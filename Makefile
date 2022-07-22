@@ -4,5 +4,6 @@
 SUBDIR += proto
 SUBDIR += kvstore
 SUBDIR += provisioning
+SUBDIR += verification
 
 include mk/subdir.mk
