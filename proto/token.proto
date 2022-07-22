@@ -1,0 +1,13 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "github.com/veraison/services/proto";
+
+import "attestation_format.proto";
+
+message AttestationToken {
+	string tenant_id = 1;
+	AttestationFormat format = 2; // TODO remove me
+	bytes data = 3;
+	string media_type = 4;
+}
