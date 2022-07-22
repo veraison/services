@@ -1,0 +1,49 @@
+# Copyright 2020-present Montgomery Edwards⁴⁴⁸ (github.com/x448).
+# This file is licensed under the MIT License. See LICENSE at https://github.com/x448/workflows for the full text.
+#
+# CI Go Cover 2020.1.28.
+# This GitHub Actions workflow checks if Go (Golang) code coverage satisfies the required minimum.
+# The required minimum is specified in the workflow name to keep badge.svg and verified minimum in sync.
+#
+# To help protect your privacy, this workflow avoids external services.
+# This workflow simply runs `go test -short -cover` --> grep --> python.
+# The python script is embedded and readable in this file.
+#
+# Steps to install and set minimum required coverage:
+# 0. Copy this file to github.com/OWNER_NAME/REPO_NAME/.github/workflows/ci-go-cover.yml
+# 1. Change workflow name from "cover 100%" to "cover ≥92.5%". Script will automatically use 92.5%.
+# 2. Update README.md to use the new path to badge.svg because the path includes the workflow name.
+
+name: cover ≥87.0%
+on: [push, pull_request]
+jobs:
+  cover:
+    name: Coverage
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version: "1.18"
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install mockgen
+      run: | 
+        go install github.com/golang/mock/mockgen@v1.6.0
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        version: '3.x'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: protoc-gen deps
+      run: |
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+        go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
+    - name: Go Coverage
+      run: |
+        go version
+        make TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
+
+      shell: bash
