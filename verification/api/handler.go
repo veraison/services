@@ -249,16 +249,6 @@ func (o *Handler) GetSession(c *gin.Context) {
 }
 
 func (o *Handler) DelSession(c *gin.Context) {
-	// do content negotiation (accept application/vnd.veraison.challenge-response-session+json)
-	offered := c.NegotiateFormat(ChallengeResponseSessionMediaType)
-	if offered != ChallengeResponseSessionMediaType {
-		ReportProblem(c,
-			http.StatusNotAcceptable,
-			fmt.Sprintf("the only supported output format is %s", ChallengeResponseSessionMediaType),
-		)
-		return
-	}
-
 	id, err := readSessionIDFromRequestURI(c)
 	if err != nil {
 		ReportProblem(c,
@@ -275,8 +265,6 @@ func (o *Handler) DelSession(c *gin.Context) {
 		)
 		return
 	}
-
-	c.Header("Content-Type", ChallengeResponseSessionMediaType)
 }
 
 func (o *Handler) SubmitEvidence(c *gin.Context) {

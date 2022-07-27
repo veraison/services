@@ -830,7 +830,6 @@ func TestHandler_DelSession_ok(t *testing.T) {
 	pathOK := path.Join(testSessionBaseURL, testUUIDString)
 
 	expectedCode := http.StatusOK
-	expectedType := ChallengeResponseSessionMediaType
 
 	sm := mock_deps.NewMockISessionManager(ctrl)
 	sm.EXPECT().
@@ -844,13 +843,10 @@ func TestHandler_DelSession_ok(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	req, _ := http.NewRequest(http.MethodDelete, pathOK, http.NoBody)
-	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
-	req.Header.Set("Content-Type", testSupportedMediaTypeA)
 
 	NewRouter(h).ServeHTTP(w, req)
 
 	assert.Equal(t, expectedCode, w.Code)
-	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 }
 
 func TestHandler_DelSession_bad_session_id(t *testing.T) {
@@ -876,8 +872,6 @@ func TestHandler_DelSession_bad_session_id(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	req, _ := http.NewRequest(http.MethodDelete, badPath, http.NoBody)
-	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
-	req.Header.Set("Content-Type", testSupportedMediaTypeA)
 
 	NewRouter(h).ServeHTTP(w, req)
 
@@ -901,13 +895,13 @@ func TestHandler_DelSession_session_id_does_not_exist(t *testing.T) {
 		Type:   "about:blank",
 		Title:  "Internal Server Error",
 		Status: http.StatusInternalServerError,
-		Detail: fmt.Sprintf("session id (%s) does not exists", testUUIDString),
+		Detail: fmt.Sprintf("session id (%s) does not exist", testUUIDString),
 	}
 
 	sm := mock_deps.NewMockISessionManager(ctrl)
 	sm.EXPECT().
 		DelSession(testUUID, tenantID).
-		Return(errors.New(`session id (` + testUUIDString + `) does not exists`))
+		Return(errors.New(`session id (` + testUUIDString + `) does not exist`))
 
 	v := mock_deps.NewMockIVerifier(ctrl)
 
@@ -916,8 +910,6 @@ func TestHandler_DelSession_session_id_does_not_exist(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	req, _ := http.NewRequest(http.MethodDelete, pathOK, http.NoBody)
-	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
-	req.Header.Set("Content-Type", testSupportedMediaTypeA)
 
 	NewRouter(h).ServeHTTP(w, req)
 
