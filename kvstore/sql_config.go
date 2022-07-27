@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
-// SQL-specific directives use the "kvstore.sql_" namespace
+// SQL-specific directives use the "kvstore.sql." namespace
 const (
-	DirectiveSQLTableName      string = "sql_tablename"
-	DirectiveSQLDriverName     string = "sql_driver"
-	DirectiveSQLDataSourceName string = "sql_datasource"
+	DirectiveSQLTableName      string = "sql.tablename"
+	DirectiveSQLDriverName     string = "sql.driver"
+	DirectiveSQLDataSourceName string = "sql.datasource"
 )

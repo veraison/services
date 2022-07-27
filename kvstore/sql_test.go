@@ -11,18 +11,19 @@ import (
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/config"
 )
 
 func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 	s := SQL{}
 
-	cfg := Config{
-		"sql_tablename":  -1,
-		"sql_driver":     "sqlite3",
-		"sql_datasource": "db=veraison.sql",
+	cfg := config.Store{
+		"sql.tablename":  -1,
+		"sql.driver":     "sqlite3",
+		"sql.datasource": "db=veraison.sql",
 	}
 
-	expectedErr := `invalidly specified directive: "sql_tablename"`
+	expectedErr := `invalidly specified directive "sql.tablename": want string, got int`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -31,12 +32,12 @@ func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 func TestSQL_Init_missing_driver_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := Config{
-		"sql_tablename":  "trustanchor",
-		"sql_datasource": "db=veraison-trustanchor.sql",
+	cfg := config.Store{
+		"sql.tablename":  "trustanchor",
+		"sql.datasource": "db=veraison-trustanchor.sql",
 	}
 
-	expectedErr := `missing directive: "sql_driver"`
+	expectedErr := `"sql.driver" directive not found`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -47,10 +48,10 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 
 	attemptedInjection := "kvstore ; DROP TABLE another ; SELECT * FROM kvstore"
 
-	cfg := Config{
-		"sql_tablename":  attemptedInjection,
-		"sql_datasource": "db=veraison-trustanchor.sql",
-		"sql_driver":     "sqlite3",
+	cfg := config.Store{
+		"sql.tablename":  attemptedInjection,
+		"sql.datasource": "db=veraison-trustanchor.sql",
+		"sql.driver":     "sqlite3",
 	}
 
 	expectedErr := fmt.Sprintf("unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
@@ -62,12 +63,12 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 func TestSQL_Init_missing_datasource_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := Config{
-		"sql_tablename": "trustanchor",
-		"sql_driver":    "postgres",
+	cfg := config.Store{
+		"sql.tablename": "trustanchor",
+		"sql.driver":    "postgres",
 	}
 
-	expectedErr := `missing directive: "sql_datasource"`
+	expectedErr := `"sql.datasource" directive not found`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -77,10 +78,10 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	s := SQL{}
 
-	cfg := Config{
-		"sql_tablename":  "trustanchor",
-		"sql_driver":     "postgres",
-		"sql_datasource": "db=veraison-trustanchor.sql",
+	cfg := config.Store{
+		"sql.tablename":  "trustanchor",
+		"sql.driver":     "postgres",
+		"sql.datasource": "db=veraison-trustanchor.sql",
 	}
 
 	expectedErr := `sql: unknown driver "postgres" (forgotten import?)`

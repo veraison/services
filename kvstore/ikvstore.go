@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
+import "github.com/veraison/services/config"
+
 type IKVStore interface {
-	Init(cfg Config) error
+	Init(cfg config.Store) error
 	Close() error
 	Get(key string) ([]string, error)
 	Set(key, val string) error

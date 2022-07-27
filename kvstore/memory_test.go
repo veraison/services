@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/config"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 func TestMemory_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	assert.NoError(t, err)
@@ -47,7 +48,7 @@ func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 
 func TestMemory_Set_Get_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -64,7 +65,7 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 
 func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -78,7 +79,7 @@ func TestMemory_Get_empty_key(t *testing.T) {
 
 func TestMemory_Del_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -92,7 +93,7 @@ func TestMemory_Del_empty_key(t *testing.T) {
 
 func TestMemory_Set_empty_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -106,7 +107,7 @@ func TestMemory_Set_empty_key(t *testing.T) {
 
 func TestMemory_Set_bad_json(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -120,7 +121,7 @@ func TestMemory_Set_bad_json(t *testing.T) {
 
 func TestMemory_Add_using_same_key_different_vals(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -140,7 +141,7 @@ func TestMemory_Add_using_same_key_different_vals(t *testing.T) {
 
 func TestMemory_Add_using_same_key_same_vals(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -160,7 +161,7 @@ func TestMemory_Add_using_same_key_same_vals(t *testing.T) {
 
 func TestMemory_Del_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -185,7 +186,7 @@ func TestMemory_Del_ok(t *testing.T) {
 
 func TestMemory_Get_no_such_key(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)
@@ -198,7 +199,7 @@ func TestMemory_Get_no_such_key(t *testing.T) {
 
 func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
-	cfg := Config{}
+	cfg := config.Store{}
 
 	err := s.Init(cfg)
 	require.NoError(t, err)

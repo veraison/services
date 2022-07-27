@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+
+	"github.com/veraison/services/config"
 )
 
-const (
+var (
 	DefaultTableName = "kvstore"
 )
 
@@ -26,15 +28,10 @@ func isSafeTblName(s string) bool {
 	return safeTblNameRe.MatchString(s)
 }
 
-func (o *SQL) Init(cfg Config) error {
-	tableName, err := cfg.ReadVarString(DirectiveSQLTableName)
+func (o *SQL) Init(cfg config.Store) error {
+	tableName, err := config.GetString(cfg, DirectiveSQLTableName, &DefaultTableName)
 	if err != nil {
-		switch err {
-		case ErrMissingDirective:
-			o.TableName = DefaultTableName
-		default:
-			return fmt.Errorf("%w: %q", err, DirectiveSQLTableName)
-		}
+		return err
 	} else {
 		o.TableName = tableName
 	}
@@ -43,14 +40,14 @@ func (o *SQL) Init(cfg Config) error {
 		return fmt.Errorf("unsafe table name: %q (MUST match %s)", o.TableName, safeTblNameRe)
 	}
 
-	driverName, err := cfg.ReadVarString(DirectiveSQLDriverName)
+	driverName, err := config.GetString(cfg, DirectiveSQLDriverName, nil)
 	if err != nil {
-		return fmt.Errorf("%w: %q", err, DirectiveSQLDriverName)
+		return err
 	}
 
-	dataSourceName, err := cfg.ReadVarString(DirectiveSQLDataSourceName)
+	dataSourceName, err := config.GetString(cfg, DirectiveSQLDataSourceName, nil)
 	if err != nil {
-		return fmt.Errorf("%w: %q", err, DirectiveSQLDataSourceName)
+		return err
 	}
 
 	db, err := sql.Open(driverName, dataSourceName)

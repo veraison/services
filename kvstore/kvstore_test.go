@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/config"
 )
 
 func TestKVStore_New_nil_config(t *testing.T) {
@@ -18,18 +19,18 @@ func TestKVStore_New_nil_config(t *testing.T) {
 }
 
 func TestKVStore_New_missing_backend_directive(t *testing.T) {
-	cfg := Config{}
+	cfg := config.Store{}
 
 	m, err := New(cfg)
 
-	expectedErr := `backend directive not found`
+	expectedErr := `"backend" directive not found`
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)
 }
 
 func TestKVStore_New_unsupported_backend(t *testing.T) {
-	cfg := Config{
+	cfg := config.Store{
 		"backend": "xyz",
 	}
 
@@ -42,7 +43,7 @@ func TestKVStore_New_unsupported_backend(t *testing.T) {
 }
 
 func TestKVStore_New_memory_backend_ok(t *testing.T) {
-	cfg := Config{
+	cfg := config.Store{
 		"backend": "memory",
 	}
 
@@ -53,16 +54,16 @@ func TestKVStore_New_memory_backend_ok(t *testing.T) {
 }
 
 func TestKVStore_New_SQL_backend_failed_init(t *testing.T) {
-	cfg := Config{
+	cfg := config.Store{
 		"backend":        "sql",
-		"sql_tablename":  "endorsement",
-		"sql_datasource": "db.sql",
-		// no sql_driver
+		"sql.tablename":  "endorsement",
+		"sql.datasource": "db.sql",
+		// no sql.driver
 	}
 
 	m, err := New(cfg)
 
-	expectedErr := `missing directive: "sql_driver"`
+	expectedErr := `"sql.driver" directive not found`
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)

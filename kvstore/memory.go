@@ -9,6 +9,8 @@ import (
 	"sort"
 	"sync"
 	"text/tabwriter"
+
+	"github.com/veraison/services/config"
 )
 
 var (
@@ -19,7 +21,7 @@ type Memory struct {
 	Data map[string][]string
 }
 
-func (o *Memory) Init(unused Config) error {
+func (o *Memory) Init(unused config.Store) error {
 	o.Data = make(map[string][]string)
 
 	return nil

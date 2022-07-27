@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jellydator/ttlcache/v3 v3.0.0
+	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/moogar0880/problems v0.1.1
 	github.com/stretchr/testify v1.8.0
 	github.com/veraison/corim v0.0.0-20220711160954-dc5f874812d6

@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := all
 
 GOPKG := github.com/veraison/services/provisioning/cmd
-CMD := provisioning
+CMD := provisioning-service
 SRCS := main.go
 
 CMD_DEPS := $(wildcard ../api/*.go)

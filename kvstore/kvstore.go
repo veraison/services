@@ -5,16 +5,18 @@ package kvstore
 import (
 	"errors"
 	"fmt"
+
+	"github.com/veraison/services/config"
 )
 
-func New(cfg Config) (IKVStore, error) {
+func New(cfg config.Store) (IKVStore, error) {
 	if cfg == nil {
 		return nil, errors.New("nil configuration")
 	}
 
-	backend, err := cfg.ReadVarString(DirectiveBackend)
+	backend, err := config.GetString(cfg, DirectiveBackend, nil)
 	if err != nil {
-		return nil, errors.New(DirectiveBackend + " directive not found")
+		return nil, err
 	}
 
 	var s IKVStore
