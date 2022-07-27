@@ -822,3 +822,109 @@ func TestHandler_GetSession_ok(t *testing.T) {
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.JSONEq(t, expectedBody, string(body))
 }
+
+func TestHandler_DelSession_ok(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	pathOK := path.Join(testSessionBaseURL, testUUIDString)
+
+	expectedCode := http.StatusOK
+	expectedType := ChallengeResponseSessionMediaType
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	sm.EXPECT().
+		DelSession(testUUID, tenantID).
+		Return(nil)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodDelete, pathOK, http.NoBody)
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", testSupportedMediaTypeA)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+}
+
+func TestHandler_DelSession_bad_session_id(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	badPath := path.Join(testSessionBaseURL, "1234")
+
+	expectedCode := http.StatusBadRequest
+	expectedType := "application/problem+json"
+	expectedBody := problems.DefaultProblem{
+		Type:   "about:blank",
+		Title:  "Bad Request",
+		Status: http.StatusBadRequest,
+		Detail: fmt.Sprintf("invalid session id (%s) in path segment: invalid UUID length: 4", badPath),
+	}
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	v := mock_deps.NewMockIVerifier(ctrl)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodDelete, badPath, http.NoBody)
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", testSupportedMediaTypeA)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_DelSession_session_id_does_not_exist(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	pathOK := path.Join(testSessionBaseURL, testUUIDString)
+
+	expectedCode := http.StatusInternalServerError
+	expectedType := "application/problem+json"
+	expectedBody := problems.DefaultProblem{
+		Type:   "about:blank",
+		Title:  "Internal Server Error",
+		Status: http.StatusInternalServerError,
+		Detail: fmt.Sprintf("session id (%s) does not exists", testUUIDString),
+	}
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	sm.EXPECT().
+		DelSession(testUUID, tenantID).
+		Return(errors.New(`session id (` + testUUIDString + `) does not exists`))
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodDelete, pathOK, http.NoBody)
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", testSupportedMediaTypeA)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}

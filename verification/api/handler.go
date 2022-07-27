@@ -38,6 +38,7 @@ type IHandler interface {
 	NewChallengeResponse(c *gin.Context)
 	SubmitEvidence(c *gin.Context)
 	GetSession(c *gin.Context)
+	DelSession(c *gin.Context)
 }
 
 type Handler struct {
@@ -245,6 +246,37 @@ func (o *Handler) GetSession(c *gin.Context) {
 
 	c.Header("Content-Type", ChallengeResponseSessionMediaType)
 	c.JSON(http.StatusOK, session)
+}
+
+func (o *Handler) DelSession(c *gin.Context) {
+	// do content negotiation (accept application/vnd.veraison.challenge-response-session+json)
+	offered := c.NegotiateFormat(ChallengeResponseSessionMediaType)
+	if offered != ChallengeResponseSessionMediaType {
+		ReportProblem(c,
+			http.StatusNotAcceptable,
+			fmt.Sprintf("the only supported output format is %s", ChallengeResponseSessionMediaType),
+		)
+		return
+	}
+
+	id, err := readSessionIDFromRequestURI(c)
+	if err != nil {
+		ReportProblem(c,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	if err = o.SessionManager.DelSession(id, tenantID); err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	c.Header("Content-Type", ChallengeResponseSessionMediaType)
 }
 
 func (o *Handler) SubmitEvidence(c *gin.Context) {

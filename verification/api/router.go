@@ -15,7 +15,8 @@ func NewRouter(handler IHandler) *gin.Engine {
 	router.Group("/challenge-response/v1").
 		POST("/newSession", handler.NewChallengeResponse).
 		POST("/session/:id", handler.SubmitEvidence).
-		GET("/session/:id", handler.GetSession)
+		GET("/session/:id", handler.GetSession).
+		DELETE("/session/:id", handler.DelSession)
 
 	return router
 }
