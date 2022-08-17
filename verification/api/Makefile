@@ -8,6 +8,8 @@ INTERFACES += ../verifier/iverifier.go
 
 MOCKPKG := mocks
 
+lint-hook-pre: _mocks
+
 include ../../mk/common.mk
 include ../../mk/pkg.mk
 include ../../mk/lint.mk
