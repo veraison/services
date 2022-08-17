@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"strconv"
@@ -312,7 +312,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	}
 
 	// read body (i.e., evidence)
-	evidence, err := ioutil.ReadAll(c.Request.Body)
+	evidence, err := io.ReadAll(c.Request.Body)
 	if err != nil || len(evidence) == 0 {
 		ReportProblem(c,
 			http.StatusBadRequest,

@@ -5,7 +5,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/veraison/services/proto"
@@ -15,7 +15,7 @@ import (
 )
 
 func Test_GetTrustAnchorID_ok(t *testing.T) {
-	tokenBytes, err := ioutil.ReadFile("test/psa-token.cbor")
+	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
 	require.NoError(t, err)
 
 	token := proto.AttestationToken{
@@ -34,10 +34,10 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 }
 
 func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
-	tokenBytes, err := ioutil.ReadFile("test/psaintegtoken.cbor")
+	tokenBytes, err := os.ReadFile("test/psaintegtoken.cbor")
 	require.NoError(t, err)
 
-	taEndValBytes, err := ioutil.ReadFile("test/ta-integ-endorsements.json")
+	taEndValBytes, err := os.ReadFile("test/ta-integ-endorsements.json")
 	require.NoError(t, err)
 
 	scheme := &Scheme{}
@@ -55,10 +55,10 @@ func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
 }
 
 func Test_ExtractVerifiedClaims_ok(t *testing.T) {
-	tokenBytes, err := ioutil.ReadFile("test/psa-token.cbor")
+	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
 	require.NoError(t, err)
 
-	taEndValBytes, err := ioutil.ReadFile("test/ta-endorsements.json")
+	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
 	require.NoError(t, err)
 
 	scheme := &Scheme{}
@@ -80,14 +80,14 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 }
 
 func Test_AppraiseEvidence_ok(t *testing.T) {
-	extractedBytes, err := ioutil.ReadFile("test/extracted.json")
+	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
 	var ec proto.EvidenceContext
 	err = json.Unmarshal(extractedBytes, &ec)
 	require.NoError(t, err)
 
-	endorsementsBytes, err := ioutil.ReadFile("test/endorsements.json")
+	endorsementsBytes, err := os.ReadFile("test/endorsements.json")
 	require.NoError(t, err)
 
 	scheme := &Scheme{}
@@ -99,7 +99,7 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 }
 
 func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
-	extractedBytes, err := ioutil.ReadFile("test/extracted.json")
+	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
 	var ec proto.EvidenceContext
@@ -107,7 +107,7 @@ func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
 	require.NoError(t, err)
 
 	var endorsemementsArray []string
-	endorsementsBytes, err := ioutil.ReadFile("test/mult-endorsements.json")
+	endorsementsBytes, err := os.ReadFile("test/mult-endorsements.json")
 	require.NoError(t, err)
 	err = json.Unmarshal(endorsementsBytes, &endorsemementsArray)
 	require.NoError(t, err)

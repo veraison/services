@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ import (
 )
 
 func Test_DecodeAttestationData_ok(t *testing.T) {
-	data, err := ioutil.ReadFile("test/tokens/basic.token")
+	data, err := os.ReadFile("test/tokens/basic.token")
 	require.NoError(t, err)
 
 	var decoded Token
@@ -30,7 +30,7 @@ func Test_DecodeAttestationData_ok(t *testing.T) {
 }
 
 func Test_GetTrustAnchorID_ok(t *testing.T) {
-	data, err := ioutil.ReadFile("test/tokens/basic.token")
+	data, err := os.ReadFile("test/tokens/basic.token")
 	require.NoError(t, err)
 
 	ta := proto.AttestationToken{
@@ -47,7 +47,7 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 }
 
 func readPublicKeyBytes(path string) ([]byte, error) {
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func readPublicKeyBytes(path string) ([]byte, error) {
 }
 
 func Test_ExtractVerifiedClaims_ok(t *testing.T) {
-	data, err := ioutil.ReadFile("test/tokens/basic.token")
+	data, err := os.ReadFile("test/tokens/basic.token")
 	require.NoError(t, err)
 
 	ta := proto.AttestationToken{

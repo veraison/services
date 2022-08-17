@@ -5,7 +5,7 @@ package api
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -69,7 +69,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	}
 
 	// read body
-	payload, err := ioutil.ReadAll(c.Request.Body)
+	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusBadRequest,

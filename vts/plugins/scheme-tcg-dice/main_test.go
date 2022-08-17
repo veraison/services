@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/veraison/services/proto"
@@ -29,10 +29,10 @@ var DeviceID = []uint8{
 }
 
 func Test_ExtractVerifiedClaims_ok(t *testing.T) {
-	deviceData, err := ioutil.ReadFile("test/DeviceCerts.pem")
+	deviceData, err := os.ReadFile("test/DeviceCerts.pem")
 	require.NoError(t, err, "could not read device certs file")
 
-	taData, err := ioutil.ReadFile("test/TrustAnchor.pem")
+	taData, err := os.ReadFile("test/TrustAnchor.pem")
 	require.NoError(t, err, "could not read trust anchor file")
 
 	s := &Scheme{}

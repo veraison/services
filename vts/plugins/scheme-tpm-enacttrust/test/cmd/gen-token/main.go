@@ -13,7 +13,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/google/go-tpm/tpm2"
@@ -55,7 +54,7 @@ func makeAttestationData(desc *TokenDescription) (*tpm2.AttestationData, error) 
 }
 
 func readTokenDescription(path string) (*TokenDescription, error) {
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +68,7 @@ func readTokenDescription(path string) (*TokenDescription, error) {
 }
 
 func readPrivateKey(path string) (*ecdsa.PrivateKey, error) {
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +153,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := ioutil.WriteFile(outPath, buff.Bytes(), 0600); err != nil {
+	if err := os.WriteFile(outPath, buff.Bytes(), 0600); err != nil {
 		fmt.Printf("ERROR could not write %q: %v\n", outPath, err)
 		os.Exit(1)
 	}
