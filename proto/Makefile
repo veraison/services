@@ -13,15 +13,10 @@ PROTOSRCS += vts.proto
 
 lint-hook-pre: protogen
 
-
-
-lint lint-extra test:
-
- clean: ; $(RM) protogen
-
 lint lint-extra test:
 
 clean: ; $(RM) protogen
 
 include ../mk/common.mk
 include ../mk/proto.mk
+include ../mk/lint.mk
