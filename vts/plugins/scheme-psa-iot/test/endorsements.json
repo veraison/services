@@ -1,0 +1,14 @@
+{
+"scheme":"PSA_IOT",
+"type":"REFERENCE_VALUE",
+"attributes":{
+    "psa.hw-model":"RoadRunner",
+    "psa.hw-vendor":"ACME",
+    "psa.impl-id":"76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "psa.measurement-desc":1,
+    "psa.measurement-type":"BL",
+    "psa.measurement-value":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa.signer-id":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa.version":"3.4.2"
+    }
+  }
