@@ -11,7 +11,7 @@ PROTOSRCS += evidence.proto
 PROTOSRCS += appraisal_context.proto
 PROTOSRCS += vts.proto
 
-lint-hook-pre: protgen
+lint-hook-pre: protogen
 
 
 
