@@ -32,9 +32,8 @@ func (o *SQL) Init(cfg config.Store) error {
 	tableName, err := config.GetString(cfg, DirectiveSQLTableName, &DefaultTableName)
 	if err != nil {
 		return err
-	} else {
-		o.TableName = tableName
 	}
+	o.TableName = tableName
 
 	if !isSafeTblName(o.TableName) {
 		return fmt.Errorf("unsafe table name: %q (MUST match %s)", o.TableName, safeTblNameRe)

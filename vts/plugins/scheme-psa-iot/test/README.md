@@ -1,7 +1,7 @@
 `psa-token.cbor` used by the tests is compiled from the YAML description using
 a utility that is included with iat-verifier tool that can be found here:
 
-    https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/tools/iat-verifier
+    https://git.trustedfirmware.org/TF-M/tf-m-tools.git/tree/tools/iat-verifier
 
 To install the tool, get the source and then
 
