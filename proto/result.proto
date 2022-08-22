@@ -38,7 +38,7 @@ message AttestationResult {
     string AppraisalPolicyID = 6 [json_name = "appraisal-policy-id"];
 
     // Extension
-    google.protobuf.Struct processed_evidence = 7 [json_name = "veraison-procesed-evidence"];
+    google.protobuf.Struct processed_evidence = 7 [json_name = "veraison-processed-evidence"];
 }
 
 // vim: set et sts=4 sw=4 ai:
