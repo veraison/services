@@ -27,7 +27,7 @@ type IReader interface {
 	// If no such Store exists, an error is returned.
 	GetStore(name string) (Store, error)
 
-	// MustGetStore returns a Store that was loaded under the specfied
+	// MustGetStore returns a Store that was loaded under the specified
 	// name. If no such store exists, an empty store is returned instead.
 	MustGetStore(name string) Store
 }

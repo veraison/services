@@ -1,0 +1,6 @@
+provisioning:
+  plugin-dir: ../plugins/bin/
+  listen-addr: localhost:8888
+vts-grpc:
+  vts-server:
+    addr: dns:127.0.0.1:50051
