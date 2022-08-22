@@ -1,0 +1,17 @@
+plugin:
+  backend: go-plugin
+  go-plugin:
+    folder: ../plugins/bin/
+ta-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: ta-store.sql
+en-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: en-store.sql
+vts-grpc:
+  server:
+    addr: 127.0.0.1:50051
