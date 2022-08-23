@@ -16,44 +16,31 @@ import (
 	"github.com/veraison/services/vts/trustedservices"
 )
 
-var (
-	PluginManagerCfg = config.Store{
-		"backend":          "go-plugin",
-		"go-plugin.folder": "../plugins/bin/",
-	}
-	TaStoreCfg = config.Store{
-		"backend":        "sql",
-		"sql.driver":     "sqlite3",
-		"sql.datasource": "ta-store.sql",
-	}
-	EnStoreCfg = config.Store{
-		"backend":        "sql",
-		"sql.driver":     "sqlite3",
-		"sql.datasource": "en-store.sql",
-	}
-	VtsGrpcConfig = config.Store{
-		"server.addr": "127.0.0.1:50051",
-	}
-)
-
 func main() {
-	taStore, err := kvstore.New(TaStoreCfg)
+	cfg := config.NewYAMLReader()
+
+	_, err := cfg.ReadFile("config.yaml")
+	if err != nil {
+		log.Fatalf("counfig.yaml could not be read.")
+	}
+
+	taStore, err := kvstore.New(cfg.MustGetStore("ta-store"))
 	if err != nil {
 		log.Fatalf("trust anchor store initialisation failed: %v", err)
 	}
 
-	enStore, err := kvstore.New(EnStoreCfg)
+	enStore, err := kvstore.New(cfg.MustGetStore("en-store"))
 	if err != nil {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
 
-	pluginManager := pluginmanager.New(PluginManagerCfg)
+	pluginManager := pluginmanager.New(cfg.MustGetStore("plugin"))
 	if err := pluginManager.Init(); err != nil {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
 	// from this point onwards taStore, enStore and pluginManager are owned by vts
-	vts := trustedservices.NewGRPC(VtsGrpcConfig, taStore, enStore, pluginManager)
+	vts := trustedservices.NewGRPC(cfg.MustGetStore("vts-grpc"), taStore, enStore, pluginManager)
 
 	err = vts.Init()
 	if err != nil {

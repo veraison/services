@@ -17,18 +17,32 @@ import (
 
 // TODO(tho) make these configurable
 var (
-	PluginDir    = "../plugins/bin/"
-	ListenAddr   = "localhost:8888"
-	VTSClientCfg = config.Store{
-		"vts-server.addr": "dns:127.0.0.1:50051",
-	}
+	DefaultPluginDir  = "../plugins/bin/"
+	DefaultListenAddr = "localhost:8888"
 )
 
 func main() {
-	pluginManager := NewGoPluginManager(PluginDir)
-	vtsClient := vtsclient.NewGRPC(VTSClientCfg)
+	cfg := config.NewYAMLReader()
+	if _, err := cfg.ReadFile("config.yaml"); err != nil {
+		log.Fatalf("counl not read config file: %v", err)
+	}
+
+	provCfg := cfg.MustGetStore("provisioning")
+
+	pluginDir, err := config.GetString(provCfg, "plugin-dir", &DefaultPluginDir)
+	if err != nil {
+		log.Fatalf("could not get plugin-dir: %v", err)
+	}
+
+	listenAddr, err := config.GetString(provCfg, "list-addr", &DefaultListenAddr)
+	if err != nil {
+		log.Fatalf("could not get listen-addr: %v", err)
+	}
+
+	pluginManager := NewGoPluginManager(pluginDir)
+	vtsClient := vtsclient.NewGRPC(cfg.MustGetStore("vts-grpc"))
 	apiHandler := api.NewHandler(pluginManager, vtsClient)
-	go apiServer(apiHandler, ListenAddr)
+	go apiServer(apiHandler, listenAddr)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

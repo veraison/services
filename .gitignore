@@ -10,10 +10,13 @@ protogen
 vts/plugins/scheme-tpm-enacttrust/test/tokens/*.token
 vts/plugins/scheme-tpm-enacttrust/test/cmd/gen-token
 vts/plugins/bin
+vts/cmd/vts-service
 provisioning/api/mocks/
+provisioning/cmd/provisioning-service
 provisioning/plugins/bin/
 provisioning/decoder/*.pb.json.go
 verification/api/mocks/
+verification/cmd/verification-service
 
 # Test binary, built with `go test -c`
 *.test
