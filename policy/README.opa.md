@@ -76,7 +76,7 @@ package provides a utility function, `semver_cmp` to aid in their comparison
 For example:
 
 ```rego
-sw_itegrity = "SUCCESS" {
+sw_integrity = "SUCCESS" {
     # note: This is an example. The evidence entries do not correspond to any
     #       actual scheme.
     evidence["application-hash"] == "h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="

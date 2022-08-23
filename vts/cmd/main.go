@@ -13,6 +13,7 @@ import (
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/vts/pluginmanager"
+	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
 )
 
@@ -34,13 +35,24 @@ func main() {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
 
+	poStore, err := kvstore.New(cfg.MustGetStore("po-store"))
+	if err != nil {
+		log.Fatalf("policy store initialization failed: %v", err)
+	}
+
+	policyManager, err := policymanager.New(cfg.MustGetStore("po-agent"), poStore)
+	if err != nil {
+		log.Fatalf("policy manager initialization failed: %v", err)
+	}
+
 	pluginManager := pluginmanager.New(cfg.MustGetStore("plugin"))
 	if err := pluginManager.Init(); err != nil {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
 	// from this point onwards taStore, enStore and pluginManager are owned by vts
-	vts := trustedservices.NewGRPC(cfg.MustGetStore("vts-grpc"), taStore, enStore, pluginManager)
+	vts := trustedservices.NewGRPC(cfg.MustGetStore("vts-grpc"), taStore, enStore,
+		pluginManager, policyManager)
 
 	err = vts.Init()
 	if err != nil {
