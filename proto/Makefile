@@ -15,7 +15,7 @@ lint-hook-pre: protogen
 
 lint lint-extra test:
 
-clean: ; $(RM) protogen *.pb.go *pb.json.go
+clean: ; $(RM) protogen
 
 include ../mk/common.mk
 include ../mk/proto.mk
