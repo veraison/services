@@ -1,0 +1,31 @@
+#!/bin/bash
+
+IGNORE=(
+    # attestaton_format.proto only defines an ENUM, and so protoc generates
+    # only a .pb.go for it.
+    "proto/attestation_format.pb.json.go"
+)
+
+
+check_genfiles_out_of_date() {
+    for proto_file in $(git diff-index --cached --name-only HEAD | grep -e "\.proto$"); do
+        gofile="${proto_file%.*}.pb.go"
+        gojsonfile="${proto_file%.*}.pb.json.go"
+        if [[ ! "${IGNORE[*]}" =~ "$gofile" ]]; then
+            if [[ ! -f $gofile || $gofile -ot $proto_file ]]; then
+                echo $(dirname $gofile)
+            fi
+        fi
+        if [[ ! "${IGNORE[*]}" =~ "$gojsonfile" ]]; then
+            if [[ ! -f $gojsonfile || $gojsonfile -ot $prot_file ]]; then
+                echo $(dirname $gojsonfile)
+            fi
+        fi
+    done
+}
+
+for d in $(echo $(check_genfiles_out_of_date) | tr ' ' '\n' | sort -u); do
+    echo "Updating protobuf-generated files in '$d' and adding them to commit."
+    make -C $d protogen
+    git add $d/*.pb.json.go $d/*.pb.go
+done
