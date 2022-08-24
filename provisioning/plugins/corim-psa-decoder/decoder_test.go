@@ -24,7 +24,7 @@ func TestDecoder_GetSupportedMediaTypes(t *testing.T) {
 	d := &Decoder{}
 
 	expected := []string{
-		SupportedMediaTypeP1, SupportedMediaTypeP2,
+		SupportedMediaType,
 	}
 
 	actual := d.GetSupportedMediaTypes()
