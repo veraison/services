@@ -12,6 +12,13 @@ en-store:
   sql:
     driver: sqlite3
     datasource: en-store.sql
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: en-store.sql
+po-agent:
+    backend: opa
 vts-grpc:
   server:
     addr: 127.0.0.1:50051

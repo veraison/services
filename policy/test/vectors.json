@@ -1,0 +1,140 @@
+[
+	{
+		"title": "malformed policy",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/malformed.rego",
+		"expected": {
+			"error": "could not Eval policy: 1 error occurred: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^",
+			"outcome": null
+		}
+	},
+	{
+		"title": "bad policy",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/bad.rego",
+		"expected": {
+			"error": "could not Eval policy: 1 error occurred: policy.rego:6: rego_unsafe_var_error: var y is unsafe",
+			"outcome": null
+		}
+	},
+	{
+		"title": "incorrect rule value policy",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/incorrect-rule-value.rego",
+		"expected": {
+			"error": "policy returned bad update: bad value for \"sw-up-to-dateness\": \"SURE\" is a not a valid status; must be in [\"FAILURE\" \"SUCCESS\" \"UNKNOWN\" \"INVALID\"]",
+			"outcome": null
+		}
+	},
+	{
+		"title": "empty policy",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/empty.rego",
+		"expected": {
+			"error": null,
+			"outcome": {
+				"status": "",
+				"trust-vector": {
+					"certification-status": "",
+					"config-integrity": "",
+					"hw-authenticity": "",
+					"runtime-integrity": "",
+					"sw-integrity": "",
+					"sw-up-to-dateness": ""
+				}
+			}
+		}
+	},
+	{
+		"title": "TPM_ENACTTRUST sw-up-todateness FAILURE",
+		"result": "test/inputs/enacttrust-result.json",
+		"evidence": "test/inputs/enacttrust-evidence.json",
+		"endorsements": "test/inputs/enacttrust-endorsements.json",
+		"policy": "test/policies/sw-up-to-dateness.rego",
+		"expected": {
+			"error": null,
+			"outcome": {
+				"status": "",
+				"trust-vector": {
+					"certification-status": "",
+					"config-integrity": "",
+					"hw-authenticity": "",
+					"runtime-integrity": "",
+					"sw-integrity": "",
+					"sw-up-to-dateness": "FAILURE"
+				}
+			}
+		}
+	},
+	{
+		"title": "TPM_ENACTTRUST sw-up-todateness SUCCESS",
+		"result": "test/inputs/enacttrust-result.json",
+		"evidence": "test/inputs/enacttrust-evidence-updatedFirmware.json",
+		"endorsements": "test/inputs/enacttrust-endorsements.json",
+		"policy": "test/policies/sw-up-to-dateness.rego",
+		"expected": {
+			"error": null,
+			"outcome": {
+				"status": "",
+				"trust-vector": {
+					"certification-status": "",
+					"config-integrity": "",
+					"hw-authenticity": "",
+					"runtime-integrity": "",
+					"sw-integrity": "",
+					"sw-up-to-dateness": "SUCCESS"
+				}
+			}
+		}
+	},
+	{
+		"title": "PSA_OIT sw-up-todateness FAILURE",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/sw-up-to-dateness.rego",
+		"expected": {
+			"error": null,
+			"outcome": {
+				"status": "",
+				"trust-vector": {
+					"certification-status": "",
+					"config-integrity": "",
+					"hw-authenticity": "",
+					"runtime-integrity": "",
+					"sw-integrity": "",
+					"sw-up-to-dateness": "FAILURE"
+				}
+			}
+		}
+	},
+	{
+		"title": "PSA_OIT sw-up-todateness SUCCESS",
+		"result": "test/inputs/psa-result.json",
+		"evidence": "test/inputs/psa-evidence-updatedBL.json",
+		"endorsements": "test/inputs/psa-endorsements.json",
+		"policy": "test/policies/sw-up-to-dateness.rego",
+		"expected": {
+			"error": null,
+			"outcome": {
+				"status": "",
+				"trust-vector": {
+					"certification-status": "",
+					"config-integrity": "",
+					"hw-authenticity": "",
+					"runtime-integrity": "",
+					"sw-integrity": "",
+					"sw-up-to-dateness": "SUCCESS"
+				}
+			}
+		}
+	}
+]

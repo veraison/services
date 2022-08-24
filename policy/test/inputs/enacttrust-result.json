@@ -1,0 +1,47 @@
+{
+  "status": "SUCCESS",
+  "trust-vector": {
+    "hw-authenticity": "SUCCESS",
+    "sw-integrity": "SUCCESS",
+    "sw-up-to-dateness": "UNKNOWN",
+    "config-integrity": "UNKNOWN",
+    "runtime-integrity": "UNKNOWN",
+    "certification-status": "UNKNOWN"
+  },
+  "veraison-procesed-evidence": {
+    "psa-boot-seed": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-client-id": 2,
+    "psa-implementation-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-instance-id": "AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
+    "psa-nonce": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-profile": "PSA_IOT_PROFILE_1",
+    "psa-security-lifecycle": 12288,
+    "psa-software-components": [
+      {
+        "measurement-description": "TF-M_SHA256MemPreXIP",
+        "measurement-type": "BL",
+        "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "version": "3.4.2"
+      },
+      {
+        "measurement-type": "M1",
+        "measurement-value": "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "version": "1.2.0"
+      },
+      {
+        "measurement-type": "M2",
+        "measurement-value": "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "version": "1.2.3"
+      },
+      {
+        "measurement-type": "M3",
+        "measurement-value": "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+        "version": "1.0.0"
+      }
+    ]
+  }
+}

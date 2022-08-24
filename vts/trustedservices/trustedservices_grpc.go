@@ -15,6 +15,7 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/pluginmanager"
+	"github.com/veraison/services/vts/policymanager"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -31,6 +32,7 @@ type GRPC struct {
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
 	PluginManager pluginmanager.ISchemePluginManager
+	PolicyManager *policymanager.PolicyManager
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -38,12 +40,18 @@ type GRPC struct {
 	proto.UnimplementedVTSServer
 }
 
-func NewGRPC(cfg config.Store, taStore, enStore kvstore.IKVStore, pluginManager pluginmanager.ISchemePluginManager) ITrustedServices {
+func NewGRPC(
+	cfg config.Store,
+	taStore, enStore kvstore.IKVStore,
+	pluginManager pluginmanager.ISchemePluginManager,
+	policyManager *policymanager.PolicyManager,
+) ITrustedServices {
 	return &GRPC{
 		Config:        cfg,
 		TaStore:       taStore,
 		EnStore:       enStore,
 		PluginManager: pluginManager,
+		PolicyManager: policyManager,
 	}
 }
 
@@ -224,7 +232,13 @@ func (o *GRPC) GetAttestation(ctx context.Context, token *proto.AttestationToken
 		return nil, err
 	}
 
-	return scheme.AppraiseEvidence(ec, endorsements)
+	attestContext, err := scheme.AppraiseEvidence(ec, endorsements)
+	if err != nil {
+		return nil, err
+	}
+
+	err = o.PolicyManager.Evaluate(ctx, attestContext, endorsements)
+	return attestContext, err
 }
 
 func (c *GRPC) extractEvidence(scheme scheme.IScheme, token *proto.AttestationToken) (*proto.EvidenceContext, error) {
