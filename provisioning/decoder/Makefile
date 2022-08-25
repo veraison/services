@@ -5,8 +5,6 @@ PROTOSRCS := decoder_response.proto
 
 PROTOPATHS := ../../proto
 
-CLEANFILES += *.pb.go
-
 all-hook-pre test-hook-pre lint-hook-pre:
 	$(MAKE) -C ../../proto protogen
 	$(MAKE) protogen
