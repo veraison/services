@@ -25,11 +25,21 @@ THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: test-hook-pre realtest
+test: check-mockgen test-hook-pre realtest
 .PHONY: test
 
 test-hook-pre:
 .PHONY: test-hook-pre
+
+check-mockgen:
+	@if [[ ! -x $(MOCKGEN) ]]; then \
+		echo ""; \
+		echo "please install mockgen using:"; \
+		echo ""; \
+		echo "    go install github.com/golang/mock/mockgen@1.6.0"; \
+		echo ""; \
+	fi
+.PHONY: check-mockgen
 
 realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
 .PHONY: realtest
