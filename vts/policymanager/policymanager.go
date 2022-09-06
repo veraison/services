@@ -67,7 +67,7 @@ func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, er
 
 	vals, err := o.Store.Get(policyID)
 	if err != nil {
-		return nil, err
+		return nil, ErrNoPolicy
 	}
 
 	// TODO(setrofim): for now, assuming that there should be exactly one
