@@ -1,0 +1,4 @@
+vts-server:
+  addr: "dns:127.0.0.1:50051",
+listen-addr: "localhost:8080"
+
