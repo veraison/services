@@ -10,27 +10,35 @@ import (
 	"github.com/veraison/services/vtsclient"
 )
 
+var (
+	DefaultListenAddr = "localhost:8080"
+)
+
 func main() {
 	cfg := config.NewYAMLReader()
 
-	_, err := cfg.ReadFile("config.yaml")
+	_, err := cfg.ReadFile("./config.yaml")
 	if err != nil {
-		log.Fatalf("counfig.yaml could not be read.")
+		log.Fatalf("config.yaml could not be read: %v", err)
 	}
 
-	let vtsClientConfig = config.Store{
-		"vts-server.addr": cfg.MustGetStore("vts-server.addr"),
+	vtsClientConfig := cfg.MustGetStore("vts-client")
+
+	verifierConfig := config.Store{
+		// placeholder, empty for now
 	}
 
-	let verifierConfig = config.Store {
-		 // placeholder, empty for now
+	apiServerConfig := cfg.MustGetStore("api-server")
+	listenAddr, err := config.GetString(apiServerConfig, "listen-addr", &DefaultListenAddr)
+	if err != nil {
+		log.Fatalf("loading api-server configuration: %v", err)
 	}
 
-		sessionManager := sessionmanager.NewSessionManagerTTLCache()
+	sessionManager := sessionmanager.NewSessionManagerTTLCache()
 	vtsClient := vtsclient.NewGRPC(vtsClientConfig)
 	verifier := verifier.New(verifierConfig, vtsClient)
 	apiHandler := api.NewHandler(sessionManager, verifier)
-	apiServer(apiHandler, cfg.MustGetStore("listen-addr"))
+	apiServer(apiHandler, listenAddr)
 }
 
 func apiServer(apiHandler api.IHandler, listenAddr string) {
