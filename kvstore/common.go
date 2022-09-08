@@ -8,6 +8,8 @@ import (
 	"fmt"
 )
 
+var ErrKeyNotFound = errors.New("key not found")
+
 func sanitizeKV(key, val string) error {
 	if err := sanitizeK(key); err != nil {
 		return err

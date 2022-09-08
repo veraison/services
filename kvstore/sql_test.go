@@ -143,6 +143,27 @@ func TestSQL_Get_db_layer_failure(t *testing.T) {
 	}
 }
 
+func TestSQL_Get_key_not_found(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT vals FROM endorsement WHERE key = ?"))
+	e.WithArgs("ninja")
+	e.WillReturnRows(sqlmock.NewRows([]string{"key", "vals"}))
+
+	expectedErr := "key not found: \"ninja\""
+
+	_, err = s.Get("ninja")
+	assert.EqualError(t, err, expectedErr)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
 func TestSQL_Get_broken_invariant_null_val_panic(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
