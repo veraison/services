@@ -67,6 +67,9 @@ func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, er
 
 	vals, err := o.Store.Get(policyID)
 	if err != nil {
+		if errors.Is(err, kvstore.ErrKeyNotFound) {
+			return nil, fmt.Errorf("%w: %q", ErrNoPolicy, policyID)
+		}
 		return nil, err
 	}
 
@@ -74,7 +77,7 @@ func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, er
 	// matching policy. Once we have a more sophisticated policy management
 	// framework worked out, we might allow multiple policies here.
 	if len(vals) == 0 {
-		return nil, ErrNoPolicy
+		return nil, fmt.Errorf("%w: %q", ErrNoPolicy, policyID)
 	} else if len(vals) > 1 {
 		return nil, fmt.Errorf("found %d policy entries for id %q; must be at most 1",
 			len(vals), policyID)
