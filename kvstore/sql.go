@@ -28,6 +28,15 @@ func isSafeTblName(s string) bool {
 	return safeTblNameRe.MatchString(s)
 }
 
+// Init initializes the KVStore. The config may contain the following values,
+// all of which are optional:
+// "sql.tablename" - The name of the table with key-values pairs (defaults to
+//                 "kvstore".
+// "sql.driver" - The SQL driver to use; see
+//                https://github.com/golang/go/wiki/SQLDrivers (defaults to
+//                "sqlite3").
+// "sql.datasource" -  The name of the data source to use. Valid values are
+//                     driver-specific (defaults to "db=veraison.sql".
 func (o *SQL) Init(cfg config.Store) error {
 	tableName, err := config.GetString(cfg, DirectiveSQLTableName, &DefaultTableName)
 	if err != nil {
@@ -85,7 +94,9 @@ func (o SQL) Get(key string) ([]string, error) {
 
 	var vals []string
 
+	count := 0
 	for rows.Next() {
+		count++
 		var s sql.NullString
 
 		if err := rows.Scan(&s); err != nil {
@@ -97,6 +108,10 @@ func (o SQL) Get(key string) ([]string, error) {
 		}
 
 		vals = append(vals, s.String)
+	}
+
+	if count == 0 {
+		return nil, fmt.Errorf("%w: %q", ErrKeyNotFound, key)
 	}
 
 	return vals, nil

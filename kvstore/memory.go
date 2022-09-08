@@ -21,6 +21,8 @@ type Memory struct {
 	Data map[string][]string
 }
 
+// Init initializes the KVStore. There are no configuration options for this
+// implementation.
 func (o *Memory) Init(unused config.Store) error {
 	o.Data = make(map[string][]string)
 
@@ -46,7 +48,7 @@ func (o Memory) Get(key string) ([]string, error) {
 
 	vals, ok := o.Data[key]
 	if !ok {
-		return nil, fmt.Errorf("key %q not found", key)
+		return nil, fmt.Errorf("%w: %q", ErrKeyNotFound, key)
 	}
 
 	return vals, nil
