@@ -228,7 +228,7 @@ func (o *GRPC) GetAttestation(ctx context.Context, token *proto.AttestationToken
 	}
 
 	endorsements, err := o.EnStore.Get(ec.SoftwareId)
-	if err != nil {
+	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, err
 	}
 
