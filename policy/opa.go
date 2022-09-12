@@ -39,7 +39,7 @@ func (o *OPA) GetName() string {
 	return "opa"
 }
 
-func (o *OPA) Evaluate(
+func (o *OPA) BackEndEvaluate(
 	ctx context.Context,
 	policy string,
 	result map[string]interface{},

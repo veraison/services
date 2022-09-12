@@ -35,6 +35,21 @@ func (m *MockIBackend) EXPECT() *MockIBackendMockRecorder {
 	return m.recorder
 }
 
+// BackEndEvaluate mocks base method.
+func (m *MockIBackend) BackEndEvaluate(ctx context.Context, policy string, result, evidence map[string]interface{}, endorsements []string) (map[string]interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BackEndEvaluate", ctx, policy, result, evidence, endorsements)
+	ret0, _ := ret[0].(map[string]interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BackEndEvaluate indicates an expected call of BackEndEvaluate.
+func (mr *MockIBackendMockRecorder) BackEndEvaluate(ctx, policy, result, evidence, endorsements interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackEndEvaluate", reflect.TypeOf((*MockIBackend)(nil).BackEndEvaluate), ctx, policy, result, evidence, endorsements)
+}
+
 // Close mocks base method.
 func (m *MockIBackend) Close() {
 	m.ctrl.T.Helper()
@@ -45,21 +60,6 @@ func (m *MockIBackend) Close() {
 func (mr *MockIBackendMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIBackend)(nil).Close))
-}
-
-// Evaluate mocks base method.
-func (m *MockIBackend) Evaluate(ctx context.Context, policy string, result, evidence map[string]interface{}, endorsements []string) (map[string]interface{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Evaluate", ctx, policy, result, evidence, endorsements)
-	ret0, _ := ret[0].(map[string]interface{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Evaluate indicates an expected call of Evaluate.
-func (mr *MockIBackendMockRecorder) Evaluate(ctx, policy, result, evidence, endorsements interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIBackend)(nil).Evaluate), ctx, policy, result, evidence, endorsements)
 }
 
 // GetName mocks base method.

@@ -23,21 +23,9 @@ func Test_CreateAgent(t *testing.T) {
 	agent, err := CreateAgent(cfg)
 	require.Nil(t, err)
 
-	_, ok := agent.Backend.(*OPA)
-	if !ok {
-		t.Errorf("expected agent to be an instance of OPA, but found %T", agent)
-	}
+	assert.IsType(t, &OPA{}, agent.GetBackEnd())
 
 	assert.Equal(t, "opa", agent.GetBackendName())
-
-	cfg = config.Store{} // use default
-	agent, err = CreateAgent(cfg)
-	require.Nil(t, err)
-
-	_, ok = agent.Backend.(*OPA)
-	if !ok {
-		t.Errorf("expected agent to be an instance of OPA, but found %T", agent)
-	}
 
 	cfg = config.Store{
 		DirectiveBackend: "nope",
@@ -167,7 +155,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 
 		backend := mock_deps.NewMockIBackend(ctrl)
 		backend.EXPECT().
-			Evaluate(gomock.Eq(ctx),
+			BackEndEvaluate(gomock.Eq(ctx),
 				gomock.Eq(policy.Rules),
 				gomock.Any(),
 				gomock.Any(),
