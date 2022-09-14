@@ -17,7 +17,7 @@ var ErrNoPolicy = errors.New("no policy found")
 
 type PolicyManager struct {
 	Store kvstore.IKVStore
-	Agent *policy.PolicyAgent
+	Agent policy.IAgent
 }
 
 func New(cfg config.Store, store kvstore.IKVStore) (*PolicyManager, error) {

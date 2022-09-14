@@ -5,6 +5,7 @@
 
 INTERFACES := ../../policy/ibackend.go
 INTERFACES += ../../kvstore/ikvstore.go
+INTERFACES += ../../policy/iagent.go
 
 MOCKPKG := mocks
 

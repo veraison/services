@@ -23,21 +23,7 @@ func Test_CreateAgent(t *testing.T) {
 	agent, err := CreateAgent(cfg)
 	require.Nil(t, err)
 
-	_, ok := agent.Backend.(*OPA)
-	if !ok {
-		t.Errorf("expected agent to be an instance of OPA, but found %T", agent)
-	}
-
 	assert.Equal(t, "opa", agent.GetBackendName())
-
-	cfg = config.Store{} // use default
-	agent, err = CreateAgent(cfg)
-	require.Nil(t, err)
-
-	_, ok = agent.Backend.(*OPA)
-	if !ok {
-		t.Errorf("expected agent to be an instance of OPA, but found %T", agent)
-	}
 
 	cfg = config.Store{
 		DirectiveBackend: "nope",
@@ -175,8 +161,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 			AnyTimes().
 			Return(v.ReturnResult, v.ReturnError)
 
-		agent := NewAgent(backend)
-
+		agent := &PolicyAgent{Backend: backend}
 		res, err := agent.Evaluate(ctx, policy, result, evidence, endorsements)
 
 		if v.ExpectedError == "" {
