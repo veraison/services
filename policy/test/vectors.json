@@ -28,7 +28,7 @@
 		"endorsements": "test/inputs/psa-endorsements.json",
 		"policy": "test/policies/incorrect-rule-value.rego",
 		"expected": {
-			"error": "policy returned bad update: bad value for \"sw-up-to-dateness\": \"SURE\" is a not a valid status; must be in [\"FAILURE\" \"SUCCESS\" \"UNKNOWN\" \"INVALID\"]",
+			"error": "policy returned bad update: bad result update from policy: bad value \"SURE\" for \"executables\": expected json.Number, but got string",
 			"outcome": null
 		}
 	},
@@ -41,15 +41,18 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"status": "",
+				"status": 0,
 				"trust-vector": {
-					"certification-status": "",
-					"config-integrity": "",
-					"hw-authenticity": "",
-					"runtime-integrity": "",
-					"sw-integrity": "",
-					"sw-up-to-dateness": ""
-				}
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       0,
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0
+				},
+				"veraison-verifier-added-claims": {}
 			}
 		}
 	},
@@ -62,15 +65,18 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"status": "",
+				"status": 0,
 				"trust-vector": {
-					"certification-status": "",
-					"config-integrity": "",
-					"hw-authenticity": "",
-					"runtime-integrity": "",
-					"sw-integrity": "",
-					"sw-up-to-dateness": "FAILURE"
-				}
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       32,
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0
+				},
+				"veraison-verifier-added-claims": {}
 			}
 		}
 	},
@@ -83,14 +89,16 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"status": "",
+				"status": 0,
 				"trust-vector": {
-					"certification-status": "",
-					"config-integrity": "",
-					"hw-authenticity": "",
-					"runtime-integrity": "",
-					"sw-integrity": "",
-					"sw-up-to-dateness": "SUCCESS"
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2,
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0
 				}
 			}
 		}
@@ -104,14 +112,16 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"status": "",
+				"status": 0,
 				"trust-vector": {
-					"certification-status": "",
-					"config-integrity": "",
-					"hw-authenticity": "",
-					"runtime-integrity": "",
-					"sw-integrity": "",
-					"sw-up-to-dateness": "FAILURE"
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       32,
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0
 				}
 			}
 		}
@@ -125,15 +135,18 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"status": "",
+				"status": 0,
 				"trust-vector": {
-					"certification-status": "",
-					"config-integrity": "",
-					"hw-authenticity": "",
-					"runtime-integrity": "",
-					"sw-integrity": "",
-					"sw-up-to-dateness": "SUCCESS"
-				}
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2,
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0
+				},
+				"veraison-verifier-added-claims": {}
 			}
 		}
 	}

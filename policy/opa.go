@@ -6,6 +6,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 
@@ -14,8 +15,7 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-var ErrBadInput = "could not construct policy input: %w"
-var ErrBadOPAResult = "wanted map[string]interface{}, but OPA returned: %v"
+var ErrBadOPAResult = errors.New("bad result update from policy")
 
 //go:embed opa.rego
 var preambleText string
@@ -49,7 +49,7 @@ func (o *OPA) Evaluate(
 
 	input, err := constructInput(result, evidence, endorsements)
 	if err != nil {
-		return nil, fmt.Errorf(ErrBadInput, err)
+		return nil, fmt.Errorf("could not construct policy input: %w", err)
 	}
 
 	rego := rego.New(
@@ -67,12 +67,10 @@ func (o *OPA) Evaluate(
 	}
 
 	value := resultSet[0].Expressions[0].Value
-	resultUpdate, ok := value.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(ErrBadOPAResult, value)
-	}
 
-	if err = validateUpdateValues(resultUpdate); err != nil {
+	resultUpdate, err := processUpdateValue(value)
+
+	if err != nil {
 		return nil, fmt.Errorf("policy returned bad update: %w", err)
 	}
 
@@ -106,49 +104,83 @@ func constructInput(
 	}, nil
 }
 
-func validateUpdateValues(update map[string]interface{}) error {
-	if err := checkStatusValue(update["status"]); err != nil {
-		return fmt.Errorf("bad \"status\" value: %w", err)
-	}
-
-	tv, ok := update["trust-vector"].(map[string]interface{})
+func getInt32Status(v interface{}) (int32, error) {
+	number, ok := v.(json.Number)
 	if !ok {
-		return fmt.Errorf(
-			"bad trust-vector: expected map[string]interface{}, but got %T",
-			update["trust-vector"],
-		)
+		err := fmt.Errorf("expected json.Number, but got %T", v)
+		return 0, err
 	}
 
-	for k, v := range tv {
-		if err := checkStatusValue(v); err != nil {
-			return fmt.Errorf("bad value for %q: %w", k, err)
-		}
+	i64, err := number.Int64()
+	if err != nil {
+		return 0, err
 	}
 
-	return nil
+	if _, err := proto.Int64ToStatus(i64); err != nil {
+		return 0, err
+	}
+
+	return int32(i64), nil
 }
 
-func checkStatusValue(v interface{}) error {
-	s, ok := v.(string)
+func processUpdateValue(value interface{}) (map[string]interface{}, error) {
+	rawUpdate, ok := value.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("must be a string, but got %T", v)
+		err := fmt.Errorf(
+			"%w: expected map[string]interface{}, but got %T",
+			ErrBadOPAResult, value)
+		return nil, err
 	}
 
-	// empty string means there was no update to correpsonding key
-	if s == "" {
-		return nil
+	updateTv := map[string]interface{}{
+		"instance-identity": 0,
+		"configuration":     0,
+		"executables":       0,
+		"file-system":       0,
+		"hardware":          0,
+		"runtime-opaque":    0,
+		"storage-opaque":    0,
+		"sourced-data":      0,
 	}
 
-	_, ok = proto.AR_Status_value[s]
+	updatedStatus, err := getInt32Status(rawUpdate["status"])
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok = proto.TrustTier_name[updatedStatus]; !ok {
+		return nil, fmt.Errorf("not a valid TrustTier value: %d", updatedStatus)
+	}
+
+	rawTv, ok := rawUpdate["trust-vector"].(map[string]interface{})
 	if !ok {
-		var valid []string
-		for i := 0; i < len(proto.AR_Status_name); i++ {
-			name := proto.AR_Status_name[int32(i)]
-			valid = append(valid, fmt.Sprintf("%q", name))
+		err := fmt.Errorf(
+			"%w: \"trust-vector\" value should be map[string]interface{}, but got %T",
+			ErrBadOPAResult, value)
+		return nil, err
+	}
+
+	for claim, rawValue := range rawTv {
+		if _, ok := updateTv[claim]; !ok {
+			err := fmt.Errorf("%w: unexpected claim %q ", ErrBadOPAResult, claim)
+			return nil, err
 		}
 
-		return fmt.Errorf("%q is a not a valid status; must be in %v", s, valid)
+		value, err := getInt32Status(rawValue)
+		if err != nil {
+			err := fmt.Errorf("%w: bad value %q for %q: %v",
+				ErrBadOPAResult, rawValue, claim, err)
+			return nil, err
+		}
+
+		updateTv[claim] = value
 	}
 
-	return nil
+	update := map[string]interface{}{
+		"status":                         updatedStatus,
+		"trust-vector":                   updateTv,
+		"veraison-verifier-added-claims": rawUpdate["veraison-verifier-added-claims"],
+	}
+
+	return update, nil
 }

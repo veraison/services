@@ -54,22 +54,24 @@ func Test_Agent_Evaluate(t *testing.T) {
 		{
 			Name: "success",
 			ReturnResult: map[string]interface{}{
-				"status": "SUCCESS",
+				"status": 2, // AFFIRMING
 				"trust-vector": map[string]interface{}{
-					"certification-status": "",
-					"config-integrity":     "",
-					"hw-authenticity":      "",
-					"runtime-integrity":    "",
-					"sw-integrity":         "SUCCESS",
-					"sw-up-to-dateness":    "",
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2, // AFFIRMING
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0,
 				},
 			},
 			ReturnError:   nil,
 			ExpectedError: "",
 			ExpectedResult: &proto.AttestationResult{
-				Status: proto.AR_Status_SUCCESS,
+				Status: proto.TrustTier_AFFIRMING,
 				TrustVector: &proto.TrustVector{
-					SoftwareIntegrity: proto.AR_Status_SUCCESS,
+					Executables: 2, // AFFIRMING
 				},
 			},
 		},
@@ -78,32 +80,36 @@ func Test_Agent_Evaluate(t *testing.T) {
 			ReturnResult: map[string]interface{}{
 				"status": "MEH",
 				"trust-vector": map[string]interface{}{
-					"certification-status": "",
-					"config-integrity":     "",
-					"hw-authenticity":      "",
-					"runtime-integrity":    "",
-					"sw-integrity":         "SUCCESS",
-					"sw-up-to-dateness":    "",
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2, // AFFIRMING
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0,
 				},
 			},
 			ReturnError:    nil,
-			ExpectedError:  "invalid value for enum type: \"MEH\" from JSON {\"status\":\"MEH\",\"trust-vector\":{\"sw-integrity\":\"SUCCESS\"}}",
+			ExpectedError:  "invalid value for enum type: \"MEH\"",
 			ExpectedResult: nil,
 		},
 		{
 			Name: "bad result, no status",
 			ReturnResult: map[string]interface{}{
 				"trust-vector": map[string]interface{}{
-					"certification-status": "",
-					"config-integrity":     "",
-					"hw-authenticity":      "",
-					"runtime-integrity":    "",
-					"sw-integrity":         "SUCCESS",
-					"sw-up-to-dateness":    "",
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2, // AFFIRMING
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0,
 				},
 			},
 			ReturnError:    nil,
-			ExpectedError:  "backend returned outcome with no status field: map[trust-vector:map[certification-status: config-integrity: hw-authenticity: runtime-integrity: sw-integrity:SUCCESS sw-up-to-dateness:]]",
+			ExpectedError:  "backend returned outcome with no status field",
 			ExpectedResult: nil,
 		},
 		{
@@ -118,13 +124,17 @@ func Test_Agent_Evaluate(t *testing.T) {
 		{
 			Name: "bad result, bad trust vector",
 			ReturnResult: map[string]interface{}{
-				"status": "SUCCESS",
+				"status": 2, // AFFIRMING
 				"trust-vector": map[string]interface{}{
-					"certification-status": "",
-					"config-integrity":     "",
-					"hw-authenticity":      "",
-					"wrong-field":          7,
-					"sw-integrity":         "SUCCESS",
+					"instance-identity": 0,
+					"configuration":     0,
+					"executables":       2, // AFFIRMING
+					"file-system":       0,
+					"hardware":          0,
+					"runtime-opaque":    0,
+					"storage-opaque":    0,
+					"sourced-data":      0,
+					"wrong-field":       0,
 				},
 			},
 			ReturnError:    nil,
@@ -143,7 +153,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 	}
 	var endorsements []string
 	result := &proto.AttestationResult{
-		Status:      proto.AR_Status_FAILURE,
+		Status:      96, // CONTRAINDICATED
 		TrustVector: &proto.TrustVector{},
 	}
 	evidence := &proto.EvidenceContext{}
@@ -175,16 +185,22 @@ func Test_Agent_Evaluate(t *testing.T) {
 		} else {
 			assert.Equal(t, policy.ID, res.AppraisalPolicyID)
 			assert.Equal(t, v.ExpectedResult.Status, res.Status)
-			assert.Equal(t, v.ExpectedResult.TrustVector.SoftwareIntegrity,
-				res.TrustVector.SoftwareIntegrity)
-			assert.Equal(t, v.ExpectedResult.TrustVector.SoftwareUpToDateness,
-				res.TrustVector.SoftwareUpToDateness)
-			assert.Equal(t, v.ExpectedResult.TrustVector.HardwareAuthenticity,
-				res.TrustVector.HardwareAuthenticity)
-			assert.Equal(t, v.ExpectedResult.TrustVector.CertificationStatus,
-				res.TrustVector.CertificationStatus)
-			assert.Equal(t, v.ExpectedResult.TrustVector.ConfigIntegrity,
-				res.TrustVector.ConfigIntegrity)
+			assert.Equal(t, v.ExpectedResult.TrustVector.InstanceIdentity,
+				res.TrustVector.InstanceIdentity)
+			assert.Equal(t, v.ExpectedResult.TrustVector.Configuration,
+				res.TrustVector.Configuration)
+			assert.Equal(t, v.ExpectedResult.TrustVector.Executables,
+				res.TrustVector.Executables)
+			assert.Equal(t, v.ExpectedResult.TrustVector.FileSystem,
+				res.TrustVector.FileSystem)
+			assert.Equal(t, v.ExpectedResult.TrustVector.Hardware,
+				res.TrustVector.Hardware)
+			assert.Equal(t, v.ExpectedResult.TrustVector.RuntimeOpaque,
+				res.TrustVector.RuntimeOpaque)
+			assert.Equal(t, v.ExpectedResult.TrustVector.StorageOpaque,
+				res.TrustVector.StorageOpaque)
+			assert.Equal(t, v.ExpectedResult.TrustVector.SourcedData,
+				res.TrustVector.SourcedData)
 		}
 	}
 }

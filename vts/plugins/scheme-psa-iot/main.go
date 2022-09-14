@@ -64,7 +64,10 @@ func (s Scheme) GetFormat() proto.AttestationFormat {
 	return proto.AttestationFormat_PSA_IOT
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s Scheme) SynthKeysFromSwComponent(
+	tenantID string,
+	swComp *proto.Endorsement,
+) ([]string, error) {
 	var (
 		implID string
 		fields map[string]*structpb.Value
@@ -136,7 +139,10 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 	), nil
 }
 
-func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor string) (*scheme.ExtractedClaims, error) {
+func (s Scheme) ExtractVerifiedClaims(
+	token *proto.AttestationToken,
+	trustAnchor string,
+) (*scheme.ExtractedClaims, error) {
 	var endorsement TaEndorsements
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
@@ -196,7 +202,7 @@ func (s Scheme) AppraiseEvidence(
 ) (*proto.AppraisalContext, error) {
 	appraisalCtx := proto.AppraisalContext{
 		Evidence: ec,
-		Result:   &proto.AttestationResult{},
+		Result:   proto.NewAttestationResult(ec),
 	}
 
 	var endorsements []Endorsements
@@ -237,14 +243,10 @@ func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
 	return psatoken.DecodeJSONClaims(data)
 }
 
-func populateAttestationResult(appraisalCtx *proto.AppraisalContext, endorsements []Endorsements) error {
-	tv := proto.TrustVector{
-		SoftwareUpToDateness: proto.AR_Status_UNKNOWN,
-		ConfigIntegrity:      proto.AR_Status_UNKNOWN,
-		RuntimeIntegrity:     proto.AR_Status_UNKNOWN,
-		CertificationStatus:  proto.AR_Status_UNKNOWN,
-	}
-
+func populateAttestationResult(
+	appraisalCtx *proto.AppraisalContext,
+	endorsements []Endorsements,
+) error {
 	claims, err := mapToClaims(appraisalCtx.Evidence.Evidence.AsMap())
 	if err != nil {
 		return err
@@ -252,25 +254,20 @@ func populateAttestationResult(appraisalCtx *proto.AppraisalContext, endorsement
 
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
-	tv.HardwareAuthenticity = proto.AR_Status_SUCCESS
+	appraisalCtx.Result.SetHardwareStatus(proto.ARStatus_HW_AFFIRMING)
 
 	match := matchSoftware(claims, endorsements)
 	if match {
-		tv.SoftwareIntegrity = proto.AR_Status_SUCCESS
+		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_AFFIRMING)
 		log.Println("\n matchSoftware Success")
 
 	} else {
+		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_UNRECOGNIZED)
 		log.Println("\n matchSoftware Failed")
-		tv.SoftwareIntegrity = proto.AR_Status_FAILURE
 	}
 
-	appraisalCtx.Result.TrustVector = &tv
-
-	if tv.SoftwareIntegrity != proto.AR_Status_FAILURE &&
-		tv.HardwareAuthenticity != proto.AR_Status_FAILURE {
-		appraisalCtx.Result.Status = proto.AR_Status_SUCCESS
-	} else {
-		appraisalCtx.Result.Status = proto.AR_Status_FAILURE
+	if err := appraisalCtx.Result.UpdateOverallStatus(); err != nil {
+		return err
 	}
 
 	appraisalCtx.Result.ProcessedEvidence = appraisalCtx.Evidence.Evidence

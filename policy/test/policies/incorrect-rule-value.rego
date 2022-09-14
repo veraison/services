@@ -1,5 +1,5 @@
 package policy
 
-sw_up_to_dateness = "SURE" {
+executables = "SURE" {
   true
 } else = "NOPE"

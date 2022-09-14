@@ -12,11 +12,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/proto"
 )
 
 type TestResult struct {
-	Error   string                 `json:"error"`
-	Outcome map[string]interface{} `json:"outcome"`
+	Error   string                   `json:"error"`
+	Outcome *proto.AttestationResult `json:"outcome"`
 }
 
 type TestVector struct {
@@ -48,7 +49,8 @@ func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 		assert.EqualError(t, err, o.Expected.Error)
 	}
 
-	assert.Equal(t, o.Expected.Outcome, res)
+	expected := getUpdateMap(o.Expected.Outcome)
+	assert.Equal(t, expected, res)
 }
 
 func Test_OPA_GetName(t *testing.T) {
@@ -120,4 +122,25 @@ func jsonFileToStringSlice(path string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+func getUpdateMap(ar *proto.AttestationResult) map[string]interface{} {
+	if ar == nil {
+		return nil
+	}
+
+	return map[string]interface{}{
+		"status": ar.Status.Int32(),
+		"trust-vector": map[string]interface{}{
+			"instance-identity": ar.TrustVector.InstanceIdentity,
+			"configuration":     ar.TrustVector.Configuration,
+			"executables":       ar.TrustVector.Executables,
+			"file-system":       ar.TrustVector.FileSystem,
+			"hardware":          ar.TrustVector.Hardware,
+			"runtime-opaque":    ar.TrustVector.RuntimeOpaque,
+			"storage-opaque":    ar.TrustVector.StorageOpaque,
+			"sourced-data":      ar.TrustVector.SourcedData,
+		},
+		"veraison-verifier-added-claims": ar.VerifierAddedClaims.AsMap(),
+	}
 }

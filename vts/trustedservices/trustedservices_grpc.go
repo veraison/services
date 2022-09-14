@@ -216,7 +216,10 @@ func addTrustAnchorErrorResponse(err error) *proto.AddTrustAnchorResponse {
 	}
 }
 
-func (o *GRPC) GetAttestation(ctx context.Context, token *proto.AttestationToken) (*proto.AppraisalContext, error) {
+func (o *GRPC) GetAttestation(
+	ctx context.Context,
+	token *proto.AttestationToken,
+) (*proto.AppraisalContext, error) {
 	scheme, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
 		return nil, err
@@ -234,14 +237,20 @@ func (o *GRPC) GetAttestation(ctx context.Context, token *proto.AttestationToken
 
 	attestContext, err := scheme.AppraiseEvidence(ec, endorsements)
 	if err != nil {
+		attestContext.Result.SetVerifierError()
 		return nil, err
 	}
 
+	// TODO(setrofim) Should we be doing SetVerifierError() on error here?
+	// This should be diced as part of wider policy framework desing.
 	err = o.PolicyManager.Evaluate(ctx, attestContext, endorsements)
 	return attestContext, err
 }
 
-func (c *GRPC) extractEvidence(scheme scheme.IScheme, token *proto.AttestationToken) (*proto.EvidenceContext, error) {
+func (c *GRPC) extractEvidence(
+	scheme scheme.IScheme,
+	token *proto.AttestationToken,
+) (*proto.EvidenceContext, error) {
 	var err error
 
 	ec := &proto.EvidenceContext{

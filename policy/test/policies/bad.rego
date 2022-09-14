@@ -2,6 +2,6 @@ package policy
 
 x := 7
 
-sw_up_to_dateness = "SUCCESS" {
+executables = EXE_AFFIRMING {
   x > y  # y undeclared
-} else = "FAILURE"
+} else = EXE_UNSAFE

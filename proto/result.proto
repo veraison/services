@@ -6,20 +6,24 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/veraison/services/proto";
 
-enum AR_Status {
-    FAILURE = 0;
-    SUCCESS = 1;
-    UNKNOWN = 2;
-    INVALID = 3;
+// Note: tier values have been chosen to be aligned with sourced-data definition of
+// https://datatracker.ietf.org/doc/draft-ietf-rats-ar4si/
+enum TrustTier {
+    NONE = 0;
+    AFFIRMING = 2;
+    WARNING = 32;
+    CONTRAINDICATED = 96;
 }
 
 message TrustVector {
-    AR_Status hardware_authenticity = 1 [json_name = "hw-authenticity"];
-    AR_Status software_integrity = 2 [json_name = "sw-integrity"];
-    AR_Status software_up_to_dateness = 3 [json_name = "sw-up-to-dateness"];
-    AR_Status config_integrity = 4 [json_name = "config-integrity"];
-    AR_Status runtime_integrity = 5 [json_name = "runtime-integrity"];
-    AR_Status certification_status = 6 [json_name = "certification-status"];
+    sint32 instance_identity = 1 [json_name = "instance-identity"];
+    sint32 configuration = 2 [json_name = "configuration"];
+    sint32 executables = 3 [json_name = "executables"];
+    sint32 file_system = 4 [json_name = "file-system"];
+    sint32 hardware = 5 [json_name = "hardware"];
+    sint32 runtime_opaque = 6 [json_name = "runtime-opaque"];
+    sint32 storage_opaque = 7 [json_name = "storage-opaque"];
+    sint32 sourced_data = 8 [json_name = "sourced-data"];
 }
 
 message EndorsedClaims {
@@ -30,7 +34,7 @@ message EndorsedClaims {
 }
 
 message AttestationResult {
-    AR_Status status = 1 [json_name = "status"];
+    TrustTier status = 1 [json_name = "status"];
     TrustVector trust_vector = 2 [json_name = "trust-vector"];
     bytes raw_evidence = 3 [json_name = "raw-evidence"];
     google.protobuf.Timestamp timestamp = 4 [json_name = "timestamp"];
@@ -39,6 +43,7 @@ message AttestationResult {
 
     // Extension
     google.protobuf.Struct processed_evidence = 7 [json_name = "veraison-processed-evidence"];
+    google.protobuf.Struct verifier_added_claims = 8 [json_name = "veraison-verifier-added-claims"];
 }
 
 // vim: set et sts=4 sw=4 ai:
