@@ -41,7 +41,7 @@ func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	policy, err := os.ReadFile(o.PolicyPath)
 	require.NoError(t, err)
 
-	res, err := pa.BackEndEvaluate(ctx, string(policy), resultMap, evidenceMap, endorsements)
+	res, err := pa.Evaluate(ctx, string(policy), resultMap, evidenceMap, endorsements)
 	if o.Expected.Error == "" {
 		require.NoError(t, err)
 	} else {

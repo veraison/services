@@ -8,8 +8,7 @@ import (
 )
 
 type IAgent interface {
-	SetBackEnd(b IBackend)
-	GetBackEnd() IBackend
+	GetBackend() IBackend
 	Init(cfg config.Store) error
 	GetBackendName() string
 	Evaluate(ctx context.Context,

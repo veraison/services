@@ -23,8 +23,7 @@ func Test_CreateAgent(t *testing.T) {
 	agent, err := CreateAgent(cfg)
 	require.Nil(t, err)
 
-	assert.IsType(t, &OPA{}, agent.GetBackEnd())
-
+	assert.IsType(t, &OPA{}, agent.GetBackend())
 	assert.Equal(t, "opa", agent.GetBackendName())
 
 	cfg = config.Store{
@@ -155,7 +154,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 
 		backend := mock_deps.NewMockIBackend(ctrl)
 		backend.EXPECT().
-			BackEndEvaluate(gomock.Eq(ctx),
+			Evaluate(gomock.Eq(ctx),
 				gomock.Eq(policy.Rules),
 				gomock.Any(),
 				gomock.Any(),
@@ -163,8 +162,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 			AnyTimes().
 			Return(v.ReturnResult, v.ReturnError)
 
-		agent := NewAgent(backend)
-
+		agent := &PolicyAgent{Backend: backend}
 		res, err := agent.Evaluate(ctx, policy, result, evidence, endorsements)
 
 		if v.ExpectedError == "" {

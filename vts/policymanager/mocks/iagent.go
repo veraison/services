@@ -64,18 +64,18 @@ func (mr *MockIAgentMockRecorder) Evaluate(ctx, policy, result, evidence, endors
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIAgent)(nil).Evaluate), ctx, policy, result, evidence, endorsements)
 }
 
-// GetBackEnd mocks base method.
-func (m *MockIAgent) GetBackEnd() policy.IBackend {
+// GetBackend mocks base method.
+func (m *MockIAgent) GetBackend() policy.IBackend {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBackEnd")
+	ret := m.ctrl.Call(m, "GetBackend")
 	ret0, _ := ret[0].(policy.IBackend)
 	return ret0
 }
 
-// GetBackEnd indicates an expected call of GetBackEnd.
-func (mr *MockIAgentMockRecorder) GetBackEnd() *gomock.Call {
+// GetBackend indicates an expected call of GetBackend.
+func (mr *MockIAgentMockRecorder) GetBackend() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackEnd", reflect.TypeOf((*MockIAgent)(nil).GetBackEnd))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackend", reflect.TypeOf((*MockIAgent)(nil).GetBackend))
 }
 
 // GetBackendName mocks base method.
@@ -104,16 +104,4 @@ func (m *MockIAgent) Init(cfg config.Store) error {
 func (mr *MockIAgentMockRecorder) Init(cfg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIAgent)(nil).Init), cfg)
-}
-
-// SetBackEnd mocks base method.
-func (m *MockIAgent) SetBackEnd(b policy.IBackend) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetBackEnd", b)
-}
-
-// SetBackEnd indicates an expected call of SetBackEnd.
-func (mr *MockIAgentMockRecorder) SetBackEnd(b interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBackEnd", reflect.TypeOf((*MockIAgent)(nil).SetBackEnd), b)
 }

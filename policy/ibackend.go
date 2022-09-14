@@ -9,7 +9,7 @@ import (
 type IBackend interface {
 	Init(cfg config.Store) error
 	GetName() string
-	BackEndEvaluate(
+	Evaluate(
 		ctx context.Context,
 		policy string,
 		result map[string]interface{},

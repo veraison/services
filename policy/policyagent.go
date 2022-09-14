@@ -47,7 +47,7 @@ func (o *PolicyAgent) Evaluate(
 		return nil, fmt.Errorf("could not unmarshal provided result: %w", err)
 	}
 
-	updatedByPolicy, err := o.Backend.BackEndEvaluate(
+	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
 		policy.Rules,
 		resultMap,
@@ -100,12 +100,8 @@ func (o *PolicyAgent) Evaluate(
 	return &evaluatedResult, nil
 }
 
-func (o *PolicyAgent) GetBackEnd() IBackend {
+func (o *PolicyAgent) GetBackend() IBackend {
 	return o.Backend
-}
-
-func (o *PolicyAgent) SetBackEnd(b IBackend) {
-	o.Backend = b
 }
 
 func (o *PolicyAgent) Close() {

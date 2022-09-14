@@ -32,10 +32,5 @@ func CreateAgent(cfg config.Store) (IAgent, error) {
 		return nil, fmt.Errorf("backend %q is not supported", backendString)
 	}
 
-	return NewAgent(backend), nil
-}
-
-func NewAgent(b IBackend) IAgent {
-	policy := &PolicyAgent{Backend: b}
-	return policy
+	return &PolicyAgent{Backend: backend}, nil
 }
