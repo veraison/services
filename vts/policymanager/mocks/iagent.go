@@ -64,20 +64,6 @@ func (mr *MockIAgentMockRecorder) Evaluate(ctx, policy, result, evidence, endors
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIAgent)(nil).Evaluate), ctx, policy, result, evidence, endorsements)
 }
 
-// GetBackend mocks base method.
-func (m *MockIAgent) GetBackend() policy.IBackend {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBackend")
-	ret0, _ := ret[0].(policy.IBackend)
-	return ret0
-}
-
-// GetBackend indicates an expected call of GetBackend.
-func (mr *MockIAgentMockRecorder) GetBackend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackend", reflect.TypeOf((*MockIAgent)(nil).GetBackend))
-}
-
 // GetBackendName mocks base method.
 func (m *MockIAgent) GetBackendName() string {
 	m.ctrl.T.Helper()

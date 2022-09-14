@@ -23,7 +23,6 @@ func Test_CreateAgent(t *testing.T) {
 	agent, err := CreateAgent(cfg)
 	require.Nil(t, err)
 
-	assert.IsType(t, &OPA{}, agent.GetBackend())
 	assert.Equal(t, "opa", agent.GetBackendName())
 
 	cfg = config.Store{
