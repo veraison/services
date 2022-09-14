@@ -40,7 +40,7 @@ func (o *PolicyManager) Evaluate(
 
 	policy, err := o.getPolicy(evidence)
 	if err != nil {
-		if err == ErrNoPolicy {
+		if errors.Is(err, ErrNoPolicy) {
 			return nil // No policy? No problem!
 		}
 
