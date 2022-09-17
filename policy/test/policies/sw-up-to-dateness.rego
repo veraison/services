@@ -1,14 +1,14 @@
 package policy
 
-# Use the psa_sw_up_to_dateness rules iff the attestaion format is PSA_IOT, and
-# to enacttrust_sw_up_to_dateness iff the format is TPM_ENACTTRUST, otherwise,
-# sw_up_to_dateness will remain undefined.
-sw_up_to_dateness = psa_sw_up_to_dateness { format == "PSA_IOT" }
-             else = enacttrust_sw_up_to_dateness { format == "TPM_ENACTTRUST" }
+# Use the psa_executables rules iff the attestaion format is PSA_IOT, and
+# to enacttrust_executables iff the format is TPM_ENACTTRUST, otherwise,
+# executables will remain undefined.
+executables = psa_executables { format == "PSA_IOT" }
+             else = enacttrust_executables { format == "TPM_ENACTTRUST" }
 
-# This sets sw-up-to-dateness trust verctor value to success iff BL version is
+# This sets executables trust verctor value to AFFIRMING iff BL version is
 # 3.5 or greater, and to failure otherwise.
-psa_sw_up_to_dateness = "SUCCESS" {
+psa_executables = EXE_AFFIRMING {
   # there exisists some i such that...
   some i
   # ...the i'th software component has type "BL", and...
@@ -19,10 +19,10 @@ psa_sw_up_to_dateness = "SUCCESS" {
   # parameter is greater than the second, -1 if it is less than the second,
   # and 0 if they are equal.)
   semver_cmp(evidence["psa-software-components"][i].version, "3.5") >= 0
-} else = "FAILURE" # unless the above condition is met, return "FAILURE"
+} else =  EXE_UNSAFE # unless the above condition is met, return EXE_UNRECOGNIZED
 
 # Unlike the PSA token, the EnactTrust token does not include information about
 # multiple sofware componets and instead has a single "firmware" entry.
-enacttrust_sw_up_to_dateness = "SUCCESS" {
+enacttrust_executables = EXE_AFFIRMING {
   evidence["firmware"] >= 8
-} else = "FAILURE"
+} else = EXE_UNSAFE

@@ -86,21 +86,13 @@ func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor
 }
 
 func (s Scheme) AppraiseEvidence(ec *proto.EvidenceContext, endorsementsString []string) (*proto.AppraisalContext, error) {
-	attestation := proto.AppraisalContext{
-		Evidence: ec,
-	}
-	tv := proto.TrustVector{
-		SoftwareIntegrity:    proto.AR_Status_UNKNOWN,
-		HardwareAuthenticity: proto.AR_Status_UNKNOWN,
-		SoftwareUpToDateness: proto.AR_Status_UNKNOWN,
-		ConfigIntegrity:      proto.AR_Status_UNKNOWN,
-		RuntimeIntegrity:     proto.AR_Status_UNKNOWN,
-		CertificationStatus:  proto.AR_Status_SUCCESS,
-	}
+	ac := proto.NewAppraisalContext(ec)
 
-	attestation.Result.TrustVector = &tv
+	// If we got this far, this means the cert chain has been verfied, and
+	// thus, the identity has been established as valid.
+	ac.Result.SetInstanceIdentityStatus(proto.ARStatus_IDENT_AFFIRMING)
 
-	return &attestation, nil
+	return ac, nil
 }
 
 func extractEvidenceClaims(cert *x509.Certificate) (map[string]interface{}, error) {

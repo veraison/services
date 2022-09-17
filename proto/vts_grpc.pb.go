@@ -4,10 +4,10 @@ package proto
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,7 +22,7 @@ type VTSClient interface {
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
-	GetSupportedVerificationMediaTypes(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 	// Service endpoints that are used to store Software Components
 	// and Trust Anchors to the endorsement store
 	AddSwComponents(ctx context.Context, in *AddSwComponentsRequest, opts ...grpc.CallOption) (*AddSwComponentsResponse, error)
@@ -46,7 +46,7 @@ func (c *vTSClient) GetAttestation(ctx context.Context, in *AttestationToken, op
 	return out, nil
 }
 
-func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
 	out := new(MediaTypeList)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedVerificationMediaTypes", in, out, opts...)
 	if err != nil {
@@ -80,7 +80,7 @@ type VTSServer interface {
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
-	GetSupportedVerificationMediaTypes(context.Context, *empty.Empty) (*MediaTypeList, error)
+	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	// Service endpoints that are used to store Software Components
 	// and Trust Anchors to the endorsement store
 	AddSwComponents(context.Context, *AddSwComponentsRequest) (*AddSwComponentsResponse, error)
@@ -95,7 +95,7 @@ type UnimplementedVTSServer struct {
 func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAttestation not implemented")
 }
-func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *empty.Empty) (*MediaTypeList, error) {
+func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedVerificationMediaTypes not implemented")
 }
 func (UnimplementedVTSServer) AddSwComponents(context.Context, *AddSwComponentsRequest) (*AddSwComponentsResponse, error) {
@@ -136,7 +136,7 @@ func _VTS_GetAttestation_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx contex
 		FullMethod: "/proto.VTS/GetSupportedVerificationMediaTypes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*empty.Empty))
+		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

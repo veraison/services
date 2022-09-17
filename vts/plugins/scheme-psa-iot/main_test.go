@@ -95,7 +95,7 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 	attestation, err := scheme.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.AR_Status_SUCCESS, attestation.Result.Status)
+	assert.Equal(t, proto.TrustTier_AFFIRMING, attestation.Result.Status)
 }
 
 func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
@@ -117,5 +117,5 @@ func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
 	attestation, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.AR_Status_SUCCESS, attestation.Result.Status)
+	assert.Equal(t, proto.TrustTier_AFFIRMING, attestation.Result.Status)
 }

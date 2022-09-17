@@ -116,6 +116,7 @@ func Test_GetAttestation(t *testing.T) {
 	appraisalCtx, err := scheme.AppraiseEvidence(evidenceContext, endorsements)
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.AR_Status_SUCCESS, appraisalCtx.Result.Status)
-	assert.Equal(t, proto.AR_Status_SUCCESS, appraisalCtx.Result.TrustVector.SoftwareIntegrity)
+	assert.Equal(t, proto.TrustTier_AFFIRMING, appraisalCtx.Result.Status)
+	assert.Equal(t, proto.TrustTier_AFFIRMING,
+		appraisalCtx.Result.GetExecutablesStatus().GetTier())
 }

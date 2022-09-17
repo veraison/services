@@ -17,7 +17,6 @@ import (
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/plugins/common"
 	structpb "google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Scheme struct{}
@@ -36,7 +35,10 @@ func (s Scheme) GetSupportedMediaTypes() []string {
 	}
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s Scheme) SynthKeysFromSwComponent(
+	tenantID string,
+	swComp *proto.Endorsement,
+) ([]string, error) {
 	return synthKeysFromParts("software component", tenantID, swComp.GetAttributes())
 }
 
@@ -66,7 +68,10 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 	return tpmEnactTrustLookupKey(token.TenantId, nodeID.String()), nil
 }
 
-func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor string) (*scheme.ExtractedClaims, error) {
+func (s Scheme) ExtractVerifiedClaims(
+	token *proto.AttestationToken,
+	trustAnchor string,
+) (*scheme.ExtractedClaims, error) {
 	if token.Format != proto.AttestationFormat_TPM_ENACTTRUST {
 		return nil, fmt.Errorf("wrong format: expect %q, but found %q",
 			proto.AttestationFormat_TPM_ENACTTRUST.String(),
@@ -114,25 +119,18 @@ func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor
 }
 
 func initAppraisalContext(ec *proto.EvidenceContext) *proto.AppraisalContext {
-	return &proto.AppraisalContext{
-		Evidence: ec,
-		Result: &proto.AttestationResult{
-			Status: proto.AR_Status_FAILURE,
-			TrustVector: &proto.TrustVector{
-				SoftwareIntegrity:    proto.AR_Status_FAILURE,
-				HardwareAuthenticity: proto.AR_Status_UNKNOWN,
-				SoftwareUpToDateness: proto.AR_Status_UNKNOWN,
-				ConfigIntegrity:      proto.AR_Status_UNKNOWN,
-				RuntimeIntegrity:     proto.AR_Status_UNKNOWN,
-				CertificationStatus:  proto.AR_Status_UNKNOWN,
-			},
-			Timestamp:         timestamppb.Now(),
-			ProcessedEvidence: ec.Evidence,
-		},
-	}
+	ac := proto.NewAppraisalContext(ec)
+
+	ac.Result.Status = proto.TrustTier_CONTRAINDICATED
+	ac.Result.SetExecutablesStatus(proto.ARStatus_EXE_CONTRAINDICATED)
+
+	return ac
 }
 
-func (s Scheme) AppraiseEvidence(ec *proto.EvidenceContext, endorsementStrings []string) (*proto.AppraisalContext, error) {
+func (s Scheme) AppraiseEvidence(
+	ec *proto.EvidenceContext,
+	endorsementStrings []string,
+) (*proto.AppraisalContext, error) {
 	appraisalCtx := initAppraisalContext(ec)
 
 	digestValue, ok := ec.Evidence.AsMap()["pcr-digest"]
@@ -142,7 +140,12 @@ func (s Scheme) AppraiseEvidence(ec *proto.EvidenceContext, endorsementStrings [
 
 	evidenceDigest, ok := digestValue.(string)
 	if !ok {
-		return appraisalCtx, fmt.Errorf("wrong type value %q entry; expected string but found %T", "pcr-digest", digestValue)
+		err := fmt.Errorf(
+			"wrong type value %q entry; expected string but found %T",
+			"pcr-digest",
+			digestValue,
+		)
+		return appraisalCtx, err
 	}
 
 	var endorsements Endorsements
@@ -151,8 +154,8 @@ func (s Scheme) AppraiseEvidence(ec *proto.EvidenceContext, endorsementStrings [
 	}
 
 	if endorsements.Digest == evidenceDigest {
-		appraisalCtx.Result.TrustVector.SoftwareIntegrity = proto.AR_Status_SUCCESS
-		appraisalCtx.Result.Status = proto.AR_Status_SUCCESS
+		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_AFFIRMING)
+		appraisalCtx.Result.Status = proto.TrustTier_AFFIRMING
 	}
 
 	return appraisalCtx, nil
