@@ -8,13 +8,14 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/golang/mock v1.6.0
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-tpm v0.3.3
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/moogar0880/problems v0.1.1
-	github.com/open-policy-agent/opa v0.43.0
+	github.com/open-policy-agent/opa v0.43.1
 	github.com/stretchr/testify v1.8.0
 	github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c
 	github.com/veraison/dice v0.0.1
@@ -39,7 +40,6 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
