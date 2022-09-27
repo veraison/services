@@ -11,7 +11,7 @@ import (
 	"log"
 
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
 )
 
@@ -23,15 +23,15 @@ var preambleText string
 type OPA struct {
 }
 
-func NewOPA(cfg config.Store) (*OPA, error) {
+func NewOPA(v *viper.Viper) (*OPA, error) {
 	var o OPA
-	if err := o.Init(cfg); err != nil {
+	if err := o.Init(v); err != nil {
 		return nil, err
 	}
 	return &o, nil
 }
 
-func (o *OPA) Init(cfg config.Store) error {
+func (o *OPA) Init(v *viper.Viper) error {
 	return nil
 }
 

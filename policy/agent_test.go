@@ -8,37 +8,27 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/config"
 	mock_deps "github.com/veraison/services/policy/mocks"
 	"github.com/veraison/services/proto"
 )
 
 func Test_CreateAgent(t *testing.T) {
-	cfg := config.Store{
-		DirectiveBackend: "opa",
-	}
+	v := viper.New()
+	v.Set(DirectiveBackend, "opa")
 
-	agent, err := CreateAgent(cfg)
+	agent, err := CreateAgent(v)
 	require.Nil(t, err)
 
 	assert.Equal(t, "opa", agent.GetBackendName())
 
-	cfg = config.Store{
-		DirectiveBackend: "nope",
-	}
-	agent, err = CreateAgent(cfg)
+	v.Set(DirectiveBackend, "nope")
+
+	agent, err = CreateAgent(v)
 	assert.Nil(t, agent)
 	assert.EqualError(t, err, `backend "nope" is not supported`)
-
-	cfg = config.Store{
-		DirectiveBackend: nil,
-	}
-	agent, err = CreateAgent(cfg)
-	assert.Nil(t, agent)
-	assert.EqualError(t, err, `loading backend from config: invalidly specified directive "policy.backend": want string, got <nil>`)
-
 }
 
 type AgentEvaluateTestVector struct {
@@ -171,7 +161,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 			AnyTimes().
 			Return(v.ReturnResult, v.ReturnError)
 
-		agent := &PolicyAgent{Backend: backend}
+		agent := &Agent{Backend: backend}
 		res, err := agent.Evaluate(ctx, policy, result, evidence, endorsements)
 
 		if v.ExpectedError == "" {

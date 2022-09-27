@@ -4,12 +4,13 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
@@ -21,26 +22,44 @@ var (
 	DefaultListenAddr = "localhost:8888"
 )
 
+func initConfig() (*viper.Viper, error) {
+	v := viper.New()
+
+	v.SetConfigType("yaml")
+	v.SetConfigName("config")
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	v.AddConfigPath(wd)
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	cfg := v.Sub("provisioning")
+	if cfg == nil {
+		return nil, errors.New(`"provisioning" section not found in config`)
+	}
+
+	cfg.SetDefault("plugin-dir", DefaultPluginDir)
+	cfg.SetDefault("list-addr", DefaultListenAddr)
+
+	return cfg, nil
+}
+
 func main() {
-	cfg := config.NewYAMLReader()
-	if _, err := cfg.ReadFile("config.yaml"); err != nil {
-		log.Fatalf("counl not read config file: %v", err)
-	}
-
-	provCfg := cfg.MustGetStore("provisioning")
-
-	pluginDir, err := config.GetString(provCfg, "plugin-dir", &DefaultPluginDir)
+	cfg, err := initConfig()
 	if err != nil {
-		log.Fatalf("could not get plugin-dir: %v", err)
+		log.Fatalf("could not read config: %v", err)
 	}
 
-	listenAddr, err := config.GetString(provCfg, "list-addr", &DefaultListenAddr)
-	if err != nil {
-		log.Fatalf("could not get listen-addr: %v", err)
-	}
+	pluginDir := cfg.GetString("plugin-dir")
+	listenAddr := cfg.GetString("list-addr")
 
 	pluginManager := NewGoPluginManager(pluginDir)
-	vtsClient := vtsclient.NewGRPC(cfg.MustGetStore("vts-grpc"))
+	vtsClient := vtsclient.NewGRPC(cfg.Sub("vts-grpc"))
 	apiHandler := api.NewHandler(pluginManager, vtsClient)
 	go apiServer(apiHandler, listenAddr)
 

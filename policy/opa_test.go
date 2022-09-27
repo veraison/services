@@ -76,15 +76,14 @@ func Test_OPA_Evaluate(t *testing.T) {
 	err = json.Unmarshal(bytes, &vectors)
 	require.NoError(t, err)
 
-	// XXX(setrofim): currently, rego packages spits outs messages about unsafe vars and
-	// "no index vars", but despite that, seems to be working. This does not happend when
+	// XXX(setrofim): currently, rego package spits outs messages about unsafe vars and
+	// "no index vars", but despite that, seems to be working. This does not happen when
 	// running exactly the same policies via stand-alone opa executable.
 	// The messages are connected to array comprehensions, but I haven't been able to figure
 	// out exactly whats wrong with them. I suspect it might be somehow related to
 	// https://github.com/open-policy-agent/opa/issues/3557 (though that is
 	// about set comprehensions). In any case, I'm silencing the log for
-	// these tests for now to avoid confusiong when parsing the tests'
-	// results.
+	// these tests for now to avoid confusion when parsing the tests' results.
 	log.SetOutput(nil)
 
 	for _, v := range vectors {

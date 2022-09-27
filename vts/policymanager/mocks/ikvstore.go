@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/veraison/services/config"
+	viper "github.com/spf13/viper"
 )
 
 // MockIKVStore is a mock of IKVStore interface.
@@ -92,17 +92,17 @@ func (mr *MockIKVStoreMockRecorder) Get(key interface{}) *gomock.Call {
 }
 
 // Init mocks base method.
-func (m *MockIKVStore) Init(cfg config.Store) error {
+func (m *MockIKVStore) Init(v *viper.Viper) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", cfg)
+	ret := m.ctrl.Call(m, "Init", v)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockIKVStoreMockRecorder) Init(cfg interface{}) *gomock.Call {
+func (mr *MockIKVStoreMockRecorder) Init(v interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIKVStore)(nil).Init), cfg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIKVStore)(nil).Init), v)
 }
 
 // Set mocks base method.

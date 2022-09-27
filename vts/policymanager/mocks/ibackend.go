@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/veraison/services/config"
+	viper "github.com/spf13/viper"
 )
 
 // MockIBackend is a mock of IBackend interface.
@@ -77,15 +77,15 @@ func (mr *MockIBackendMockRecorder) GetName() *gomock.Call {
 }
 
 // Init mocks base method.
-func (m *MockIBackend) Init(cfg config.Store) error {
+func (m *MockIBackend) Init(v *viper.Viper) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", cfg)
+	ret := m.ctrl.Call(m, "Init", v)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockIBackendMockRecorder) Init(cfg interface{}) *gomock.Call {
+func (mr *MockIBackendMockRecorder) Init(v interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIBackend)(nil).Init), cfg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIBackend)(nil).Init), v)
 }

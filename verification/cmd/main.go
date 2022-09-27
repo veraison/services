@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"log"
+	"os"
 
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
@@ -11,19 +13,36 @@ import (
 )
 
 var (
-	ListenAddr  = "localhost:8080"
-	VerifierCfg = config.Store{
-		// placeholder, empty for now
-	}
-	VTSClientCfg = config.Store{
-		"vts-server.addr": "dns:127.0.0.1:50051",
-	}
+	ListenAddr = "localhost:8080"
 )
 
 func main() {
+
+	VTSClientCfg := viper.New()
+	VTSClientCfg.SetDefault("vts-server.addr", "dns:127.0.0.1:50051")
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	VTSClientCfg.AddConfigPath(wd)
+	VTSClientCfg.SetConfigType("yaml")
+	VTSClientCfg.SetConfigName("config")
+
+	err = VTSClientCfg.ReadInConfig()
+	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
+		// If there is no config file, use the defaults set above.
+		err = nil
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
 	vtsClient := vtsclient.NewGRPC(VTSClientCfg)
-	verifier := verifier.New(VerifierCfg, vtsClient)
+	verifier := verifier.New(viper.New(), vtsClient)
 	apiHandler := api.NewHandler(sessionManager, verifier)
 	apiServer(apiHandler, ListenAddr)
 }

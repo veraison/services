@@ -8,19 +8,19 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )
 
 type GoPluginManager struct {
-	Config        config.Store
+	Config        *viper.Viper
 	DispatchTable map[string]*scheme.SchemeGoPlugin
 }
 
-func New(cfg config.Store) *GoPluginManager {
+func New(v *viper.Viper) *GoPluginManager {
 	return &GoPluginManager{
-		Config: cfg,
+		Config: v,
 	}
 }
 
@@ -28,17 +28,16 @@ func New(cfg config.Store) *GoPluginManager {
 //   * "go-plugin.folder"
 func (o *GoPluginManager) Init() error {
 	defaultBackend := "go-plugin"
-	backend, err := config.GetString(o.Config, "backend", &defaultBackend)
-	if err != nil {
-		return fmt.Errorf("loading backend from config: %w", err)
-	}
+	o.Config.SetDefault("backend", defaultBackend)
+
+	backend := o.Config.GetString("backend")
 	if backend != defaultBackend {
 		return fmt.Errorf("want backend %s, got %s", defaultBackend, backend)
 	}
 
-	dir, err := config.GetString(o.Config, "go-plugin.folder", nil)
-	if err != nil {
-		return fmt.Errorf("loading plugin folder from config: %w", err)
+	dir := o.Config.GetString("go-plugin.folder")
+	if dir == "" {
+		return fmt.Errorf(`"go-pluing.folder" not specified`)
 	}
 
 	pPaths, err := plugin.Discover("*", dir)

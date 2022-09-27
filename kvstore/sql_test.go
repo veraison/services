@@ -9,21 +9,20 @@ import (
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/config"
 )
 
 func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  -1,
-		"sql.driver":     "sqlite3",
-		"sql.datasource": "db=veraison.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("Sql.tablename", -1)
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", "db=veraison.sql")
 
-	expectedErr := `invalidly specified directive "sql.tablename": want string, got int`
+	expectedErr := `unsafe table name: "-1" (MUST match ^[a-zA-Z0-9_]+$)`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -32,10 +31,9 @@ func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 func TestSQL_Init_missing_driver_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  "trustanchor",
-		"sql.datasource": "db=veraison-trustanchor.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
 
 	expectedErr := `"sql.driver" directive not found`
 
@@ -48,11 +46,10 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 
 	attemptedInjection := "kvstore ; DROP TABLE another ; SELECT * FROM kvstore"
 
-	cfg := config.Store{
-		"sql.tablename":  attemptedInjection,
-		"sql.datasource": "db=veraison-trustanchor.sql",
-		"sql.driver":     "sqlite3",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", attemptedInjection)
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
+	cfg.Set("sql.driver", "sqlite3")
 
 	expectedErr := fmt.Sprintf("unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
 
@@ -63,12 +60,26 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 func TestSQL_Init_missing_datasource_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename": "trustanchor",
-		"sql.driver":    "postgres",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "postgres")
 
 	expectedErr := `"sql.datasource" directive not found`
+
+	err := s.Init(cfg)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Init_extra_params(t *testing.T) {
+	s := SQL{}
+
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
+	cfg.Set("sql.unexpected", "foo")
+
+	expectedErr := `unexpected "sql" directive(s): unexpected:foo`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -78,11 +89,10 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  "trustanchor",
-		"sql.driver":     "postgres",
-		"sql.datasource": "db=veraison-trustanchor.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "postgres")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
 
 	expectedErr := `sql: unknown driver "postgres" (forgotten import?)`
 

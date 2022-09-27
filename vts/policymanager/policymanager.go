@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
@@ -20,8 +20,8 @@ type PolicyManager struct {
 	Agent policy.IAgent
 }
 
-func New(cfg config.Store, store kvstore.IKVStore) (*PolicyManager, error) {
-	agent, err := policy.CreateAgent(cfg)
+func New(v *viper.Viper, store kvstore.IKVStore) (*PolicyManager, error) {
+	agent, err := policy.CreateAgent(v)
 	if err != nil {
 		return nil, err
 	}

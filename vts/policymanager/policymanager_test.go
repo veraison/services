@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
@@ -106,10 +106,10 @@ func TestPolicyMgr_New_policyAgent_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	store := mock_deps.NewMockIKVStore(ctrl)
-	cfg := config.Store{
-		policy.DirectiveBackend: "opa",
-	}
-	_, err := New(cfg, store)
+	v := viper.New()
+	v.Set(policy.DirectiveBackend, "opa")
+
+	_, err := New(v, store)
 	require.NoError(t, err)
 }
 
@@ -117,10 +117,10 @@ func TestPolicyMgr_New_policyAgent_NOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	store := mock_deps.NewMockIKVStore(ctrl)
-	cfg := config.Store{
-		policy.DirectiveBackend: "nope",
-	}
-	_, err := New(cfg, store)
+	v := viper.New()
+	v.Set(policy.DirectiveBackend, "nope")
+
+	_, err := New(v, store)
 	assert.EqualError(t, err, `backend "nope" is not supported`)
 }
 

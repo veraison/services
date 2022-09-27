@@ -10,7 +10,7 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -23,7 +23,7 @@ type Memory struct {
 
 // Init initializes the KVStore. There are no configuration options for this
 // implementation.
-func (o *Memory) Init(unused config.Store) error {
+func (o *Memory) Init(unused *viper.Viper) error {
 	o.Data = make(map[string][]string)
 
 	return nil

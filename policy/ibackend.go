@@ -3,11 +3,11 @@ package policy
 import (
 	"context"
 
-	"github.com/veraison/services/config"
+	"github.com/spf13/viper"
 )
 
 type IBackend interface {
-	Init(cfg config.Store) error
+	Init(v *viper.Viper) error
 	GetName() string
 	Evaluate(
 		ctx context.Context,
