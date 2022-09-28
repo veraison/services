@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
@@ -43,7 +44,7 @@ func main() {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
 
-	poStore, err := kvstore.New(v.Sub("po-store"))
+	poStore, err := policy.NewStore(v.Sub("po-store"))
 	if err != nil {
 		log.Fatalf("policy store initialization failed: %v", err)
 	}
