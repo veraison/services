@@ -55,10 +55,9 @@ func (o *PolicyManager) Evaluate(
 }
 
 func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, error) {
-	policyID := fmt.Sprintf("%s://%s/%s",
+	policyID := fmt.Sprintf("%s://%s",
 		o.Agent.GetBackendName(),
 		ev.TenantId,
-		ev.Format.String(),
 	)
 
 	p, err := o.Store.GetLatest(policyID)

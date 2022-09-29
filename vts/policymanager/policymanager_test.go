@@ -23,7 +23,7 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
+		Get(gomock.Eq("opa://0")).
 		Return(nil, kvstore.ErrKeyNotFound)
 
 	// Get the Mock Agent here
@@ -52,7 +52,7 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
+		Get(gomock.Eq("opa://0")).
 		Return([]string{"{}"}, nil)
 
 	agent := mock_deps.NewMockIAgent(ctrl)
@@ -102,7 +102,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
+		Get(gomock.Eq("opa://0")).
 		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
@@ -130,7 +130,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
+		Get(gomock.Eq("opa://0")).
 		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
