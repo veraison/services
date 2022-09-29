@@ -17,6 +17,10 @@ type IKVStore interface {
 	// operations.
 	Close() error
 
+	// Setup a new store for use. What this actually entails is  specific
+	// to a backend.
+	Setup() error
+
 	// Get returns a []string of values for the specified key. If the
 	// specified key is not in the store, a ErrKeyNotFound is returned. The
 	// values are in the order they were added, with the most recent value

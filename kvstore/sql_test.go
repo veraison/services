@@ -5,10 +5,12 @@ package kvstore
 import (
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -448,4 +450,24 @@ func TestSQL_Add_ok(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
 	}
+}
+
+func TestSQL_Setup(t *testing.T) {
+	storeFile := path.Join(t.TempDir(), "store.db")
+
+	cfg := viper.New()
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", fmt.Sprintf("file:%s", storeFile))
+	cfg.Set("sql.tablename", "test")
+
+	s := SQL{}
+	err := s.Init(cfg)
+	require.NoError(t, err)
+	defer s.Close()
+
+	err = s.Setup()
+	assert.NoError(t, err)
+
+	err = s.Setup()
+	assert.ErrorContains(t, err, "table test already exists")
 }

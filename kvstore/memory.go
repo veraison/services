@@ -34,6 +34,11 @@ func (o *Memory) Close() error {
 	return nil
 }
 
+func (o *Memory) Setup() error {
+	// no-op (the map is created on init, and no further setup is necessary)
+	return nil
+}
+
 func (o Memory) Get(key string) ([]string, error) {
 	if o.Data == nil {
 		return nil, errors.New("memory store uninitialized")

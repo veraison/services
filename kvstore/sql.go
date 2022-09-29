@@ -96,6 +96,19 @@ func (o *SQL) Close() error {
 	return o.DB.Close()
 }
 
+func (o SQL) Setup() error {
+	if o.DB == nil {
+		return errors.New("SQL store uninitialized")
+	}
+
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
+	q := fmt.Sprintf("CREATE TABLE %s (key text NOT NULL, vals text NOT NULL)", o.TableName)
+	_, err := o.DB.Exec(q)
+
+	return err
+}
+
 func (o SQL) Get(key string) ([]string, error) {
 	if o.DB == nil {
 		return nil, errors.New("SQL store uninitialized")
