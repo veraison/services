@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"

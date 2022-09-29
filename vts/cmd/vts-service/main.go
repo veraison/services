@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/policy"

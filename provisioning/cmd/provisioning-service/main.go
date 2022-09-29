@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"

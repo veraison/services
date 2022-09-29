@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"

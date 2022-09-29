@@ -5,7 +5,7 @@ package kvstore
 import (
 	"testing"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 )
 
 func New(v *viper.Viper) (IKVStore, error) {

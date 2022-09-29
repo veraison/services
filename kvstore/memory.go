@@ -10,7 +10,7 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 )
 
 var (

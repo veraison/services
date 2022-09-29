@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	viper "github.com/spf13/viper"
+	viper "github.com/setrofim/viper"
 )
 
 // MockIKVStore is a mock of IKVStore interface.

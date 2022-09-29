@@ -11,7 +11,7 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

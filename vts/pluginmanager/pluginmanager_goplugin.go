@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
-import "github.com/spf13/viper"
+import "github.com/setrofim/viper"
 
 // IKVStore is the interface to a key-value store. Keys and values are both
 // strings. A key can be associated with multiple values.

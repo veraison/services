@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/viper"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
