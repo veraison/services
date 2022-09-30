@@ -59,6 +59,22 @@ func (o Memory) Get(key string) ([]string, error) {
 	return vals, nil
 }
 
+func (o Memory) GetKeys() ([]string, error) {
+	if o.Data == nil {
+		return nil, errors.New("memory store uninitialized")
+	}
+
+	lk.RLock()
+	defer lk.RUnlock()
+
+	var keys []string
+	for k := range o.Data {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
+}
+
 func (o *Memory) Add(key string, val string) error {
 	if o.Data == nil {
 		return errors.New("memory store uninitialized")

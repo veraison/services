@@ -91,6 +91,21 @@ func (mr *MockIKVStoreMockRecorder) Get(key interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockIKVStore)(nil).Get), key)
 }
 
+// GetKeys mocks base method.
+func (m *MockIKVStore) GetKeys() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeys")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeys indicates an expected call of GetKeys.
+func (mr *MockIKVStoreMockRecorder) GetKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockIKVStore)(nil).GetKeys))
+}
+
 // Init mocks base method.
 func (m *MockIKVStore) Init(v *viper.Viper) error {
 	m.ctrl.T.Helper()

@@ -220,6 +220,29 @@ func TestSQL_Get_ok(t *testing.T) {
 	}
 }
 
+func TestSQL_GetKeys_ok(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"key"})
+	rows.AddRow("k1")
+	rows.AddRow("k2")
+
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT key FROM endorsement"))
+	e.WillReturnRows(rows)
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	keys, err := s.GetKeys()
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"k1", "k2"}, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
 func TestSQL_Set_empty_key(t *testing.T) {
 	db, _, err := sqlmock.New()
 	require.NoError(t, err)

@@ -154,6 +154,41 @@ func (o SQL) Get(key string) ([]string, error) {
 	return vals, nil
 }
 
+func (o SQL) GetKeys() ([]string, error) {
+	if o.DB == nil {
+		return nil, errors.New("SQL store uninitialized")
+	}
+
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
+	q := fmt.Sprintf("SELECT DISTINCT key FROM %s", o.TableName)
+
+	rows, err := o.DB.Query(q)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var keys []string
+
+	for rows.Next() {
+		var s sql.NullString
+
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+
+		if !s.Valid {
+			panic("broken invariant: found key with null string")
+		}
+
+		keys = append(keys, s.String)
+	}
+
+	return keys, nil
+}
+
 func (o SQL) Add(key string, val string) error {
 	if o.DB == nil {
 		return errors.New("SQL store uninitialized")

@@ -57,6 +57,11 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 	val, err := s.Get(testKey)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedVal, val)
+
+	keys, err := s.GetKeys()
+	assert.NoError(t, err)
+	require.Equal(t, 1, len(keys))
+	assert.Equal(t, testKey, keys[0])
 }
 
 func TestMemory_Get_empty_key(t *testing.T) {

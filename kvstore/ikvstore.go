@@ -27,6 +27,9 @@ type IKVStore interface {
 	// last.
 	Get(key string) ([]string, error)
 
+	// GetKeys returns a []string of keys currently set in the store.
+	GetKeys() ([]string, error)
+
 	// Set the specified key to the specified value, discarding any
 	// existing values.
 	Set(key, val string) error
