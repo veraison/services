@@ -14,8 +14,10 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/moogar0880/problems v0.1.1
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/open-policy-agent/opa v0.43.1
 	github.com/setrofim/viper v0.0.0-20220929140858-add5a281c9db
+	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
 	github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c
 	github.com/veraison/dice v0.0.1
@@ -44,6 +46,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
@@ -55,6 +58,7 @@ require (
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

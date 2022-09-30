@@ -5,6 +5,8 @@
 
 GOPKG := github.com/veraison/services/policy
 
+SUBDIR := cmd/polcli
+
 INTERFACES := ibackend.go
 
 MOCKPKG := mocks
@@ -16,3 +18,4 @@ include ../mk/common.mk
 include ../mk/pkg.mk
 include ../mk/lint.mk
 include ../mk/test.mk
+include ../mk/subdir.mk

@@ -1,0 +1,5 @@
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: po-store.sql

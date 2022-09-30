@@ -13,6 +13,7 @@ provisioning/cmd/provisioning-service/provisioning-service
 provisioning/plugins/bin/
 provisioning/decoder/*.pb.json.go
 verification/cmd/verification-service/verification-service
+policy/cmd/polcli/polcli
 
 # Test binary, built with `go test -c`
 *.test
