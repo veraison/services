@@ -43,6 +43,18 @@ func Test_Store_CRUD(t *testing.T) {
 	assert.Len(t, versions, 2)
 	assert.Equal(t, int32(2), versions[1].Version)
 
+	policies, err := store.List()
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(policies))
+	assert.Equal(t, "p1", policies[0].ID)
+
+	policies, err = store.ListAllVersions()
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(policies))
+	assert.Equal(t, "p1", policies[0].ID)
+	assert.Equal(t, int32(1), policies[0].Version)
+	assert.Equal(t, int32(2), policies[1].Version)
+
 	err = store.Del("p1")
 	require.NoError(t, err)
 

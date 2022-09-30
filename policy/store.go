@@ -94,6 +94,50 @@ func (o *Store) Get(id string) ([]Policy, error) {
 	return policies, nil
 }
 
+// List returns []Policy containing latest versions of all policies. All
+// policies returned will have distinct IDs. In cases where multiple policies
+// exist for one ID in the store, the latest version will be returned.
+func (o *Store) List() ([]Policy, error) {
+	keys, err := o.KVStore.GetKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	var policies []Policy
+	for _, key := range keys {
+		policy, err := o.GetLatest(key)
+		if err != nil {
+			return nil, err
+		}
+
+		policies = append(policies, policy)
+	}
+
+	return policies, nil
+}
+
+// ListAllVersions returns a []Policy containing every policy entry in the
+// underlying store, including multiple versions associated with a single
+// policy ID.
+func (o *Store) ListAllVersions() ([]Policy, error) {
+	keys, err := o.KVStore.GetKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	var policies []Policy
+	for _, key := range keys {
+		versions, err := o.Get(key)
+		if err != nil {
+			return nil, err
+		}
+
+		policies = append(policies, versions...)
+	}
+
+	return policies, nil
+}
+
 // GetLatest returns the latest version of the policy with the specified ID. If
 // no such policy exists, a wrapped ErrNoPolicy is returned.
 func (o *Store) GetLatest(id string) (Policy, error) {
