@@ -186,6 +186,19 @@ func TestMemory_Get_no_such_key(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
+func TestMemory_Del_no_such_key(t *testing.T) {
+	s := Memory{}
+
+	err := s.Init(nil)
+	require.NoError(t, err)
+
+	expectedErr := fmt.Sprintf("key not found: %q", testKey)
+
+	err = s.Del(testKey)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.EqualError(t, err, expectedErr)
+}
+
 func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
 

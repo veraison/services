@@ -380,6 +380,28 @@ func TestSQL_Del_ok(t *testing.T) {
 	}
 }
 
+func TestSQL_Del_key_not_found(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
+	e.WithArgs(testKey)
+	e.WillReturnResult(sqlmock.NewResult(1, 0))
+
+	expectedErr := fmt.Sprintf("key not found: %q", testKey)
+
+	err = s.Del(testKey)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.EqualError(t, err, expectedErr)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
 func TestSQL_Add_empty_key(t *testing.T) {
 	db, _, err := sqlmock.New()
 	require.NoError(t, err)

@@ -32,7 +32,8 @@ type IKVStore interface {
 	Set(key, val string) error
 
 	// Del removes the specified key from the store, discarding its
-	// associated values.
+	// associated values. If the key does not exist, ErrKeyNotFound will be
+	// returned.
 	Del(key string) error
 
 	// Add the specified value to the specified key. If the key does

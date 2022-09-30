@@ -223,9 +223,16 @@ func (o SQL) Del(key string) error {
 	// o.TableName has been checked by isSafeTblName on init
 	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
-	_, err := o.DB.Exec(q, key)
+	res, err := o.DB.Exec(q, key)
 	if err != nil {
 		return err
+	}
+
+	numRows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	} else if numRows == 0 {
+		return fmt.Errorf("%w: %q", ErrKeyNotFound, key)
 	}
 
 	return nil

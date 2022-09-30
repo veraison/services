@@ -116,6 +116,10 @@ func (o *Memory) Del(key string) error {
 	lk.Lock()
 	defer lk.Unlock()
 
+	if _, ok := o.Data[key]; !ok {
+		return fmt.Errorf("%w: %q", ErrKeyNotFound, key)
+	}
+
 	delete(o.Data, key)
 
 	return nil
