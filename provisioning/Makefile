@@ -4,6 +4,6 @@
 SUBDIR := decoder
 SUBDIR += api
 SUBDIR += plugins
-SUBDIR += cmd
+SUBDIR += cmd/provisioning-service
 
 include ../mk/subdir.mk

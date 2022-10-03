@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 )
 
 var (
@@ -19,13 +19,44 @@ var (
 	safeTblNameRe = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 )
 
+func isSafeTblName(s string) bool {
+	return safeTblNameRe.MatchString(s)
+}
+
+type cfg struct {
+	TableName      string                 `mapstructure:"tablename"`
+	DriverName     string                 `mapstructure:"driver"`
+	DataSourceName string                 `mapstructure:"datasource"`
+	Other          map[string]interface{} `mapstructure:",remain"`
+}
+
+func (o *cfg) Validate() error {
+	if !isSafeTblName(o.TableName) {
+		return fmt.Errorf("unsafe table name: %q (MUST match %s)",
+			o.TableName, safeTblNameRe)
+	}
+
+	if o.DriverName == "" {
+		return errors.New("\"sql.driver\" directive not found")
+	}
+
+	if o.DataSourceName == "" {
+		return errors.New("\"sql.datasource\" directive not found")
+	}
+
+	if o.Other != nil {
+		// Print the textual representation of the map with the "map[]"
+		// stripped, resulting a list of "<key>:<value>" entries.
+		other := fmt.Sprintf("%v", o.Other)
+		return fmt.Errorf(`unexpected "sql" directive(s): %v`, other[4:len(other)-1])
+	}
+
+	return nil
+}
+
 type SQL struct {
 	TableName string
 	DB        *sql.DB
-}
-
-func isSafeTblName(s string) bool {
-	return safeTblNameRe.MatchString(s)
 }
 
 // Init initializes the KVStore. The config may contain the following values,
@@ -37,28 +68,21 @@ func isSafeTblName(s string) bool {
 //                "sqlite3").
 // "sql.datasource" -  The name of the data source to use. Valid values are
 //                     driver-specific (defaults to "db=veraison.sql".
-func (o *SQL) Init(cfg config.Store) error {
-	tableName, err := config.GetString(cfg, DirectiveSQLTableName, &DefaultTableName)
-	if err != nil {
-		return err
-	}
-	o.TableName = tableName
+func (o *SQL) Init(v *viper.Viper) error {
+	var cfg cfg
 
-	if !isSafeTblName(o.TableName) {
-		return fmt.Errorf("unsafe table name: %q (MUST match %s)", o.TableName, safeTblNameRe)
-	}
-
-	driverName, err := config.GetString(cfg, DirectiveSQLDriverName, nil)
-	if err != nil {
+	v.SetDefault("sql.tablename", DefaultTableName)
+	if err := v.UnmarshalKey("sql", &cfg); err != nil {
 		return err
 	}
 
-	dataSourceName, err := config.GetString(cfg, DirectiveSQLDataSourceName, nil)
-	if err != nil {
+	if err := cfg.Validate(); err != nil {
 		return err
 	}
 
-	db, err := sql.Open(driverName, dataSourceName)
+	o.TableName = cfg.TableName
+
+	db, err := sql.Open(cfg.DriverName, cfg.DataSourceName)
 	if err != nil {
 		return err
 	}
@@ -70,6 +94,19 @@ func (o *SQL) Init(cfg config.Store) error {
 
 func (o *SQL) Close() error {
 	return o.DB.Close()
+}
+
+func (o SQL) Setup() error {
+	if o.DB == nil {
+		return errors.New("SQL store uninitialized")
+	}
+
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
+	q := fmt.Sprintf("CREATE TABLE %s (key text NOT NULL, vals text NOT NULL)", o.TableName)
+	_, err := o.DB.Exec(q)
+
+	return err
 }
 
 func (o SQL) Get(key string) ([]string, error) {
@@ -115,6 +152,41 @@ func (o SQL) Get(key string) ([]string, error) {
 	}
 
 	return vals, nil
+}
+
+func (o SQL) GetKeys() ([]string, error) {
+	if o.DB == nil {
+		return nil, errors.New("SQL store uninitialized")
+	}
+
+	// nolint:gosec
+	// o.TableName has been checked by isSafeTblName on init
+	q := fmt.Sprintf("SELECT DISTINCT key FROM %s", o.TableName)
+
+	rows, err := o.DB.Query(q)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var keys []string
+
+	for rows.Next() {
+		var s sql.NullString
+
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+
+		if !s.Valid {
+			panic("broken invariant: found key with null string")
+		}
+
+		keys = append(keys, s.String)
+	}
+
+	return keys, nil
 }
 
 func (o SQL) Add(key string, val string) error {
@@ -186,9 +258,16 @@ func (o SQL) Del(key string) error {
 	// o.TableName has been checked by isSafeTblName on init
 	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
 
-	_, err := o.DB.Exec(q, key)
+	res, err := o.DB.Exec(q, key)
 	if err != nil {
 		return err
+	}
+
+	numRows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	} else if numRows == 0 {
+		return fmt.Errorf("%w: %q", ErrKeyNotFound, key)
 	}
 
 	return nil

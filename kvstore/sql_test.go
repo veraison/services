@@ -5,25 +5,26 @@ package kvstore
 import (
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/setrofim/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/config"
 )
 
 func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  -1,
-		"sql.driver":     "sqlite3",
-		"sql.datasource": "db=veraison.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("Sql.tablename", -1)
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", "db=veraison.sql")
 
-	expectedErr := `invalidly specified directive "sql.tablename": want string, got int`
+	expectedErr := `unsafe table name: "-1" (MUST match ^[a-zA-Z0-9_]+$)`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -32,10 +33,9 @@ func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 func TestSQL_Init_missing_driver_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  "trustanchor",
-		"sql.datasource": "db=veraison-trustanchor.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
 
 	expectedErr := `"sql.driver" directive not found`
 
@@ -48,11 +48,10 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 
 	attemptedInjection := "kvstore ; DROP TABLE another ; SELECT * FROM kvstore"
 
-	cfg := config.Store{
-		"sql.tablename":  attemptedInjection,
-		"sql.datasource": "db=veraison-trustanchor.sql",
-		"sql.driver":     "sqlite3",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", attemptedInjection)
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
+	cfg.Set("sql.driver", "sqlite3")
 
 	expectedErr := fmt.Sprintf("unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
 
@@ -63,12 +62,26 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 func TestSQL_Init_missing_datasource_name(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename": "trustanchor",
-		"sql.driver":    "postgres",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "postgres")
 
 	expectedErr := `"sql.datasource" directive not found`
+
+	err := s.Init(cfg)
+	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_Init_extra_params(t *testing.T) {
+	s := SQL{}
+
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
+	cfg.Set("sql.unexpected", "foo")
+
+	expectedErr := `unexpected "sql" directive(s): unexpected:foo`
 
 	err := s.Init(cfg)
 	assert.EqualError(t, err, expectedErr)
@@ -78,11 +91,10 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 	s := SQL{}
 
-	cfg := config.Store{
-		"sql.tablename":  "trustanchor",
-		"sql.driver":     "postgres",
-		"sql.datasource": "db=veraison-trustanchor.sql",
-	}
+	cfg := viper.New()
+	cfg.Set("sql.tablename", "trustanchor")
+	cfg.Set("sql.driver", "postgres")
+	cfg.Set("sql.datasource", "db=veraison-trustanchor.sql")
 
 	expectedErr := `sql: unknown driver "postgres" (forgotten import?)`
 
@@ -202,6 +214,29 @@ func TestSQL_Get_ok(t *testing.T) {
 	vals, err := s.Get("key")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"[1, 2]"}, vals)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+func TestSQL_GetKeys_ok(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"key"})
+	rows.AddRow("k1")
+	rows.AddRow("k2")
+
+	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT key FROM endorsement"))
+	e.WillReturnRows(rows)
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	keys, err := s.GetKeys()
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"k1", "k2"}, keys)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
@@ -368,6 +403,28 @@ func TestSQL_Del_ok(t *testing.T) {
 	}
 }
 
+func TestSQL_Del_key_not_found(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE key = ?"))
+	e.WithArgs(testKey)
+	e.WillReturnResult(sqlmock.NewResult(1, 0))
+
+	expectedErr := fmt.Sprintf("key not found: %q", testKey)
+
+	err = s.Del(testKey)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.EqualError(t, err, expectedErr)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
 func TestSQL_Add_empty_key(t *testing.T) {
 	db, _, err := sqlmock.New()
 	require.NoError(t, err)
@@ -438,4 +495,24 @@ func TestSQL_Add_ok(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
 	}
+}
+
+func TestSQL_Setup(t *testing.T) {
+	storeFile := path.Join(t.TempDir(), "store.db")
+
+	cfg := viper.New()
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("sql.datasource", fmt.Sprintf("file:%s", storeFile))
+	cfg.Set("sql.tablename", "test")
+
+	s := SQL{}
+	err := s.Init(cfg)
+	require.NoError(t, err)
+	defer s.Close()
+
+	err = s.Setup()
+	assert.NoError(t, err)
+
+	err = s.Setup()
+	assert.ErrorContains(t, err, "table test already exists")
 }

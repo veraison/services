@@ -6,17 +6,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 )
 
-func New(cfg config.Store) (IKVStore, error) {
-	if cfg == nil {
+func New(v *viper.Viper) (IKVStore, error) {
+	if v == nil {
 		return nil, errors.New("nil configuration")
 	}
 
-	backend, err := config.GetString(cfg, DirectiveBackend, nil)
-	if err != nil {
-		return nil, err
+	backend := v.GetString(DirectiveBackend)
+	if backend == "" {
+		return nil, fmt.Errorf("%q not set in config", DirectiveBackend)
 	}
 
 	var s IKVStore
@@ -30,7 +30,7 @@ func New(cfg config.Store) (IKVStore, error) {
 		return nil, fmt.Errorf("backend %q is not supported", backend)
 	}
 
-	if err := s.Init(cfg); err != nil {
+	if err := s.Init(v); err != nil {
 		return nil, err
 	}
 

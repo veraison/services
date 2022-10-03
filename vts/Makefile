@@ -5,6 +5,6 @@ SUBDIR := plugins
 SUBDIR += trustedservices
 SUBDIR += pluginmanager
 SUBDIR += policymanager
-SUBDIR += cmd
+SUBDIR += cmd/vts-service
 
 include ../mk/subdir.mk

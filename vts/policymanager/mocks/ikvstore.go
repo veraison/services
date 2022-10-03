@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/veraison/services/config"
+	viper "github.com/setrofim/viper"
 )
 
 // MockIKVStore is a mock of IKVStore interface.
@@ -91,18 +91,33 @@ func (mr *MockIKVStoreMockRecorder) Get(key interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockIKVStore)(nil).Get), key)
 }
 
-// Init mocks base method.
-func (m *MockIKVStore) Init(cfg config.Store) error {
+// GetKeys mocks base method.
+func (m *MockIKVStore) GetKeys() ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", cfg)
+	ret := m.ctrl.Call(m, "GetKeys")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeys indicates an expected call of GetKeys.
+func (mr *MockIKVStoreMockRecorder) GetKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockIKVStore)(nil).GetKeys))
+}
+
+// Init mocks base method.
+func (m *MockIKVStore) Init(v *viper.Viper) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Init", v)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockIKVStoreMockRecorder) Init(cfg interface{}) *gomock.Call {
+func (mr *MockIKVStoreMockRecorder) Init(v interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIKVStore)(nil).Init), cfg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIKVStore)(nil).Init), v)
 }
 
 // Set mocks base method.
@@ -117,4 +132,18 @@ func (m *MockIKVStore) Set(key, val string) error {
 func (mr *MockIKVStoreMockRecorder) Set(key, val interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockIKVStore)(nil).Set), key, val)
+}
+
+// Setup mocks base method.
+func (m *MockIKVStore) Setup() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Setup")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Setup indicates an expected call of Setup.
+func (mr *MockIKVStoreMockRecorder) Setup() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Setup", reflect.TypeOf((*MockIKVStore)(nil).Setup))
 }

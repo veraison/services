@@ -10,7 +10,7 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 )
 
 var (
@@ -23,7 +23,7 @@ type Memory struct {
 
 // Init initializes the KVStore. There are no configuration options for this
 // implementation.
-func (o *Memory) Init(unused config.Store) error {
+func (o *Memory) Init(unused *viper.Viper) error {
 	o.Data = make(map[string][]string)
 
 	return nil
@@ -31,6 +31,11 @@ func (o *Memory) Init(unused config.Store) error {
 
 func (o *Memory) Close() error {
 	// no-op (the map is garbage collected)
+	return nil
+}
+
+func (o *Memory) Setup() error {
+	// no-op (the map is created on init, and no further setup is necessary)
 	return nil
 }
 
@@ -52,6 +57,22 @@ func (o Memory) Get(key string) ([]string, error) {
 	}
 
 	return vals, nil
+}
+
+func (o Memory) GetKeys() ([]string, error) {
+	if o.Data == nil {
+		return nil, errors.New("memory store uninitialized")
+	}
+
+	lk.RLock()
+	defer lk.RUnlock()
+
+	var keys []string
+	for k := range o.Data {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
 }
 
 func (o *Memory) Add(key string, val string) error {
@@ -110,6 +131,10 @@ func (o *Memory) Del(key string) error {
 
 	lk.Lock()
 	defer lk.Unlock()
+
+	if _, ok := o.Data[key]; !ok {
+		return fmt.Errorf("%w: %q", ErrKeyNotFound, key)
+	}
 
 	delete(o.Data, key)
 

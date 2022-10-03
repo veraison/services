@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/setrofim/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
@@ -23,7 +23,7 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
+		Get(gomock.Eq("opa://0")).
 		Return(nil, kvstore.ErrKeyNotFound)
 
 	// Get the Mock Agent here
@@ -40,48 +40,20 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 		Evidence:      evStruct,
 	}
 
-	pm := &PolicyManager{Store: store, Agent: agent}
+	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 
 	pol, err := pm.getPolicy(ec)
 	assert.Nil(t, pol)
-	assert.ErrorIs(t, err, ErrNoPolicy)
+	assert.ErrorIs(t, err, policy.ErrNoPolicy)
 }
 
-func TestPolicyMgr_getPolicy_mult_found(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	store := mock_deps.NewMockIKVStore(ctrl)
-	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
-		Return([]string{"Policy 1", "Policy 2"}, nil)
-
-	// Get the Mock Agent here
-	agent := mock_deps.NewMockIAgent(ctrl)
-	agent.EXPECT().GetBackendName().Return("opa")
-	evStruct, err := structpb.NewStruct(nil)
-	require.NoError(t, err)
-
-	ec := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
-		TenantId:      "0",
-		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		Evidence:      evStruct,
-	}
-
-	pm := &PolicyManager{Store: store, Agent: agent}
-
-	pol, err := pm.getPolicy(ec)
-	assert.Nil(t, pol)
-	assert.EqualError(t, err, `found 2 policy entries for id "opa://0/TPM_ENACTTRUST"; must be at most 1`)
-}
 func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
-		Return([]string{"Real Value"}, nil)
+		Get(gomock.Eq("opa://0")).
+		Return([]string{"{}"}, nil)
 
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
@@ -96,7 +68,7 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 		Evidence:      evStruct,
 	}
 
-	pm := &PolicyManager{Store: store, Agent: agent}
+	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 
 	_, err = pm.getPolicy(ec)
 	require.NoError(t, err)
@@ -106,10 +78,10 @@ func TestPolicyMgr_New_policyAgent_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	store := mock_deps.NewMockIKVStore(ctrl)
-	cfg := config.Store{
-		policy.DirectiveBackend: "opa",
-	}
-	_, err := New(cfg, store)
+	v := viper.New()
+	v.Set(policy.DirectiveBackend, "opa")
+
+	_, err := New(v, &policy.Store{KVStore: store})
 	require.NoError(t, err)
 }
 
@@ -117,10 +89,10 @@ func TestPolicyMgr_New_policyAgent_NOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	store := mock_deps.NewMockIKVStore(ctrl)
-	cfg := config.Store{
-		policy.DirectiveBackend: "nope",
-	}
-	_, err := New(cfg, store)
+	v := viper.New()
+	v.Set(policy.DirectiveBackend, "nope")
+
+	_, err := New(v, &policy.Store{KVStore: store})
 	assert.EqualError(t, err, `backend "nope" is not supported`)
 }
 
@@ -130,8 +102,8 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
-		Return([]string{"Real Value"}, nil)
+		Get(gomock.Eq("opa://0")).
+		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
 		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
@@ -147,7 +119,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
 	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ac.Result, ec, endorsements)
-	pm := &PolicyManager{Store: store, Agent: agent}
+	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 	err := pm.Evaluate(context.TODO(), ac, endorsements)
 	require.NoError(t, err)
 }
@@ -158,8 +130,8 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0/TPM_ENACTTRUST")).
-		Return([]string{"Real Value"}, nil)
+		Get(gomock.Eq("opa://0")).
+		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
 		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
@@ -175,7 +147,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
 	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ac.Result, ec, endorsements).Return(nil, expectedErr)
-	pm := &PolicyManager{Store: store, Agent: agent}
+	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 	err := pm.Evaluate(context.TODO(), ac, endorsements)
 	assert.ErrorIs(t, err, expectedErr)
 

@@ -9,49 +9,58 @@ import (
 	"syscall"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/setrofim/viper"
 
-	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
 )
 
 func main() {
-	cfg := config.NewYAMLReader()
+	v := viper.New()
 
-	_, err := cfg.ReadFile("config.yaml")
+	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("counfig.yaml could not be read.")
+		log.Fatal(err)
 	}
 
-	taStore, err := kvstore.New(cfg.MustGetStore("ta-store"))
+	v.AddConfigPath(wd)
+	v.SetConfigType("yaml")
+	v.SetConfigName("config")
+
+	if err := v.ReadInConfig(); err != nil {
+		log.Fatalf("could not read config: %v", err)
+	}
+
+	taStore, err := kvstore.New(v.Sub("ta-store"))
 	if err != nil {
 		log.Fatalf("trust anchor store initialisation failed: %v", err)
 	}
 
-	enStore, err := kvstore.New(cfg.MustGetStore("en-store"))
+	enStore, err := kvstore.New(v.Sub("en-store"))
 	if err != nil {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
 
-	poStore, err := kvstore.New(cfg.MustGetStore("po-store"))
+	poStore, err := policy.NewStore(v.Sub("po-store"))
 	if err != nil {
 		log.Fatalf("policy store initialization failed: %v", err)
 	}
 
-	policyManager, err := policymanager.New(cfg.MustGetStore("po-agent"), poStore)
+	policyManager, err := policymanager.New(v.Sub("po-agent"), poStore)
 	if err != nil {
 		log.Fatalf("policy manager initialization failed: %v", err)
 	}
 
-	pluginManager := pluginmanager.New(cfg.MustGetStore("plugin"))
+	pluginManager := pluginmanager.New(v.Sub("plugin"))
 	if err := pluginManager.Init(); err != nil {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
 	// from this point onwards taStore, enStore and pluginManager are owned by vts
-	vts := trustedservices.NewGRPC(cfg.MustGetStore("vts-grpc"), taStore, enStore,
+	vts := trustedservices.NewGRPC(v.Sub("vts-grpc"), taStore, enStore,
 		pluginManager, policyManager)
 
 	err = vts.Init()

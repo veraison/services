@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Verifier struct {
-	Config    config.Store
+	Config    *viper.Viper
 	VTSClient vtsclient.IVTSClient
 }
 
-func New(cfg config.Store, vtsClient vtsclient.IVTSClient) IVerifier {
+func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IVerifier {
 	return &Verifier{
-		Config:    cfg,
+		Config:    v,
 		VTSClient: vtsClient,
 	}
 }

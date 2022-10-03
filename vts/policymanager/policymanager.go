@@ -7,21 +7,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/config"
-	"github.com/veraison/services/kvstore"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
 )
 
-var ErrNoPolicy = errors.New("no policy found")
-
 type PolicyManager struct {
-	Store kvstore.IKVStore
+	Store *policy.Store
 	Agent policy.IAgent
 }
 
-func New(cfg config.Store, store kvstore.IKVStore) (*PolicyManager, error) {
-	agent, err := policy.CreateAgent(cfg)
+func New(v *viper.Viper, store *policy.Store) (*PolicyManager, error) {
+	agent, err := policy.CreateAgent(v)
 	if err != nil {
 		return nil, err
 	}
@@ -38,16 +35,16 @@ func (o *PolicyManager) Evaluate(
 ) error {
 	evidence := ac.Evidence
 
-	policy, err := o.getPolicy(evidence)
+	pol, err := o.getPolicy(evidence)
 	if err != nil {
-		if errors.Is(err, ErrNoPolicy) {
+		if errors.Is(err, policy.ErrNoPolicy) {
 			return nil // No policy? No problem!
 		}
 
 		return err
 	}
 
-	updatedResult, err := o.Agent.Evaluate(ctx, policy, ac.Result, evidence, endorsements)
+	updatedResult, err := o.Agent.Evaluate(ctx, pol, ac.Result, evidence, endorsements)
 	if err != nil {
 		return err
 	}
@@ -58,30 +55,15 @@ func (o *PolicyManager) Evaluate(
 }
 
 func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, error) {
-
-	policyID := fmt.Sprintf("%s://%s/%s",
+	policyID := fmt.Sprintf("%s://%s",
 		o.Agent.GetBackendName(),
 		ev.TenantId,
-		ev.Format.String(),
 	)
 
-	vals, err := o.Store.Get(policyID)
+	p, err := o.Store.GetLatest(policyID)
 	if err != nil {
-		if errors.Is(err, kvstore.ErrKeyNotFound) {
-			return nil, fmt.Errorf("%w: %q", ErrNoPolicy, policyID)
-		}
 		return nil, err
 	}
 
-	// TODO(setrofim): for now, assuming that there should be exactly one
-	// matching policy. Once we have a more sophisticated policy management
-	// framework worked out, we might allow multiple policies here.
-	if len(vals) == 0 {
-		return nil, fmt.Errorf("%w: %q", ErrNoPolicy, policyID)
-	} else if len(vals) > 1 {
-		return nil, fmt.Errorf("found %d policy entries for id %q; must be at most 1",
-			len(vals), policyID)
-	}
-
-	return &policy.Policy{ID: policyID, Rules: vals[0]}, nil
+	return &p, nil
 }

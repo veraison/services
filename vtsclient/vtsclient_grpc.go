@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -27,14 +28,14 @@ var (
 // * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
 
 type GRPC struct {
-	Config     config.Store
+	Config     *viper.Viper
 	Connection *grpc.ClientConn
 }
 
 // NewGRPC instantiate a new gRPC store client with the supplied configuration
-func NewGRPC(c config.Store) *GRPC {
+func NewGRPC(v *viper.Viper) *GRPC {
 	return &GRPC{
-		Config: c,
+		Config: v,
 	}
 }
 
@@ -114,12 +115,11 @@ func (o *GRPC) EnsureConnection() error {
 		grpc.WithBlock(),
 	}
 
-	defaultVTSAddr := "dns:" + config.DefaultVTSAddr
+	defaultVTSAddr := "dns:" + trustedservices.DefaultVTSAddr
 
-	storeServerAddr, err := config.GetString(o.Config, "vts-server.addr", &defaultVTSAddr)
-	if err != nil {
-		return fmt.Errorf("configuration error: %w", err)
-	}
+	o.Config.SetDefault("vts-server.addr", defaultVTSAddr)
+
+	storeServerAddr := o.Config.GetString("vts-server.addr")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

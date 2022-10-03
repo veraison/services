@@ -40,10 +40,11 @@ message AttestationResult {
     google.protobuf.Timestamp timestamp = 4 [json_name = "timestamp"];
     EndorsedClaims endorsed_claims = 5 [json_name = "endorsed-claims"];
     string AppraisalPolicyID = 6 [json_name = "appraisal-policy-id"];
+    int32 AppraisalPolicyVersion = 7 [json_name = "appraisal-policy-version"];
 
     // Extension
-    google.protobuf.Struct processed_evidence = 7 [json_name = "veraison-processed-evidence"];
-    google.protobuf.Struct verifier_added_claims = 8 [json_name = "veraison-verifier-added-claims"];
+    google.protobuf.Struct processed_evidence = 8 [json_name = "veraison-processed-evidence"];
+    google.protobuf.Struct verifier_added_claims = 9 [json_name = "veraison-verifier-added-claims"];
 }
 
 // vim: set et sts=4 sw=4 ai:

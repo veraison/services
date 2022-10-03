@@ -5,8 +5,8 @@ package kvstore
 import (
 	"testing"
 
+	"github.com/setrofim/viper"
 	"github.com/stretchr/testify/assert"
-	"github.com/veraison/services/config"
 )
 
 func TestKVStore_New_nil_config(t *testing.T) {
@@ -19,20 +19,19 @@ func TestKVStore_New_nil_config(t *testing.T) {
 }
 
 func TestKVStore_New_missing_backend_directive(t *testing.T) {
-	cfg := config.Store{}
+	cfg := viper.New()
 
 	m, err := New(cfg)
 
-	expectedErr := `"backend" directive not found`
+	expectedErr := `"backend" not set in config`
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)
 }
 
 func TestKVStore_New_unsupported_backend(t *testing.T) {
-	cfg := config.Store{
-		"backend": "xyz",
-	}
+	cfg := viper.New()
+	cfg.Set("backend", "xyz")
 
 	m, err := New(cfg)
 
@@ -43,9 +42,8 @@ func TestKVStore_New_unsupported_backend(t *testing.T) {
 }
 
 func TestKVStore_New_memory_backend_ok(t *testing.T) {
-	cfg := config.Store{
-		"backend": "memory",
-	}
+	cfg := viper.New()
+	cfg.Set("backend", "memory")
 
 	m, err := New(cfg)
 
@@ -54,12 +52,11 @@ func TestKVStore_New_memory_backend_ok(t *testing.T) {
 }
 
 func TestKVStore_New_SQL_backend_failed_init(t *testing.T) {
-	cfg := config.Store{
-		"backend":        "sql",
-		"sql.tablename":  "endorsement",
-		"sql.datasource": "db.sql",
-		// no sql.driver
-	}
+	cfg := viper.New()
+	cfg.Set("backend", "sql")
+	cfg.Set("sql.tablename", "endorsement")
+	cfg.Set("sql.datasource", "db.sql")
+	// no sql.driver
 
 	m, err := New(cfg)
 

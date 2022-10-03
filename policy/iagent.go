@@ -3,12 +3,12 @@ package policy
 import (
 	"context"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/proto"
 )
 
 type IAgent interface {
-	Init(cfg config.Store) error
+	Init(v *viper.Viper) error
 	GetBackendName() string
 	Evaluate(ctx context.Context,
 		policy *Policy,

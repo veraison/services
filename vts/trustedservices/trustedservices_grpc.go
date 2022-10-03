@@ -10,7 +10,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/veraison/services/config"
+	"github.com/setrofim/viper"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
@@ -27,7 +27,7 @@ import (
 const DummyTenantID = "0"
 
 type GRPC struct {
-	Config config.Store
+	Config *viper.Viper
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
@@ -41,7 +41,7 @@ type GRPC struct {
 }
 
 func NewGRPC(
-	cfg config.Store,
+	cfg *viper.Viper,
 	taStore, enStore kvstore.IKVStore,
 	pluginManager pluginmanager.ISchemePluginManager,
 	policyManager *policymanager.PolicyManager,
@@ -64,10 +64,8 @@ func (o *GRPC) Run() error {
 }
 
 func (o *GRPC) Init() error {
-	addr, err := config.GetString(o.Config, "server.addr", &config.DefaultVTSAddr)
-	if err != nil {
-		return fmt.Errorf("loading configuration failed: %w", err)
-	}
+	o.Config.SetDefault("server.addr", DefaultVTSAddr)
+	addr := o.Config.GetString("server.addr")
 
 	lsd, err := net.Listen("tcp", addr)
 	if err != nil {
