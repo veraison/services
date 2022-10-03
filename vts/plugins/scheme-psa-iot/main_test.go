@@ -48,7 +48,7 @@ func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
 		Data:     tokenBytes,
 	}
 
-	_, err = scheme.ExtractVerifiedClaims(&token, string(taEndValBytes))
+	_, err = scheme.ExtractClaims(&token, string(taEndValBytes))
 
 	require.NoError(t, err)
 
@@ -69,7 +69,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		Data:     tokenBytes,
 	}
 
-	extracted, err := scheme.ExtractVerifiedClaims(&token, string(taEndValBytes))
+	extracted, err := scheme.ExtractClaims(&token, string(taEndValBytes))
 
 	require.NoError(t, err)
 	assert.Equal(t, "PSA_IOT_PROFILE_1", extracted.ClaimsSet["psa-profile"].(string))
@@ -77,6 +77,26 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	swComponents := extracted.ClaimsSet["psa-software-components"].([]interface{})
 	assert.Len(t, swComponents, 4)
 	assert.Equal(t, "BL", swComponents[0].(map[string]interface{})["measurement-type"].(string))
+}
+
+func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
+	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
+	require.NoError(t, err)
+
+	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
+	require.NoError(t, err)
+
+	scheme := &Scheme{}
+
+	token := proto.AttestationToken{
+		TenantId: "1",
+		Format:   proto.AttestationFormat_PSA_IOT,
+		Data:     tokenBytes,
+	}
+
+	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+
+	assert.NoError(t, err)
 }
 
 func Test_AppraiseEvidence_ok(t *testing.T) {

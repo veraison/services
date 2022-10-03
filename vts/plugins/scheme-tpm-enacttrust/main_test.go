@@ -75,7 +75,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	require.NoError(t, err)
 	trustAnchor := base64.StdEncoding.EncodeToString(trustAnchorBytes)
 
-	ev, err := s.ExtractVerifiedClaims(&ta, trustAnchor)
+	ev, err := s.ExtractClaims(&ta, trustAnchor)
 	require.Nil(t, err)
 
 	expectedPCRDigest := []byte{
@@ -88,6 +88,27 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	assert.Equal(t, []int64{1, 2, 3, 4}, ev.ClaimsSet["pcr-selection"])
 	assert.Equal(t, int64(11), ev.ClaimsSet["hash-algorithm"])
 	assert.Equal(t, expectedPCRDigest, ev.ClaimsSet["pcr-digest"])
+}
+
+func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
+	data, err := os.ReadFile("test/tokens/basic.token")
+	require.NoError(t, err)
+
+	ta := proto.AttestationToken{
+		TenantId: "0",
+		Format:   proto.AttestationFormat_TPM_ENACTTRUST,
+		Data:     data,
+	}
+
+	var s Scheme
+
+	trustAnchorBytes, err := readPublicKeyBytes("test/keys/basic.pem.pub")
+	require.NoError(t, err)
+	trustAnchor := base64.StdEncoding.EncodeToString(trustAnchorBytes)
+
+	err = s.ValidateEvidenceIntegrity(&ta, trustAnchor, nil)
+	assert.Nil(t, err)
+
 }
 
 func Test_GetAttestation(t *testing.T) {

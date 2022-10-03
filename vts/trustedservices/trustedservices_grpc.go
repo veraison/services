@@ -223,13 +223,39 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	ec, err := o.extractEvidence(scheme, token)
+	ec, err := o.initEvidenceContext(scheme, token)
 	if err != nil {
 		return nil, err
 	}
 
+	ta, err := o.getTrustAnchor(ec.TrustAnchorId)
+	if err != nil {
+		return nil, err
+	}
+
+	extracted, err := scheme.ExtractClaims(token, ta)
+	if err != nil {
+		return nil, err
+	}
+
+	ec.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
+	if err != nil {
+		return nil, err
+	}
+
+	ec.SoftwareId = extracted.SoftwareID
+
 	endorsements, err := o.EnStore.Get(ec.SoftwareId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
+		return nil, err
+	}
+
+	if err = scheme.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
+		// TODO(setrofim): we should distinguish between validation
+		// failing due to bad signature vs actual error here, and only
+		// return actual err. Bad sig should be reported as a failure
+		// in attestation result, rather than an error in the
+		// attestation call.
 		return nil, err
 	}
 
@@ -245,7 +271,7 @@ func (o *GRPC) GetAttestation(
 	return attestContext, err
 }
 
-func (c *GRPC) extractEvidence(
+func (c *GRPC) initEvidenceContext(
 	scheme scheme.IScheme,
 	token *proto.AttestationToken,
 ) (*proto.EvidenceContext, error) {
@@ -261,28 +287,20 @@ func (c *GRPC) extractEvidence(
 		return nil, err
 	}
 
-	trustAnchor, err := c.TaStore.Get(ec.TrustAnchorId)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(trustAnchor) != 1 {
-		return nil, fmt.Errorf("found %d trust anchors, want 1", len(trustAnchor))
-	}
-
-	extracted, err := scheme.ExtractVerifiedClaims(token, trustAnchor[0])
-	if err != nil {
-		return nil, err
-	}
-
-	ec.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
-	if err != nil {
-		return nil, err
-	}
-
-	ec.SoftwareId = extracted.SoftwareID
-
 	return ec, nil
+}
+
+func (c *GRPC) getTrustAnchor(id string) (string, error) {
+	values, err := c.TaStore.Get(id)
+	if err != nil {
+		return "", err
+	}
+
+	if len(values) != 1 {
+		return "", fmt.Errorf("found %d trust anchors, want 1", len(values))
+	}
+
+	return values[0], nil
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
