@@ -4,6 +4,6 @@
 SUBDIR := api
 SUBDIR += verifier
 SUBDIR += sessionmanager
-SUBDIR += cmd
+SUBDIR += cmd/verification-service
 
 include ../mk/subdir.mk
