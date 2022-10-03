@@ -1,0 +1,17 @@
+plugin:
+  backend: {{ "go-plugin" }}
+  go-plugin:
+    folder: {{  "../../plugins/bin/" | env_override('PLUGIN_DIR') }}
+{% set stores = ['ta-store', 'en-store', 'po-store'] %}
+
+{% for store in stores %}
+{{ store }}: 
+  backend: {{ "sql" }}
+  sql:
+    driver: {{ "sqlite3" }}
+    datasource: {{ store ~ '.sql' }}
+{% endfor %}
+po-agent:
+  backend: {{ "opa" }}
+vts:
+  server-addr: {{ "127.0.0.1:50051" }}
