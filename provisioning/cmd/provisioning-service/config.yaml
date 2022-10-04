@@ -1,5 +1,5 @@
 provisioning:
-  plugin-dir: ../plugins/bin/
+  plugin-dir: ../../plugins/bin/
   listen-addr: localhost:8888
 vts-grpc:
   vts-server:

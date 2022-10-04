@@ -16,13 +16,20 @@ import (
 	"github.com/veraison/services/vtsclient"
 )
 
-// TODO(tho) make these configurable
 var (
-	DefaultPluginDir  = "../plugins/bin/"
+	DefaultPluginDir  = "../../plugins/bin/"
 	DefaultListenAddr = "localhost:8888"
 )
 
-func initConfig() (*viper.Viper, error) {
+type config struct {
+	Provisioning struct {
+		PluginDir  string `mapstructure:"plugin-dir"`
+		ListenAddr string `mapstructure:"listen-addr"`
+	}
+	VtsGRPC *viper.Viper
+}
+
+func initConfig() (*config, error) {
 	v := viper.New()
 
 	v.SetConfigType("yaml")
@@ -38,28 +45,33 @@ func initConfig() (*viper.Viper, error) {
 		return nil, err
 	}
 
-	cfg := v.Sub("provisioning")
-	if cfg == nil {
-		return nil, errors.New(`"provisioning" section not found in config`)
+	v.SetDefault("provisioning.plugin-dir", DefaultPluginDir)
+	v.SetDefault("provisioning.listen-addr", DefaultListenAddr)
+
+	var cfg config
+
+	if err = v.UnmarshalKey("provisioning", &cfg.Provisioning); err != nil {
+		return nil, err
 	}
 
-	cfg.SetDefault("plugin-dir", DefaultPluginDir)
-	cfg.SetDefault("list-addr", DefaultListenAddr)
+	if cfg.VtsGRPC = v.Sub("vts-grpc"); cfg.VtsGRPC == nil {
+		return nil, errors.New(`"vts-grpc" section not found in config.`)
+	}
 
-	return cfg, nil
+	return &cfg, nil
 }
 
 func main() {
 	cfg, err := initConfig()
 	if err != nil {
-		log.Fatalf("could not read config: %v", err)
+		log.Fatalf("could not load config: %v", err)
 	}
 
-	pluginDir := cfg.GetString("plugin-dir")
-	listenAddr := cfg.GetString("list-addr")
+	pluginDir := cfg.Provisioning.PluginDir
+	listenAddr := cfg.Provisioning.ListenAddr
 
 	pluginManager := NewGoPluginManager(pluginDir)
-	vtsClient := vtsclient.NewGRPC(cfg.Sub("vts-grpc"))
+	vtsClient := vtsclient.NewGRPC(cfg.VtsGRPC)
 	apiHandler := api.NewHandler(pluginManager, vtsClient)
 	go apiServer(apiHandler, listenAddr)
 
