@@ -7,13 +7,43 @@ import (
 
 	"github.com/setrofim/viper"
 	"github.com/spf13/cobra"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/policy"
 )
 
-var store *policy.Store
+var (
+	rawConfig        *viper.Viper
+	store            *policy.Store
+	storeDsnFromFlag string
+
+	storeDefaults = map[string]string{
+		"backend":        "sql",
+		"sql.driver":     "sqlite3",
+		"sql.datasource": "po-store.sql",
+	}
+)
+
+func init() {
+	cobra.OnInitialize(initConfig)
+}
+
+func initConfig() {
+	var err error
+	rawConfig, err = config.ReadRawConfig(cfgFile, true)
+	cobra.CheckErr(err)
+}
 
 func initPolicyStore(cmd *cobra.Command, args []string) error {
-	cfg := viper.Sub("po-store")
+	cfg := rawConfig.Sub("po-store")
+	for k, v := range storeDefaults {
+		cfg.SetDefault(k, v)
+	}
+
+	// if store location has been specified with --store flag, set it as
+	// the datasource for the selected backend.
+	if storeDsnFromFlag != "" {
+		cfg.Set(fmt.Sprintf("%s.datasource", cfg.GetString("backend")), storeDsnFromFlag)
+	}
 
 	var err error
 

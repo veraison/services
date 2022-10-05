@@ -6,41 +6,75 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )
 
+type cfg struct {
+	Backend        string
+	BackendConfigs map[string]interface{} `mapstructure:",remain"`
+}
+
+func (o cfg) Validate() error {
+	supportedBackends := map[string]bool{
+		"go-plugin": true,
+	}
+
+	var unexpected []string
+	for k := range o.BackendConfigs {
+		if _, ok := supportedBackends[k]; !ok {
+			unexpected = append(unexpected, k)
+		}
+	}
+
+	if len(unexpected) > 0 {
+		sort.Strings(unexpected)
+		return fmt.Errorf("unexpected directives: %s", strings.Join(unexpected, ", "))
+	}
+
+	return nil
+}
+
+type backendCfg struct {
+	Folder string
+}
+
 type GoPluginManager struct {
-	Config        *viper.Viper
+	Backend       string
 	DispatchTable map[string]*scheme.SchemeGoPlugin
 }
 
-func New(v *viper.Viper) *GoPluginManager {
-	return &GoPluginManager{
-		Config: v,
-	}
+func New() *GoPluginManager {
+	return &GoPluginManager{}
 }
 
 // variables read from the config store:
 //   * "go-plugin.folder"
-func (o *GoPluginManager) Init() error {
-	defaultBackend := "go-plugin"
-	o.Config.SetDefault("backend", defaultBackend)
-
-	backend := o.Config.GetString("backend")
-	if backend != defaultBackend {
-		return fmt.Errorf("want backend %s, got %s", defaultBackend, backend)
+func (o *GoPluginManager) Init(v *viper.Viper) error {
+	cfg := cfg{Backend: "go-plugin"}
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
 	}
 
-	dir := o.Config.GetString("go-plugin.folder")
-	if dir == "" {
-		return fmt.Errorf(`"go-pluing.folder" not specified`)
+	subs, err := config.GetSubs(v, "go-plugin")
+	if err != nil {
+		return err
 	}
 
-	pPaths, err := plugin.Discover("*", dir)
+	var backendCfg backendCfg
+	loader = config.NewLoader(&backendCfg)
+	if err := loader.LoadFromViper(subs["go-plugin"]); err != nil {
+		return err
+	}
+
+	pPaths, err := plugin.Discover("*", backendCfg.Folder)
 	if err != nil {
 		return err
 	}

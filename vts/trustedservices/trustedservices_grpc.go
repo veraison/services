@@ -11,6 +11,11 @@ import (
 	"net"
 
 	"github.com/setrofim/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
@@ -26,8 +31,24 @@ import (
 // should be passed as a parameter
 const DummyTenantID = "0"
 
+// Supported parameters:
+// * vts.server-addr: string w/ syntax specified in
+//   https://github.com/grpc/grpc/blob/master/doc/naming.md
+//
+// * TODO(tho) load balancing config
+//   See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
+//
+// * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
+type GRPCConfig struct {
+	ServerAddress string `mapstructure:"server-addr" valid:"dialstring"`
+}
+
+func NewGRPCConfig() *GRPCConfig {
+	return &GRPCConfig{ServerAddress: DefaultVTSAddr}
+}
+
 type GRPC struct {
-	Config *viper.Viper
+	ServerAddress string
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
@@ -41,13 +62,11 @@ type GRPC struct {
 }
 
 func NewGRPC(
-	cfg *viper.Viper,
 	taStore, enStore kvstore.IKVStore,
 	pluginManager pluginmanager.ISchemePluginManager,
 	policyManager *policymanager.PolicyManager,
 ) ITrustedServices {
 	return &GRPC{
-		Config:        cfg,
 		TaStore:       taStore,
 		EnStore:       enStore,
 		PluginManager: pluginManager,
@@ -63,11 +82,17 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init() error {
-	o.Config.SetDefault("server.addr", DefaultVTSAddr)
-	addr := o.Config.GetString("server.addr")
+func (o *GRPC) Init(v *viper.Viper) error {
+	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
 
-	lsd, err := net.Listen("tcp", addr)
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
+	}
+
+	o.ServerAddress = cfg.ServerAddress
+
+	lsd, err := net.Listen("tcp", o.ServerAddress)
 	if err != nil {
 		return fmt.Errorf("listening socket initialisation failed: %w", err)
 	}

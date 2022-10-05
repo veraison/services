@@ -23,7 +23,7 @@ func TestKVStore_New_missing_backend_directive(t *testing.T) {
 
 	m, err := New(cfg)
 
-	expectedErr := `"backend" not set in config`
+	expectedErr := "directives not found: Backend"
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)
@@ -36,6 +36,21 @@ func TestKVStore_New_unsupported_backend(t *testing.T) {
 	m, err := New(cfg)
 
 	expectedErr := `backend "xyz" is not supported`
+
+	assert.EqualError(t, err, expectedErr)
+	assert.Nil(t, m)
+}
+
+func TestKVStore_New_unexpected_directives(t *testing.T) {
+	cfg := viper.New()
+
+	cfg.Set("backend", "sql")
+	cfg.Set("sql.driver", "sqlite3")
+	cfg.Set("slq.tablename", "endorsement") // typo in backend name
+	cfg.Set("value-type", "string")
+
+	m, err := New(cfg)
+	expectedErr := `unexpected directives: slq, value-type`
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)
@@ -60,7 +75,7 @@ func TestKVStore_New_SQL_backend_failed_init(t *testing.T) {
 
 	m, err := New(cfg)
 
-	expectedErr := `"sql.driver" directive not found`
+	expectedErr := "sql: directives not found: driver"
 
 	assert.EqualError(t, err, expectedErr)
 	assert.Nil(t, m)

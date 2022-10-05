@@ -11,13 +11,11 @@ import (
 )
 
 type Verifier struct {
-	Config    *viper.Viper
 	VTSClient vtsclient.IVTSClient
 }
 
 func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IVerifier {
 	return &Verifier{
-		Config:    v,
 		VTSClient: vtsClient,
 	}
 }

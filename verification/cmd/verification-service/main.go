@@ -1,11 +1,9 @@
 package main
 
 import (
-	"errors"
 	"log"
-	"os"
 
-	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
@@ -13,38 +11,42 @@ import (
 )
 
 var (
-	ListenAddr = "localhost:8080"
+	DefaultListenAddr = "localhost:8080"
 )
 
+type cfg struct {
+	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
+}
+
 func main() {
-
-	VTSClientCfg := viper.New()
-	VTSClientCfg.SetDefault("vts-server.addr", "dns:127.0.0.1:50051")
-
-	wd, err := os.Getwd()
+	v, err := config.ReadRawConfig("", true)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read config: %v", err)
 	}
 
-	VTSClientCfg.AddConfigPath(wd)
-	VTSClientCfg.SetConfigType("yaml")
-	VTSClientCfg.SetConfigName("config")
-
-	err = VTSClientCfg.ReadInConfig()
-	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
-		// If there is no config file, use the defaults set above.
-		err = nil
-	}
-
+	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read config: %v", err)
 	}
 
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
-	vtsClient := vtsclient.NewGRPC(VTSClientCfg)
-	verifier := verifier.New(viper.New(), vtsClient)
+
+	vtsClient := vtsclient.NewGRPC()
+	if err := vtsClient.Init(subs["vts"]); err != nil {
+		log.Fatalf("Could not initialize VTS client: %v", err)
+	}
+
+	verifier := verifier.New(subs["verifier"], vtsClient)
 	apiHandler := api.NewHandler(sessionManager, verifier)
-	apiServer(apiHandler, ListenAddr)
+
+	cfg := cfg{ListenAddr: DefaultListenAddr}
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(subs["verification"]); err != nil {
+		log.Fatalf("Could not load verfication config: %v", err)
+
+	}
+
+	apiServer(apiHandler, cfg.ListenAddr)
 }
 
 func apiServer(apiHandler api.IHandler, listenAddr string) {

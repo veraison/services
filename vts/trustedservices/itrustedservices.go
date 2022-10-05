@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
-import "github.com/veraison/services/proto"
+import (
+	"github.com/setrofim/viper"
+	"github.com/veraison/services/proto"
+)
 
 // MediaTypeMap maintains the association between the media types supported by
 // the active plugins and the attestation scheme they implement.
@@ -11,7 +14,7 @@ import "github.com/veraison/services/proto"
 type MediaTypeMap map[string]proto.AttestationFormat
 
 type ITrustedServices interface {
-	Init() error
+	Init(cfg *viper.Viper) error
 	Close() error
 	Run() error
 

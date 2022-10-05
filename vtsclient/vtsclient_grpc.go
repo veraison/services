@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"
@@ -18,28 +19,33 @@ var (
 	ErrNoClient = errors.New("there is no active gRPC VTS client")
 )
 
-// Supported parameters:
-// * vts-server.addr: string w/ syntax specified in
-//   https://github.com/grpc/grpc/blob/master/doc/naming.md
-//
-// * TODO(tho) load balancing config
-//   See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
-// * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
-
 type GRPC struct {
-	Config     *viper.Viper
-	Connection *grpc.ClientConn
+	ServerAddress string
+	Connection    *grpc.ClientConn
 }
 
 // NewGRPC instantiate a new gRPC store client with the supplied configuration
-func NewGRPC(v *viper.Viper) *GRPC {
-	return &GRPC{
-		Config: v,
-	}
+func NewGRPC() *GRPC {
+	return &GRPC{}
 }
 
-func (o *GRPC) AddSwComponents(ctx context.Context, in *proto.AddSwComponentsRequest, opts ...grpc.CallOption,
+func (o *GRPC) Init(v *viper.Viper) error {
+	cfg := trustedservices.NewGRPCConfig()
+
+	loader := config.NewLoader(cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
+	}
+
+	o.ServerAddress = cfg.ServerAddress
+
+	return nil
+}
+
+func (o *GRPC) AddSwComponents(
+	ctx context.Context,
+	in *proto.AddSwComponentsRequest,
+	opts ...grpc.CallOption,
 ) (*proto.AddSwComponentsResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
 		return nil, fmt.Errorf("failed AddSwComponents: %w", err)
@@ -53,7 +59,10 @@ func (o *GRPC) AddSwComponents(ctx context.Context, in *proto.AddSwComponentsReq
 	return c.AddSwComponents(ctx, in, opts...)
 }
 
-func (o *GRPC) AddTrustAnchor(ctx context.Context, in *proto.AddTrustAnchorRequest, opts ...grpc.CallOption,
+func (o *GRPC) AddTrustAnchor(
+	ctx context.Context,
+	in *proto.AddTrustAnchorRequest,
+	opts ...grpc.CallOption,
 ) (*proto.AddTrustAnchorResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
 		return nil, fmt.Errorf("failed AddTrustAnchor: %w", err)
@@ -115,18 +124,12 @@ func (o *GRPC) EnsureConnection() error {
 		grpc.WithBlock(),
 	}
 
-	defaultVTSAddr := "dns:" + trustedservices.DefaultVTSAddr
-
-	o.Config.SetDefault("vts-server.addr", defaultVTSAddr)
-
-	storeServerAddr := o.Config.GetString("vts-server.addr")
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctx, storeServerAddr, opts...)
+	conn, err := grpc.DialContext(ctx, o.ServerAddress, opts...)
 	if err != nil {
-		return fmt.Errorf("connection to gRPC VTS server %s failed: %w", storeServerAddr, err)
+		return fmt.Errorf("connection to gRPC VTS server %s failed: %w", o.ServerAddress, err)
 	}
 
 	o.Connection = conn

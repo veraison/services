@@ -9,6 +9,7 @@ import (
 	"regexp"
 
 	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 )
 
 var (
@@ -23,32 +24,16 @@ func isSafeTblName(s string) bool {
 	return safeTblNameRe.MatchString(s)
 }
 
-type cfg struct {
-	TableName      string                 `mapstructure:"tablename"`
-	DriverName     string                 `mapstructure:"driver"`
-	DataSourceName string                 `mapstructure:"datasource"`
-	Other          map[string]interface{} `mapstructure:",remain"`
+type sqlConfig struct {
+	TableName      string `mapstructure:"tablename"`
+	DriverName     string `mapstructure:"driver"`
+	DataSourceName string `mapstructure:"datasource"`
 }
 
-func (o *cfg) Validate() error {
+func (o *sqlConfig) Validate() error {
 	if !isSafeTblName(o.TableName) {
 		return fmt.Errorf("unsafe table name: %q (MUST match %s)",
 			o.TableName, safeTblNameRe)
-	}
-
-	if o.DriverName == "" {
-		return errors.New("\"sql.driver\" directive not found")
-	}
-
-	if o.DataSourceName == "" {
-		return errors.New("\"sql.datasource\" directive not found")
-	}
-
-	if o.Other != nil {
-		// Print the textual representation of the map with the "map[]"
-		// stripped, resulting a list of "<key>:<value>" entries.
-		other := fmt.Sprintf("%v", o.Other)
-		return fmt.Errorf(`unexpected "sql" directive(s): %v`, other[4:len(other)-1])
 	}
 
 	return nil
@@ -69,15 +54,13 @@ type SQL struct {
 // "sql.datasource" -  The name of the data source to use. Valid values are
 //                     driver-specific (defaults to "db=veraison.sql".
 func (o *SQL) Init(v *viper.Viper) error {
-	var cfg cfg
-
-	v.SetDefault("sql.tablename", DefaultTableName)
-	if err := v.UnmarshalKey("sql", &cfg); err != nil {
-		return err
+	cfg := sqlConfig{
+		TableName: DefaultTableName,
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return err
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v.Sub("sql")); err != nil {
+		return fmt.Errorf("sql: %w", err)
 	}
 
 	o.TableName = cfg.TableName

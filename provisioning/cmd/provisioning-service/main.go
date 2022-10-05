@@ -4,13 +4,13 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
@@ -21,59 +21,49 @@ var (
 	DefaultListenAddr = "localhost:8888"
 )
 
-type config struct {
-	Provisioning struct {
-		PluginDir  string `mapstructure:"plugin-dir"`
-		ListenAddr string `mapstructure:"listen-addr"`
-	}
-	VtsGRPC *viper.Viper
+type cfg struct {
+	PluginDir  string `mapstructure:"plugin-dir"`
+	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
 }
 
-func initConfig() (*config, error) {
-	v := viper.New()
-
-	v.SetConfigType("yaml")
-	v.SetConfigName("config")
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	v.AddConfigPath(wd)
-
-	if err := v.ReadInConfig(); err != nil {
-		return nil, err
+func (o cfg) Validate() error {
+	if _, err := os.Stat(o.PluginDir); err != nil {
+		return fmt.Errorf("could not stat PluginDir: %w", err)
 	}
 
-	v.SetDefault("provisioning.plugin-dir", DefaultPluginDir)
-	v.SetDefault("provisioning.listen-addr", DefaultListenAddr)
-
-	var cfg config
-
-	if err = v.UnmarshalKey("provisioning", &cfg.Provisioning); err != nil {
-		return nil, err
-	}
-
-	if cfg.VtsGRPC = v.Sub("vts-grpc"); cfg.VtsGRPC == nil {
-		return nil, errors.New(`"vts-grpc" section not found in config.`)
-	}
-
-	return &cfg, nil
+	return nil
 }
 
 func main() {
-	cfg, err := initConfig()
+	v, err := config.ReadRawConfig("", false)
 	if err != nil {
-		log.Fatalf("could not load config: %v", err)
+		log.Fatalf("Could not read config sources: %v", err)
 	}
 
-	pluginDir := cfg.Provisioning.PluginDir
-	listenAddr := cfg.Provisioning.ListenAddr
+	cfg := cfg{
+		PluginDir:  DefaultPluginDir,
+		ListenAddr: DefaultListenAddr,
+	}
 
-	pluginManager := NewGoPluginManager(pluginDir)
-	vtsClient := vtsclient.NewGRPC(cfg.VtsGRPC)
+	subs, err := config.GetSubs(v, "provisioning", "*vts")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	loader := config.NewLoader(&cfg)
+	if err = loader.LoadFromViper(subs["provisioning"]); err != nil {
+		log.Fatalf("Could not load config: %v", err)
+	}
+
+	pluginManager := NewGoPluginManager(cfg.PluginDir)
+
+	vtsClient := vtsclient.NewGRPC()
+	if err := vtsClient.Init(subs["vts"]); err != nil {
+		log.Fatalf("Could not initilize VTS client: %v", err)
+	}
+
 	apiHandler := api.NewHandler(pluginManager, vtsClient)
-	go apiServer(apiHandler, listenAddr)
+	go apiServer(apiHandler, cfg.ListenAddr)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

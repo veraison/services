@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 )
 
@@ -15,19 +16,30 @@ var ErrBadResult = "could not create updated AttestationResult: %w from JSON %s"
 var ErrNoStatus = "backend returned outcome with no status field: %v"
 var ErrNoTV = "backend returned no trust-vector field, or its not a map[string]interface{}: %v"
 
+type cfg struct {
+	Backend string
+}
+
+func (o cfg) Validate() error {
+	if _, ok := backends[o.Backend]; !ok {
+		return fmt.Errorf("backend %q is not supported", o.Backend)
+	}
+
+	return nil
+}
+
 // CreateAgent creates a new PolicyAgent using the backend specified in the
 // config with "policy.backend" directive. If this directive is absent, the
 // default backend, "opa",  will be used.
 func CreateAgent(v *viper.Viper) (IAgent, error) {
-	v.SetDefault("backend", DefaultBackend)
-	backendName := v.GetString("backend")
+	cfg := cfg{Backend: DefaultBackend}
 
-	backend, ok := backends[backendName]
-	if !ok {
-		return nil, fmt.Errorf("backend %q is not supported", backendName)
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return nil, err
 	}
 
-	return &Agent{Backend: backend}, nil
+	return &Agent{Backend: backends[cfg.Backend]}, nil
 }
 
 type Agent struct {
