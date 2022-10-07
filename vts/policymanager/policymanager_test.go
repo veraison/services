@@ -79,7 +79,7 @@ func TestPolicyMgr_New_policyAgent_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	v := viper.New()
-	v.Set(policy.DirectiveBackend, "opa")
+	v.Set("backend", "opa")
 
 	_, err := New(v, &policy.Store{KVStore: store})
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestPolicyMgr_New_policyAgent_NOK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	v := viper.New()
-	v.Set(policy.DirectiveBackend, "nope")
+	v.Set("backend", "nope")
 
 	_, err := New(v, &policy.Store{KVStore: store})
 	assert.EqualError(t, err, `backend "nope" is not supported`)

@@ -139,47 +139,15 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 	), nil
 }
 
-func (s Scheme) ExtractVerifiedClaims(
+func (s Scheme) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchor string,
 ) (*scheme.ExtractedClaims, error) {
-	var endorsement TaEndorsements
-
-	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Println("Could not decode Endorsements in ExtractVerifiedClaims")
-		return nil, fmt.Errorf("could not decode endorsement at %w", err)
-	}
-	ta := *endorsement.Attr.VerifKey
-	block, rest := pem.Decode([]byte(ta))
-
-	if block == nil {
-		log.Println("Could not get TA PEM Block ExtractVerifiedClaims")
-		return nil, errors.New("could not extract trust anchor PEM block")
-	}
-
-	if len(rest) != 0 {
-		return nil, errors.New("trailing data found after PEM block")
-	}
-
-	if block.Type != "PUBLIC KEY" {
-		return nil, fmt.Errorf("unsupported key type %q", block.Type)
-	}
-
-	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
 	var psaToken psatoken.Evidence
 
-	if err = psaToken.FromCOSE(token.Data); err != nil {
+	if err := psaToken.FromCOSE(token.Data); err != nil {
 		return nil, err
 	}
-
-	if err = psaToken.Verify(pk); err != nil {
-		return nil, err
-	}
-	log.Println("\n Token Signature Verified")
 
 	var extracted scheme.ExtractedClaims
 
@@ -195,6 +163,51 @@ func (s Scheme) ExtractVerifiedClaims(
 	)
 	log.Printf("\n Extracted SW ID Key = %s", extracted.SoftwareID)
 	return &extracted, nil
+}
+
+func (s Scheme) ValidateEvidenceIntegrity(
+	token *proto.AttestationToken,
+	trustAnchor string,
+	endorsementsStrings []string,
+) error {
+	var endorsement TaEndorsements
+
+	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
+		log.Println("Could not decode Endorsements in ExtractVerifiedClaims")
+		return fmt.Errorf("could not decode endorsement: %w", err)
+	}
+	ta := *endorsement.Attr.VerifKey
+	block, rest := pem.Decode([]byte(ta))
+
+	if block == nil {
+		log.Println("Could not get TA PEM Block ExtractVerifiedClaims")
+		return errors.New("could not extract trust anchor PEM block")
+	}
+
+	if len(rest) != 0 {
+		return errors.New("trailing data found after PEM block")
+	}
+
+	if block.Type != "PUBLIC KEY" {
+		return fmt.Errorf("unsupported key type %q", block.Type)
+	}
+
+	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+
+	var psaToken psatoken.Evidence
+
+	if err = psaToken.FromCOSE(token.Data); err != nil {
+		return err
+	}
+
+	if err = psaToken.Verify(pk); err != nil {
+		return err
+	}
+	log.Println("\n Token Signature Verified")
+	return nil
 }
 
 func (s Scheme) AppraiseEvidence(

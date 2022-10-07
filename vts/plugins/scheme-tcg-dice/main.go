@@ -47,7 +47,10 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 	return nil, errors.New("TODO")
 }
 
-func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor string) (*scheme.ExtractedClaims, error) {
+func (s Scheme) ExtractClaims(
+	token *proto.AttestationToken,
+	trustAnchor string,
+) (*scheme.ExtractedClaims, error) {
 	roots := x509.NewCertPool()
 	intermediates := x509.NewCertPool()
 
@@ -85,7 +88,19 @@ func (s Scheme) ExtractVerifiedClaims(token *proto.AttestationToken, trustAnchor
 	return &extracted, err
 }
 
-func (s Scheme) AppraiseEvidence(ec *proto.EvidenceContext, endorsementsString []string) (*proto.AppraisalContext, error) {
+func (s Scheme) ValidateEvidenceIntegrity(
+	token *proto.AttestationToken,
+	trustAnchor string,
+	endorsements []string,
+) error {
+	// Cert verified earlier when extracting claims -- see note inside ExtractClaims above.
+	return nil
+}
+
+func (s Scheme) AppraiseEvidence(
+	ec *proto.EvidenceContext,
+	endorsementsString []string,
+) (*proto.AppraisalContext, error) {
 	ac := proto.NewAppraisalContext(ec)
 
 	// If we got this far, this means the cert chain has been verfied, and

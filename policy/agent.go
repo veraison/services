@@ -20,7 +20,7 @@ var ErrNoTV = "backend returned no trust-vector field, or its not a map[string]i
 // default backend, "opa",  will be used.
 func CreateAgent(v *viper.Viper) (IAgent, error) {
 	v.SetDefault("backend", DefaultBackend)
-	backendName := v.GetString(DirectiveBackend)
+	backendName := v.GetString("backend")
 
 	backend, ok := backends[backendName]
 	if !ok {

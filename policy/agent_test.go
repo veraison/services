@@ -17,14 +17,14 @@ import (
 
 func Test_CreateAgent(t *testing.T) {
 	v := viper.New()
-	v.Set(DirectiveBackend, "opa")
+	v.Set("backend", "opa")
 
 	agent, err := CreateAgent(v)
 	require.Nil(t, err)
 
 	assert.Equal(t, "opa", agent.GetBackendName())
 
-	v.Set(DirectiveBackend, "nope")
+	v.Set("backend", "nope")
 
 	agent, err = CreateAgent(v)
 	assert.Nil(t, agent)

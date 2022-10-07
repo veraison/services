@@ -68,7 +68,7 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 	return tpmEnactTrustLookupKey(token.TenantId, nodeID.String()), nil
 }
 
-func (s Scheme) ExtractVerifiedClaims(
+func (s Scheme) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchor string,
 ) (*scheme.ExtractedClaims, error) {
@@ -83,15 +83,6 @@ func (s Scheme) ExtractVerifiedClaims(
 
 	if err := decoded.Decode(token.Data); err != nil {
 		return nil, fmt.Errorf("could not decode token: %w", err)
-	}
-
-	pubKey, err := parseKey(trustAnchor)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse trust anchor: %w", err)
-	}
-
-	if err = decoded.VerifySignature(pubKey); err != nil {
-		return nil, fmt.Errorf("could not verify token signature: %w", err)
 	}
 
 	if decoded.AttestationData.Type != tpm2.TagAttestQuote {
@@ -116,6 +107,29 @@ func (s Scheme) ExtractVerifiedClaims(
 	evidence.SoftwareID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
 
 	return evidence, nil
+}
+
+func (s Scheme) ValidateEvidenceIntegrity(
+	token *proto.AttestationToken,
+	trustAnchor string,
+	endorsements []string,
+) error {
+	var decoded Token
+
+	if err := decoded.Decode(token.Data); err != nil {
+		return fmt.Errorf("could not decode token: %w", err)
+	}
+
+	pubKey, err := parseKey(trustAnchor)
+	if err != nil {
+		return fmt.Errorf("could not parse trust anchor: %w", err)
+	}
+
+	if err = decoded.VerifySignature(pubKey); err != nil {
+		return fmt.Errorf("could not verify token signature: %w", err)
+	}
+
+	return nil
 }
 
 func initAppraisalContext(ec *proto.EvidenceContext) *proto.AppraisalContext {

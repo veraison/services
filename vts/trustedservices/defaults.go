@@ -3,5 +3,5 @@
 package trustedservices
 
 var (
-	DefaultVTSAddr = "127.0.0.1:12345"
+	DefaultVTSAddr = "127.0.0.1:50051"
 )
