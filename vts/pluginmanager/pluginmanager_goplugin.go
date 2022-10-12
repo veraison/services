@@ -5,7 +5,6 @@ package pluginmanager
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
+	"go.uber.org/zap"
 )
 
 type cfg struct {
@@ -48,10 +48,12 @@ type backendCfg struct {
 type GoPluginManager struct {
 	Backend       string
 	DispatchTable map[string]*scheme.SchemeGoPlugin
+
+	logger *zap.SugaredLogger
 }
 
-func New() *GoPluginManager {
-	return &GoPluginManager{}
+func New(logger *zap.SugaredLogger) *GoPluginManager {
+	return &GoPluginManager{logger: logger}
 }
 
 // variables read from the config store:
@@ -74,6 +76,7 @@ func (o *GoPluginManager) Init(v *viper.Viper) error {
 		return err
 	}
 
+	o.logger.Debugw("discovering plugins", "location", backendCfg.Folder)
 	pPaths, err := plugin.Discover("*", backendCfg.Folder)
 	if err != nil {
 		return err
@@ -82,7 +85,7 @@ func (o *GoPluginManager) Init(v *viper.Viper) error {
 	tbl := make(map[string]*scheme.SchemeGoPlugin)
 
 	for _, p := range pPaths {
-		ctx, err := scheme.NewSchemeGoPlugin(p)
+		ctx, err := scheme.NewSchemeGoPlugin(p, o.logger)
 		if err != nil {
 			return err
 		}
@@ -92,9 +95,17 @@ func (o *GoPluginManager) Init(v *viper.Viper) error {
 			// advertised by another plugin.  Should raise fatal error if this
 			// is the case.
 			tbl[mt] = ctx
+			o.logger.Infow("media type registred", "media-type", mt)
 		}
 	}
 
+	if len(tbl) > 0 {
+		o.logger.Infof("found scheme plugins for %d media types", len(tbl))
+	} else {
+		o.logger.Warn("did not find any scheme plugins")
+	}
+
+	o.logger.Debugw("loaded scheme plugins", "dispatch-table", tbl)
 	o.DispatchTable = tbl
 
 	return nil
@@ -102,7 +113,7 @@ func (o *GoPluginManager) Init(v *viper.Viper) error {
 func (o *GoPluginManager) Close() error {
 	for _, v := range o.DispatchTable {
 		if v.Client != nil {
-			log.Printf("killing client %s", v.Name)
+			o.logger.Debugf("killing client %s", v.Name)
 			v.Client.Kill()
 		}
 	}

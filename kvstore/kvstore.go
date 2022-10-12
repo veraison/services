@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
+	"go.uber.org/zap"
 )
 
 type cfg struct {
@@ -37,7 +38,7 @@ func (o cfg) Validate() error {
 	return nil
 }
 
-func New(v *viper.Viper) (IKVStore, error) {
+func New(v *viper.Viper, logger *zap.SugaredLogger) (IKVStore, error) {
 	var cfg cfg
 
 	loader := config.NewLoader(&cfg)
@@ -56,7 +57,7 @@ func New(v *viper.Viper) (IKVStore, error) {
 		return nil, fmt.Errorf("backend %q is not supported", cfg.Backend)
 	}
 
-	if err := s.Init(v); err != nil {
+	if err := s.Init(v, logger); err != nil {
 		return nil, err
 	}
 

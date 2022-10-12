@@ -9,23 +9,25 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/kvstore"
+	"go.uber.org/zap"
 )
 
 var ErrNoPolicy = errors.New("no policy found")
 
 // NewStore returns a new policy store. Config options are the same as those
 // used for kvstore.New().
-func NewStore(v *viper.Viper) (*Store, error) {
-	kvStore, err := kvstore.New(v)
+func NewStore(v *viper.Viper, logger *zap.SugaredLogger) (*Store, error) {
+	kvStore, err := kvstore.New(v, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{KVStore: kvStore}, nil
+	return &Store{KVStore: kvStore, Logger: logger}, nil
 }
 
 type Store struct {
 	KVStore kvstore.IKVStore
+	Logger  *zap.SugaredLogger
 }
 
 // Setup the underyling kvstore. This is a one-time setup that only needs to be

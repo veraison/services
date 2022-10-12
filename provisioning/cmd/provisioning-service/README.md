@@ -5,6 +5,7 @@ configuration:
 
 - `provisoning`: provisioning service configuration. See [below](#provisioning-service-configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
+- `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 
 ### Provisioning service configuration
 

@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/log"
 )
 
 func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
@@ -26,7 +27,7 @@ func TestSQL_Init_invalid_type_for_store_table(t *testing.T) {
 
 	expectedErr := `sql: unsafe table name: "-1" (MUST match ^[a-zA-Z0-9_]+$)`
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -39,7 +40,7 @@ func TestSQL_Init_missing_driver_name(t *testing.T) {
 
 	expectedErr := "sql: directives not found: driver"
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -55,7 +56,7 @@ func TestSQL_Init_bad_tablename(t *testing.T) {
 
 	expectedErr := fmt.Sprintf("sql: unsafe table name: %q (MUST match %s)", attemptedInjection, safeTblNameRe)
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -68,7 +69,7 @@ func TestSQL_Init_missing_datasource_name(t *testing.T) {
 
 	expectedErr := "sql: directives not found: datasource"
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -83,7 +84,7 @@ func TestSQL_Init_extra_params(t *testing.T) {
 
 	expectedErr := "sql: unexpected directives: unexpected"
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -98,7 +99,7 @@ func TestSQL_Init_db_open_unknown_driver_postgres(t *testing.T) {
 
 	expectedErr := `sql: unknown driver "postgres" (forgotten import?)`
 
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -506,7 +507,7 @@ func TestSQL_Setup(t *testing.T) {
 	cfg.Set("sql.tablename", "test")
 
 	s := SQL{}
-	err := s.Init(cfg)
+	err := s.Init(cfg, log.Named("test"))
 	require.NoError(t, err)
 	defer s.Close()
 

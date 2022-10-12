@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package decoder
 
+import "go.uber.org/zap"
+
 type IDecoderManager interface {
-	Init(dir string) error
+	Init(dir string, logger *zap.SugaredLogger) error
 	Close() error
 	Dispatch(mediaType string, data []byte) (*EndorsementDecoderResponse, error)
 	IsSupportedMediaType(mediaType string) bool

@@ -13,7 +13,7 @@ function deploy() {
     mkdir -p $DEPLOY_DIR/plugins
     mkdir -p $DEPLOY_DIR/stores
     mkdir -p $DEPLOY_DIR/plugins-provisioning
-
+    mkdir -p $DEPLOY_DIR/logs
     echo "deploying services"
     cp $REPO_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
     cp $REPO_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/

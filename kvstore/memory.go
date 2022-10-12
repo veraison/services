@@ -11,6 +11,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var (
@@ -19,12 +20,15 @@ var (
 
 type Memory struct {
 	Data map[string][]string
+
+	logger *zap.SugaredLogger
 }
 
 // Init initializes the KVStore. There are no configuration options for this
 // implementation.
-func (o *Memory) Init(unused *viper.Viper) error {
+func (o *Memory) Init(unused *viper.Viper, logger *zap.SugaredLogger) error {
 	o.Data = make(map[string][]string)
+	o.logger = logger
 
 	return nil
 }

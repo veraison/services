@@ -5,15 +5,16 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
+	"go.uber.org/zap"
 )
 
 var (
@@ -45,24 +46,33 @@ func main() {
 		ListenAddr: DefaultListenAddr,
 	}
 
-	subs, err := config.GetSubs(v, "provisioning", "*vts")
+	subs, err := config.GetSubs(v, "provisioning", "*vts", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	classifiers := map[string]interface{}{"service": "provisioning"}
+	if err := log.Init(subs["logging"], classifiers); err != nil {
+		log.Fatalf("could not configure logging: %v", err)
+	}
+	log.InitGinWriter() // route gin output to our logger.
 
 	loader := config.NewLoader(&cfg)
 	if err = loader.LoadFromViper(subs["provisioning"]); err != nil {
 		log.Fatalf("Could not load config: %v", err)
 	}
 
-	pluginManager := NewGoPluginManager(cfg.PluginDir)
+	log.Info("loading plugins")
+	pluginManager := NewGoPluginManager(cfg.PluginDir, log.Named("plugin"))
 
+	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()
 	if err := vtsClient.Init(subs["vts"]); err != nil {
 		log.Fatalf("Could not initilize VTS client: %v", err)
 	}
 
-	apiHandler := api.NewHandler(pluginManager, vtsClient)
+	log.Infow("initializing API service", "address", cfg.ListenAddr)
+	apiHandler := api.NewHandler(pluginManager, vtsClient, log.Named("api"))
 	go apiServer(apiHandler, cfg.ListenAddr)
 
 	sigs := make(chan os.Signal, 1)
@@ -70,7 +80,7 @@ func main() {
 	done := make(chan bool, 1)
 	go terminator(sigs, done, pluginManager)
 	<-done
-	log.Println("bye!")
+	log.Info("bye!")
 }
 
 func terminator(
@@ -80,11 +90,11 @@ func terminator(
 ) {
 	sig := <-sigs
 
-	log.Println(sig, "received, exiting")
+	log.Info(sig, "received, exiting")
 
-	log.Println("stopping the plugin manager")
+	log.Info("stopping the plugin manager")
 	if err := pluginManager.Close(); err != nil {
-		log.Println("plugin manager termination failed:", err)
+		log.Error("plugin manager termination failed:", err)
 	}
 
 	done <- true
@@ -96,11 +106,11 @@ func apiServer(apiHandler api.IHandler, listenAddr string) {
 	}
 }
 
-func NewGoPluginManager(dir string) decoder.IDecoderManager {
+func NewGoPluginManager(dir string, logger *zap.SugaredLogger) decoder.IDecoderManager {
 	mgr := &decoder.GoPluginDecoderManager{}
-	err := mgr.Init(dir)
+	err := mgr.Init(dir, logger)
 	if err != nil {
-		log.Fatalf("plugin initialisation failed: %v", err)
+		logger.Fatalf("plugin initialisation failed: %v", err)
 	}
 
 	return mgr

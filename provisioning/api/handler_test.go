@@ -16,6 +16,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/provisioning/api/mocks"
 	"github.com/veraison/services/provisioning/decoder"
@@ -91,7 +92,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusUnsupportedMediaType
 	expectedType := "application/problem+json"
@@ -136,7 +137,7 @@ func TestHandler_Submit_NoBody(t *testing.T) {
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusBadRequest
 	expectedType := "application/problem+json"
@@ -189,7 +190,7 @@ func TestHandler_Submit_DecodeFailure(t *testing.T) {
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -248,7 +249,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure1(t *testing.T) {
 		).
 		Return(nil, errors.New(storeError))
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -311,7 +312,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
 		).
 		Return(&testFailedTaRes, nil)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -385,7 +386,7 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 		).
 		Return(nil, errors.New(storeError))
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -460,7 +461,7 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 		).
 		Return(&testFailedSwCompRes, nil)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -533,7 +534,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 		).
 		Return(&testGoodSwCompRes, nil)
 
-	h := NewHandler(dm, sc)
+	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType

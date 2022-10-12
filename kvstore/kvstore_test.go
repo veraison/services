@@ -7,10 +7,11 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/log"
 )
 
 func TestKVStore_New_nil_config(t *testing.T) {
-	m, err := New(nil)
+	m, err := New(nil, log.Named("test"))
 
 	expectedErr := `nil configuration`
 
@@ -21,7 +22,7 @@ func TestKVStore_New_nil_config(t *testing.T) {
 func TestKVStore_New_missing_backend_directive(t *testing.T) {
 	cfg := viper.New()
 
-	m, err := New(cfg)
+	m, err := New(cfg, log.Named("test"))
 
 	expectedErr := "directives not found: Backend"
 
@@ -33,7 +34,7 @@ func TestKVStore_New_unsupported_backend(t *testing.T) {
 	cfg := viper.New()
 	cfg.Set("backend", "xyz")
 
-	m, err := New(cfg)
+	m, err := New(cfg, log.Named("test"))
 
 	expectedErr := `backend "xyz" is not supported`
 
@@ -49,7 +50,7 @@ func TestKVStore_New_unexpected_directives(t *testing.T) {
 	cfg.Set("slq.tablename", "endorsement") // typo in backend name
 	cfg.Set("value-type", "string")
 
-	m, err := New(cfg)
+	m, err := New(cfg, log.Named("test"))
 	expectedErr := `unexpected directives: slq, value-type`
 
 	assert.EqualError(t, err, expectedErr)
@@ -60,7 +61,7 @@ func TestKVStore_New_memory_backend_ok(t *testing.T) {
 	cfg := viper.New()
 	cfg.Set("backend", "memory")
 
-	m, err := New(cfg)
+	m, err := New(cfg, log.Named("test"))
 
 	assert.NoError(t, err)
 	assert.IsType(t, &Memory{}, m)
@@ -73,7 +74,7 @@ func TestKVStore_New_SQL_backend_failed_init(t *testing.T) {
 	cfg.Set("sql.datasource", "db.sql")
 	// no sql.driver
 
-	m, err := New(cfg)
+	m, err := New(cfg, log.Named("test"))
 
 	expectedErr := "sql: directives not found: driver"
 

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
+	"go.uber.org/zap"
 )
 
 var ErrBadResult = "could not create updated AttestationResult: %w from JSON %s"
@@ -31,7 +32,7 @@ func (o cfg) Validate() error {
 // CreateAgent creates a new PolicyAgent using the backend specified in the
 // config with "policy.backend" directive. If this directive is absent, the
 // default backend, "opa",  will be used.
-func CreateAgent(v *viper.Viper) (IAgent, error) {
+func CreateAgent(v *viper.Viper, logger *zap.SugaredLogger) (IAgent, error) {
 	cfg := cfg{Backend: DefaultBackend}
 
 	loader := config.NewLoader(&cfg)
@@ -39,11 +40,13 @@ func CreateAgent(v *viper.Viper) (IAgent, error) {
 		return nil, err
 	}
 
-	return &Agent{Backend: backends[cfg.Backend]}, nil
+	return &Agent{Backend: backends[cfg.Backend], logger: logger}, nil
 }
 
 type Agent struct {
 	Backend IBackend
+
+	logger *zap.SugaredLogger
 }
 
 func (o *Agent) Init(v *viper.Viper) error {
@@ -91,10 +94,7 @@ func (o *Agent) Evaluate(
 		return nil, fmt.Errorf("could not evaluate policy: %w", err)
 	}
 
-	// TODO(setrofim): at this stage, we have the opportunity to log or
-	// otherwise communicate/identify the changes to the AttestationResult
-	// made by policy, if we want each entry in the result to have a
-	// clearly-traceable origin.
+	o.logger.Debugw("policy evaluated", "policy-id", policy.ID, "updated", updatedByPolicy)
 
 	updatedStatus, ok := updatedByPolicy["status"]
 	if !ok {

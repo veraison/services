@@ -13,6 +13,7 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
+	"go.uber.org/zap"
 )
 
 type IHandler interface {
@@ -22,15 +23,19 @@ type IHandler interface {
 type Handler struct {
 	DecoderManager decoder.IDecoderManager
 	VTSClient      vtsclient.IVTSClient
+
+	logger *zap.SugaredLogger
 }
 
 func NewHandler(
 	dm decoder.IDecoderManager,
 	sc vtsclient.IVTSClient,
+	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
 		DecoderManager: dm,
 		VTSClient:      sc,
+		logger:         logger,
 	}
 }
 

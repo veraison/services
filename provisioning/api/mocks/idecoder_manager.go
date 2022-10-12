@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	decoder "github.com/veraison/services/provisioning/decoder"
+	zap "go.uber.org/zap"
 )
 
 // MockIDecoderManager is a mock of IDecoderManager interface.
@@ -64,17 +65,17 @@ func (mr *MockIDecoderManagerMockRecorder) Dispatch(mediaType, data interface{})
 }
 
 // Init mocks base method.
-func (m *MockIDecoderManager) Init(dir string) error {
+func (m *MockIDecoderManager) Init(dir string, logger *zap.SugaredLogger) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", dir)
+	ret := m.ctrl.Call(m, "Init", dir, logger)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockIDecoderManagerMockRecorder) Init(dir interface{}) *gomock.Call {
+func (mr *MockIDecoderManagerMockRecorder) Init(dir, logger interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIDecoderManager)(nil).Init), dir)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIDecoderManager)(nil).Init), dir, logger)
 }
 
 // IsSupportedMediaType mocks base method.

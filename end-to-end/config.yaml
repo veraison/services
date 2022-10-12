@@ -1,3 +1,7 @@
+logging:
+  output-paths:
+    - stdout
+    - logs/{{ .service }}-stdout.log
 provisioning:
   plugin-dir: ./plugins-provisioning/
   listen-addr: localhost:8888

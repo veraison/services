@@ -4,11 +4,12 @@ package decoder
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/veraison/services/log"
+	"go.uber.org/zap"
 )
 
 var handshakeConfig = plugin.HandshakeConfig{
@@ -24,11 +25,16 @@ var pluginMap = map[string]plugin.Plugin{
 
 type GoPluginDecoderManager struct {
 	DispatchTable map[string]*GoPluginDecoderContext
+
+	logger *zap.SugaredLogger
 }
 
-func (o *GoPluginDecoderManager) Init(dir string) error {
+func (o *GoPluginDecoderManager) Init(dir string, logger *zap.SugaredLogger) error {
+	o.logger = logger
+
 	// TODO(tho) might want to define a naming convention for endorsement
 	// decoder plugins
+	o.logger.Debugw("discovering plugins", "location", dir)
 	pPaths, err := plugin.Discover("*", dir)
 	if err != nil {
 		return err
@@ -38,7 +44,7 @@ func (o *GoPluginDecoderManager) Init(dir string) error {
 
 	for _, p := range pPaths {
 
-		ctx, err := NewGoPluginDecoderContext(p)
+		ctx, err := NewGoPluginDecoderContext(p, o.logger)
 		if err != nil {
 			return err
 		}
@@ -48,7 +54,14 @@ func (o *GoPluginDecoderManager) Init(dir string) error {
 			// advertised by another plugin.  Should raise fatal error if this
 			// is the case.
 			o.DispatchTable[mt] = ctx
+			o.logger.Infow("media type registred", "media-type", mt)
 		}
+	}
+
+	if len(o.DispatchTable) > 0 {
+		o.logger.Infof("found decoder plugins for %d media types", len(o.DispatchTable))
+	} else {
+		o.logger.Warn("did not find any decoder plugins")
 	}
 
 	return nil
@@ -57,7 +70,7 @@ func (o *GoPluginDecoderManager) Init(dir string) error {
 func (o GoPluginDecoderManager) Close() error {
 	for _, v := range o.DispatchTable {
 		if v.client != nil {
-			log.Printf("killing client %s", v.name)
+			o.logger.Debugw("killing client", "client", v.name)
 			v.client.Kill()
 		}
 	}
@@ -100,12 +113,16 @@ type GoPluginDecoderContext struct {
 	client              *plugin.Client
 }
 
-func NewGoPluginDecoderContext(path string) (*GoPluginDecoderContext, error) {
+func NewGoPluginDecoderContext(
+	path string,
+	logger *zap.SugaredLogger,
+) (*GoPluginDecoderContext, error) {
 	client := plugin.NewClient(
 		&plugin.ClientConfig{
 			HandshakeConfig: handshakeConfig,
 			Plugins:         pluginMap,
 			Cmd:             exec.Command(path),
+			Logger:          log.NewLogger(logger),
 		},
 	)
 

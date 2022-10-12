@@ -9,6 +9,7 @@ configuration:
 - `po-agent` (optional): policy agent configuration. See [policy config](/policy/README.md#Configuration).
 - `plugin`: plugin manager configuration. See [plugin config](/vts/pluginmanager/README.md#Configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
+- `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 
 ### Example
 

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/log"
 	mock_deps "github.com/veraison/services/policy/mocks"
 	"github.com/veraison/services/proto"
 )
@@ -19,14 +20,14 @@ func Test_CreateAgent(t *testing.T) {
 	v := viper.New()
 	v.Set("backend", "opa")
 
-	agent, err := CreateAgent(v)
+	agent, err := CreateAgent(v, log.Named("test"))
 	require.Nil(t, err)
 
 	assert.Equal(t, "opa", agent.GetBackendName())
 
 	v.Set("backend", "nope")
 
-	agent, err = CreateAgent(v)
+	agent, err = CreateAgent(v, log.Named("test"))
 	assert.Nil(t, agent)
 	assert.EqualError(t, err, `backend "nope" is not supported`)
 }
@@ -148,6 +149,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 	}
 	evidence := &proto.EvidenceContext{}
 
+	logger := log.Named("test")
+
 	for _, v := range vectors {
 		fmt.Printf("running %q\n", v.Name)
 
@@ -161,7 +164,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 			AnyTimes().
 			Return(v.ReturnResult, v.ReturnError)
 
-		agent := &Agent{Backend: backend}
+		agent := &Agent{Backend: backend, logger: logger}
 		res, err := agent.Evaluate(ctx, policy, result, evidence, endorsements)
 
 		if v.ExpectedError == "" {

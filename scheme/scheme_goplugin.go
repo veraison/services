@@ -7,6 +7,9 @@ import (
 	"os/exec"
 
 	"github.com/hashicorp/go-plugin"
+	"go.uber.org/zap"
+
+	"github.com/veraison/services/log"
 )
 
 var (
@@ -30,12 +33,13 @@ type SchemeGoPlugin struct {
 	Client              *plugin.Client
 }
 
-func NewSchemeGoPlugin(path string) (*SchemeGoPlugin, error) {
+func NewSchemeGoPlugin(path string, logger *zap.SugaredLogger) (*SchemeGoPlugin, error) {
 	client := plugin.NewClient(
 		&plugin.ClientConfig{
 			HandshakeConfig: handshakeConfig,
 			Plugins:         pluginMap,
 			Cmd:             exec.Command(path),
+			Logger:          log.NewLogger(logger),
 		},
 	)
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
+	"go.uber.org/zap"
 )
 
 var (
@@ -42,6 +43,8 @@ func (o *sqlConfig) Validate() error {
 type SQL struct {
 	TableName string
 	DB        *sql.DB
+
+	logger *zap.SugaredLogger
 }
 
 // Init initializes the KVStore. The config may contain the following values,
@@ -53,7 +56,9 @@ type SQL struct {
 //                "sqlite3").
 // "sql.datasource" -  The name of the data source to use. Valid values are
 //                     driver-specific (defaults to "db=veraison.sql".
-func (o *SQL) Init(v *viper.Viper) error {
+func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
+	o.logger = logger
+
 	cfg := sqlConfig{
 		TableName: DefaultTableName,
 	}
@@ -71,6 +76,8 @@ func (o *SQL) Init(v *viper.Viper) error {
 	}
 
 	o.DB = db
+	o.logger.Infow("store opened", "driver", cfg.DriverName,
+		"datasource", cfg.DataSourceName, "table", o.TableName)
 
 	return nil
 }
@@ -86,6 +93,7 @@ func (o SQL) Setup() error {
 
 	// nolint:gosec
 	// o.TableName has been checked by isSafeTblName on init
+	o.logger.Debugw("create table", "table", o.TableName)
 	q := fmt.Sprintf("CREATE TABLE %s (key text NOT NULL, vals text NOT NULL)", o.TableName)
 	_, err := o.DB.Exec(q)
 

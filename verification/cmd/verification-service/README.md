@@ -6,6 +6,7 @@ configuration:
 - `verification` (optional): verification service configuration. See [below](#verification-service-configuration).
 - `verifier` (optional): verifier configuration. See [below](#verifier-configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
+- `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 
 ### Verification service configuration
 

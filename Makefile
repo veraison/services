@@ -3,6 +3,7 @@
 
 SUBDIR += config
 SUBDIR += kvstore
+SUBDIR += log
 SUBDIR += policy
 SUBDIR += proto
 SUBDIR += provisioning

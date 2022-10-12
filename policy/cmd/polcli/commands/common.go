@@ -5,9 +5,10 @@ package commands
 import (
 	"fmt"
 
-	"github.com/spf13/viper"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
 )
 
@@ -47,7 +48,7 @@ func initPolicyStore(cmd *cobra.Command, args []string) error {
 
 	var err error
 
-	store, err = policy.NewStore(cfg)
+	store, err = policy.NewStore(cfg, log.Named("po-store"))
 	if err != nil {
 		return fmt.Errorf("could not initialize policy store: %w", err)
 	}
