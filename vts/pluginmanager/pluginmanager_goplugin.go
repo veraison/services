@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"

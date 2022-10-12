@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 )
 

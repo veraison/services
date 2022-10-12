@@ -3,7 +3,7 @@ package policy
 import (
 	"context"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 )
 
 type IBackend interface {

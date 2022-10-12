@@ -8,7 +8,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/mitchellh/mapstructure"
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
 )
 

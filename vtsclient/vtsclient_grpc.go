@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"

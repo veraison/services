@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 )
 
 // ReadRawConfig instantiates a Viper and uses it to read in configuration. If

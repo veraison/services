@@ -10,7 +10,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"

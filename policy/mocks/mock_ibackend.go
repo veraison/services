@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	viper "github.com/setrofim/viper"
+	viper "github.com/spf13/viper"
 )
 
 // MockIBackend is a mock of IBackend interface.
