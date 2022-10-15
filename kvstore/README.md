@@ -17,6 +17,42 @@ This package contains two implementations of the `IKVStore`:
 
 A `New` method can be used to create either of these from a `Config` object.
 
+## Configuration
+
+`kvstore` expects the following entries in configuration:
+
+
+- `backend`: the name of the backend to use for the store. Currently supported
+  backends: `memory`, `sql`.
+- `<backend name>`: an entry with the name of a backend is used to specify the
+  configuration for that backend. There may be multiple such entries for different
+  backends. Only the entry matching the active backend specified by `backend`
+  directive will actually be used. The contents for each entry is specific to
+  the backend.
+
+Note: in a config file, `kvstore` configuration will typically be namespaced
+under the name of a particular store instance, e.g.
+
+```yaml
+ta-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+```
+
+### `memory` backend configuration
+
+Currently, `memory` backend does not support any configuration.
+
+### `sql` backend configuration
+
+`driver`: The name of the golang SQL driver to use ([see here](https://github.com/golang/go/wiki/SQLDrivers))
+- `datasource`: Data source name to use. The format of the name depends on the
+  driver (e.g. a file path for SQLite or server dial string for PostgreSQL).
+- `tablename` (optional): the name of the table within the SQL database that will
+- be used by the store. If this is not specified, it will default to
+  `"kvstore"`.
+
 ## SQL drivers
 
 To use a SQL backend the calling code needs to (anonymously) import the supporting driver.
