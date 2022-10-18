@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -100,6 +101,16 @@ func (o *Handler) Submit(c *gin.Context) {
 	// pass data to the identified plugin for normalisation
 	rsp, err := o.DecoderManager.Dispatch(mediaType, payload)
 	if err != nil {
+		o.logger.Errorw("session failed", "error", err)
+
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+			return
+		}
+
 		sendFailedProvisioningSession(
 			c,
 			fmt.Sprintf("decoder manager returned error: %s", err),
@@ -109,6 +120,16 @@ func (o *Handler) Submit(c *gin.Context) {
 
 	// forward normalised data to the endorsement store
 	if err := o.store(rsp); err != nil {
+		o.logger.Errorw("session failed", "error", err)
+
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+			return
+		}
+
 		sendFailedProvisioningSession(
 			c,
 			fmt.Sprintf("endorsement store returned error: %s", err),

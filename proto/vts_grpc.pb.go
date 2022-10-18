@@ -19,6 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VTSClient interface {
+	// Returns the the server version (note: this is distinct from protocol or API version).
+	GetVTSVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerVersion, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
@@ -35,6 +37,15 @@ type vTSClient struct {
 
 func NewVTSClient(cc grpc.ClientConnInterface) VTSClient {
 	return &vTSClient{cc}
+}
+
+func (c *vTSClient) GetVTSVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerVersion, error) {
+	out := new(ServerVersion)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetVTSVersion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *vTSClient) GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error) {
@@ -77,6 +88,8 @@ func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorReques
 // All implementations must embed UnimplementedVTSServer
 // for forward compatibility
 type VTSServer interface {
+	// Returns the the server version (note: this is distinct from protocol or API version).
+	GetVTSVersion(context.Context, *emptypb.Empty) (*ServerVersion, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
@@ -92,6 +105,9 @@ type VTSServer interface {
 type UnimplementedVTSServer struct {
 }
 
+func (UnimplementedVTSServer) GetVTSVersion(context.Context, *emptypb.Empty) (*ServerVersion, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVTSVersion not implemented")
+}
 func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAttestation not implemented")
 }
@@ -115,6 +131,24 @@ type UnsafeVTSServer interface {
 
 func RegisterVTSServer(s grpc.ServiceRegistrar, srv VTSServer) {
 	s.RegisterService(&VTS_ServiceDesc, srv)
+}
+
+func _VTS_GetVTSVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetVTSVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetVTSVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetVTSVersion(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _VTS_GetAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -196,6 +230,10 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.VTS",
 	HandlerType: (*VTSServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetVTSVersion",
+			Handler:    _VTS_GetVTSVersion_Handler,
+		},
 		{
 			MethodName: "GetAttestation",
 			Handler:    _VTS_GetAttestation_Handler,

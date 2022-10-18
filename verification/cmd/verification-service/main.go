@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
 	"github.com/veraison/services/vtsclient"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
@@ -42,6 +45,14 @@ func main() {
 		log.Fatalf("Could not initialize VTS client: %v", err)
 	}
 
+	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	if err == nil {
+		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+	} else {
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
+			"error", err)
+	}
+
 	log.Info("initializing verifier")
 	verifier := verifier.New(subs["verifier"], vtsClient)
 
@@ -54,7 +65,7 @@ func main() {
 
 	}
 
-	log.Infow("initializing API service", "address", cfg.ListenAddr)
+	log.Infow("initializing verification API service", "address", cfg.ListenAddr)
 	apiServer(apiHandler, cfg.ListenAddr)
 }
 

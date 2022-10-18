@@ -19,6 +19,23 @@ var (
 	ErrNoClient = errors.New("there is no active gRPC VTS client")
 )
 
+type NoConnectionError struct {
+	Context string
+	Err     error
+}
+
+func NewNoConnectionError(ctx string, err error) NoConnectionError {
+	return NoConnectionError{Context: ctx, Err: err}
+}
+
+func (o NoConnectionError) Error() string {
+	return fmt.Sprintf("(from: %s) %v", o.Context, o.Err)
+}
+
+func (o NoConnectionError) Unwrap() error {
+	return o.Err
+}
+
 type GRPC struct {
 	ServerAddress string
 	Connection    *grpc.ClientConn
@@ -42,13 +59,30 @@ func (o *GRPC) Init(v *viper.Viper) error {
 	return nil
 }
 
+func (o *GRPC) GetVTSVersion(
+	ctx context.Context,
+	in *emptypb.Empty,
+	opts ...grpc.CallOption,
+) (*proto.ServerVersion, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetVTSVersion", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetVTSVersion(ctx, in, opts...)
+}
+
 func (o *GRPC) AddSwComponents(
 	ctx context.Context,
 	in *proto.AddSwComponentsRequest,
 	opts ...grpc.CallOption,
 ) (*proto.AddSwComponentsResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed AddSwComponents: %w", err)
+		return nil, NewNoConnectionError("AddSwComponents", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -65,7 +99,7 @@ func (o *GRPC) AddTrustAnchor(
 	opts ...grpc.CallOption,
 ) (*proto.AddTrustAnchorResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed AddTrustAnchor: %w", err)
+		return nil, NewNoConnectionError("AddTrustAnchor", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -80,7 +114,7 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context, in *proto.AttestationToken, opts ...grpc.CallOption,
 ) (*proto.AppraisalContext, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed GetAttestation: %w", err)
+		return nil, NewNoConnectionError("GetAttestation", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -95,7 +129,7 @@ func (o *GRPC) GetSupportedVerificationMediaTypes(
 	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
 ) (*proto.MediaTypeList, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed GetSupportedVerificationMediaTypes: %w", err)
+		return nil, NewNoConnectionError("GetSupportedVerificationMediaTypes", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -129,7 +163,7 @@ func (o *GRPC) EnsureConnection() error {
 
 	conn, err := grpc.DialContext(ctx, o.ServerAddress, opts...)
 	if err != nil {
-		return fmt.Errorf("connection to gRPC VTS server %s failed: %w", o.ServerAddress, err)
+		return fmt.Errorf("connection to gRPC VTS server [%s] failed: %w", o.ServerAddress, err)
 	}
 
 	o.Connection = conn

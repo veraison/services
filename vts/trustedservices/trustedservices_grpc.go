@@ -28,6 +28,10 @@ import (
 // should be passed as a parameter
 const DummyTenantID = "0"
 
+// Trusted Services server implementation version. Note: this is distinct from
+// the version of the API being implemented.
+const ServerVersion = "0.0.1"
+
 // Supported parameters:
 // * vts.server-addr: string w/ syntax specified in
 //   https://github.com/grpc/grpc/blob/master/doc/naming.md
@@ -129,6 +133,10 @@ func (o *GRPC) Close() error {
 	}
 
 	return nil
+}
+
+func (o *GRPC) GetVTSVersion(context.Context, *emptypb.Empty) (*proto.ServerVersion, error) {
+	return &proto.ServerVersion{Version: ServerVersion}, nil
 }
 
 func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRequest) (*proto.AddSwComponentsResponse, error) {

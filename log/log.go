@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/moogar0880/problems"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -435,4 +436,18 @@ func Panicln(args ...interface{}) {
 // Fatalln uses fmt.Sprintln to construct and log a message, then calls os.Exit.
 func Fatalln(args ...interface{}) {
 	logger.Fatalln(args...)
+}
+
+// LogProblem logs a problems.StatusProblem reported  by the api. 500 probelms
+// are logged as errors, everything else is logged as warnings.
+func LogProblem(logger *zap.SugaredLogger, prob *problems.DefaultProblem) {
+	var logFunc func(msg string, args ...interface{})
+
+	if prob.Status >= 500 {
+		logFunc = logger.Errorw
+	} else {
+		logFunc = logger.Warnw
+	}
+
+	logFunc("problem encountered", "title", prob.Title, "detail", prob.Detail)
 }

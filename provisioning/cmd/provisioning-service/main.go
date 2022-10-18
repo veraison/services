@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,6 +16,7 @@ import (
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
@@ -71,7 +73,15 @@ func main() {
 		log.Fatalf("Could not initilize VTS client: %v", err)
 	}
 
-	log.Infow("initializing API service", "address", cfg.ListenAddr)
+	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	if err == nil {
+		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+	} else {
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+			"error", err)
+	}
+
+	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
 	apiHandler := api.NewHandler(pluginManager, vtsClient, log.Named("api"))
 	go apiServer(apiHandler, cfg.ListenAddr)
 

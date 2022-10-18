@@ -201,7 +201,7 @@ func TestHandler_NewChallengeResponse_NoNonceParameters(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		SupportedMediaTypes().
-		Return(testSupportedMediaTypes)
+		Return(testSupportedMediaTypes, nil)
 
 	h := NewHandler(sm, v)
 
@@ -241,7 +241,7 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		SupportedMediaTypes().
-		Return(testSupportedMediaTypes)
+		Return(testSupportedMediaTypes, nil)
 
 	h := NewHandler(sm, v)
 
@@ -287,7 +287,7 @@ func TestHandler_NewChallengeResponse_NonceSizeParameter(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		SupportedMediaTypes().
-		Return(testSupportedMediaTypes)
+		Return(testSupportedMediaTypes, nil)
 
 	h := NewHandler(sm, v)
 
@@ -343,7 +343,7 @@ func TestHandler_NewChallengeResponse_SetSessionFailure(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		SupportedMediaTypes().
-		Return(testSupportedMediaTypes)
+		Return(testSupportedMediaTypes, nil)
 
 	h := NewHandler(sm, v)
 
@@ -421,10 +421,10 @@ func TestHandler_SubmitEvidence_unsupported_evidence_format(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		SupportedMediaTypes().
-		Return(testSupportedMediaTypes)
+		Return(testSupportedMediaTypes, nil)
 	v.EXPECT().
 		IsSupportedMediaType(testUnsupportedMediaType).
-		Return(false)
+		Return(false, nil)
 
 	h := NewHandler(sm, v)
 
@@ -465,7 +465,7 @@ func TestHandler_SubmitEvidence_bad_session_id_url(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 
 	h := NewHandler(sm, v)
 
@@ -510,7 +510,7 @@ func TestHandler_SubmitEvidence_session_not_found(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 
 	h := NewHandler(sm, v)
 
@@ -553,7 +553,7 @@ func TestHandler_SubmitEvidence_no_body(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 
 	h := NewHandler(sm, v)
 
@@ -599,7 +599,7 @@ func TestHandler_SubmitEvidence_process_evidence_failed(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 	v.EXPECT().
 		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, errors.New(vmErr))
@@ -642,7 +642,7 @@ func TestHandler_SubmitEvidence_process_ok_sync(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 	v.EXPECT().
 		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return([]byte(testResult), nil)
@@ -685,7 +685,7 @@ func TestHandler_SubmitEvidence_process_ok_async(t *testing.T) {
 	v := mock_deps.NewMockIVerifier(ctrl)
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true)
+		Return(true, nil)
 	v.EXPECT().
 		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, nil)

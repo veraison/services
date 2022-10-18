@@ -34,11 +34,12 @@ func (m *MockIVerifier) EXPECT() *MockIVerifierMockRecorder {
 }
 
 // IsSupportedMediaType mocks base method.
-func (m *MockIVerifier) IsSupportedMediaType(mt string) bool {
+func (m *MockIVerifier) IsSupportedMediaType(mt string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSupportedMediaType", mt)
 	ret0, _ := ret[0].(bool)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // IsSupportedMediaType indicates an expected call of IsSupportedMediaType.
@@ -63,11 +64,12 @@ func (mr *MockIVerifierMockRecorder) ProcessEvidence(tenantID, data, mt interfac
 }
 
 // SupportedMediaTypes mocks base method.
-func (m *MockIVerifier) SupportedMediaTypes() []string {
+func (m *MockIVerifier) SupportedMediaTypes() ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SupportedMediaTypes")
 	ret0, _ := ret[0].([]string)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SupportedMediaTypes indicates an expected call of SupportedMediaTypes.

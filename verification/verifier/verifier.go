@@ -20,34 +20,34 @@ func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IVerifier {
 	}
 }
 
-func (o *Verifier) IsSupportedMediaType(mt string) bool {
+func (o *Verifier) IsSupportedMediaType(mt string) (bool, error) {
 	mts, err := o.VTSClient.GetSupportedVerificationMediaTypes(
 		context.Background(),
 		&emptypb.Empty{},
 	)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	for _, v := range mts.MediaTypes {
 		if v == mt {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
-func (o *Verifier) SupportedMediaTypes() []string {
+func (o *Verifier) SupportedMediaTypes() ([]string, error) {
 	mts, err := o.VTSClient.GetSupportedVerificationMediaTypes(
 		context.Background(),
 		&emptypb.Empty{},
 	)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return mts.GetMediaTypes()
+	return mts.GetMediaTypes(), nil
 }
 
 func (o *Verifier) ProcessEvidence(tenantID string, data []byte, mt string) ([]byte, error) {
