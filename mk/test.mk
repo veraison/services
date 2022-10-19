@@ -25,7 +25,7 @@ THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 _mocks: $(MOCK_FILES)
 .PHONY: _mocks
 
-test: check-mockgen test-hook-pre realtest
+test: check-mockgen test-hook-pre realtest checkcopyrights
 .PHONY: test
 
 test-hook-pre:
@@ -48,5 +48,8 @@ COPYRIGHT_FLAGS :=
 ifdef CI_PIPELINE
 	COPYRIGHT_FLAGS += --no-year-check
 endif
+
+checkcopyrights: ; python3 $(THIS_DIR)../scripts/check-copyright $(COPYRIGHT_FLAGS) .
+.PHONY: checkcopyrights
 
 CLEANFILES += $(MOCK_FILES)
