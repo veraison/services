@@ -7,31 +7,46 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
+	"go.uber.org/zap"
 )
 
 var ErrBadResult = "could not create updated AttestationResult: %w from JSON %s"
 var ErrNoStatus = "backend returned outcome with no status field: %v"
 var ErrNoTV = "backend returned no trust-vector field, or its not a map[string]interface{}: %v"
 
+type cfg struct {
+	Backend string
+}
+
+func (o cfg) Validate() error {
+	if _, ok := backends[o.Backend]; !ok {
+		return fmt.Errorf("backend %q is not supported", o.Backend)
+	}
+
+	return nil
+}
+
 // CreateAgent creates a new PolicyAgent using the backend specified in the
 // config with "policy.backend" directive. If this directive is absent, the
 // default backend, "opa",  will be used.
-func CreateAgent(v *viper.Viper) (IAgent, error) {
-	v.SetDefault("backend", DefaultBackend)
-	backendName := v.GetString("backend")
+func CreateAgent(v *viper.Viper, logger *zap.SugaredLogger) (IAgent, error) {
+	cfg := cfg{Backend: DefaultBackend}
 
-	backend, ok := backends[backendName]
-	if !ok {
-		return nil, fmt.Errorf("backend %q is not supported", backendName)
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return nil, err
 	}
 
-	return &Agent{Backend: backend}, nil
+	return &Agent{Backend: backends[cfg.Backend], logger: logger}, nil
 }
 
 type Agent struct {
 	Backend IBackend
+
+	logger *zap.SugaredLogger
 }
 
 func (o *Agent) Init(v *viper.Viper) error {
@@ -79,10 +94,7 @@ func (o *Agent) Evaluate(
 		return nil, fmt.Errorf("could not evaluate policy: %w", err)
 	}
 
-	// TODO(setrofim): at this stage, we have the opportunity to log or
-	// otherwise communicate/identify the changes to the AttestationResult
-	// made by policy, if we want each entry in the result to have a
-	// clearly-traceable origin.
+	o.logger.Debugw("policy evaluated", "policy-id", policy.ID, "updated", updatedByPolicy)
 
 	updatedStatus, ok := updatedByPolicy["status"]
 	if !ok {

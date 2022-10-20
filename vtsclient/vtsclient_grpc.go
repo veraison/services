@@ -1,3 +1,5 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package vtsclient
 
 import (
@@ -6,7 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"
@@ -18,31 +21,70 @@ var (
 	ErrNoClient = errors.New("there is no active gRPC VTS client")
 )
 
-// Supported parameters:
-// * vts-server.addr: string w/ syntax specified in
-//   https://github.com/grpc/grpc/blob/master/doc/naming.md
-//
-// * TODO(tho) load balancing config
-//   See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
-// * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
+type NoConnectionError struct {
+	Context string
+	Err     error
+}
+
+func NewNoConnectionError(ctx string, err error) NoConnectionError {
+	return NoConnectionError{Context: ctx, Err: err}
+}
+
+func (o NoConnectionError) Error() string {
+	return fmt.Sprintf("(from: %s) %v", o.Context, o.Err)
+}
+
+func (o NoConnectionError) Unwrap() error {
+	return o.Err
+}
 
 type GRPC struct {
-	Config     *viper.Viper
-	Connection *grpc.ClientConn
+	ServerAddress string
+	Connection    *grpc.ClientConn
 }
 
 // NewGRPC instantiate a new gRPC store client with the supplied configuration
-func NewGRPC(v *viper.Viper) *GRPC {
-	return &GRPC{
-		Config: v,
-	}
+func NewGRPC() *GRPC {
+	return &GRPC{}
 }
 
-func (o *GRPC) AddSwComponents(ctx context.Context, in *proto.AddSwComponentsRequest, opts ...grpc.CallOption,
+func (o *GRPC) Init(v *viper.Viper) error {
+	cfg := trustedservices.NewGRPCConfig()
+
+	loader := config.NewLoader(cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
+	}
+
+	o.ServerAddress = cfg.ServerAddress
+
+	return nil
+}
+
+func (o *GRPC) GetVTSVersion(
+	ctx context.Context,
+	in *emptypb.Empty,
+	opts ...grpc.CallOption,
+) (*proto.ServerVersion, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetVTSVersion", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetVTSVersion(ctx, in, opts...)
+}
+
+func (o *GRPC) AddSwComponents(
+	ctx context.Context,
+	in *proto.AddSwComponentsRequest,
+	opts ...grpc.CallOption,
 ) (*proto.AddSwComponentsResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed AddSwComponents: %w", err)
+		return nil, NewNoConnectionError("AddSwComponents", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -53,10 +95,13 @@ func (o *GRPC) AddSwComponents(ctx context.Context, in *proto.AddSwComponentsReq
 	return c.AddSwComponents(ctx, in, opts...)
 }
 
-func (o *GRPC) AddTrustAnchor(ctx context.Context, in *proto.AddTrustAnchorRequest, opts ...grpc.CallOption,
+func (o *GRPC) AddTrustAnchor(
+	ctx context.Context,
+	in *proto.AddTrustAnchorRequest,
+	opts ...grpc.CallOption,
 ) (*proto.AddTrustAnchorResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed AddTrustAnchor: %w", err)
+		return nil, NewNoConnectionError("AddTrustAnchor", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -71,7 +116,7 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context, in *proto.AttestationToken, opts ...grpc.CallOption,
 ) (*proto.AppraisalContext, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed GetAttestation: %w", err)
+		return nil, NewNoConnectionError("GetAttestation", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -86,7 +131,7 @@ func (o *GRPC) GetSupportedVerificationMediaTypes(
 	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
 ) (*proto.MediaTypeList, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, fmt.Errorf("failed GetSupportedVerificationMediaTypes: %w", err)
+		return nil, NewNoConnectionError("GetSupportedVerificationMediaTypes", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -115,18 +160,12 @@ func (o *GRPC) EnsureConnection() error {
 		grpc.WithBlock(),
 	}
 
-	defaultVTSAddr := "dns:" + trustedservices.DefaultVTSAddr
-
-	o.Config.SetDefault("vts-server.addr", defaultVTSAddr)
-
-	storeServerAddr := o.Config.GetString("vts-server.addr")
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctx, storeServerAddr, opts...)
+	conn, err := grpc.DialContext(ctx, o.ServerAddress, opts...)
 	if err != nil {
-		return fmt.Errorf("connection to gRPC VTS server %s failed: %w", storeServerAddr, err)
+		return fmt.Errorf("connection to gRPC VTS server [%s] failed: %w", o.ServerAddress, err)
 	}
 
 	o.Connection = conn

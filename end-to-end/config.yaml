@@ -1,0 +1,30 @@
+logging:
+  output-paths:
+    - stdout
+    - logs/{{ .service }}-stdout.log
+provisioning:
+  plugin-dir: ./plugins-provisioning/
+  listen-addr: localhost:8888
+vts:
+  server-addr: 127.0.0.1:50051
+plugin:
+  backend: go-plugin
+  go-plugin:
+    folder: ./plugins/
+ta-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: stores/ta-store.sql
+en-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: stores/en-store.sql
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: stores/en-store.sql
+po-agent:
+    backend: opa

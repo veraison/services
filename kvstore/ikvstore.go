@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
-import "github.com/setrofim/viper"
+import (
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+)
 
 // IKVStore is the interface to a key-value store. Keys and values are both
 // strings. A key can be associated with multiple values.
@@ -10,7 +13,7 @@ type IKVStore interface {
 	// Init initializes the store. The parameters expected inside
 	// viper.Viper are implementation-specific -- please see the
 	// documentation for the implementation you're using.
-	Init(v *viper.Viper) error
+	Init(v *viper.Viper, logger *zap.SugaredLogger) error
 
 	// Close the store, shutting down the underlying connection (if one
 	// exists in the implementation), and disallowing any further

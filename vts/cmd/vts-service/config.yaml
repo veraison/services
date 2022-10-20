@@ -19,6 +19,5 @@ po-store:
     datasource: en-store.sql
 po-agent:
     backend: opa
-vts-grpc:
-  server:
-    addr: 127.0.0.1:50051
+vts:
+  server-addr: 127.0.0.1:50051

@@ -1,50 +1,74 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
-	"errors"
-	"log"
-	"os"
+	"context"
 
-	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
 	"github.com/veraison/services/vtsclient"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
-	ListenAddr = "localhost:8080"
+	DefaultListenAddr = "localhost:8080"
 )
 
+type cfg struct {
+	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
+}
+
 func main() {
-
-	VTSClientCfg := viper.New()
-	VTSClientCfg.SetDefault("vts-server.addr", "dns:127.0.0.1:50051")
-
-	wd, err := os.Getwd()
+	v, err := config.ReadRawConfig("", true)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read config: %v", err)
 	}
 
-	VTSClientCfg.AddConfigPath(wd)
-	VTSClientCfg.SetConfigType("yaml")
-	VTSClientCfg.SetConfigName("config")
-
-	err = VTSClientCfg.ReadInConfig()
-	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
-		// If there is no config file, use the defaults set above.
-		err = nil
-	}
-
+	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification", "*logging")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read config: %v", err)
 	}
+
+	classifiers := map[string]interface{}{"service": "verification"}
+	if err := log.Init(subs["logging"], classifiers); err != nil {
+		log.Fatalf("could not configure logging: %v", err)
+	}
+	log.InitGinWriter() // route gin output to our logger.
 
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
-	vtsClient := vtsclient.NewGRPC(VTSClientCfg)
-	verifier := verifier.New(viper.New(), vtsClient)
+
+	log.Info("initializing VTS client")
+	vtsClient := vtsclient.NewGRPC()
+	if err := vtsClient.Init(subs["vts"]); err != nil {
+		log.Fatalf("Could not initialize VTS client: %v", err)
+	}
+
+	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	if err == nil {
+		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+	} else {
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
+			"error", err)
+	}
+
+	log.Info("initializing verifier")
+	verifier := verifier.New(subs["verifier"], vtsClient)
+
 	apiHandler := api.NewHandler(sessionManager, verifier)
-	apiServer(apiHandler, ListenAddr)
+
+	cfg := cfg{ListenAddr: DefaultListenAddr}
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(subs["verification"]); err != nil {
+		log.Fatalf("Could not load verfication config: %v", err)
+
+	}
+
+	log.Infow("initializing verification API service", "address", cfg.ListenAddr)
+	apiServer(apiHandler, cfg.ListenAddr)
 }
 
 func apiServer(apiHandler api.IHandler, listenAddr string) {

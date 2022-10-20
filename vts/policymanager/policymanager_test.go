@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/vts/policymanager/mocks"
@@ -40,9 +41,13 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 		Evidence:      evStruct,
 	}
 
-	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
+	pm := &PolicyManager{Store: &policy.Store{KVStore: store, Logger: log.Named("test")},
+		Agent: agent}
 
-	pol, err := pm.getPolicy(ec)
+	polID := pm.getPolicyID(ec)
+	assert.Equal(t, "opa://0", polID)
+
+	pol, err := pm.getPolicy(polID)
 	assert.Nil(t, pol)
 	assert.ErrorIs(t, err, policy.ErrNoPolicy)
 }
@@ -70,7 +75,10 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 
-	_, err = pm.getPolicy(ec)
+	polID := pm.getPolicyID(ec)
+	assert.Equal(t, "opa://0", polID)
+
+	_, err = pm.getPolicy(polID)
 	require.NoError(t, err)
 }
 
@@ -81,7 +89,7 @@ func TestPolicyMgr_New_policyAgent_OK(t *testing.T) {
 	v := viper.New()
 	v.Set("backend", "opa")
 
-	_, err := New(v, &policy.Store{KVStore: store})
+	_, err := New(v, &policy.Store{KVStore: store}, log.Named("test"))
 	require.NoError(t, err)
 }
 
@@ -92,7 +100,7 @@ func TestPolicyMgr_New_policyAgent_NOK(t *testing.T) {
 	v := viper.New()
 	v.Set("backend", "nope")
 
-	_, err := New(v, &policy.Store{KVStore: store})
+	_, err := New(v, &policy.Store{KVStore: store}, log.Named("test"))
 	assert.EqualError(t, err, `backend "nope" is not supported`)
 }
 

@@ -52,8 +52,15 @@ message MediaTypeList {
     repeated string media_types = 1;
 }
 
+message ServerVersion {
+    string version = 1;
+}
+
 // Client interface for the Veraison Trusted Services component.
 service VTS {
+    // Returns the the server version (note: this is distinct from protocol or API version).
+    rpc GetVTSVersion(google.protobuf.Empty) returns (ServerVersion);
+
     // Returns attestation information -- evidences, endorsed claims, trust
     // vector, etc -- for the provided attestation token data.
     rpc GetAttestation(AttestationToken) returns (AppraisalContext);

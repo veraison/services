@@ -4,16 +4,19 @@
 package main
 
 import (
-	"errors"
-	"log"
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/setrofim/viper"
+	"github.com/veraison/services/config"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
@@ -21,66 +24,73 @@ var (
 	DefaultListenAddr = "localhost:8888"
 )
 
-type config struct {
-	Provisioning struct {
-		PluginDir  string `mapstructure:"plugin-dir"`
-		ListenAddr string `mapstructure:"listen-addr"`
-	}
-	VtsGRPC *viper.Viper
+type cfg struct {
+	PluginDir  string `mapstructure:"plugin-dir"`
+	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
 }
 
-func initConfig() (*config, error) {
-	v := viper.New()
-
-	v.SetConfigType("yaml")
-	v.SetConfigName("config")
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	v.AddConfigPath(wd)
-
-	if err := v.ReadInConfig(); err != nil {
-		return nil, err
+func (o cfg) Validate() error {
+	if _, err := os.Stat(o.PluginDir); err != nil {
+		return fmt.Errorf("could not stat PluginDir: %w", err)
 	}
 
-	v.SetDefault("provisioning.plugin-dir", DefaultPluginDir)
-	v.SetDefault("provisioning.listen-addr", DefaultListenAddr)
-
-	var cfg config
-
-	if err = v.UnmarshalKey("provisioning", &cfg.Provisioning); err != nil {
-		return nil, err
-	}
-
-	if cfg.VtsGRPC = v.Sub("vts-grpc"); cfg.VtsGRPC == nil {
-		return nil, errors.New(`"vts-grpc" section not found in config.`)
-	}
-
-	return &cfg, nil
+	return nil
 }
 
 func main() {
-	cfg, err := initConfig()
+	v, err := config.ReadRawConfig("", false)
 	if err != nil {
-		log.Fatalf("could not load config: %v", err)
+		log.Fatalf("Could not read config sources: %v", err)
 	}
 
-	pluginDir := cfg.Provisioning.PluginDir
-	listenAddr := cfg.Provisioning.ListenAddr
+	cfg := cfg{
+		PluginDir:  DefaultPluginDir,
+		ListenAddr: DefaultListenAddr,
+	}
 
-	pluginManager := NewGoPluginManager(pluginDir)
-	vtsClient := vtsclient.NewGRPC(cfg.VtsGRPC)
-	apiHandler := api.NewHandler(pluginManager, vtsClient)
-	go apiServer(apiHandler, listenAddr)
+	subs, err := config.GetSubs(v, "provisioning", "*vts", "*logging")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	classifiers := map[string]interface{}{"service": "provisioning"}
+	if err := log.Init(subs["logging"], classifiers); err != nil {
+		log.Fatalf("could not configure logging: %v", err)
+	}
+	log.InitGinWriter() // route gin output to our logger.
+
+	loader := config.NewLoader(&cfg)
+	if err = loader.LoadFromViper(subs["provisioning"]); err != nil {
+		log.Fatalf("Could not load config: %v", err)
+	}
+
+	log.Info("loading plugins")
+	pluginManager := NewGoPluginManager(cfg.PluginDir, log.Named("plugin"))
+
+	log.Info("initializing VTS client")
+	vtsClient := vtsclient.NewGRPC()
+	if err := vtsClient.Init(subs["vts"]); err != nil {
+		log.Fatalf("Could not initilize VTS client: %v", err)
+	}
+
+	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	if err == nil {
+		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+	} else {
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+			"error", err)
+	}
+
+	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
+	apiHandler := api.NewHandler(pluginManager, vtsClient, log.Named("api"))
+	go apiServer(apiHandler, cfg.ListenAddr)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	done := make(chan bool, 1)
 	go terminator(sigs, done, pluginManager)
 	<-done
-	log.Println("bye!")
+	log.Info("bye!")
 }
 
 func terminator(
@@ -90,11 +100,11 @@ func terminator(
 ) {
 	sig := <-sigs
 
-	log.Println(sig, "received, exiting")
+	log.Info(sig, "received, exiting")
 
-	log.Println("stopping the plugin manager")
+	log.Info("stopping the plugin manager")
 	if err := pluginManager.Close(); err != nil {
-		log.Println("plugin manager termination failed:", err)
+		log.Error("plugin manager termination failed:", err)
 	}
 
 	done <- true
@@ -106,11 +116,11 @@ func apiServer(apiHandler api.IHandler, listenAddr string) {
 	}
 }
 
-func NewGoPluginManager(dir string) decoder.IDecoderManager {
+func NewGoPluginManager(dir string, logger *zap.SugaredLogger) decoder.IDecoderManager {
 	mgr := &decoder.GoPluginDecoderManager{}
-	err := mgr.Init(dir)
+	err := mgr.Init(dir, logger)
 	if err != nil {
-		log.Fatalf("plugin initialisation failed: %v", err)
+		logger.Fatalf("plugin initialisation failed: %v", err)
 	}
 
 	return mgr

@@ -1,9 +1,11 @@
+// Copyright 2022 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package policy
 
 import (
 	"context"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 )
 
 type IBackend interface {

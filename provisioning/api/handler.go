@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
+	"go.uber.org/zap"
 )
 
 type IHandler interface {
@@ -22,15 +24,19 @@ type IHandler interface {
 type Handler struct {
 	DecoderManager decoder.IDecoderManager
 	VTSClient      vtsclient.IVTSClient
+
+	logger *zap.SugaredLogger
 }
 
 func NewHandler(
 	dm decoder.IDecoderManager,
 	sc vtsclient.IVTSClient,
+	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
 		DecoderManager: dm,
 		VTSClient:      sc,
+		logger:         logger,
 	}
 }
 
@@ -95,6 +101,16 @@ func (o *Handler) Submit(c *gin.Context) {
 	// pass data to the identified plugin for normalisation
 	rsp, err := o.DecoderManager.Dispatch(mediaType, payload)
 	if err != nil {
+		o.logger.Errorw("session failed", "error", err)
+
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+			return
+		}
+
 		sendFailedProvisioningSession(
 			c,
 			fmt.Sprintf("decoder manager returned error: %s", err),
@@ -104,6 +120,16 @@ func (o *Handler) Submit(c *gin.Context) {
 
 	// forward normalised data to the endorsement store
 	if err := o.store(rsp); err != nil {
+		o.logger.Errorw("session failed", "error", err)
+
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+			return
+		}
+
 		sendFailedProvisioningSession(
 			c,
 			fmt.Sprintf("endorsement store returned error: %s", err),

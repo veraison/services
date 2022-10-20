@@ -3,15 +3,15 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/setrofim/viper"
 
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
@@ -19,52 +19,56 @@ import (
 )
 
 func main() {
-	v := viper.New()
+	v, err := config.ReadRawConfig("", false)
+	if err != nil {
+		log.Fatalf("could not read config: %v", err)
+	}
 
-	wd, err := os.Getwd()
+	subs, err := config.GetSubs(v, "ta-store", "en-store", "po-store",
+		"*po-agent", "plugin", "*vts", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	v.AddConfigPath(wd)
-	v.SetConfigType("yaml")
-	v.SetConfigName("config")
-
-	if err := v.ReadInConfig(); err != nil {
-		log.Fatalf("could not read config: %v", err)
+	classifiers := map[string]interface{}{"service": "vts"}
+	if err := log.Init(subs["logging"], classifiers); err != nil {
+		log.Fatalf("could not configure logging: %v", err)
 	}
 
-	taStore, err := kvstore.New(v.Sub("ta-store"))
+	log.Info("initializing stores")
+	taStore, err := kvstore.New(subs["ta-store"], log.Named("ta-store"))
 	if err != nil {
 		log.Fatalf("trust anchor store initialisation failed: %v", err)
 	}
 
-	enStore, err := kvstore.New(v.Sub("en-store"))
+	enStore, err := kvstore.New(subs["en-store"], log.Named("en-store"))
 	if err != nil {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
 
-	poStore, err := policy.NewStore(v.Sub("po-store"))
+	poStore, err := policy.NewStore(subs["po-store"], log.Named("po-store"))
 	if err != nil {
 		log.Fatalf("policy store initialization failed: %v", err)
 	}
 
-	policyManager, err := policymanager.New(v.Sub("po-agent"), poStore)
+	log.Info("initializing policy manager")
+	policyManager, err := policymanager.New(subs["po-agent"], poStore, log.Named("policy"))
 	if err != nil {
 		log.Fatalf("policy manager initialization failed: %v", err)
 	}
 
-	pluginManager := pluginmanager.New(v.Sub("plugin"))
-	if err := pluginManager.Init(); err != nil {
+	log.Info("loading plugins")
+	pluginManager := pluginmanager.New(log.Named("plugin"))
+	if err := pluginManager.Init(subs["plugin"]); err != nil {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
+	log.Info("initializing service")
 	// from this point onwards taStore, enStore and pluginManager are owned by vts
-	vts := trustedservices.NewGRPC(v.Sub("vts-grpc"), taStore, enStore,
-		pluginManager, policyManager)
+	vts := trustedservices.NewGRPC(taStore, enStore,
+		pluginManager, policyManager, log.Named("vts"))
 
-	err = vts.Init()
-	if err != nil {
+	if err = vts.Init(subs["vts"]); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 
@@ -77,16 +81,16 @@ func main() {
 
 	<-done
 
-	log.Println("stopping VTS")
+	log.Info("stopping service")
 	if err := vts.Close(); err != nil {
-		log.Println("VTS termination failed:", err)
+		log.Error("service termination failed:", err)
 	}
-	log.Println("bye!")
+	log.Info("bye!")
 }
 
 func vtsRun(vts trustedservices.ITrustedServices, done chan bool) {
 	if err := vts.Run(); err != nil {
-		log.Println("VTS failed:", err)
+		log.Error("VTS failed:", err)
 	}
 
 	done <- true
@@ -95,7 +99,7 @@ func vtsRun(vts trustedservices.ITrustedServices, done chan bool) {
 func sigWaiter(sigs chan os.Signal, done chan bool) {
 	sig := <-sigs
 
-	log.Println(sig, "received, exiting")
+	log.Info(sig, " received, exiting")
 
 	done <- true
 }

@@ -7,18 +7,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // XXX
@@ -26,8 +28,28 @@ import (
 // should be passed as a parameter
 const DummyTenantID = "0"
 
+// Trusted Services server implementation version. Note: this is distinct from
+// the version of the API being implemented.
+const ServerVersion = "0.0.1"
+
+// Supported parameters:
+// * vts.server-addr: string w/ syntax specified in
+//   https://github.com/grpc/grpc/blob/master/doc/naming.md
+//
+// * TODO(tho) load balancing config
+//   See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
+//
+// * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
+type GRPCConfig struct {
+	ServerAddress string `mapstructure:"server-addr" valid:"dialstring"`
+}
+
+func NewGRPCConfig() *GRPCConfig {
+	return &GRPCConfig{ServerAddress: DefaultVTSAddr}
+}
+
 type GRPC struct {
-	Config *viper.Viper
+	ServerAddress string
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
@@ -37,21 +59,23 @@ type GRPC struct {
 	Server *grpc.Server
 	Socket net.Listener
 
+	logger *zap.SugaredLogger
+
 	proto.UnimplementedVTSServer
 }
 
 func NewGRPC(
-	cfg *viper.Viper,
 	taStore, enStore kvstore.IKVStore,
 	pluginManager pluginmanager.ISchemePluginManager,
 	policyManager *policymanager.PolicyManager,
+	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		Config:        cfg,
 		TaStore:       taStore,
 		EnStore:       enStore,
 		PluginManager: pluginManager,
 		PolicyManager: policyManager,
+		logger:        logger,
 	}
 }
 
@@ -60,14 +84,21 @@ func (o *GRPC) Run() error {
 		return errors.New("nil server: must call Init() first")
 	}
 
+	o.logger.Infow("listening for GRPC requests", "address", o.ServerAddress)
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init() error {
-	o.Config.SetDefault("server.addr", DefaultVTSAddr)
-	addr := o.Config.GetString("server.addr")
+func (o *GRPC) Init(v *viper.Viper) error {
+	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
 
-	lsd, err := net.Listen("tcp", addr)
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
+	}
+
+	o.ServerAddress = cfg.ServerAddress
+
+	lsd, err := net.Listen("tcp", o.ServerAddress)
 	if err != nil {
 		return fmt.Errorf("listening socket initialisation failed: %w", err)
 	}
@@ -90,18 +121,22 @@ func (o *GRPC) Close() error {
 	}
 
 	if err := o.PluginManager.Close(); err != nil {
-		log.Printf("plugin manager shutdown failed: %v", err)
+		o.logger.Errorf("plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.TaStore.Close(); err != nil {
-		log.Printf("trust anchor store closure failed: %v", err)
+		o.logger.Errorf("trust anchor store closure failed: %v", err)
 	}
 
 	if err := o.EnStore.Close(); err != nil {
-		log.Printf("endorsement store closure failed: %v", err)
+		o.logger.Errorf("endorsement store closure failed: %v", err)
 	}
 
 	return nil
+}
+
+func (o *GRPC) GetVTSVersion(context.Context, *emptypb.Empty) (*proto.ServerVersion, error) {
+	return &proto.ServerVersion{Version: ServerVersion}, nil
 }
 
 func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRequest) (*proto.AddSwComponentsResponse, error) {
@@ -136,6 +171,8 @@ func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRe
 			}
 		}
 	}
+
+	o.logger.Infow("added software component", "keys", keys)
 
 	return addSwComponentSuccessResponse(), nil
 }
@@ -194,6 +231,8 @@ func (o *GRPC) AddTrustAnchor(ctx context.Context, req *proto.AddTrustAnchorRequ
 		}
 	}
 
+	o.logger.Infow("added trust anchor", "keys", keys)
+
 	return addTrustAnchorSuccessResponse(), nil
 }
 
@@ -218,6 +257,9 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
+	o.logger.Infow("get attestation", "media-type", token.MediaType,
+		"tenant-id", token.TenantId, "format", token.Format)
+
 	scheme, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
 		return nil, err
@@ -245,9 +287,16 @@ func (o *GRPC) GetAttestation(
 
 	ec.SoftwareId = extracted.SoftwareID
 
+	o.logger.Debugw("constructed evidence context", "software-id", ec.SoftwareId,
+		"trust-anchor-id", ec.TrustAnchorId)
+
 	endorsements, err := o.EnStore.Get(ec.SoftwareId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, err
+	}
+
+	if len(endorsements) > 0 {
+		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
 	}
 
 	if err = scheme.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
@@ -268,6 +317,9 @@ func (o *GRPC) GetAttestation(
 	// TODO(setrofim) Should we be doing SetVerifierError() on error here?
 	// This should be diced as part of wider policy framework desing.
 	err = o.PolicyManager.Evaluate(ctx, attestContext, endorsements)
+
+	o.logger.Infow("evaluated attestation result", "attestation-result", attestContext.Result)
+
 	return attestContext, err
 }
 

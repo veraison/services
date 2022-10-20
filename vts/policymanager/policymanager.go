@@ -7,23 +7,28 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
+	"go.uber.org/zap"
 )
 
 type PolicyManager struct {
 	Store *policy.Store
 	Agent policy.IAgent
+
+	logger *zap.SugaredLogger
 }
 
-func New(v *viper.Viper, store *policy.Store) (*PolicyManager, error) {
-	agent, err := policy.CreateAgent(v)
+func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*PolicyManager, error) {
+	agent, err := policy.CreateAgent(v, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	pm := &PolicyManager{Agent: agent, Store: store}
+	logger.Infow("agent created", "agent", agent.GetBackendName())
+
+	pm := &PolicyManager{Agent: agent, Store: store, logger: logger}
 
 	return pm, nil
 }
@@ -34,10 +39,12 @@ func (o *PolicyManager) Evaluate(
 	endorsements []string,
 ) error {
 	evidence := ac.Evidence
+	policyID := o.getPolicyID(evidence)
 
-	pol, err := o.getPolicy(evidence)
+	pol, err := o.getPolicy(policyID)
 	if err != nil {
 		if errors.Is(err, policy.ErrNoPolicy) {
+			o.logger.Debugw("no policy", "policy-id", policyID)
 			return nil // No policy? No problem!
 		}
 
@@ -54,12 +61,15 @@ func (o *PolicyManager) Evaluate(
 	return nil
 }
 
-func (o *PolicyManager) getPolicy(ev *proto.EvidenceContext) (*policy.Policy, error) {
-	policyID := fmt.Sprintf("%s://%s",
+func (o *PolicyManager) getPolicyID(ec *proto.EvidenceContext) string {
+	return fmt.Sprintf("%s://%s",
 		o.Agent.GetBackendName(),
-		ev.TenantId,
+		ec.TenantId,
 	)
 
+}
+
+func (o *PolicyManager) getPolicy(policyID string) (*policy.Policy, error) {
 	p, err := o.Store.GetLatest(policyID)
 	if err != nil {
 		return nil, err

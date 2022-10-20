@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/log"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 func TestMemory_Init_Close_cycle_ok(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	assert.NoError(t, err)
 	assert.Len(t, s.Data, 0)
 
@@ -46,7 +47,7 @@ func TestMemory_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 func TestMemory_Set_Get_ok(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	err = s.Set(testKey, testVal)
@@ -67,7 +68,7 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	emptyKey := ""
@@ -80,7 +81,7 @@ func TestMemory_Get_empty_key(t *testing.T) {
 func TestMemory_Del_empty_key(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	emptyKey := ""
@@ -93,7 +94,7 @@ func TestMemory_Del_empty_key(t *testing.T) {
 func TestMemory_Set_empty_key(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	emptyKey := ""
@@ -106,7 +107,7 @@ func TestMemory_Set_empty_key(t *testing.T) {
 func TestMemory_Set_bad_json(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	badJSON := "[1, 2"
@@ -119,7 +120,7 @@ func TestMemory_Set_bad_json(t *testing.T) {
 func TestMemory_Add_using_same_key_different_vals(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	err = s.Set(testKey, testVal)
@@ -138,7 +139,7 @@ func TestMemory_Add_using_same_key_different_vals(t *testing.T) {
 func TestMemory_Add_using_same_key_same_vals(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	err = s.Set(testKey, testVal)
@@ -157,7 +158,7 @@ func TestMemory_Add_using_same_key_same_vals(t *testing.T) {
 func TestMemory_Del_ok(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	err = s.Set(testKey, testVal)
@@ -181,7 +182,7 @@ func TestMemory_Del_ok(t *testing.T) {
 func TestMemory_Get_no_such_key(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	expectedErr := fmt.Sprintf("key not found: %q", testKey)
@@ -194,7 +195,7 @@ func TestMemory_Get_no_such_key(t *testing.T) {
 func TestMemory_Del_no_such_key(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	expectedErr := fmt.Sprintf("key not found: %q", testKey)
@@ -207,7 +208,7 @@ func TestMemory_Del_no_such_key(t *testing.T) {
 func TestMemory_dump_ok(t *testing.T) {
 	s := Memory{}
 
-	err := s.Init(nil)
+	err := s.Init(nil, log.Named("test"))
 	require.NoError(t, err)
 
 	err = s.Set(testKey, testVal)

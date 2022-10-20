@@ -11,7 +11,7 @@ import (
 	"log"
 
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
 )
 

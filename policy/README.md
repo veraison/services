@@ -16,3 +16,18 @@ moment, the following policy agents are supported:
 generic Open Source policy agent that utilizes its own policy language called
 Rego. See [README.opa.md](README.opa.md).
 
+
+## Configuration
+
+The following policy agent configuration directives are currently supported:
+
+- `backend`: specified which policy backend will be used. Currently supported
+  backends: `opa`.
+- `<backend name>`: an entry with the name of a backend is used to specify
+  configuration for that backend. Multiple such entries may exist in a single
+  config, but only the one for the backend specified by the `backend` directive
+  will be used.
+
+### `opa` backend configuration
+
+Currently, `opa` backend does not support any configuration.

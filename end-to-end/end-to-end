@@ -1,0 +1,156 @@
+#!/bin/bash
+# Copyright 2022 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+
+DEPLOY_DIR=${DEPLOY_DIR:-/tmp/veraison}
+TMUX_SESSION=${TMUX_SESSION:-veraison}
+
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+REPO_DIR=$THIS_DIR/..
+
+function deploy() {
+    echo "creating deployment directory structure under $DEPLOY_DIR"
+    mkdir -p $DEPLOY_DIR/plugins
+    mkdir -p $DEPLOY_DIR/stores
+    mkdir -p $DEPLOY_DIR/plugins-provisioning
+    mkdir -p $DEPLOY_DIR/logs
+    echo "deploying services"
+    cp $REPO_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
+    cp $REPO_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
+    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $REPO_DIR/provisioning/plugins/bin/* $DEPLOY_DIR/plugins-provisioning/
+    cp $REPO_DIR/vts/plugins/bin/* $DEPLOY_DIR/plugins/
+    cp $THIS_DIR/config.yaml $DEPLOY_DIR/
+
+    echo "initializing stores"
+    for t in en ta po
+    do
+        echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+            sqlite3 $DEPLOY_DIR/stores/$t-store.sql
+    done
+}
+
+function run() {
+    echo "starting services inside a tmux session"
+    tmux new-session -d -s $TMUX_SESSION -c $DEPLOY_DIR "bash -c './vts-service'"
+    tmux rename-window -t $TMUX_SESSION:0 services
+
+    sleep 0.5 # wait for VTS to start
+
+    tmux split-window -t $TMUX_SESSION:0.0 -c $DEPLOY_DIR "bash -c './verification-service'"
+    tmux split-window -t $TMUX_SESSION:0.1 -c $DEPLOY_DIR "bash -c './provisioning-service'"
+    tmux resize-pane -t $TMUX_SESSION:0.0 -y 33%
+    tmux resize-pane -t $TMUX_SESSION:0.1 -y 33%
+    echo "done."
+    echo ""
+    echo "    use \"tmux attach -t $TMUX_SESSION\" to attach to the session."
+    echo ""
+}
+
+function terminate() {
+    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $TMUX_SESSION)" != "" ]]; then
+        echo "killing exististing tmux session"
+        tmux kill-session -t $TMUX_SESSION
+    fi
+}
+
+function clean() {
+    rm -rf $DEPLOY_DIR
+}
+
+function provision() {
+    set -x
+    cocli corim submit --corim-file=$THIS_DIR/input/corim-full.cbor --api-server="http://localhost:8888/endorsement-provisioning/v1/submit" --media-type="application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+}
+
+function check() {
+    echo "TRUST ANCHORS:"
+    echo "--------------"
+    sqlite3 $DEPLOY_DIR/stores/ta-store.sql 'select distinct vals from kvstore' | jq .
+
+    echo ""
+
+    echo "ENDORSEMENTS:"
+    echo "-------------"
+    sqlite3 $DEPLOY_DIR/stores/en-store.sql 'select distinct vals from kvstore' | jq .
+
+    echo ""
+}
+
+function verify_as_attester() {
+    set -x
+    evcli psa verify-as attester \
+        --api-server=http://localhost:8080/challenge-response/v1/newSession \
+        --claims=$THIS_DIR/input/psa-claims-profile-2-without-nonce.json \
+        --key=$THIS_DIR/input/ec-p256.jwk --nonce-size=32
+}
+
+function verify_as_relying_party() {
+    set -x
+    evcli psa verify-as relying-party \
+        --api-server=http://localhost:8080/challenge-response/v1/newSession \
+        --token=$THIS_DIR/input/psa-evidence.cbor
+}
+
+function verify() {
+    as=$1
+
+    case $as in
+        attester | attest) verify_as_attester;;
+        rp | relying-party) verify_as_relying_party;;
+        *) echo "ERROR unexected \"as\": \"$as\"; should be either \"attester\" or \"rp\""
+    esac
+}
+
+function build() {
+    make -C $REPO_DIR
+}
+
+function help() {
+cat <<'EOF'
+Usage: ./end-to-end [command]
+
+Command:
+
+  Deployment commands:
+  --------------------
+
+  build
+      Build Veraison (equivalent to `make -C ..`).
+  deploy
+      Create deployment location and copy built artefacts into it.
+  run | start
+      Run veraison services inside a tmux session.
+  stop | terminate
+      Terminate the tmux session and the services therein.
+  clean
+      Delete the deployment location
+
+  End-to-end test commands:
+  -------------------------
+
+  provision
+      Provision endorsements and trust anchors via the provisioning API.
+  check | check-stores
+      Check the contents of the endorsement and trust anchor stores.
+  verify [ attester | rp ]
+      Verify claims via verification API either as an attester or the relying party.
+
+EOF
+}
+
+command=$1
+case $command in
+    help | -h ) help;;
+    deploy) deploy;;
+    redeploy) build && terminate && deploy && run;;
+    start | run) run;;
+    stop | terminate) terminate;;
+    clean | rm) terminate && clean;;
+    provision) provision;;
+    check | check-stores) check;;
+    verify) verify $2;;
+    build) build;;
+    *) echo "ERROR: unexpected command: \"$command\""; help;;
+esac

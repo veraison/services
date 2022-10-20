@@ -283,8 +283,27 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// read content-type and check against supported attestation formats
 	mediaType := c.Request.Header.Get("Content-Type")
 
-	if !o.Verifier.IsSupportedMediaType(mediaType) {
-		c.Header("Accept", strings.Join(o.Verifier.SupportedMediaTypes(), ", "))
+	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not check media type with verifier: %v", err),
+		)
+		return
+	}
+
+	if !isSupported {
+		supportedMediaTypes, err := o.Verifier.SupportedMediaTypes()
+		if err != nil {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("could not get supported media types from verifier: %v",
+					err),
+			)
+			return
+		}
+
+		c.Header("Accept", strings.Join(supportedMediaTypes, ", "))
 		ReportProblem(c,
 			http.StatusUnsupportedMediaType,
 			fmt.Sprintf("no active plugin found for %s", mediaType),
@@ -376,7 +395,16 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 		return
 	}
 
-	id, session, err := newSession(nonce, o.Verifier.SupportedMediaTypes(), ConfigSessionTTL)
+	supportedMediaTypes, err := o.Verifier.SupportedMediaTypes()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not get media types form verifier: %v", err),
+		)
+		return
+	}
+
+	id, session, err := newSession(nonce, supportedMediaTypes, ConfigSessionTTL)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,

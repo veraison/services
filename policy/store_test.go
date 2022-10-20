@@ -5,16 +5,17 @@ package policy
 import (
 	"testing"
 
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/services/log"
 )
 
 func Test_Store_CRUD(t *testing.T) {
 	v := viper.New()
 	v.Set("backend", "memory")
 
-	store, err := NewStore(v)
+	store, err := NewStore(v, log.Named("test"))
 	require.NoError(t, err)
 	defer store.Close()
 

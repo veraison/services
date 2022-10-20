@@ -3,12 +3,13 @@
 package pluginmanager
 
 import (
+	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )
 
 type ISchemePluginManager interface {
-	Init() error
+	Init(*viper.Viper) error
 	Close() error
 
 	LookupByMediaType(mediaType string) (scheme.IScheme, error)

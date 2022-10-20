@@ -3,9 +3,7 @@
 package verifier
 
 type IVerifier interface {
-	// XXX this should return an error as well
-	IsSupportedMediaType(mt string) bool
-	// XXX this should return an error as well
-	SupportedMediaTypes() []string
+	IsSupportedMediaType(mt string) (bool, error)
+	SupportedMediaTypes() ([]string, error)
 	ProcessEvidence(tenantID string, data []byte, mt string) ([]byte, error)
 }

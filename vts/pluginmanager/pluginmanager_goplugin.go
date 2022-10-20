@@ -5,42 +5,79 @@ package pluginmanager
 import (
 	"errors"
 	"fmt"
-	"log"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/setrofim/viper"
+	"github.com/spf13/viper"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
+	"go.uber.org/zap"
 )
 
-type GoPluginManager struct {
-	Config        *viper.Viper
-	DispatchTable map[string]*scheme.SchemeGoPlugin
+type cfg struct {
+	Backend        string
+	BackendConfigs map[string]interface{} `mapstructure:",remain"`
 }
 
-func New(v *viper.Viper) *GoPluginManager {
-	return &GoPluginManager{
-		Config: v,
+func (o cfg) Validate() error {
+	supportedBackends := map[string]bool{
+		"go-plugin": true,
 	}
+
+	var unexpected []string
+	for k := range o.BackendConfigs {
+		if _, ok := supportedBackends[k]; !ok {
+			unexpected = append(unexpected, k)
+		}
+	}
+
+	if len(unexpected) > 0 {
+		sort.Strings(unexpected)
+		return fmt.Errorf("unexpected directives: %s", strings.Join(unexpected, ", "))
+	}
+
+	return nil
+}
+
+type backendCfg struct {
+	Folder string
+}
+
+type GoPluginManager struct {
+	Backend       string
+	DispatchTable map[string]*scheme.SchemeGoPlugin
+
+	logger *zap.SugaredLogger
+}
+
+func New(logger *zap.SugaredLogger) *GoPluginManager {
+	return &GoPluginManager{logger: logger}
 }
 
 // variables read from the config store:
 //   * "go-plugin.folder"
-func (o *GoPluginManager) Init() error {
-	defaultBackend := "go-plugin"
-	o.Config.SetDefault("backend", defaultBackend)
-
-	backend := o.Config.GetString("backend")
-	if backend != defaultBackend {
-		return fmt.Errorf("want backend %s, got %s", defaultBackend, backend)
+func (o *GoPluginManager) Init(v *viper.Viper) error {
+	cfg := cfg{Backend: "go-plugin"}
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(v); err != nil {
+		return err
 	}
 
-	dir := o.Config.GetString("go-plugin.folder")
-	if dir == "" {
-		return fmt.Errorf(`"go-pluing.folder" not specified`)
+	subs, err := config.GetSubs(v, "go-plugin")
+	if err != nil {
+		return err
 	}
 
-	pPaths, err := plugin.Discover("*", dir)
+	var backendCfg backendCfg
+	loader = config.NewLoader(&backendCfg)
+	if err := loader.LoadFromViper(subs["go-plugin"]); err != nil {
+		return err
+	}
+
+	o.logger.Debugw("discovering plugins", "location", backendCfg.Folder)
+	pPaths, err := plugin.Discover("*", backendCfg.Folder)
 	if err != nil {
 		return err
 	}
@@ -48,7 +85,7 @@ func (o *GoPluginManager) Init() error {
 	tbl := make(map[string]*scheme.SchemeGoPlugin)
 
 	for _, p := range pPaths {
-		ctx, err := scheme.NewSchemeGoPlugin(p)
+		ctx, err := scheme.NewSchemeGoPlugin(p, o.logger)
 		if err != nil {
 			return err
 		}
@@ -58,9 +95,17 @@ func (o *GoPluginManager) Init() error {
 			// advertised by another plugin.  Should raise fatal error if this
 			// is the case.
 			tbl[mt] = ctx
+			o.logger.Infow("media type registred", "media-type", mt)
 		}
 	}
 
+	if len(tbl) > 0 {
+		o.logger.Infof("found scheme plugins for %d media types", len(tbl))
+	} else {
+		o.logger.Warn("did not find any scheme plugins")
+	}
+
+	o.logger.Debugw("loaded scheme plugins", "dispatch-table", tbl)
 	o.DispatchTable = tbl
 
 	return nil
@@ -68,7 +113,7 @@ func (o *GoPluginManager) Init() error {
 func (o *GoPluginManager) Close() error {
 	for _, v := range o.DispatchTable {
 		if v.Client != nil {
-			log.Printf("killing client %s", v.Name)
+			o.logger.Debugf("killing client %s", v.Name)
 			v.Client.Kill()
 		}
 	}
