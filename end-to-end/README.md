@@ -85,13 +85,13 @@ Optionally, you can verify that the store have been populated:
 As a relying party:
 
 ```sh
-./end-to-end virify rp
+./end-to-end verify rp
 ```
 
 As an attester:
 
 ```sh
-./end-to-end virify attest
+./end-to-end verify attest
 ```
 
 ## Clean up
