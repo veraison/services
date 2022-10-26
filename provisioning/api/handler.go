@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -66,7 +67,8 @@ func (o *Handler) Submit(c *gin.Context) {
 	mediaType := c.Request.Header.Get("Content-Type")
 
 	if !o.DecoderManager.IsSupportedMediaType(mediaType) {
-		c.Header("Accept", o.DecoderManager.SupportedMediaTypes())
+		mediaTypes := o.DecoderManager.GetSupportedMediaTypes()
+		c.Header("Accept", strings.Join(mediaTypes, ", "))
 		ReportProblem(c,
 			http.StatusUnsupportedMediaType,
 			fmt.Sprintf("no active plugin found for %s", mediaType),
