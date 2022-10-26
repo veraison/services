@@ -1,0 +1,20 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "github.com/veraison/services/proto";
+
+import "google/protobuf/struct.proto";
+
+enum ServiceStatus {
+    DOWN = 0;
+    INITIALIZING = 1;
+    READY = 2;
+    TERMINATING = 3;
+}
+
+
+message ServiceState {
+	ServiceStatus status = 1 [json_name = "status"];
+	string server_version = 2 [json_name = "server-version"];
+	map<string, google.protobuf.ListValue> supported_media_types = 3 [json_name = "supported-media-types"];
+}

@@ -28,10 +28,6 @@ import (
 // should be passed as a parameter
 const DummyTenantID = "0"
 
-// Trusted Services server implementation version. Note: this is distinct from
-// the version of the API being implemented.
-const ServerVersion = "0.0.1"
-
 // Supported parameters:
 // * vts.server-addr: string w/ syntax specified in
 //   https://github.com/grpc/grpc/blob/master/doc/naming.md
@@ -135,8 +131,25 @@ func (o *GRPC) Close() error {
 	return nil
 }
 
-func (o *GRPC) GetVTSVersion(context.Context, *emptypb.Empty) (*proto.ServerVersion, error) {
-	return &proto.ServerVersion{Version: ServerVersion}, nil
+func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceState, error) {
+
+	mediaTypes, err := o.PluginManager.SupportedVerificationMediaTypes()
+	if err != nil {
+		return nil, err
+	}
+
+	mediaTypesList, err := proto.NewStringList(mediaTypes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.ServiceState{
+		Status:        proto.ServiceStatus_READY,
+		ServerVersion: config.Version,
+		SupportedMediaTypes: map[string]*structpb.ListValue{
+			"challenge-response/v1": mediaTypesList.AsListValue(),
+		},
+	}, nil
 }
 
 func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRequest) (*proto.AddSwComponentsResponse, error) {

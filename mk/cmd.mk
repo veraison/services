@@ -10,11 +10,12 @@
 # * all      - build the binary and save it to $(CMD)
 # * clean    - remove the generated binary
 
+
 ifndef CMD
   $(error CMD must be set when including cmd.mk)
 endif
 
-$(CMD): $(SRCS) $(CMD_DEPS) ; go build -o $(CMD)
+$(CMD): $(SRCS) $(CMD_DEPS) ; go build -o $(CMD) -ldflags "-X 'github.com/veraison/services/config.Version=$(VERSION_FROM_GIT)'"
 
 CLEANFILES += $(CMD)
 

@@ -59,6 +59,8 @@ func main() {
 	}
 	log.InitGinWriter() // route gin output to our logger.
 
+	log.Infow("Initializing Provisioning Service", "version", config.Version)
+
 	loader := config.NewLoader(&cfg)
 	if err = loader.LoadFromViper(subs["provisioning"]); err != nil {
 		log.Fatalf("Could not load config: %v", err)
@@ -73,9 +75,9 @@ func main() {
 		log.Fatalf("Could not initilize VTS client: %v", err)
 	}
 
-	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	vtsState, err := vtsClient.GetServiceState(context.TODO(), &emptypb.Empty{})
 	if err == nil {
-		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+		log.Infow("vts connection established", "server-version", vtsState.ServerVersion)
 	} else {
 		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
 			"error", err)

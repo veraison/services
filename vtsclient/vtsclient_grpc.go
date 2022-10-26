@@ -61,13 +61,15 @@ func (o *GRPC) Init(v *viper.Viper) error {
 	return nil
 }
 
-func (o *GRPC) GetVTSVersion(
+func (o *GRPC) GetServiceState(
 	ctx context.Context,
 	in *emptypb.Empty,
 	opts ...grpc.CallOption,
-) (*proto.ServerVersion, error) {
+) (*proto.ServiceState, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, NewNoConnectionError("GetVTSVersion", err)
+		return &proto.ServiceState{
+			Status: proto.ServiceStatus_DOWN,
+		}, nil
 	}
 
 	c := o.GetProvisionerClient()
@@ -75,7 +77,7 @@ func (o *GRPC) GetVTSVersion(
 		return nil, ErrNoClient
 	}
 
-	return c.GetVTSVersion(ctx, in, opts...)
+	return c.GetServiceState(ctx, in, opts...)
 }
 
 func (o *GRPC) AddSwComponents(

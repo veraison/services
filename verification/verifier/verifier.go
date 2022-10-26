@@ -22,6 +22,10 @@ func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IVerifier {
 	}
 }
 
+func (o *Verifier) GetVTSState() (*proto.ServiceState, error) {
+	return o.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+}
+
 func (o *Verifier) IsSupportedMediaType(mt string) (bool, error) {
 	mts, err := o.VTSClient.GetSupportedVerificationMediaTypes(
 		context.Background(),

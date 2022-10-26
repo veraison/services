@@ -12,14 +12,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type IHandler interface {
 	Submit(c *gin.Context)
+	GetServiceState(c *gin.Context)
 }
 
 type Handler struct {
@@ -50,6 +54,49 @@ type ProvisioningSession struct {
 const (
 	ProvisioningSessionMediaType = "application/vnd.veraison.provisioning-session+json"
 )
+
+func (o *Handler) GetServiceState(c *gin.Context) {
+	state := proto.ServiceState{
+		ServerVersion: config.Version,
+	}
+
+	vtsState, err := o.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not retrieve service state: %v", err),
+		)
+		return
+	}
+
+	apiMediaTypeList, err := structpb.NewList([]interface{}{ProvisioningSessionMediaType})
+	if err != nil {
+		panic(err) // Should never happen as the value above is hard-coded.
+	}
+
+	decoderMediaTypeList, err := proto.NewStringList(o.DecoderManager.GetSupportedMediaTypes())
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not retrieve decoder media types: %v", err),
+		)
+		return
+	}
+
+	state.SupportedMediaTypes = map[string]*structpb.ListValue{
+		"endrosement-provisioning/v1": apiMediaTypeList,
+		"decoder":                     decoderMediaTypeList.AsListValue(),
+	}
+
+	if vtsState.Status == proto.ServiceStatus_DOWN {
+		state.Status = proto.ServiceStatus_INITIALIZING
+	} else {
+		state.Status = proto.ServiceStatus_READY
+	}
+
+	c.Header("Content-Type", proto.ServiceStateMediaType)
+	c.JSON(http.StatusOK, &state)
+}
 
 func (o *Handler) Submit(c *gin.Context) {
 	// read the accept header and make sure that it's compatible with what we

@@ -39,6 +39,8 @@ func main() {
 	}
 	log.InitGinWriter() // route gin output to our logger.
 
+	log.Infow("Initializing Verification Service", "version", config.Version)
+
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
 
 	log.Info("initializing VTS client")
@@ -47,9 +49,9 @@ func main() {
 		log.Fatalf("Could not initialize VTS client: %v", err)
 	}
 
-	vtsServerVersion, err := vtsClient.GetVTSVersion(context.TODO(), &emptypb.Empty{})
+	vtsState, err := vtsClient.GetServiceState(context.TODO(), &emptypb.Empty{})
 	if err == nil {
-		log.Infow("vts connection established", "server-version", vtsServerVersion.Version)
+		log.Infow("vts connection established", "server-version", vtsState.ServerVersion)
 	} else {
 		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
 			"error", err)

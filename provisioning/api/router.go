@@ -14,6 +14,7 @@ func NewRouter(handler IHandler) *gin.Engine {
 
 	router.Group("/endorsement-provisioning/v1").
 		POST("/submit", handler.Submit)
+	router.GET("/status", handler.GetServiceState)
 
 	return router
 }

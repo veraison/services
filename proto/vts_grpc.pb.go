@@ -19,8 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VTSClient interface {
-	// Returns the the server version (note: this is distinct from protocol or API version).
-	GetVTSVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerVersion, error)
+	// Return the summary state of the service.
+	GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
@@ -39,9 +39,9 @@ func NewVTSClient(cc grpc.ClientConnInterface) VTSClient {
 	return &vTSClient{cc}
 }
 
-func (c *vTSClient) GetVTSVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerVersion, error) {
-	out := new(ServerVersion)
-	err := c.cc.Invoke(ctx, "/proto.VTS/GetVTSVersion", in, out, opts...)
+func (c *vTSClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error) {
+	out := new(ServiceState)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetServiceState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +88,8 @@ func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorReques
 // All implementations must embed UnimplementedVTSServer
 // for forward compatibility
 type VTSServer interface {
-	// Returns the the server version (note: this is distinct from protocol or API version).
-	GetVTSVersion(context.Context, *emptypb.Empty) (*ServerVersion, error)
+	// Return the summary state of the service.
+	GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
@@ -105,8 +105,8 @@ type VTSServer interface {
 type UnimplementedVTSServer struct {
 }
 
-func (UnimplementedVTSServer) GetVTSVersion(context.Context, *emptypb.Empty) (*ServerVersion, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVTSVersion not implemented")
+func (UnimplementedVTSServer) GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServiceState not implemented")
 }
 func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAttestation not implemented")
@@ -133,20 +133,20 @@ func RegisterVTSServer(s grpc.ServiceRegistrar, srv VTSServer) {
 	s.RegisterService(&VTS_ServiceDesc, srv)
 }
 
-func _VTS_GetVTSVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VTS_GetServiceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).GetVTSVersion(ctx, in)
+		return srv.(VTSServer).GetServiceState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/GetVTSVersion",
+		FullMethod: "/proto.VTS/GetServiceState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetVTSVersion(ctx, req.(*emptypb.Empty))
+		return srv.(VTSServer).GetServiceState(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -231,8 +231,8 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*VTSServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetVTSVersion",
-			Handler:    _VTS_GetVTSVersion_Handler,
+			MethodName: "GetServiceState",
+			Handler:    _VTS_GetServiceState_Handler,
 		},
 		{
 			MethodName: "GetAttestation",
