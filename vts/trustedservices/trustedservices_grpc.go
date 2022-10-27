@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -38,6 +39,7 @@ const DummyTenantID = "0"
 // * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
 type GRPCConfig struct {
 	ServerAddress string `mapstructure:"server-addr" valid:"dialstring"`
+	ListenAddress string `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -92,7 +94,12 @@ func (o *GRPC) Init(v *viper.Viper) error {
 		return err
 	}
 
-	o.ServerAddress = cfg.ServerAddress
+	if cfg.ListenAddress != "" {
+		o.ServerAddress = cfg.ListenAddress
+	} else {
+		// note: the indexing will succeed as ServerAddress has been validated as a dialstring.
+		o.ServerAddress = ":" + strings.Split(cfg.ServerAddress, ":")[1]
+	}
 
 	lsd, err := net.Listen("tcp", o.ServerAddress)
 	if err != nil {
@@ -206,7 +213,10 @@ func addSwComponentErrorResponse(err error) *proto.AddSwComponentsResponse {
 	}
 }
 
-func (o *GRPC) AddTrustAnchor(ctx context.Context, req *proto.AddTrustAnchorRequest) (*proto.AddTrustAnchorResponse, error) {
+func (o *GRPC) AddTrustAnchor(
+	ctx context.Context,
+	req *proto.AddTrustAnchorRequest,
+) (*proto.AddTrustAnchorResponse, error) {
 	var (
 		err    error
 		keys   []string
