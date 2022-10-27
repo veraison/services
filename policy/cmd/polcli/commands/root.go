@@ -4,6 +4,8 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/veraison/services/config"
 )
 
 var (
@@ -12,7 +14,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:     "polcli",
 		Short:   "policy management client",
-		Version: "0.0.1",
+		Version: config.Version,
 	}
 )
 
