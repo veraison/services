@@ -5,7 +5,6 @@ package decoder
 import (
 	"fmt"
 	"os/exec"
-	"strings"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/services/log"
@@ -95,14 +94,14 @@ func (o GoPluginDecoderManager) IsSupportedMediaType(mediaType string) bool {
 	return ok
 }
 
-func (o GoPluginDecoderManager) SupportedMediaTypes() string {
-	a := make([]string, len(o.DispatchTable))
+func (o GoPluginDecoderManager) GetSupportedMediaTypes() []string {
+	var a []string
 
 	for k := range o.DispatchTable {
 		a = append(a, k)
 	}
 
-	return strings.Join(a, ", ")
+	return a
 }
 
 type GoPluginDecoderContext struct {

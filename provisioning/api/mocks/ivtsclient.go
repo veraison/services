@@ -97,6 +97,26 @@ func (mr *MockIVTSClientMockRecorder) GetAttestation(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAttestation", reflect.TypeOf((*MockIVTSClient)(nil).GetAttestation), varargs...)
 }
 
+// GetServiceState mocks base method.
+func (m *MockIVTSClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.ServiceState, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetServiceState", varargs...)
+	ret0, _ := ret[0].(*proto.ServiceState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetServiceState indicates an expected call of GetServiceState.
+func (mr *MockIVTSClientMockRecorder) GetServiceState(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceState", reflect.TypeOf((*MockIVTSClient)(nil).GetServiceState), varargs...)
+}
+
 // GetSupportedVerificationMediaTypes mocks base method.
 func (m *MockIVTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.MediaTypeList, error) {
 	m.ctrl.T.Helper()
@@ -115,24 +135,4 @@ func (mr *MockIVTSClientMockRecorder) GetSupportedVerificationMediaTypes(ctx, in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportedVerificationMediaTypes", reflect.TypeOf((*MockIVTSClient)(nil).GetSupportedVerificationMediaTypes), varargs...)
-}
-
-// GetVTSVersion mocks base method.
-func (m *MockIVTSClient) GetVTSVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.ServerVersion, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetVTSVersion", varargs...)
-	ret0, _ := ret[0].(*proto.ServerVersion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVTSVersion indicates an expected call of GetVTSVersion.
-func (mr *MockIVTSClientMockRecorder) GetVTSVersion(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVTSVersion", reflect.TypeOf((*MockIVTSClient)(nil).GetVTSVersion), varargs...)
 }

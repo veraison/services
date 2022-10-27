@@ -10,7 +10,7 @@ import (
 
 func Test_TrustTier_String(t *testing.T) {
 	assert.Equal(t, TrustTier_AFFIRMING.String(), "AFFIRMING")
-	assert.Equal(t, TrustTier(73).String(), "TrustTier(73)")
+	assert.Equal(t, TrustTier(73).String(), "73")
 }
 
 func Test_ARStatus_GetTier(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	proto "github.com/veraison/services/proto"
 )
 
 // MockIVerifier is a mock of IVerifier interface.
@@ -31,6 +32,21 @@ func NewMockIVerifier(ctrl *gomock.Controller) *MockIVerifier {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIVerifier) EXPECT() *MockIVerifierMockRecorder {
 	return m.recorder
+}
+
+// GetVTSState mocks base method.
+func (m *MockIVerifier) GetVTSState() (*proto.ServiceState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVTSState")
+	ret0, _ := ret[0].(*proto.ServiceState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVTSState indicates an expected call of GetVTSState.
+func (mr *MockIVerifierMockRecorder) GetVTSState() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVTSState", reflect.TypeOf((*MockIVerifier)(nil).GetVTSState))
 }
 
 // IsSupportedMediaType mocks base method.

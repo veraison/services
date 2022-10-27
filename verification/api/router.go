@@ -17,6 +17,7 @@ func NewRouter(handler IHandler) *gin.Engine {
 		POST("/session/:id", handler.SubmitEvidence).
 		GET("/session/:id", handler.GetSession).
 		DELETE("/session/:id", handler.DelSession)
+	router.GET("/status", handler.GetServiceState)
 
 	return router
 }

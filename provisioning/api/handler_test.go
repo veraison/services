@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -78,7 +79,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 	defer ctrl.Finish()
 
 	mediaType := "application/unsupported+json"
-	supportedMediaTypes := "application/type-1, application/type-2"
+	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
 
 	dm := mock_deps.NewMockIDecoderManager(ctrl)
 	dm.EXPECT().
@@ -87,7 +88,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 		).
 		Return(false)
 	dm.EXPECT().
-		SupportedMediaTypes().
+		GetSupportedMediaTypes().
 		Return(supportedMediaTypes)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
@@ -102,7 +103,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 		Status: http.StatusUnsupportedMediaType,
 		Detail: fmt.Sprintf("no active plugin found for %s", mediaType),
 	}
-	expectedAcceptHeader := supportedMediaTypes
+	expectedAcceptHeader := strings.Join(supportedMediaTypes, ", ")
 
 	w := httptest.NewRecorder()
 	g, _ := gin.CreateTestContext(w)

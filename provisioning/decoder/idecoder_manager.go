@@ -9,5 +9,5 @@ type IDecoderManager interface {
 	Close() error
 	Dispatch(mediaType string, data []byte) (*EndorsementDecoderResponse, error)
 	IsSupportedMediaType(mediaType string) bool
-	SupportedMediaTypes() string
+	GetSupportedMediaTypes() []string
 }

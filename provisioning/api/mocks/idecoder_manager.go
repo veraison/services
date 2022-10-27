@@ -64,6 +64,20 @@ func (mr *MockIDecoderManagerMockRecorder) Dispatch(mediaType, data interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dispatch", reflect.TypeOf((*MockIDecoderManager)(nil).Dispatch), mediaType, data)
 }
 
+// GetSupportedMediaTypes mocks base method.
+func (m *MockIDecoderManager) GetSupportedMediaTypes() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSupportedMediaTypes")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetSupportedMediaTypes indicates an expected call of GetSupportedMediaTypes.
+func (mr *MockIDecoderManagerMockRecorder) GetSupportedMediaTypes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportedMediaTypes", reflect.TypeOf((*MockIDecoderManager)(nil).GetSupportedMediaTypes))
+}
+
 // Init mocks base method.
 func (m *MockIDecoderManager) Init(dir string, logger *zap.SugaredLogger) error {
 	m.ctrl.T.Helper()
@@ -90,18 +104,4 @@ func (m *MockIDecoderManager) IsSupportedMediaType(mediaType string) bool {
 func (mr *MockIDecoderManagerMockRecorder) IsSupportedMediaType(mediaType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSupportedMediaType", reflect.TypeOf((*MockIDecoderManager)(nil).IsSupportedMediaType), mediaType)
-}
-
-// SupportedMediaTypes mocks base method.
-func (m *MockIDecoderManager) SupportedMediaTypes() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SupportedMediaTypes")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// SupportedMediaTypes indicates an expected call of SupportedMediaTypes.
-func (mr *MockIDecoderManagerMockRecorder) SupportedMediaTypes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SupportedMediaTypes", reflect.TypeOf((*MockIDecoderManager)(nil).SupportedMediaTypes))
 }
