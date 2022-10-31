@@ -4,7 +4,6 @@ package verifier
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
@@ -70,11 +69,6 @@ func (o *Verifier) ProcessEvidence(tenantID string, data []byte, mt string) ([]b
 	if err != nil {
 		return nil, err
 	}
-	res, err := appraisalCtx.Result.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("Apprisal Context %s,", string(res))
-	return appraisalCtx.Result.MarshalJSON()
 
+	return appraisalCtx.Result, nil
 }

@@ -3,7 +3,10 @@
 
 package scheme
 
-import "github.com/veraison/services/proto"
+import (
+	"github.com/veraison/ear"
+	"github.com/veraison/services/proto"
+)
 
 // IScheme defines the interface to attestation scheme specific functionality.
 // An object implementing this interface encapsulates all functionality specific
@@ -50,12 +53,11 @@ type IScheme interface {
 	) error
 
 	// AppraiseEvidence evaluates the specified  EvidenceContext against
-	// the specified endorsements, and returns an AttestationResult wrapped
-	// in an AppraisalContext.
+	// the specified endorsements, and returns an AttestationResult.
 	AppraiseEvidence(
 		ec *proto.EvidenceContext,
 		endorsements []string,
-	) (*proto.AppraisalContext, error)
+	) (*ear.AttestationResult, error)
 
 	// SynthKeysFromSwComponent synthesizes lookup key(s) for the
 	// provided software component endorsement.

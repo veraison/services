@@ -9,6 +9,7 @@ import (
 	"net/rpc"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/proto"
 )
 
@@ -329,12 +330,12 @@ func (s *RPCClient) ValidateEvidenceIntegrity(
 	return err
 }
 
-func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []string) (*proto.AppraisalContext, error) {
+func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []string) (*ear.AttestationResult, error) {
 	var (
-		args         AppraiseEvidenceArgs
-		appraisalCtx proto.AppraisalContext
-		err          error
-		resp         []byte
+		args   AppraiseEvidenceArgs
+		result ear.AttestationResult
+		err    error
+		resp   []byte
 	)
 
 	args.Evidence, err = json.Marshal(ec)
@@ -349,9 +350,9 @@ func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []s
 		return nil, fmt.Errorf("Plugin.AppraiseEvidence RPC call failed: %w", err) // nolint
 	}
 
-	err = json.Unmarshal(resp, &appraisalCtx)
+	err = json.Unmarshal(resp, &result)
 
-	return &appraisalCtx, err
+	return &result, err
 }
 
 func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*ExtractedClaims, error) {

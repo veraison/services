@@ -11,10 +11,12 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/vts/appraisal"
 	mock_deps "github.com/veraison/services/vts/policymanager/mocks"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -121,14 +123,14 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Evidence:      evStruct,
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
-	ar := &proto.AttestationResult{}
-	ac := &proto.AppraisalContext{Evidence: ec, Result: ar}
+	ar := ear.NewAttestationResult()
+	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar}
 
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ac.Result, ec, endorsements)
+	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ar, ec, endorsements)
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
-	err := pm.Evaluate(context.TODO(), ac, endorsements)
+	err := pm.Evaluate(context.TODO(), ap, endorsements)
 	require.NoError(t, err)
 }
 
@@ -149,14 +151,14 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 		Evidence:      evStruct,
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
-	ar := &proto.AttestationResult{}
-	ac := &proto.AppraisalContext{Evidence: ec, Result: ar}
+	ar := ear.NewAttestationResult()
+	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar}
 	expectedErr := errors.New("could not evaluate policy: policy returned bad update")
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ac.Result, ec, endorsements).Return(nil, expectedErr)
+	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), ar, ec, endorsements).Return(nil, expectedErr)
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
-	err := pm.Evaluate(context.TODO(), ac, endorsements)
+	err := pm.Evaluate(context.TODO(), ap, endorsements)
 	assert.ErrorIs(t, err, expectedErr)
 
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/log"
 	mock_deps "github.com/veraison/services/policy/mocks"
 	"github.com/veraison/services/proto"
@@ -37,16 +38,22 @@ type AgentEvaluateTestVector struct {
 	ExpectedError  string
 	ReturnResult   map[string]interface{}
 	ReturnError    error
-	ExpectedResult *proto.AttestationResult
+	ExpectedResult *ear.AttestationResult
 }
 
 func Test_Agent_Evaluate(t *testing.T) {
+	affirmingStatus := ear.TrustTierAffirming
+	profile := ear.EatProfile
+	timestamp := int64(1666091373)
+
 	vectors := []AgentEvaluateTestVector{
 		{
 			Name: "success",
 			ReturnResult: map[string]interface{}{
-				"status": 2, // AFFIRMING
-				"trust-vector": map[string]interface{}{
+				"ear.status":  2,
+				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"iat":         1666091373,
+				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -59,18 +66,22 @@ func Test_Agent_Evaluate(t *testing.T) {
 			},
 			ReturnError:   nil,
 			ExpectedError: "",
-			ExpectedResult: &proto.AttestationResult{
-				Status: proto.TrustTier_AFFIRMING,
-				TrustVector: &proto.TrustVector{
-					Executables: 2, // AFFIRMING
+			ExpectedResult: &ear.AttestationResult{
+				Status:   &affirmingStatus,
+				Profile:  &profile,
+				IssuedAt: &timestamp,
+				TrustVector: &ear.TrustVector{
+					Executables: ear.ApprovedRuntimeClaim,
 				},
 			},
 		},
 		{
 			Name: "bad status",
 			ReturnResult: map[string]interface{}{
-				"status": "MEH",
-				"trust-vector": map[string]interface{}{
+				"ear.status":  "MEH",
+				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"iat":         1666091373,
+				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -82,13 +93,13 @@ func Test_Agent_Evaluate(t *testing.T) {
 				},
 			},
 			ReturnError:    nil,
-			ExpectedError:  "invalid value for enum type: \"MEH\"",
+			ExpectedError:  "invalid values(s) for  'ear.status' from JSON",
 			ExpectedResult: nil,
 		},
 		{
 			Name: "bad result, no status",
 			ReturnResult: map[string]interface{}{
-				"trust-vector": map[string]interface{}{
+				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -106,17 +117,21 @@ func Test_Agent_Evaluate(t *testing.T) {
 		{
 			Name: "bad result, no trust vector",
 			ReturnResult: map[string]interface{}{
-				"status": "SUCCESS",
+				"ear.status":  "affirming",
+				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"iat":         1666091373,
 			},
 			ReturnError:    nil,
-			ExpectedError:  "backend returned no trust-vector field, or its not a map[string]interface{}: map[status:SUCCESS]",
+			ExpectedError:  "backend returned no trust-vector field, or its not a map[string]interface{}",
 			ExpectedResult: nil,
 		},
 		{
 			Name: "bad result, bad trust vector",
 			ReturnResult: map[string]interface{}{
-				"status": 2, // AFFIRMING
-				"trust-vector": map[string]interface{}{
+				"ear.status":  2,
+				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"iat":         1666091373,
+				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -129,7 +144,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 				},
 			},
 			ReturnError:    nil,
-			ExpectedError:  `unknown field "wrong-field"`,
+			ExpectedError:  "found unexpected fields: wrong-field",
 			ExpectedResult: nil,
 		},
 	}
@@ -142,10 +157,14 @@ func Test_Agent_Evaluate(t *testing.T) {
 		ID:    "test-policy",
 		Rules: "",
 	}
+
 	var endorsements []string
-	result := &proto.AttestationResult{
-		Status:      96, // CONTRAINDICATED
-		TrustVector: &proto.TrustVector{},
+	contraStatus := ear.TrustTierContraindicated
+	result := &ear.AttestationResult{
+		Status:      &contraStatus,
+		Profile:     &profile,
+		IssuedAt:    &timestamp,
+		TrustVector: &ear.TrustVector{},
 	}
 	evidence := &proto.EvidenceContext{}
 
@@ -176,8 +195,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 		if v.ExpectedResult == nil {
 			assert.Nil(t, res)
 		} else {
-			assert.Equal(t, policy.ID, res.AppraisalPolicyID)
-			assert.Equal(t, v.ExpectedResult.Status, res.Status)
+			assert.Equal(t, policy.ID, *res.AppraisalPolicyID)
+			assert.Equal(t, *v.ExpectedResult.Status, *res.Status)
 			assert.Equal(t, v.ExpectedResult.TrustVector.InstanceIdentity,
 				res.TrustVector.InstanceIdentity)
 			assert.Equal(t, v.ExpectedResult.TrustVector.Configuration,

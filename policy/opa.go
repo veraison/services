@@ -12,7 +12,7 @@ import (
 
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/spf13/viper"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/ear"
 )
 
 var ErrBadOPAResult = errors.New("bad result update from policy")
@@ -104,25 +104,6 @@ func constructInput(
 	}, nil
 }
 
-func getInt32Status(v interface{}) (int32, error) {
-	number, ok := v.(json.Number)
-	if !ok {
-		err := fmt.Errorf("expected json.Number, but got %T", v)
-		return 0, err
-	}
-
-	i64, err := number.Int64()
-	if err != nil {
-		return 0, err
-	}
-
-	if _, err := proto.Int64ToStatus(i64); err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
-}
-
 func processUpdateValue(value interface{}) (map[string]interface{}, error) {
 	rawUpdate, ok := value.(map[string]interface{})
 	if !ok {
@@ -143,13 +124,9 @@ func processUpdateValue(value interface{}) (map[string]interface{}, error) {
 		"sourced-data":      0,
 	}
 
-	updatedStatus, err := getInt32Status(rawUpdate["status"])
+	updatedStatus, err := ear.ToTrustTier(rawUpdate["status"])
 	if err != nil {
 		return nil, err
-	}
-
-	if _, ok = proto.TrustTier_name[updatedStatus]; !ok {
-		return nil, fmt.Errorf("not a valid TrustTier value: %d", updatedStatus)
 	}
 
 	rawTv, ok := rawUpdate["trust-vector"].(map[string]interface{})
@@ -166,20 +143,28 @@ func processUpdateValue(value interface{}) (map[string]interface{}, error) {
 			return nil, err
 		}
 
-		value, err := getInt32Status(rawValue)
+		value, err := ear.ToTrustClaim(rawValue)
 		if err != nil {
 			err := fmt.Errorf("%w: bad value %q for %q: %v",
 				ErrBadOPAResult, rawValue, claim, err)
 			return nil, err
 		}
 
-		updateTv[claim] = value
+		updateTv[claim] = *value
+	}
+
+	addedClaims, ok := rawUpdate["added-claims"].(map[string]interface{})
+	if !ok {
+		err := fmt.Errorf(
+			`%w: "added-claims" value should be map[string]interface{}, but got %T`,
+			ErrBadOPAResult, value)
+		return nil, err
 	}
 
 	update := map[string]interface{}{
-		"status":                         updatedStatus,
-		"trust-vector":                   updateTv,
-		"veraison-verifier-added-claims": rawUpdate["veraison-verifier-added-claims"],
+		"ear.status":                         updatedStatus,
+		"ear.trustworthiness-vector":         updateTv,
+		"ear.veraison.verifier-added-claims": &addedClaims,
 	}
 
 	return update, nil

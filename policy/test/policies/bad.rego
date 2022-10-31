@@ -2,6 +2,6 @@ package policy
 
 x := 7
 
-executables = EXE_AFFIRMING {
+executables = APPROVED_RT {
   x > y  # y undeclared
-} else = EXE_UNSAFE
+} else = UNSAFE_RT

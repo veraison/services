@@ -1,14 +1,18 @@
 {
-  "status": "SUCCESS",
-  "trust-vector": {
-    "hw-authenticity": "SUCCESS",
-    "sw-integrity": "SUCCESS",
-    "sw-up-to-dateness": "UNKNOWN",
-    "config-integrity": "UNKNOWN",
-    "runtime-integrity": "UNKNOWN",
-    "certification-status": "UNKNOWN"
+  "ear.status": "affirming",
+  "eat_profile": "tag:github.com,2022:veraison/ear",
+  "iat": 1666091373,
+  "ear.trustworthiness-vector": {
+    "instance-identity": 0,
+    "configuration": 0,
+    "executables": 2,
+    "file-system": 0,
+    "hardware": 2,
+    "runtime-opaque": 0,
+    "storage-opaque": 0,
+    "sourced-data": 0
   },
-  "veraison-procesed-evidence": {
+  "ear.veraison.processed-evidence": {
     "psa-boot-seed": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
     "psa-client-id": 2,
     "psa-implementation-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",

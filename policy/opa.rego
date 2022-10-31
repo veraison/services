@@ -3,38 +3,47 @@ package policy
 import future.keywords
 
 NO_CLAIM := 0
-CANNOT_PARSE := 1
-VERIFIER_ERROR := -1
-INVALID := 99
-CONF_AFFIRMING := 2
-CONF_NOVULN := 3
-CONF_UNSAFE := 32
-CONF_UNSUPPORTABLE := 96
-EXE_AFFIRMING := 2
-EXE_BOOT_AFFIRMING := 3
-EXE_UNSAFE := 32
-EXE_UNRECOGNIZED := 33
-EXE_CONTRAINDICATED := 96
-FS_AFFIRMING := 2
-FS_UNSAFE := 32
-FS_COUNTRAINDICATED := 96
-HW_AFFIRMING := 2
-HW_UNSAFE := 32
-HW_CONTRAINDICATED := 96
-HW_UNRECOGNIZED := 97
-IDENT_AFFIRMING := 2
-IDENT_CONTRAINDICATED := 96
-IDENT_UNRECOGNIZED := 97
-RT_AFFIRMING := 2
-RT_ISOLATED := 32
-RT_EXPOSED := 96
-SOURCED_AFFIRMING := 2
-SOURCED_UNSAFE := 32
-SOURCED_CONTRAINDICATED := 96
-SECRETS_AFFIRMING := 2
-SECRETS_NOHWKEYS := 32
-SECRETS_EXPOSED := 96
+UNEXECTED_EVIDENCE := 1
 
+AFFIRMING := 2
+WARNING := 32
+CONTRAINDICATED := 96
+
+RECOGNIZED_INSTANCE := 2
+UNTRUSTWORTHY_INSTANCE := 96
+UNRECOGNIZED_INSTANCE := 97
+
+APPROVED_CONFIG := 2
+SAFE_CONFIG := 3
+UNSAFE_CONFIG := 32
+UNSUPPORTABLE_CONFIG := 96
+
+APPROVED_RT := 2
+APPROVED_BOOT := 3
+UNSAFE_RT := 32
+UNRECOGNIZED_RT := 33
+CONTRAINDICATED_RT := 96
+
+APPROVED_FS := 2
+UNRECOGNIZED_FS := 32
+CONTRAINDICATED_FS := 96
+
+GENUINE_HW := 2
+UNSAFE_HW := 32
+CONTRAINDICATED_HW := 96
+UNRECOGNIZED_HW := 97
+
+ENCRYPTED_RT := 2
+ISOLATED_RT := 32
+VISIBLE_RT := 96
+
+HW_ENCRYPTED_SECRETS := 2
+SW_ENCRYPTED_SECRETS := 32
+UNENCRYPTED_SECRETES := 96
+
+TRUSTED_SOURCES := 2
+UNTRUSTED_SOURCES := 32
+CONTRAINDICATED_SOURCES := 96
 
 result := input.result
 evidence := input.evidence["evidence"]
@@ -58,7 +67,7 @@ default hardware = 0
 default runtime_opaque = 0
 default storage_opaque = 0
 default sourced_data = 0
-default verifier_added_claims = {}
+default added_claims = {}
 
 simple_semver_split (s) := res {
   parts :=  split(s, ".")
@@ -88,5 +97,5 @@ outcome := {
     "storage-opaque":    storage_opaque,
     "sourced-data":      sourced_data
   },
-  "veraison-verifier-added-claims": verifier_added_claims,
+  "added-claims": added_claims,
 }

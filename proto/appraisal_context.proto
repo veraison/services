@@ -5,9 +5,10 @@ package proto;
 option go_package = "github.com/veraison/services/proto";
 
 import "evidence.proto";
-import "result.proto";
 
 message AppraisalContext {
 	EvidenceContext evidence = 1;
-	AttestationResult result = 2;
+	// This is a JSON-serialized form ear.AttestationResult which is not
+	// defined as a protobuf message and so cannot be included directly.
+	bytes result = 2;
 }

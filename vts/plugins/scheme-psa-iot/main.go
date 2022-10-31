@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
@@ -212,13 +213,10 @@ func (s Scheme) ValidateEvidenceIntegrity(
 
 func (s Scheme) AppraiseEvidence(
 	ec *proto.EvidenceContext, endorsementsStrings []string,
-) (*proto.AppraisalContext, error) {
-	appraisalCtx := proto.AppraisalContext{
-		Evidence: ec,
-		Result:   proto.NewAttestationResult(ec),
-	}
-
+) (*ear.AttestationResult, error) {
 	var endorsements []Endorsements
+
+	result := ear.NewAttestationResult()
 
 	for i, e := range endorsementsStrings {
 		var endorsement Endorsements
@@ -230,9 +228,9 @@ func (s Scheme) AppraiseEvidence(
 		endorsements = append(endorsements, endorsement)
 	}
 
-	err := populateAttestationResult(&appraisalCtx, endorsements)
+	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
 
-	return &appraisalCtx, err
+	return result, err
 }
 
 func claimsToMap(claims psatoken.IClaims) (map[string]interface{}, error) {
@@ -257,33 +255,32 @@ func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
 }
 
 func populateAttestationResult(
-	appraisalCtx *proto.AppraisalContext,
+	result *ear.AttestationResult,
+	evidence map[string]interface{},
 	endorsements []Endorsements,
 ) error {
-	claims, err := mapToClaims(appraisalCtx.Evidence.Evidence.AsMap())
+	claims, err := mapToClaims(evidence)
 	if err != nil {
 		return err
 	}
 
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
-	appraisalCtx.Result.SetHardwareStatus(proto.ARStatus_HW_AFFIRMING)
+	result.TrustVector.Hardware = ear.GenuineHardwareClaim
 
 	match := matchSoftware(claims, endorsements)
 	if match {
-		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_AFFIRMING)
+		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		log.Println("\n matchSoftware Success")
 
 	} else {
-		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_UNRECOGNIZED)
+		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 		log.Println("\n matchSoftware Failed")
 	}
 
-	if err := appraisalCtx.Result.UpdateOverallStatus(); err != nil {
-		return err
-	}
+	result.UpdateStatusFromTrustVector()
 
-	appraisalCtx.Result.ProcessedEvidence = appraisalCtx.Evidence.Evidence
+	result.VeraisonProcessedEvidence = &evidence
 
 	return nil
 }

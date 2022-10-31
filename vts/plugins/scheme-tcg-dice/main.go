@@ -10,6 +10,7 @@ import (
 	"errors"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/veraison/ear"
 	"github.com/veraison/dice"
 
 	"github.com/veraison/services/proto"
@@ -100,14 +101,14 @@ func (s Scheme) ValidateEvidenceIntegrity(
 func (s Scheme) AppraiseEvidence(
 	ec *proto.EvidenceContext,
 	endorsementsString []string,
-) (*proto.AppraisalContext, error) {
-	ac := proto.NewAppraisalContext(ec)
+) (*ear.AttestationResult, error) {
+	result := ear.NewAttestationResult()
 
 	// If we got this far, this means the cert chain has been verfied, and
 	// thus, the identity has been established as valid.
-	ac.Result.SetInstanceIdentityStatus(proto.ARStatus_IDENT_AFFIRMING)
+	result.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 
-	return ac, nil
+	return result, nil
 }
 
 func extractEvidenceClaims(cert *x509.Certificate) (map[string]interface{}, error) {
