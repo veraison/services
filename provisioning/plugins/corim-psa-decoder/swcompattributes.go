@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/veraison/corim/comid"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type PSASwCompAttributes struct {
@@ -57,4 +58,31 @@ func (o *PSASwCompAttributes) FromMeasurement(m comid.Measurement) error {
 	o.MeasurementValue = (*d)[0].HashValue
 
 	return nil
+}
+
+func (o *PSASwCompAttributes) MakeSwAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
+	swAttrs := map[string]interface{}{
+		"psa.impl-id":           c.ImplID,
+		"psa.signer-id":         o.SignerID,
+		"psa.measurement-value": o.MeasurementValue,
+		"psa.measurement-desc":  o.AlgID,
+	}
+
+	if c.Vendor != "" {
+		swAttrs["psa.hw-vendor"] = c.Vendor
+	}
+
+	if c.Model != "" {
+		swAttrs["psa.hw-model"] = c.Model
+	}
+
+	if o.MeasurementType != "" {
+		swAttrs["psa.measurement-type"] = o.MeasurementType
+	}
+
+	if o.Version != "" {
+		swAttrs["psa.version"] = o.Version
+	}
+
+	return structpb.NewStruct(swAttrs)
 }

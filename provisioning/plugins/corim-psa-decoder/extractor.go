@@ -6,14 +6,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/proto"
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/services/proto"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
-type Extractor struct{}
+const (
+	cca_profile = "http://arm.com/cca/ssd/1"
+)
 
-func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
+type Extractor struct {
+	Profile string
+}
+
+func (o Extractor) GetProfile() string {
+	return o.Profile
+}
+
+func (o *Extractor) SetProfile(p string) {
+	o.Profile = p
+}
+
+type MeasExtractor interface {
+	FromMeasurement(comid.Measurement) error
+	MakeSwAttrs(PSAClassAttributes) (*structpb.Struct, error)
+}
+
+func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
 	var psaClassAttrs PSAClassAttributes
 
 	if err := psaClassAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -27,26 +46,37 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	// identified in the subject of the "reference value" triple.  A single
 	// reference-triple-record SHALL completely describe the updatable PSA RoT.
 	swComponents := make([]*proto.Endorsement, 0, len(rv.Measurements))
-
+	var swComponent *proto.Endorsement
+	var err error
 	for i, m := range rv.Measurements {
-		var psaSwCompAttrs PSASwCompAttributes
 
-		if err := psaSwCompAttrs.FromMeasurement(m); err != nil {
-			return nil, fmt.Errorf("extracting measurement at index %d: %w", i, err)
+		if m.Key == nil {
+			return nil, fmt.Errorf("measurement key is not present")
 		}
 
-		swAttrs, err := makeSwAttrs(psaClassAttrs, psaSwCompAttrs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create software component attributes: %w", err)
+		if !m.Key.IsSet() {
+			return nil, fmt.Errorf("measurement key is not set")
 		}
+		// Check which MKey is present and then decide which extractor to invoke
+		if m.Key.IsPSARefValID() {
+			var psaSwCompAttrs PSASwCompAttributes
 
-		swComponent := proto.Endorsement{
-			Scheme:     proto.AttestationFormat_PSA_IOT,
-			Type:       proto.EndorsementType_REFERENCE_VALUE,
-			Attributes: swAttrs,
+			swComponent, err = ExtractMeas(&psaSwCompAttrs, m, psaClassAttrs)
+			if err != nil {
+				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
+			}
 		}
-
-		swComponents = append(swComponents, &swComponent)
+		if m.Key.IsCCAPlatformConfigID() {
+			if o.Profile != cca_profile {
+				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
+			}
+			var ccaPlatformConfigID CCAPlatformConfigID
+			swComponent, err = ExtractMeas(&ccaPlatformConfigID, m, psaClassAttrs)
+			if err != nil {
+				return nil, fmt.Errorf("unable to extract measurement: %w", err)
+			}
+		}
+		swComponents = append(swComponents, swComponent)
 	}
 
 	if len(swComponents) == 0 {
@@ -56,31 +86,22 @@ func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	return swComponents, nil
 }
 
-func makeSwAttrs(c PSAClassAttributes, s PSASwCompAttributes) (*structpb.Struct, error) {
-	swAttrs := map[string]interface{}{
-		"psa.impl-id":           c.ImplID,
-		"psa.signer-id":         s.SignerID,
-		"psa.measurement-value": s.MeasurementValue,
-		"psa.measurement-desc":  s.AlgID,
+func ExtractMeas(obj MeasExtractor, m comid.Measurement, class PSAClassAttributes) (*proto.Endorsement, error) {
+
+	if err := obj.FromMeasurement(m); err != nil {
+		return &proto.Endorsement{}, err
 	}
 
-	if c.Vendor != "" {
-		swAttrs["psa.hw-vendor"] = c.Vendor
+	swAttrs, err := obj.MakeSwAttrs(class)
+	if err != nil {
+		return &proto.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
-
-	if c.Model != "" {
-		swAttrs["psa.hw-model"] = c.Model
+	swComponent := proto.Endorsement{
+		Scheme:     proto.AttestationFormat_PSA_IOT,
+		Type:       proto.EndorsementType_REFERENCE_VALUE,
+		Attributes: swAttrs,
 	}
-
-	if s.MeasurementType != "" {
-		swAttrs["psa.measurement-type"] = s.MeasurementType
-	}
-
-	if s.Version != "" {
-		swAttrs["psa.version"] = s.Version
-	}
-
-	return structpb.NewStruct(swAttrs)
+	return &swComponent, nil
 }
 
 func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, error) {

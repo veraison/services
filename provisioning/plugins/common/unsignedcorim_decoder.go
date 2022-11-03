@@ -7,10 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/proto"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
+	"github.com/veraison/services/proto"
 	"github.com/veraison/services/provisioning/decoder"
+)
+
+const (
+	no_profile = ""
 )
 
 // IExtractor is the interface that CoRIM plugins need to implement to hook into
@@ -24,7 +28,9 @@ import (
 // well as extraction from the "global" CoRIM context.
 // See also https://github.com/veraison/veraison/issues/112
 type IExtractor interface {
-	SwCompExtractor(comid.ReferenceValue) ([]*proto.Endorsement, error)
+	SetProfile(string)
+	GetProfile() string
+	RefValExtractor(comid.ReferenceValue) ([]*proto.Endorsement, error)
 	TaExtractor(comid.AttestVerifKey) (*proto.Endorsement, error)
 }
 
@@ -34,7 +40,6 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 	}
 
 	var uc corim.UnsignedCorim
-
 	if err := uc.FromCBOR(data); err != nil {
 		return nil, fmt.Errorf("CBOR decoding failed: %w", err)
 	}
@@ -43,7 +48,20 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 		return nil, fmt.Errorf("invalid unsigned corim: %w", err)
 	}
 
-	// TODO(tho) check profile
+	if uc.Profiles != nil {
+		// get the profile
+		if len(*uc.Profiles) > 1 {
+			return nil, fmt.Errorf("invalid multiple profiles: %x", len(*uc.Profiles))
+		}
+		p := (*uc.Profiles)[0]
+		profile, err := p.Get()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get the profile information: %w", err)
+		}
+		xtr.SetProfile(profile)
+	} else {
+		xtr.SetProfile(no_profile)
+	}
 
 	rsp := decoder.EndorsementDecoderResponse{}
 
@@ -74,7 +92,7 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 
 		if c.Triples.ReferenceValues != nil {
 			for _, rv := range *c.Triples.ReferenceValues {
-				swComp, err := xtr.SwCompExtractor(rv)
+				swComp, err := xtr.RefValExtractor(rv)
 				if err != nil {
 					return nil, fmt.Errorf("bad software component in CoMID at index %d: %w", i, err)
 				}

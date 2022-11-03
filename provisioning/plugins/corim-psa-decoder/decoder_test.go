@@ -24,7 +24,8 @@ func TestDecoder_GetSupportedMediaTypes(t *testing.T) {
 	d := &Decoder{}
 
 	expected := []string{
-		SupportedMediaType,
+		SupportedPSAMediaType,
+		SupportedCCAMediaType,
 	}
 
 	actual := d.GetSupportedMediaTypes()
@@ -100,12 +101,12 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "multiple digests in the same measurement",
 			input:       unsignedCorimComidPsaRefValMultDigest,
-			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: expecting exactly one digest`,
+			expectedErr: "bad software component in CoMID at index 0: unable to extract measurement at index 0, expecting exactly one digest",
 		},
 		{
 			desc:        "missing measurement identifier",
 			input:       unsignedCorimComidPsaRefValNoMkey,
-			expectedErr: `bad software component in CoMID at index 0: extracting measurement at index 0: measurement key is not present`,
+			expectedErr: "bad software component in CoMID at index 0: measurement key is not present",
 		},
 		{
 			desc:        "no implementation id specified in the measurement",
@@ -122,6 +123,47 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 			input:       unsignedCorimComidPsaIakPubNoImplID,
 			expectedErr: `bad key in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
 		}}
+
+	for _, tv := range tvs {
+		data := comid.MustHexDecode(t, tv.input)
+		d := &Decoder{}
+		_, err := d.Decode(data)
+		assert.EqualError(t, err, tv.expectedErr)
+	}
+}
+
+func TestDecoder_Decode_CcaRefVal_OK(t *testing.T) {
+	tvs := []string{
+		unsignedCorimComidCcaRefValOne,
+		unsignedCorimComidCcaRefValFour,
+	}
+
+	d := &Decoder{}
+
+	for _, tv := range tvs {
+		data := comid.MustHexDecode(t, tv)
+		_, err := d.Decode(data)
+		assert.NoError(t, err)
+	}
+}
+
+func TestDecoder_Decode_CCaRefVal_nok(t *testing.T) {
+	tvs := []struct {
+		desc        string
+		input       string
+		expectedErr string
+	}{
+		{
+			desc:        "missing profile inside corim containing one CCA platform config measurement",
+			input:       unsignedCorimnoprofileComidCcaRefValOne,
+			expectedErr: "bad software component in CoMID at index 0: measurement error at index 0: incorrect profile ",
+		},
+		{
+			desc:        "missing profile inside corim containing multiple reference value measurements",
+			input:       unsignedCorimnoprofileComidCcaRefValFour,
+			expectedErr: "bad software component in CoMID at index 0: measurement error at index 3: incorrect profile ",
+		},
+	}
 
 	for _, tv := range tvs {
 		data := comid.MustHexDecode(t, tv.input)

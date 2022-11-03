@@ -33,5 +33,5 @@ func (o Decoder) GetSupportedMediaTypes() []string {
 }
 
 func (o Decoder) Decode(data []byte) (*decoder.EndorsementDecoderResponse, error) {
-	return plugin_common.UnsignedCorimDecoder(data, Extractor{})
+	return plugin_common.UnsignedCorimDecoder(data, &Extractor{Profile: ""})
 }

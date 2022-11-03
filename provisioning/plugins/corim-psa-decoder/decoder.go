@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	SupportedMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
-	PluginName         = "unsigned-corim (PSA IoT profile)"
+	SupportedPSAMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+	SupportedCCAMediaType = "application/corim-unsigned+cbor; profile= http://arm.com/cca/ssd/1"
+	PluginName            = "unsigned-corim (PSA IoT profile)"
 )
 
 type Decoder struct{}
@@ -28,10 +29,11 @@ func (o Decoder) GetName() string {
 
 func (o Decoder) GetSupportedMediaTypes() []string {
 	return []string{
-		SupportedMediaType,
+		SupportedPSAMediaType,
+		SupportedCCAMediaType,
 	}
 }
 
 func (o Decoder) Decode(data []byte) (*decoder.EndorsementDecoderResponse, error) {
-	return plugin_common.UnsignedCorimDecoder(data, Extractor{})
+	return plugin_common.UnsignedCorimDecoder(data, &Extractor{Profile: ""})
 }

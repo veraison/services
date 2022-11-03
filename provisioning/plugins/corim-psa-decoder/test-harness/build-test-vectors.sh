@@ -20,6 +20,7 @@ COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaRefValNoImplID"
 COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaIakPubNoUeID"
 COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaIakPubNoImplID"
 
+
 TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
 
 printf "package main\n\n" > ${TV_DOT_GO}
@@ -31,6 +32,28 @@ do
 	echo "// automatically generated from $t.json" >> ${TV_DOT_GO}
 	echo "var unsignedCorim${t} = "'`' >> ${TV_DOT_GO}
 	cat corim${t}.cbor | xxd -p >> ${TV_DOT_GO}
+	echo '`' >> ${TV_DOT_GO}
+	gofmt -w ${TV_DOT_GO}
+done
+
+CORIM_TEMPLATE=corimCca.json
+CORIM_TEMPLATE1=corimCcaNoProfile.json
+
+COMID_TEMPLATES1=
+COMID_TEMPLATES1="${COMID_TEMPLATES1} ComidCcaRefValOne"
+COMID_TEMPLATES1="${COMID_TEMPLATES1} ComidCcaRefValFour"
+
+for t in ${COMID_TEMPLATES1}
+do
+	cocli comid create -t ${t}.json
+	cocli corim create -m ${t}.cbor -t ${CORIM_TEMPLATE} -o corim${t}.cbor
+	cocli corim create -m ${t}.cbor -t ${CORIM_TEMPLATE1} -o corimnoprofile${t}.cbor
+	echo "// automatically generated from $t.json" >> ${TV_DOT_GO}
+	echo "var unsignedCorim${t} = "'`' >> ${TV_DOT_GO}
+	cat corim${t}.cbor | xxd -p >> ${TV_DOT_GO}
+	echo '`' >> ${TV_DOT_GO}
+	echo "var unsignedCorimnoprofile${t} = "'`' >> ${TV_DOT_GO}
+	cat corimnoprofile${t}.cbor | xxd -p >> ${TV_DOT_GO}
 	echo '`' >> ${TV_DOT_GO}
 	gofmt -w ${TV_DOT_GO}
 done
