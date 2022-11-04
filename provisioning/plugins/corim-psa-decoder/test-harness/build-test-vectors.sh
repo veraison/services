@@ -5,7 +5,7 @@
 set -eu
 set -o pipefail
 
-CORIM_TEMPLATE=corimMini.json
+CORIM_CCA_TEMPLATE=corimMini.json
 
 COMID_TEMPLATES=
 COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaIakPubOne"
@@ -20,40 +20,42 @@ COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaRefValNoImplID"
 COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaIakPubNoUeID"
 COMID_TEMPLATES="${COMID_TEMPLATES} ComidPsaIakPubNoImplID"
 
-
 TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
 
 printf "package main\n\n" > ${TV_DOT_GO}
 
+generate_cbor () {
+	echo "generating cbor using $1 $2"
+	echo $1
+	echo $2
+	cocli comid create -t ${1}.json
+	cocli corim create -m ${1}.cbor -t $2 -o corim${1}.cbor
+	echo "// automatically generated from $t.json" >> ${TV_DOT_GO}
+	echo "var ${3}${1} = "'`' >> ${TV_DOT_GO}
+	cat corim${1}.cbor | xxd -p >> ${TV_DOT_GO}
+	echo '`' >> ${TV_DOT_GO}
+	gofmt -w ${TV_DOT_GO}
+}
+
 for t in ${COMID_TEMPLATES}
 do
-	cocli comid create -t ${t}.json
-	cocli corim create -m ${t}.cbor -t ${CORIM_TEMPLATE} -o corim${t}.cbor
-	echo "// automatically generated from $t.json" >> ${TV_DOT_GO}
-	echo "var unsignedCorim${t} = "'`' >> ${TV_DOT_GO}
-	cat corim${t}.cbor | xxd -p >> ${TV_DOT_GO}
-	echo '`' >> ${TV_DOT_GO}
-	gofmt -w ${TV_DOT_GO}
+generate_cbor $t $CORIM_CCA_TEMPLATE "unsignedCorim"
 done
 
-CORIM_TEMPLATE=corimCca.json
-CORIM_TEMPLATE1=corimCcaNoProfile.json
 
-COMID_TEMPLATES1=
-COMID_TEMPLATES1="${COMID_TEMPLATES1} ComidCcaRefValOne"
-COMID_TEMPLATES1="${COMID_TEMPLATES1} ComidCcaRefValFour"
+CORIM_CCA_TEMPLATE=corimCca.json
+CORIM_CCA_TEMPLATE1=corimCcaNoProfile.json
 
-for t in ${COMID_TEMPLATES1}
+COMID_CCA_TEMPLATES=
+COMID_CCA_TEMPLATES="${COMID_CCA_TEMPLATES} ComidCcaRefValOne"
+COMID_CCA_TEMPLATES="${COMID_CCA_TEMPLATES} ComidCcaRefValFour"
+
+for t in ${COMID_CCA_TEMPLATES}
 do
-	cocli comid create -t ${t}.json
-	cocli corim create -m ${t}.cbor -t ${CORIM_TEMPLATE} -o corim${t}.cbor
-	cocli corim create -m ${t}.cbor -t ${CORIM_TEMPLATE1} -o corimnoprofile${t}.cbor
-	echo "// automatically generated from $t.json" >> ${TV_DOT_GO}
-	echo "var unsignedCorim${t} = "'`' >> ${TV_DOT_GO}
-	cat corim${t}.cbor | xxd -p >> ${TV_DOT_GO}
-	echo '`' >> ${TV_DOT_GO}
-	echo "var unsignedCorimnoprofile${t} = "'`' >> ${TV_DOT_GO}
-	cat corimnoprofile${t}.cbor | xxd -p >> ${TV_DOT_GO}
-	echo '`' >> ${TV_DOT_GO}
-	gofmt -w ${TV_DOT_GO}
+generate_cbor $t $CORIM_CCA_TEMPLATE "unsignedCorim"
+done
+
+for t in ${COMID_CCA_TEMPLATES}
+do
+generate_cbor $t $CORIM_CCA_TEMPLATE1 "unsignedCorimnoprofile"
 done
