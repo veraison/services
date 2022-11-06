@@ -18,5 +18,8 @@ enum AttestationFormat {
 
 	// TPM EnactTrust
 	TPM_ENACTTRUST = 3;
+
+	// TPM PARSEC Key Attestation
+	TPM_PARSEC = 4;
 }
 
