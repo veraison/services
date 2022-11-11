@@ -19,7 +19,6 @@ generate_go_test_vector () {
 	echo "var ${3}${1} = "'`' >> ${4}
 	cat corim${1}.cbor | xxd -p >> ${4}
 	echo '`' >> ${4}
-	gofmt -w ${4}
 }
 
 # CORIM TEMPLATE
@@ -66,3 +65,5 @@ for t in ${COMID_CCA_TEMPLATES}
 do
 	generate_go_test_vector $t $CORIM_CCA_TEMPLATE1 "unsignedCorimnoprofile" $TV_DOT_GO
 done
+
+gofmt -w $TV_DOT_GO
