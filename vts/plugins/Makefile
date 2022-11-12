@@ -5,5 +5,6 @@ SUBDIR := common
 SUBDIR += scheme-tcg-dice
 SUBDIR += scheme-psa-iot
 SUBDIR += scheme-tpm-enacttrust
+SUBDIR += scheme-aws-nitro
 
 include ../../mk/subdir.mk

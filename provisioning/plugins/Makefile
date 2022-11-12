@@ -4,5 +4,6 @@
 SUBDIR += common
 SUBDIR += corim-psa-decoder
 SUBDIR += corim-tpm-enacttrust-decoder
+SUBDIR += corim-nitro-decoder
 
 include ../../mk/subdir.mk

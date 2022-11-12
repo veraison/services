@@ -18,5 +18,8 @@ enum AttestationFormat {
 
 	// TPM EnactTrust
 	TPM_ENACTTRUST = 3;
+
+	// AWS Nitro Enclaves
+	AWS_NITRO = 4;
 }
 
