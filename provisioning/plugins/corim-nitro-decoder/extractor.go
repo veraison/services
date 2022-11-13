@@ -123,8 +123,6 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 
 func makeTaAttrs(i NitroInstanceAttributes, c NitroClassAttributes, key string) (*structpb.Struct, error) {
 	taID := map[string]interface{}{
-		//"nitro.impl-id": c.ImplID,
-		//"psa.inst-id": []byte(i.InstID),
 		"nitro.iak-pub": key,
 	}
 

@@ -117,25 +117,25 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
  	assert.EqualError(t, err, `scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to AuthenticateDocument failed:AuthenticateDocument::Verify failed:verification error`)
  }
 
-// func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
-// 	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
-// 	require.NoError(t, err)
+func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
+	tokenBytes, err := os.ReadFile("test/aws_nitro_document.cbor")
+	require.NoError(t, err)
 
-// 	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
-// 	require.NoError(t, err)
+	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
+	require.NoError(t, err)
 
-// 	scheme := &Scheme{}
+	scheme := &Scheme{}
 
-// 	token := proto.AttestationToken{
-// 		TenantId: "1",
-// 		Format:   proto.AttestationFormat_PSA_IOT,
-// 		Data:     tokenBytes,
-// 	}
+	token := proto.AttestationToken{
+		TenantId: "1",
+		Format:   proto.AttestationFormat_AWS_NITRO,
+		Data:     tokenBytes,
+	}
 
-// 	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+	err = scheme.ValidateEvidenceIntegrityTest(&token, string(taEndValBytes), nil, testTime)
 
-// 	assert.NoError(t, err)
-// }
+	assert.NoError(t, err)
+}
 
 // func Test_AppraiseEvidence_ok(t *testing.T) {
 // 	extractedBytes, err := os.ReadFile("test/extracted.json")

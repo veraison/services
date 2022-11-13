@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/veraison/services/provisioning/decoder"
 	plugin_common "github.com/veraison/services/provisioning/plugins/common"
 )
@@ -34,8 +33,6 @@ func (o Decoder) GetSupportedMediaTypes() []string {
 }
 
 func (o Decoder) Decode(data []byte) (*decoder.EndorsementDecoderResponse, error) {
-	fmt.Println("provisioning.plugins.corim-nitro-decoder.decoder.go.Decoder.Decode calling plugin_common.UnsignedCorimDecoder")
 	result,err := plugin_common.UnsignedCorimDecoder(data, Extractor{})
-	fmt.Printf("provisionin.plugins.corim-nitro-decoder.Decoder received response from UnsignedCorimDecoder:%v, %v\n", result, err)
 	return result, err
 }

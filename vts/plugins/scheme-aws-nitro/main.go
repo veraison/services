@@ -8,6 +8,7 @@ import (
 	//"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"flag"
 	"fmt"
 	"net/url"
 	"time"
@@ -46,19 +47,28 @@ func (s Scheme) GetSupportedMediaTypes() []string {
 	}
 }
 
+// GetTrustAnchorID returns a string ID used to retrieve a trust anchor
+// for this token. The trust anchor may be necessary to validate the
+// token and/or extract its claims (if it is encrypted).
 func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
 
 	return nitroTaLookupKey(token.TenantId), nil
 }
 
+// ExtractClaims parses the attestation token and returns claims
+// extracted therefrom.
 func (s Scheme) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*scheme.ExtractedClaims, error) {
 	return s.extractClaimsImpl(token, trustAnchor, time.Now())
 }
 
+/// Same as ExtractClaims, but allows the caller to set an alternate "current time" to allow
+/// tests to use saved attestation document data without triggering certificate expiry errors.
+/// THIS FUNCTION SHOULD ONLY BE USED IN TESTING
 func (s Scheme) ExtractClaimsTest(token *proto.AttestationToken, trustAnchor string, testTime time.Time) (*scheme.ExtractedClaims, error) {
 	return s.extractClaimsImpl(token, trustAnchor, testTime)
 }
 
+/// Implementation of the functionality for ExtracClaims and ExtracClaimsTest
 func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor string, now time.Time) (*scheme.ExtractedClaims, error) {
 	ta_unmarshalled := make(map[string]interface{})
 
@@ -98,7 +108,12 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 
 	token_data := token.Data
 	
-	document, err := nitro_eclave_attestation_document.AuthenticateDocumentTest(token_data, *cert, now)
+	var document *nitro_eclave_attestation_document.AttestationDocument
+	if flag.Lookup("test.v") == nil {
+		document, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
+	} else {
+		document, err = nitro_eclave_attestation_document.AuthenticateDocumentTest(token_data, *cert, now)
+	}
 	if err != nil {
 		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to AuthenticateDocument failed:%v", err)
 		return nil, new_err
@@ -116,6 +131,9 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 	return &extracted, nil
 }
 
+// AppraiseEvidence evaluates the specified  EvidenceContext against
+// the specified endorsements, and returns an AttestationResult wrapped
+// in an AppraisalContext.
 func (s Scheme) AppraiseEvidence(
 	ec *proto.EvidenceContext, endorsementsStrings []string,
 ) (*proto.AppraisalContext, error) {
@@ -154,23 +172,43 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	trustAnchor string,
 	endorsementsStrings []string,
 ) error {
+	return s.validateEvidenceIntegrityImpl(token, trustAnchor, endorsementsStrings, time.Now())
+}
+
+/// Same as ValidateEvidenceIntegrity, but allows the caller to set an alternate "current time" to allow
+/// tests to use saved attestation document data without triggering certificate expiry errors.
+/// THIS FUNCTION SHOULD ONLY BE USED IN TESTING
+func (s Scheme) ValidateEvidenceIntegrityTest(
+	token *proto.AttestationToken,
+	trustAnchor string,
+	endorsementsStrings []string,
+	testTime time.Time,
+) error {
+	return s.validateEvidenceIntegrityImpl(token, trustAnchor, endorsementsStrings, testTime)
+}
+
+func (s Scheme) validateEvidenceIntegrityImpl(token *proto.AttestationToken,
+	trustAnchor string,
+	endorsementsStrings []string,
+	now time.Time,
+) error {
 
 	ta_unmarshalled := make(map[string]interface{})
 
 	err := json.Unmarshal([]byte(trustAnchor), &ta_unmarshalled)
 	if err != nil {
-		new_err := fmt.Errorf("ExtractVerifiedClaims call to json.Unmarshall failed:%v", err)
+		new_err := fmt.Errorf("ValidateEvidenceIntegrityImpl call to json.Unmarshall failed:%v", err)
 		return new_err
 	}
 	contents, ok := ta_unmarshalled["attributes"].(map[string]interface{})
 	if !ok {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims cast of %v to map[string]interface{} failed", ta_unmarshalled["attributes"])
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl cast of %v to map[string]interface{} failed", ta_unmarshalled["attributes"])
 		return new_err
 	}
 
-	cert_pem, ok := contents["nitro.iak-pub"].(string)
+	cert_pem, ok := contents["key"].(string)
 	if !ok {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims cast of %v to string failed", contents["nitro.iak-pub"])
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl cast of %v to string failed", contents["nitro.iak-pub"])
 		return new_err
 	}
 
@@ -180,27 +218,31 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	cert_pem_bytes := []byte(cert_pem)
 	cert_block, _ := pem.Decode(cert_pem_bytes)
 	if cert_block == nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to pem.Decode failed, but I don't know why")
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to pem.Decode failed, but I don't know why")
 		return new_err
 	}
 
 	cert_der := cert_block.Bytes
 	cert, err := x509.ParseCertificate(cert_der)
 	if err != nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to x509.ParseCertificate failed:%v", err)
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to x509.ParseCertificate failed:%v", err)
 		return new_err
 	}
 
 	// token_data, err := base64.StdEncoding.DecodeString(string(token.Data))
 	// if err != nil {
-	// 	new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to base64.StdEncoding.DecodeString failed:%v", err)
+	// 	new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to base64.StdEncoding.DecodeString failed:%v", err)
 	// 	return nil, new_err
 	// }
 	token_data := token.Data
 
-	_, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
+	if flag.Lookup("test.v") == nil {
+		_, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
+	} else {
+		_, err = nitro_eclave_attestation_document.AuthenticateDocumentTest(token_data, *cert, now)
+	}
 	if err != nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to AuthenticateDocument failed:%v", err)
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to AuthenticateDocument failed:%v", err)
 		return new_err
 	}
 	return nil
