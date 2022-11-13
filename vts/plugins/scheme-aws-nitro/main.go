@@ -10,12 +10,12 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"net/url"
-	"time"
 	"github.com/hashicorp/go-plugin"
 	nitro_eclave_attestation_document "github.com/veracruz-project/go-nitro-enclave-attestation-document"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
+	"net/url"
+	"time"
 )
 
 type Endorsements struct {
@@ -107,7 +107,7 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 	}
 
 	token_data := token.Data
-	
+
 	var document *nitro_eclave_attestation_document.AttestationDocument
 	if flag.Lookup("test.v") == nil {
 		document, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
@@ -131,7 +131,7 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 	return &extracted, nil
 }
 
-// AppraiseEvidence evaluates the specified  EvidenceContext against
+// AppraiseEvidence evaluates the specified EvidenceContext against
 // the specified endorsements, and returns an AttestationResult wrapped
 // in an AppraisalContext.
 func (s Scheme) AppraiseEvidence(
