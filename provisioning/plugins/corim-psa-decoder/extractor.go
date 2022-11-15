@@ -23,6 +23,8 @@ func (o *Extractor) SetProfile(p string) {
 	o.Profile = p
 }
 
+// MeasExtractor is an interface to extract measurements from comid
+// and to make ref attributes from them
 type MeasExtractor interface {
 	FromMeasurement(comid.Measurement) error
 	MakeRefAttrs(PSAClassAttributes) (*structpb.Struct, error)
