@@ -217,7 +217,7 @@ c3f9bebb6bc24f32ffd5b67b387244c2c909da779a1478a200d9025a7819
 `
 
 // automatically generated from ComidCcaRefValOne.json
-var unsignedCorimnoprofileComidCcaRefValOne = `
+var unsignedCorimNoProfileComidCcaRefValOne = `
 a500505c57e8f446cd421b91c908cf93e13cfc018158c4d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
 434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d70
@@ -234,7 +234,7 @@ c0c0b572db4d8d3ab7e97f368ff74e62347a824decb67a84e5224d7504a2
 `
 
 // automatically generated from ComidCcaRefValFour.json
-var unsignedCorimnoprofileComidCcaRefValFour = `
+var unsignedCorimNoProfileComidCcaRefValFour = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901dcd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
 41434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d

@@ -63,7 +63,7 @@ done
 
 for t in ${COMID_CCA_TEMPLATES}
 do
-	generate_go_test_vector $t $CORIM_CCA_TEMPLATE1 "unsignedCorimnoprofile" $TV_DOT_GO
+	generate_go_test_vector $t $CORIM_CCA_TEMPLATE1 "unsignedCorimNoProfile" $TV_DOT_GO
 done
 
 gofmt -w $TV_DOT_GO
