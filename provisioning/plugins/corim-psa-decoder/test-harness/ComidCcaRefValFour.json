@@ -77,7 +77,7 @@
           {
             "key": {
                 "type": "cca.platform-config-id",
-                "value": "cca-platform-config-label"
+                "value": "any-value"
             },
             "value": {
                 "raw-value": {

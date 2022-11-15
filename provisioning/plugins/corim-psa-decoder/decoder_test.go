@@ -147,7 +147,7 @@ func TestDecoder_Decode_CcaRefVal_OK(t *testing.T) {
 	}
 }
 
-func TestDecoder_Decode_CCaRefVal_nok(t *testing.T) {
+func TestDecoder_Decode_CCaRefVal_NOK(t *testing.T) {
 	tvs := []struct {
 		desc        string
 		input       string

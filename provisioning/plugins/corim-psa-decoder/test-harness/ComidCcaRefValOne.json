@@ -33,7 +33,7 @@
           {
             "key": {
               "type": "cca.platform-config-id",
-              "value": "cca-platform-config-label"
+              "value": "any-label"
             },
             "value": {
               "raw-value": {
