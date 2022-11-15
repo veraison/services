@@ -60,7 +60,7 @@ func (o *PSASwCompAttributes) FromMeasurement(m comid.Measurement) error {
 	return nil
 }
 
-func (o *PSASwCompAttributes) MakeSwAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
+func (o *PSASwCompAttributes) MakeRefAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
 	swAttrs := map[string]interface{}{
 		"psa.impl-id":           c.ImplID,
 		"psa.signer-id":         o.SignerID,

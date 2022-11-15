@@ -75,16 +75,16 @@
             }
           },
           {
-              "key": {
-                  "type": "cca.platform-config-id",
-                  "value": "cca-platform-config-label"
-              },
-              "value": {
-                  "raw-value": {
-                      "type": "bytes",
-                      "value": "cmF3dmFsdWUKcmF3dmFsdWUK"
-                  }
+            "key": {
+                "type": "cca.platform-config-id",
+                "value": "cca-platform-config-label"
+            },
+            "value": {
+                "raw-value": {
+                    "type": "bytes",
+                    "value": "cmF3dmFsdWUKcmF3dmFsdWUK"
               }
+            }
           }
         ]
       }

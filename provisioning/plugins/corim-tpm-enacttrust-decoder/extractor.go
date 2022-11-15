@@ -19,9 +19,6 @@ func (o *Extractor) SetProfile(p string) {
 	o.Profile = p
 }
 
-func (o Extractor) GetProfile() string {
-	return o.Profile
-}
 func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 

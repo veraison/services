@@ -15,7 +15,6 @@ type CCAPlatformConfigID struct {
 }
 
 func (o *CCAPlatformConfigID) FromMeasurement(m comid.Measurement) error {
-
 	id, err := m.Key.GetCCAPlatformConfigID()
 	if err != nil {
 		return fmt.Errorf("failed extracting mkey for cca-platform-config-id: %w", err)
@@ -34,20 +33,20 @@ func (o *CCAPlatformConfigID) FromMeasurement(m comid.Measurement) error {
 	return nil
 }
 
-func (o CCAPlatformConfigID) MakeSwAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
-	swAttrs := map[string]interface{}{
+func (o CCAPlatformConfigID) MakeRefAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
+	refAttrs := map[string]interface{}{
 		"psa.impl-id":               c.ImplID,
 		"cca.platform-config-label": o.Label,
 		"cca.platform-config-id":    o.Value,
 	}
 
 	if c.Vendor != "" {
-		swAttrs["psa.hw-vendor"] = c.Vendor
+		refAttrs["psa.hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		swAttrs["psa.hw-model"] = c.Model
+		refAttrs["psa.hw-model"] = c.Model
 	}
 
-	return structpb.NewStruct(swAttrs)
+	return structpb.NewStruct(refAttrs)
 }

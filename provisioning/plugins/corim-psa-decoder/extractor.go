@@ -12,15 +12,11 @@ import (
 )
 
 const (
-	cca_profile = "http://arm.com/cca/ssd/1"
+	ccaProfile = "http://arm.com/cca/ssd/1"
 )
 
 type Extractor struct {
 	Profile string
-}
-
-func (o Extractor) GetProfile() string {
-	return o.Profile
 }
 
 func (o *Extractor) SetProfile(p string) {
@@ -29,7 +25,7 @@ func (o *Extractor) SetProfile(p string) {
 
 type MeasExtractor interface {
 	FromMeasurement(comid.Measurement) error
-	MakeSwAttrs(PSAClassAttributes) (*structpb.Struct, error)
+	MakeRefAttrs(PSAClassAttributes) (*structpb.Struct, error)
 }
 
 func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
@@ -45,15 +41,13 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	// measurements as needed, provided they belong to the same PSA RoT
 	// identified in the subject of the "reference value" triple.  A single
 	// reference-triple-record SHALL completely describe the updatable PSA RoT.
-	swComponents := make([]*proto.Endorsement, 0, len(rv.Measurements))
-	var swComponent *proto.Endorsement
+	refVals := make([]*proto.Endorsement, 0, len(rv.Measurements))
+	var refVal *proto.Endorsement
 	var err error
 	for i, m := range rv.Measurements {
-
 		if m.Key == nil {
 			return nil, fmt.Errorf("measurement key is not present")
 		}
-
 		if !m.Key.IsSet() {
 			return nil, fmt.Errorf("measurement key is not set")
 		}
@@ -61,47 +55,47 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 		if m.Key.IsPSARefValID() {
 			var psaSwCompAttrs PSASwCompAttributes
 
-			swComponent, err = ExtractMeas(&psaSwCompAttrs, m, psaClassAttrs)
+			refVal, err = ExtractMeas(&psaSwCompAttrs, m, psaClassAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		}
 		if m.Key.IsCCAPlatformConfigID() {
-			if o.Profile != cca_profile {
+			if o.Profile != ccaProfile {
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
 			}
 			var ccaPlatformConfigID CCAPlatformConfigID
-			swComponent, err = ExtractMeas(&ccaPlatformConfigID, m, psaClassAttrs)
+			refVal, err = ExtractMeas(&ccaPlatformConfigID, m, psaClassAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
 		}
-		swComponents = append(swComponents, swComponent)
+		refVals = append(refVals, refVal)
 	}
 
-	if len(swComponents) == 0 {
+	if len(refVals) == 0 {
 		return nil, fmt.Errorf("no software components found")
 	}
 
-	return swComponents, nil
+	return refVals, nil
 }
 
 func ExtractMeas(obj MeasExtractor, m comid.Measurement, class PSAClassAttributes) (*proto.Endorsement, error) {
 
 	if err := obj.FromMeasurement(m); err != nil {
-		return &proto.Endorsement{}, err
+		return nil, err
 	}
 
-	swAttrs, err := obj.MakeSwAttrs(class)
+	refAttrs, err := obj.MakeRefAttrs(class)
 	if err != nil {
 		return &proto.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
-	swComponent := proto.Endorsement{
+	refVal := proto.Endorsement{
 		Scheme:     proto.AttestationFormat_PSA_IOT,
 		Type:       proto.EndorsementType_REFERENCE_VALUE,
-		Attributes: swAttrs,
+		Attributes: refAttrs,
 	}
-	return &swComponent, nil
+	return &refVal, nil
 }
 
 func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, error) {

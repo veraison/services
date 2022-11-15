@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	no_profile = ""
+	noProfile = ""
 )
 
 // IExtractor is the interface that CoRIM plugins need to implement to hook into
@@ -29,7 +29,6 @@ const (
 // See also https://github.com/veraison/veraison/issues/112
 type IExtractor interface {
 	SetProfile(string)
-	GetProfile() string
 	RefValExtractor(comid.ReferenceValue) ([]*proto.Endorsement, error)
 	TaExtractor(comid.AttestVerifKey) (*proto.Endorsement, error)
 }
@@ -60,7 +59,7 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 		}
 		xtr.SetProfile(profile)
 	} else {
-		xtr.SetProfile(no_profile)
+		xtr.SetProfile(noProfile)
 	}
 
 	rsp := decoder.EndorsementDecoderResponse{}
