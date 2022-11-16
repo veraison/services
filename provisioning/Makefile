@@ -6,4 +6,15 @@ SUBDIR += api
 SUBDIR += plugins
 SUBDIR += cmd/provisioning-service
 
+# Create directories for packaging (TODO: May be a better way to do this)
+install:
+	mkdir -p $(PROVISIONING_DEPLOY_PREFIX)$(BIN_DIR)
+	mkdir -p $(PROVISIONING_DEPLOY_PREFIX)$(LOG_DIR)
+	mkdir -p $(PROVISIONING_DEPLOY_PREFIX)$(PLUGIN_DIR)
+	mkdir -p $(PROVISIONING_DEPLOY_PREFIX)$(INPUT_FILE_DIR)
+	install $(TOPDIR)/provisioning/cmd/provisioning-service/provisioning-service $(PROVISIONING_DEPLOY_PREFIX)$(BIN_DIR)/provisioning-service
+	install -D $(TOPDIR)/provisioning/plugins/bin/* $(PROVISIONING_DEPLOY_PREFIX)$(PLUGIN_DIR)
+	install $(TOPDIR)/provisioning/cmd/provisioning-service/config.yaml $(PROVISIONING_DEPLOY_PREFIX)/config.yaml
+	install $(TOPDIR)/end-to-end/input/corim-full.cbor $(PROVISIONING_DEPLOY_PREFIX)$(INPUT_FILE_DIR)
+
 include ../mk/subdir.mk

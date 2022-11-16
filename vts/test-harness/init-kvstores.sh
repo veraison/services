@@ -6,7 +6,7 @@
 set -eux
 set -o pipefail
 
-for t in en ta
+for t in en ta po
 do
     echo "CREATE TABLE kvstore ( key text NOT NULL, vals text NOT NULL );" | \
         sqlite3 $t-store.sql

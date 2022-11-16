@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  provisioning:
+    build:
+      context: ../../
+      dockerfile: ./deployments/docker/Dockerfile
+      target: provisioning-run
+      args:
+        PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
+        LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
+        PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
+        INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+    ports: 
+      - 8888:8888
+    depends_on:
+      - vts
+    networks:
+      - provisioning-network
+
+  verification:
+    build:
+      context: ../../
+      dockerfile: ./deployments/docker/Dockerfile
+      target: verification-run
+      args:
+        PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
+        LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
+        PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
+        INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+    ports:
+      - 8080:8080
+    depends_on:
+      - vts
+    networks:
+      - verification-network
+
+
+  vts:
+    build:
+      context: ../../
+      dockerfile: ./deployments/docker/Dockerfile
+      target: vts-run
+      args:
+        PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+        VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
+        BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
+        LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
+        PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
+        INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+    networks:
+      provisioning-network:
+        ipv4_address: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+      verification-network:
+        ipv4_address: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+
+networks:
+  default:
+    external: true
+    name: none
+
+
+  provisioning-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+  
+  verification-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
+

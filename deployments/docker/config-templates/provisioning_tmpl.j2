@@ -1,0 +1,5 @@
+provisioning:
+  plugin-dir: {{ "../../plugins/bin/" | env_override('PLUGIN_DIR') }}
+  listen-addr: {{ "localhost:8888" }}
+vts:
+  server-addr: {{ "127.0.0.1" | env_override('VTS_PROVISIONING_LOCAL_IP_ADDRESS') }}:{{ "50051" | env_override('VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT') }}

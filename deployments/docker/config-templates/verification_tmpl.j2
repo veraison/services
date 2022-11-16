@@ -1,0 +1,4 @@
+verifier:
+
+vts:
+  server-addr: {{ "127.0.0.1" | env_override('VTS_VERIFICATION_LOCAL_IP_ADDRESS') }}:{{ "50051" | env_override('VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT') }}
