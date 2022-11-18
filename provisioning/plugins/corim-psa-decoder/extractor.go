@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/proto"
@@ -71,7 +72,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("unknown measurement key")
+			return nil, fmt.Errorf("unknown measurement key: %T", reflect.TypeOf(m.Key))
 		}
 		refVals = append(refVals, refVal)
 	}
