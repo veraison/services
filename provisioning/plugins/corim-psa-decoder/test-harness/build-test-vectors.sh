@@ -13,12 +13,12 @@ set -o pipefail
 # $4 name of the file where the generated CBOR test vectors are aggregated
 generate_go_test_vector () {
 	echo "generating test vector using $1 $2"
-	cocli comid create -t ${1}.json
-	cocli corim create -m ${1}.cbor -t $2 -o corim${1}.cbor
+	cocli comid create -t $1.json
+	cocli corim create -m $1.cbor -t $2 -o corim$1.cbor
 	echo "// automatically generated from $1.json" >> ${4}
-	echo "var ${3}${1} = "'`' >> ${4}
-	cat corim${1}.cbor | xxd -p >> ${4}
-	echo '`' >> ${4}
+	echo "var $3$1 = "'`' >> $4
+	cat corim$1.cbor | xxd -p >> $4
+	echo '`' >> $4
 }
 
 # CORIM TEMPLATE

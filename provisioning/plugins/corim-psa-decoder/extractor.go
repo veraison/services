@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	psaProfile = "http://arm.com/psa/iot/1"
 	ccaProfile = "http://arm.com/cca/ssd/1"
 )
 
@@ -56,6 +57,14 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 		}
 		// Check which MKey is present and then decide which extractor to invoke
 		if m.Key.IsPSARefValID() {
+			// Check correct profile and then proceed
+			switch o.Profile {
+			case psaProfile, ccaProfile:
+				break
+			default:
+				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
+			}
+
 			var psaSwCompAttrs PSASwCompAttributes
 
 			refVal, err = ExtractMeas(&psaSwCompAttrs, m, psaClassAttrs)

@@ -156,12 +156,12 @@ func TestDecoder_Decode_CCaRefVal_NOK(t *testing.T) {
 		{
 			desc:        "missing profile inside corim containing one CCA platform config measurement",
 			input:       unsignedCorimNoProfileComidCcaRefValOne,
-			expectedErr: "bad software component in CoMID at index 0: measurement error at index 0: incorrect profile ",
+			expectedErr: "no profile information set in CoRIM",
 		},
 		{
 			desc:        "missing profile inside corim containing multiple reference value measurements",
 			input:       unsignedCorimNoProfileComidCcaRefValFour,
-			expectedErr: "bad software component in CoMID at index 0: measurement error at index 3: incorrect profile ",
+			expectedErr: "no profile information set in CoRIM",
 		},
 	}
 

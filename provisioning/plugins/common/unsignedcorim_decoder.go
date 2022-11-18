@@ -59,7 +59,7 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 		}
 		xtr.SetProfile(profile)
 	} else {
-		xtr.SetProfile(noProfile)
+		return nil, fmt.Errorf("no profile information set in CoRIM")
 	}
 
 	rsp := decoder.EndorsementDecoderResponse{}
