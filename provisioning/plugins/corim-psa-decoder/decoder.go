@@ -9,7 +9,7 @@ import (
 
 const (
 	SupportedPSAMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
-	SupportedCCAMediaType = "application/corim-unsigned+cbor; profile= http://arm.com/cca/ssd/1"
+	SupportedCCAMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1"
 	PluginName            = "unsigned-corim (PSA & CCA platform profiles)"
 )
 

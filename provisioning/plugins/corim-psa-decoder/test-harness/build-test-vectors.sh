@@ -7,15 +7,15 @@ set -o pipefail
 
 # function generate_go_test_vector constructs CBOR test vector using
 # supplied comid and corim json template and saves them in a file
-# $1 file name for comid json template
-# $2 file name for corim json template
+# $1 file name for comid json template, example one of COMID_TEMPLATES
+# $2 file name for corim json template, example CORIM_CCA_TEMPLATE
 # $3 a qualifier for each cbor test vector name
 # $4 name of the file where the generated CBOR test vectors are aggregated
 generate_go_test_vector () {
 	echo "generating test vector using $1 $2"
 	cocli comid create -t ${1}.json
 	cocli corim create -m ${1}.cbor -t $2 -o corim${1}.cbor
-	echo "// automatically generated from $t.json" >> ${4}
+	echo "// automatically generated from $1.json" >> ${4}
 	echo "var ${3}${1} = "'`' >> ${4}
 	cat corim${1}.cbor | xxd -p >> ${4}
 	echo '`' >> ${4}
@@ -26,7 +26,7 @@ CORIM_TEMPLATE=corimMini.json
 
 # CORIM CCA TEMPLATES
 CORIM_CCA_TEMPLATE=corimCca.json
-CORIM_CCA_TEMPLATE1=corimCcaNoProfile.json
+CORIM_CCA_TEMPLATE_NO_PROFILE=corimCcaNoProfile.json
 
 # COMID TEMPLATES
 COMID_TEMPLATES=
@@ -63,7 +63,7 @@ done
 
 for t in ${COMID_CCA_TEMPLATES}
 do
-	generate_go_test_vector $t $CORIM_CCA_TEMPLATE1 "unsignedCorimNoProfile" $TV_DOT_GO
+	generate_go_test_vector $t $CORIM_CCA_TEMPLATE_NO_PROFILE "unsignedCorimNoProfile" $TV_DOT_GO
 done
 
 gofmt -w $TV_DOT_GO

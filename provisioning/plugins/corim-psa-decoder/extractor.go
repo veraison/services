@@ -23,9 +23,9 @@ func (o *Extractor) SetProfile(p string) {
 	o.Profile = p
 }
 
-// MeasExtractor is an interface to extract measurements from comid
+// MeasurementExtractor is an interface to extract measurements from comid
 // and to make ref attributes from them
-type MeasExtractor interface {
+type MeasurementExtractor interface {
 	FromMeasurement(comid.Measurement) error
 	MakeRefAttrs(PSAClassAttributes) (*structpb.Struct, error)
 }
@@ -61,8 +61,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
-		}
-		if m.Key.IsCCAPlatformConfigID() {
+		} else if m.Key.IsCCAPlatformConfigID() {
 			if o.Profile != ccaProfile {
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
 			}
@@ -71,6 +70,8 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
+		} else {
+			return nil, fmt.Errorf("unknown measurement key")
 		}
 		refVals = append(refVals, refVal)
 	}
@@ -82,7 +83,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	return refVals, nil
 }
 
-func ExtractMeas(obj MeasExtractor, m comid.Measurement, class PSAClassAttributes) (*proto.Endorsement, error) {
+func ExtractMeas(obj MeasurementExtractor, m comid.Measurement, class PSAClassAttributes) (*proto.Endorsement, error) {
 
 	if err := obj.FromMeasurement(m); err != nil {
 		return nil, err

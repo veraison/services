@@ -91,13 +91,13 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 
 		if c.Triples.ReferenceValues != nil {
 			for _, rv := range *c.Triples.ReferenceValues {
-				swComp, err := xtr.RefValExtractor(rv)
+				refVal, err := xtr.RefValExtractor(rv)
 				if err != nil {
 					return nil, fmt.Errorf("bad software component in CoMID at index %d: %w", i, err)
 				}
 
-				for i := range swComp {
-					rsp.SwComponents = append(rsp.SwComponents, swComp[i])
+				for i := range refVal {
+					rsp.SwComponents = append(rsp.SwComponents, refVal[i])
 				}
 			}
 		}
