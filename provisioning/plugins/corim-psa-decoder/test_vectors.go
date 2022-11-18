@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package main
 
-// automatically generated from ComidPsaIakPubOne.json
+// automatically generated from:
+// ComidPsaIakPubOne.json and corimMini.json
 var unsignedCorimComidPsaIakPubOne = `
 a300505c57e8f446cd421b91c908cf93e13cfc0181590132d901faa40065
 656e2d474201a10050366d0a0a598845ed84882f2a544f62420281a30069
@@ -18,7 +19,8 @@ cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f150881a100787c4d466b77
 03817818687474703a2f2f61726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaIakPubTwo.json
+// automatically generated from:
+// ComidPsaIakPubTwo.json and corimMini.json
 var unsignedCorimComidPsaIakPubTwo = `
 a300505c57e8f446cd421b91c908cf93e13cfc0181590216d901faa40065
 656e2d474201a10050366d0a0a598845ed84882f2a544f62420281a30069
@@ -42,7 +44,8 @@ ca923f57a98becd29681a100787c4d466b77457759484b6f5a497a6a3043
 726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaRefValOne.json
+// automatically generated from:
+// ComidPsaRefValOne.json and corimMini.json
 var unsignedCorimComidPsaRefValOne = `
 a300505c57e8f446cd421b91c908cf93e13cfc018158e7d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -56,7 +59,8 @@ d8bae86b01a102818201582087428fc522803d31065e7bce3cf03fe47509
 6f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaRefValThree.json
+// automatically generated from:
+// ComidPsaRefValThree.json and corimMini.json
 var unsignedCorimComidPsaRefValThree = `
 a300505c57e8f446cd421b91c908cf93e13cfc01815901a3d901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
@@ -76,7 +80,8 @@ c3f9bebb6bc24f32ffd5b67b387244c2c909da779a147803817818687474
 703a2f2f61726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaMultIak.json
+// automatically generated from:
+// ComidPsaMultIak.json and corimMini.json
 var unsignedCorimComidPsaMultIak = `
 a300505c57e8f446cd421b91c908cf93e13cfc01815901b2d901faa40065
 656e2d474201a10050366d0a0a598845ed84882f2a544f62420281a30069
@@ -97,7 +102,8 @@ a100787c4d466b77457759484b6f5a497a6a3043415159494b6f5a497a6a
 2f696f742f31
 `
 
-// automatically generated from ComidPsaRefValMultDigest.json
+// automatically generated from:
+// ComidPsaRefValMultDigest.json and corimMini.json
 var unsignedCorimComidPsaRefValMultDigest = `
 a300505c57e8f446cd421b91c908cf93e13cfc018159010bd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
@@ -112,7 +118,8 @@ ce3cf03fe475096231e5e07bbd7a0fde60c4cf25c703817818687474703a
 2f2f61726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaRefValOnlyMandIDAttr.json
+// automatically generated from:
+// ComidPsaRefValOnlyMandIDAttr.json and corimMini.json
 var unsignedCorimComidPsaRefValOnlyMandIDAttr = `
 a300505c57e8f446cd421b91c908cf93e13cfc018158dcd901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -126,7 +133,8 @@ cf25c703817818687474703a2f2f61726d2e636f6d2f7073612f696f742f
 31
 `
 
-// automatically generated from ComidPsaRefValNoMkey.json
+// automatically generated from:
+// ComidPsaRefValNoMkey.json and corimMini.json
 var unsignedCorimComidPsaRefValNoMkey = `
 a300505c57e8f446cd421b91c908cf93e13cfc018158bbd901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -138,7 +146,8 @@ f4cb14a879432e53dd6571c7fa9bccafb75f488259262d6ea3a4d91b030a
 03817818687474703a2f2f61726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaRefValNoImplID.json
+// automatically generated from:
+// ComidPsaRefValNoImplID.json and corimMini.json
 var unsignedCorimComidPsaRefValNoImplID = `
 a300505c57e8f446cd421b91c908cf93e13cfc018158ccd901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -151,7 +160,8 @@ e475096631e5e07bbd7a0fde60c4cf25c703817818687474703a2f2f6172
 6d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaIakPubNoUeID.json
+// automatically generated from:
+// ComidPsaIakPubNoUeID.json and corimMini.json
 var unsignedCorimComidPsaIakPubNoUeID = `
 a300505c57e8f446cd421b91c908cf93e13cfc018159010bd901faa40065
 656e2d474201a10050366d0a0a598845ed84882f2a544f62420281a30069
@@ -166,7 +176,8 @@ a300505c57e8f446cd421b91c908cf93e13cfc018159010bd901faa40065
 2f2f61726d2e636f6d2f7073612f696f742f31
 `
 
-// automatically generated from ComidPsaIakPubNoImplID.json
+// automatically generated from:
+// ComidPsaIakPubNoImplID.json and corimMini.json
 var unsignedCorimComidPsaIakPubNoImplID = `
 a300505c57e8f446cd421b91c908cf93e13cfc0181590117d901faa40065
 656e2d474201a10050366d0a0a598845ed84882f2a544f62420281a30069
@@ -182,7 +193,8 @@ a300505c57e8f446cd421b91c908cf93e13cfc0181590117d901faa40065
 31
 `
 
-// automatically generated from ComidCcaRefValOne.json
+// automatically generated from:
+// ComidCcaRefValOne.json and corimCca.json
 var unsignedCorimComidCcaRefValOne = `
 a600505c57e8f446cd421b91c908cf93e13cfc018158b3d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -199,7 +211,8 @@ d902305272617776616c75650a72617776616c75650a0281a200d8207840
 41434d45204c74642e01d8206c61636d652e6578616d706c65028101
 `
 
-// automatically generated from ComidCcaRefValFour.json
+// automatically generated from:
+// ComidCcaRefValFour.json and corimCca.json
 var unsignedCorimComidCcaRefValFour = `
 a600505c57e8f446cd421b91c908cf93e13cfc01815901cbd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
@@ -226,7 +239,8 @@ c11a695467800581a3006941434d45204c74642e01d8206c61636d652e65
 78616d706c65028101
 `
 
-// automatically generated from ComidCcaRefValOne.json
+// automatically generated from:
+// ComidCcaRefValOne.json and corimCcaNoProfile.json
 var unsignedCorimNoProfileComidCcaRefValOne = `
 a500505c57e8f446cd421b91c908cf93e13cfc018158b3d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
@@ -242,7 +256,8 @@ d902305272617776616c75650a72617776616c75650a0281a200d8207840
 006941434d45204c74642e01d8206c61636d652e6578616d706c65028101
 `
 
-// automatically generated from ComidCcaRefValFour.json
+// automatically generated from:
+// ComidCcaRefValFour.json and corimCcaNoProfile.json
 var unsignedCorimNoProfileComidCcaRefValFour = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901cbd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
