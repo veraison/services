@@ -13,10 +13,6 @@ import (
 	"github.com/veraison/services/provisioning/decoder"
 )
 
-const (
-	noProfile = ""
-)
-
 // IExtractor is the interface that CoRIM plugins need to implement to hook into
 // the UnsignedCorimDecoder logics.
 // Each extractor consumes a specific CoMID triple and produces a corresponding
