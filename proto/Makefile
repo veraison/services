@@ -3,7 +3,6 @@
 
 .DEFAULT_GOAL := all
 
-PROTOSRCS := result.proto
 PROTOSRCS += attestation_format.proto
 PROTOSRCS += param.proto
 PROTOSRCS += token.proto

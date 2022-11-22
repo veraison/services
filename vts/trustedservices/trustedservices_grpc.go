@@ -20,6 +20,7 @@ import (
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
+	"github.com/veraison/services/vts/appraisal"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 )
@@ -288,12 +289,12 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	ec, err := o.initEvidenceContext(scheme, token)
+	appraisal, err := o.initEvidenceContext(scheme, token)
 	if err != nil {
 		return nil, err
 	}
 
-	ta, err := o.getTrustAnchor(ec.TrustAnchorId)
+	ta, err := o.getTrustAnchor(appraisal.EvidenceContext.TrustAnchorId)
 	if err != nil {
 		return nil, err
 	}
@@ -303,17 +304,18 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	ec.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
+	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
 	if err != nil {
 		return nil, err
 	}
 
-	ec.SoftwareId = extracted.SoftwareID
+	appraisal.EvidenceContext.SoftwareId = extracted.SoftwareID
 
-	o.logger.Debugw("constructed evidence context", "software-id", ec.SoftwareId,
-		"trust-anchor-id", ec.TrustAnchorId)
+	o.logger.Debugw("constructed evidence context",
+		"software-id", appraisal.EvidenceContext.SoftwareId,
+		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorId)
 
-	endorsements, err := o.EnStore.Get(ec.SoftwareId)
+	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.SoftwareId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, err
 	}
@@ -331,38 +333,38 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	attestContext, err := scheme.AppraiseEvidence(ec, endorsements)
+	appraisedResult, err := scheme.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
-		attestContext.Result.SetVerifierError()
-		return nil, err
+		appraisal.SetError()
+		return appraisal.MustGetContext(), err
 	}
+	appraisal.Result = appraisedResult
 
-	// TODO(setrofim) Should we be doing SetVerifierError() on error here?
-	// This should be diced as part of wider policy framework desing.
-	err = o.PolicyManager.Evaluate(ctx, attestContext, endorsements)
+	// TODO(setrofim) Should we be doing appraisal.SetError() on error here?
+	// This should be decided as part of a wider policy framework desing.
+	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
 
-	o.logger.Infow("evaluated attestation result", "attestation-result", attestContext.Result)
+	appraisal.Result.UpdateStatusFromTrustVector()
 
-	return attestContext, err
+	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
+
+	return appraisal.MustGetContext(), err
 }
 
 func (c *GRPC) initEvidenceContext(
 	scheme scheme.IScheme,
 	token *proto.AttestationToken,
-) (*proto.EvidenceContext, error) {
+) (*appraisal.Appraisal, error) {
 	var err error
 
-	ec := &proto.EvidenceContext{
-		TenantId: token.TenantId,
-		Format:   token.Format,
-	}
+	appraisal := appraisal.New(token.TenantId, token.Format)
 
-	ec.TrustAnchorId, err = scheme.GetTrustAnchorID(token)
+	appraisal.EvidenceContext.TrustAnchorId, err = scheme.GetTrustAnchorID(token)
 	if err != nil {
 		return nil, err
 	}
 
-	return ec, nil
+	return appraisal, nil
 }
 
 func (c *GRPC) getTrustAnchor(id string) (string, error) {

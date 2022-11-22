@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	viper "github.com/spf13/viper"
+	ear "github.com/veraison/ear"
 	policy "github.com/veraison/services/policy"
 	proto "github.com/veraison/services/proto"
 )
@@ -50,10 +51,10 @@ func (mr *MockIAgentMockRecorder) Close() *gomock.Call {
 }
 
 // Evaluate mocks base method.
-func (m *MockIAgent) Evaluate(ctx context.Context, policy *policy.Policy, result *proto.AttestationResult, evidence *proto.EvidenceContext, endorsements []string) (*proto.AttestationResult, error) {
+func (m *MockIAgent) Evaluate(ctx context.Context, policy *policy.Policy, result *ear.AttestationResult, evidence *proto.EvidenceContext, endorsements []string) (*ear.AttestationResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Evaluate", ctx, policy, result, evidence, endorsements)
-	ret0, _ := ret[0].(*proto.AttestationResult)
+	ret0, _ := ret[0].(*ear.AttestationResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

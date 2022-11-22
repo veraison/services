@@ -8,10 +8,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/veraison/services/proto"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/veraison/services/proto"
+	"github.com/veraison/ear"
 )
 
 func Test_GetTrustAnchorID_ok(t *testing.T) {
@@ -115,7 +116,7 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 	attestation, err := scheme.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.TrustTier_AFFIRMING, attestation.Result.Status)
+	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 }
 
 func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
@@ -137,5 +138,5 @@ func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
 	attestation, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.TrustTier_AFFIRMING, attestation.Result.Status)
+	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 }

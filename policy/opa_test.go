@@ -12,12 +12,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/ear"
 )
 
 type TestResult struct {
-	Error   string                   `json:"error"`
-	Outcome *proto.AttestationResult `json:"outcome"`
+	Error   string                 `json:"error"`
+	Outcome *ear.AttestationResult `json:"outcome"`
 }
 
 type TestVector struct {
@@ -30,7 +30,7 @@ type TestVector struct {
 }
 
 func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
-	resultMap, err := jsonFileToMap(o.ResultPath)
+	resultMap, err := jsonFileToResultMap(o.ResultPath)
 	require.NoError(t, err)
 
 	evidenceMap, err := jsonFileToMap(o.EvidencePath)
@@ -46,7 +46,7 @@ func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	if o.Expected.Error == "" {
 		require.NoError(t, err)
 	} else {
-		assert.EqualError(t, err, o.Expected.Error)
+		assert.ErrorContains(t, err, o.Expected.Error)
 	}
 
 	expected := getUpdateMap(o.Expected.Outcome)
@@ -99,13 +99,29 @@ func jsonFileToMap(path string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	result := make(map[string]interface{})
+	var result map[string]interface{}
+
 	err = json.Unmarshal(bytes, &result)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func jsonFileToResultMap(path string) (map[string]interface{}, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var result ear.AttestationResult
+	err = result.UnmarshalJSON(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.AsMap(), nil
 }
 
 func jsonFileToStringSlice(path string) ([]string, error) {
@@ -123,14 +139,16 @@ func jsonFileToStringSlice(path string) ([]string, error) {
 	return result, nil
 }
 
-func getUpdateMap(ar *proto.AttestationResult) map[string]interface{} {
+func getUpdateMap(ar *ear.AttestationResult) map[string]interface{} {
 	if ar == nil {
 		return nil
 	}
 
+	status := ear.TrustTierNone
+
 	return map[string]interface{}{
-		"status": ar.Status.Int32(),
-		"trust-vector": map[string]interface{}{
+		"ear.status": &status,
+		"ear.trustworthiness-vector": map[string]interface{}{
 			"instance-identity": ar.TrustVector.InstanceIdentity,
 			"configuration":     ar.TrustVector.Configuration,
 			"executables":       ar.TrustVector.Executables,
@@ -140,6 +158,6 @@ func getUpdateMap(ar *proto.AttestationResult) map[string]interface{} {
 			"storage-opaque":    ar.TrustVector.StorageOpaque,
 			"sourced-data":      ar.TrustVector.SourcedData,
 		},
-		"veraison-verifier-added-claims": ar.VerifierAddedClaims.AsMap(),
+		"ear.veraison.verifier-added-claims": ar.VeraisonVerifierAddedClaims,
 	}
 }

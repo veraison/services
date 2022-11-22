@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/proto"
 )
 
@@ -14,8 +15,8 @@ type IAgent interface {
 	GetBackendName() string
 	Evaluate(ctx context.Context,
 		policy *Policy,
-		result *proto.AttestationResult,
+		result *ear.AttestationResult,
 		evidence *proto.EvidenceContext,
-		endorsements []string) (*proto.AttestationResult, error)
+		endorsements []string) (*ear.AttestationResult, error)
 	Close()
 }

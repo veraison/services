@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/ear"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -134,10 +135,10 @@ func Test_GetAttestation(t *testing.T) {
 
 	var scheme Scheme
 
-	appraisalCtx, err := scheme.AppraiseEvidence(evidenceContext, endorsements)
+	result, err := scheme.AppraiseEvidence(evidenceContext, endorsements)
 	require.NoError(t, err)
 
-	assert.Equal(t, proto.TrustTier_AFFIRMING, appraisalCtx.Result.Status)
-	assert.Equal(t, proto.TrustTier_AFFIRMING,
-		appraisalCtx.Result.GetExecutablesStatus().GetTier())
+	assert.Equal(t, ear.TrustTierAffirming, *result.Status)
+	assert.Equal(t, ear.TrustTierAffirming,
+		result.TrustVector.Executables.GetTier())
 }

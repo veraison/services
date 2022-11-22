@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -35,10 +36,10 @@ func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*Polic
 
 func (o *PolicyManager) Evaluate(
 	ctx context.Context,
-	ac *proto.AppraisalContext,
+	appraisal *appraisal.Appraisal,
 	endorsements []string,
 ) error {
-	evidence := ac.Evidence
+	evidence := appraisal.EvidenceContext
 	policyID := o.getPolicyID(evidence)
 
 	pol, err := o.getPolicy(policyID)
@@ -51,12 +52,10 @@ func (o *PolicyManager) Evaluate(
 		return err
 	}
 
-	updatedResult, err := o.Agent.Evaluate(ctx, pol, ac.Result, evidence, endorsements)
+	appraisal.Result, err = o.Agent.Evaluate(ctx, pol, appraisal.Result, evidence, endorsements)
 	if err != nil {
 		return err
 	}
-
-	ac.Result = updatedResult
 
 	return nil
 }

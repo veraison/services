@@ -6,9 +6,9 @@ package policy
 executables = psa_executables { format == "PSA_IOT" }
              else = enacttrust_executables { format == "TPM_ENACTTRUST" }
 
-# This sets executables trust verctor value to AFFIRMING iff BL version is
+# This sets executables trust verctor value to APPROVED_RT iff BL version is
 # 3.5 or greater, and to failure otherwise.
-psa_executables = EXE_AFFIRMING {
+psa_executables = APPROVED_RT {
   # there exisists some i such that...
   some i
   # ...the i'th software component has type "BL", and...
@@ -19,10 +19,10 @@ psa_executables = EXE_AFFIRMING {
   # parameter is greater than the second, -1 if it is less than the second,
   # and 0 if they are equal.)
   semver_cmp(evidence["psa-software-components"][i].version, "3.5") >= 0
-} else =  EXE_UNSAFE # unless the above condition is met, return EXE_UNRECOGNIZED
+} else =  UNSAFE_RT # unless the above condition is met, return UNSAFE_RT
 
 # Unlike the PSA token, the EnactTrust token does not include information about
 # multiple sofware componets and instead has a single "firmware" entry.
-enacttrust_executables = EXE_AFFIRMING {
+enacttrust_executables = APPROVED_RT {
   evidence["firmware"] >= 8
-} else = EXE_UNSAFE
+} else = UNSAFE_RT

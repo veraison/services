@@ -13,6 +13,7 @@ import (
 	tpm2 "github.com/google/go-tpm/tpm2"
 	uuid "github.com/google/uuid"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/plugins/common"
@@ -132,24 +133,15 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	return nil
 }
 
-func initAppraisalContext(ec *proto.EvidenceContext) *proto.AppraisalContext {
-	ac := proto.NewAppraisalContext(ec)
-
-	ac.Result.Status = proto.TrustTier_CONTRAINDICATED
-	ac.Result.SetExecutablesStatus(proto.ARStatus_EXE_CONTRAINDICATED)
-
-	return ac
-}
-
 func (s Scheme) AppraiseEvidence(
 	ec *proto.EvidenceContext,
 	endorsementStrings []string,
-) (*proto.AppraisalContext, error) {
-	appraisalCtx := initAppraisalContext(ec)
+) (*ear.AttestationResult, error) {
+	result := ear.NewAttestationResult()
 
 	digestValue, ok := ec.Evidence.AsMap()["pcr-digest"]
 	if !ok {
-		return appraisalCtx, fmt.Errorf("evidence does not contain %q entry", "pcr-digest")
+		return result, fmt.Errorf("evidence does not contain %q entry", "pcr-digest")
 	}
 
 	evidenceDigest, ok := digestValue.(string)
@@ -159,20 +151,20 @@ func (s Scheme) AppraiseEvidence(
 			"pcr-digest",
 			digestValue,
 		)
-		return appraisalCtx, err
+		return result, err
 	}
 
 	var endorsements Endorsements
 	if err := endorsements.Populate(endorsementStrings); err != nil {
-		return appraisalCtx, err
+		return result, err
 	}
 
 	if endorsements.Digest == evidenceDigest {
-		appraisalCtx.Result.SetExecutablesStatus(proto.ARStatus_EXE_AFFIRMING)
-		appraisalCtx.Result.Status = proto.TrustTier_AFFIRMING
+		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
+		*result.Status = ear.TrustTierAffirming
 	}
 
-	return appraisalCtx, nil
+	return result, nil
 }
 
 func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]string, error) {

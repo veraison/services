@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"go.uber.org/zap"
@@ -69,19 +70,11 @@ func (o *Agent) GetBackendName() string {
 func (o *Agent) Evaluate(
 	ctx context.Context,
 	policy *Policy,
-	result *proto.AttestationResult,
+	result *ear.AttestationResult,
 	evidence *proto.EvidenceContext,
 	endorsements []string,
-) (*proto.AttestationResult, error) {
-	resultBytes, err := result.MarshalJSON()
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal provided result: %w", err)
-	}
-
-	var resultMap map[string]interface{}
-	if err = json.Unmarshal(resultBytes, &resultMap); err != nil {
-		return nil, fmt.Errorf("could not unmarshal provided result: %w", err)
-	}
+) (*ear.AttestationResult, error) {
+	resultMap := result.AsMap()
 
 	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
@@ -96,24 +89,35 @@ func (o *Agent) Evaluate(
 
 	o.logger.Debugw("policy evaluated", "policy-id", policy.ID, "updated", updatedByPolicy)
 
-	updatedStatus, ok := updatedByPolicy["status"]
+	updatedStatus, ok := updatedByPolicy["ear.status"]
 	if !ok {
 		return nil, fmt.Errorf(ErrNoStatus, updatedByPolicy)
 	}
 
 	if updatedStatus != "" {
-		resultMap["status"] = updatedByPolicy["status"]
+		resultMap["ear.status"] = updatedByPolicy["ear.status"]
 	}
 
-	updatedTV, ok := updatedByPolicy["trust-vector"].(map[string]interface{})
+	updatedTV, ok := updatedByPolicy["ear.trustworthiness-vector"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf(ErrNoTV, updatedByPolicy)
 	}
 
 	for k, v := range updatedTV {
 		if v != "" {
-			resultMap["trust-vector"].(map[string]interface{})[k] = v
+			tc, err := ear.ToTrustClaim(v)
+			if err != nil {
+				msg := "could not get TrustClaim for %q from %v"
+				return nil, fmt.Errorf(msg, k, v)
+			}
+
+			resultMap["ear.trustworthiness-vector"].(map[string]ear.TrustClaim)[k] = *tc
 		}
+	}
+
+	updatedAddedClaims, ok := updatedByPolicy["ear.veraison.verifier-added-claims"].(*map[string]interface{})
+	if ok {
+		resultMap["ear.veraison.verifier-added-claims"] = updatedAddedClaims
 	}
 
 	evalBytes, err := json.Marshal(resultMap)
@@ -121,13 +125,13 @@ func (o *Agent) Evaluate(
 		return nil, fmt.Errorf("could not marshal updated result: %w", err)
 	}
 
-	var evaluatedResult proto.AttestationResult
+	var evaluatedResult ear.AttestationResult
 
 	if err = evaluatedResult.UnmarshalJSON(evalBytes); err != nil {
 		return nil, fmt.Errorf(ErrBadResult, err, evalBytes)
 	}
 
-	evaluatedResult.AppraisalPolicyID = policy.ID
+	evaluatedResult.AppraisalPolicyID = &policy.ID
 
 	return &evaluatedResult, nil
 }
