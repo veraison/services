@@ -6,14 +6,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/services/proto"
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/services/proto"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
-type Extractor struct{}
+type Extractor struct {
+	Profile string
+}
 
-func (o Extractor) SwCompExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
+func (o *Extractor) SetProfile(p string) {
+	o.Profile = p
+}
+
+func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(rv.Environment); err != nil {

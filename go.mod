@@ -24,7 +24,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
-	github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c
+	github.com/veraison/corim v0.0.0-20221101190258-b8e2d544a0a3
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
 	github.com/veraison/eat v0.0.0-20210331113810-3da8a4dd42ff
