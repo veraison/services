@@ -1,0 +1,58 @@
+package plugin
+
+import (
+	"fmt"
+	"net/rpc"
+
+	"go.uber.org/zap"
+
+	"github.com/veraison/services/log"
+)
+
+type RPCChannel[I IPluggable] struct {
+	GetClient func(c *rpc.Client) interface{}
+	GetServer func(i I) interface{}
+}
+
+var rpcMap map[string]interface{}
+var logger *zap.SugaredLogger
+
+func init() {
+	rpcMap = make(map[string]interface{})
+	logger = log.Named("plugin.rpc")
+}
+
+func registerRPCChannel[I IPluggable](name string, ch RPCChannel[I]) error {
+	if _, ok := rpcMap[name]; ok {
+		return fmt.Errorf("RPC channel for %q already registred", name)
+	}
+
+	rpcMap[name] = ch
+	logger.Debugw("registered RPC channel", "name", name)
+
+	return nil
+}
+
+func GetRPCServer[I IPluggable](name string, impl I) interface{} {
+	logger.Debugw("GetRPCServer", "name", name, "type", getTypeName[I]())
+	i, ok := rpcMap[name]
+	if !ok {
+		return nil
+	}
+
+	ch := i.(RPCChannel[I])
+
+	return ch.GetServer(impl)
+}
+
+func GetRPCClient[I IPluggable](name string, impl I, c *rpc.Client) interface{} {
+	logger.Debugw("GetRPCClient", "name", name, "type", getTypeName[I]())
+	i, ok := rpcMap[name]
+	if !ok {
+		return nil
+	}
+
+	ch := i.(RPCChannel[I])
+
+	return ch.GetClient(c)
+}
