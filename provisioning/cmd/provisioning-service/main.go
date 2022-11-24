@@ -5,36 +5,25 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/provisioning/api"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
-	DefaultPluginDir  = "../../plugins/bin/"
 	DefaultListenAddr = "localhost:8888"
 )
 
 type cfg struct {
-	PluginDir  string `mapstructure:"plugin-dir"`
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
-}
-
-func (o cfg) Validate() error {
-	if _, err := os.Stat(o.PluginDir); err != nil {
-		return fmt.Errorf("could not stat PluginDir: %w", err)
-	}
-
-	return nil
 }
 
 func main() {
@@ -44,11 +33,10 @@ func main() {
 	}
 
 	cfg := cfg{
-		PluginDir:  DefaultPluginDir,
 		ListenAddr: DefaultListenAddr,
 	}
 
-	subs, err := config.GetSubs(v, "provisioning", "*vts", "*logging")
+	subs, err := config.GetSubs(v, "provisioning", "plugin", "*vts", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +55,11 @@ func main() {
 	}
 
 	log.Info("loading plugins")
-	pluginManager := NewGoPluginManager(cfg.PluginDir, log.Named("plugin"))
+	pluginManager, err := plugin.CreateGoPluginManager(
+		subs["plugin"], log.Named("decoder-plugin"), "decoder", decoder.DecoderRPC)
+	if err != nil {
+		log.Fatalf("Could not load plugins: %v", err)
+	}
 
 	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()
@@ -98,7 +90,7 @@ func main() {
 func terminator(
 	sigs chan os.Signal,
 	done chan bool,
-	pluginManager decoder.IDecoderManager,
+	pluginManager plugin.IManager[decoder.IDecoder],
 ) {
 	sig := <-sigs
 
@@ -116,14 +108,4 @@ func apiServer(apiHandler api.IHandler, listenAddr string) {
 	if err := api.NewRouter(apiHandler).Run(listenAddr); err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
-}
-
-func NewGoPluginManager(dir string, logger *zap.SugaredLogger) decoder.IDecoderManager {
-	mgr := &decoder.GoPluginDecoderManager{}
-	err := mgr.Init(dir, logger)
-	if err != nil {
-		logger.Fatalf("plugin initialisation failed: %v", err)
-	}
-
-	return mgr
 }

@@ -5,6 +5,7 @@ package scheme
 
 import (
 	"github.com/veraison/ear"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 )
 
@@ -13,15 +14,7 @@ import (
 // to a particular AttestationFormat, such as knowledge of evidence and
 // endorsements structure.
 type IScheme interface {
-	// GetName returns the Scheme name as a string. The name is
-	// typically taken from the corresponding attestation format (it is,
-	// however, theoretically possible for them to be different, e.g. if
-	// there are multiple schemes associated with the same format) .
-	GetName() string
-
-	// GetSupportedMediaTypes returns a string slice of MIME media types
-	// handled by this scheme.
-	GetSupportedMediaTypes() []string
+	plugin.IPluggable
 
 	// GetTrustAnchorID returns a string ID used to retrieve a trust anchor
 	// for this token. The trust anchor may be necessary to validate the

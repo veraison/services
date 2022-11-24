@@ -1,7 +1,7 @@
 plugin:
   backend: go-plugin
   go-plugin:
-    folder: ../../plugins/bin/
+    dir: ../../plugins/bin/
 ta-store:
   backend: sql
   sql:

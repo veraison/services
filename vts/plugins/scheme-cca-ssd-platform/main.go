@@ -15,11 +15,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/plugins/common"
@@ -431,20 +431,6 @@ func MustInstIDString(c psatoken.IClaims) string {
 }
 
 func main() {
-	var handshakeConfig = plugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "VERAISON_PLUGIN",
-		MagicCookieValue: "VERAISON",
-	}
-
-	var pluginMap = map[string]plugin.Plugin{
-		"scheme": &scheme.Plugin{
-			Impl: &Scheme{},
-		},
-	}
-
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
-	})
+	scheme.RegisterImplementation(&Scheme{})
+	plugin.Serve()
 }

@@ -1,7 +1,7 @@
 # Copyright 2022 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../bin/veraison-provisining-decoder-corim-tpm-enacttrust
+PLUGIN := ../bin/decoder-corim-tpm-enacttrust.plugin
 GOPKG := github.com/veraison/services/provisioning/plugins/corim-tpm-enacttrust-decoder
 SRCS := $(wildcard *.go)
 

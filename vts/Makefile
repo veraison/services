@@ -3,7 +3,6 @@
 
 SUBDIR := plugins
 SUBDIR += trustedservices
-SUBDIR += pluginmanager
 SUBDIR += policymanager
 SUBDIR += cmd/vts-service
 

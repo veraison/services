@@ -1,5 +1,8 @@
 provisioning:
-  plugin-dir: ../../plugins/bin/
   listen-addr: localhost:8888
+plugin:
+  backend: go-plugin
+  go-plugin:
+    dir: ../../plugins/bin/
 vts:
   server-addr: 127.0.0.1:50051

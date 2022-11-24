@@ -1,7 +1,7 @@
 # Copyright 2021 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../bin/scheme-tpm-enacttrust
+PLUGIN := ../bin/scheme-tpm-enacttrust.plugin
 GOPKG := github.com/veraison/services/vts/plugins/scheme-tpm-enacttrust
 SRCS := main.go
 

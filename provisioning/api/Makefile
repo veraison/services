@@ -4,12 +4,12 @@
 .DEFAULT_GOAL := test
 
 INTERFACES := ../../vtsclient/ivtsclient.go
-INTERFACES += ../decoder/idecoder_manager.go
+INTERFACES += ../../plugin/imanager.go
 
 MOCKPKG := mocks
 
 lint-hook-pre: _mocks
- 
+
 include ../../mk/common.mk
 include ../../mk/pkg.mk
 include ../../mk/lint.mk

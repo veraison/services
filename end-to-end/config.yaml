@@ -3,7 +3,6 @@ logging:
     - stdout
     - logs/{{ .service }}-stdout.log
 provisioning:
-  plugin-dir: ./plugins-provisioning/
   listen-addr: localhost:8888
 vts:
   server-addr: 127.0.0.1:50051
@@ -13,7 +12,7 @@ ear-signer:
 plugin:
   backend: go-plugin
   go-plugin:
-    folder: ./plugins/
+    dir: ./plugins/
 ta-store:
   backend: sql
   sql:

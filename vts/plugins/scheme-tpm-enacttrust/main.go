@@ -12,8 +12,8 @@ import (
 
 	tpm2 "github.com/google/go-tpm/tpm2"
 	uuid "github.com/google/uuid"
-	plugin "github.com/hashicorp/go-plugin"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/plugins/common"
@@ -220,20 +220,6 @@ func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
 }
 
 func main() {
-	var handshakeConfig = plugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "VERAISON_PLUGIN",
-		MagicCookieValue: "VERAISON",
-	}
-
-	var pluginMap = map[string]plugin.Plugin{
-		"scheme": &scheme.Plugin{
-			Impl: &Scheme{},
-		},
-	}
-
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
-	})
+	scheme.RegisterImplementation(&Scheme{})
+	plugin.Serve()
 }

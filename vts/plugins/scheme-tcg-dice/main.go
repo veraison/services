@@ -9,10 +9,10 @@ import (
 	"encoding/pem"
 	"errors"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/dice"
 	"github.com/veraison/ear"
 
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )
@@ -235,20 +235,6 @@ func parseTrustAnchor(trustAnchor []byte, roots *x509.CertPool, intermediates *x
 }
 
 func main() {
-	var handshakeConfig = plugin.HandshakeConfig{
-		ProtocolVersion:  1,
-		MagicCookieKey:   "VERAISON_PLUGIN",
-		MagicCookieValue: "VERAISON",
-	}
-
-	var pluginMap = map[string]plugin.Plugin{
-		"scheme": &scheme.Plugin{
-			Impl: &Scheme{},
-		},
-	}
-
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
-	})
+	scheme.RegisterImplementation(&Scheme{})
+	plugin.Serve()
 }

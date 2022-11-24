@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
@@ -27,21 +28,21 @@ type IHandler interface {
 }
 
 type Handler struct {
-	DecoderManager decoder.IDecoderManager
-	VTSClient      vtsclient.IVTSClient
+	PluginManager plugin.IManager[decoder.IDecoder]
+	VTSClient     vtsclient.IVTSClient
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
-	dm decoder.IDecoderManager,
+	pm plugin.IManager[decoder.IDecoder],
 	sc vtsclient.IVTSClient,
 	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
-		DecoderManager: dm,
-		VTSClient:      sc,
-		logger:         logger,
+		PluginManager: pm,
+		VTSClient:     sc,
+		logger:        logger,
 	}
 }
 
@@ -74,7 +75,7 @@ func (o *Handler) GetServiceState(c *gin.Context) {
 		panic(err) // Should never happen as the value above is hard-coded.
 	}
 
-	decoderMediaTypeList, err := proto.NewStringList(o.DecoderManager.GetSupportedMediaTypes())
+	decoderMediaTypeList, err := proto.NewStringList(o.PluginManager.GetRegisteredMediaTypes())
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
@@ -113,8 +114,8 @@ func (o *Handler) Submit(c *gin.Context) {
 	// read media type
 	mediaType := c.Request.Header.Get("Content-Type")
 
-	if !o.DecoderManager.IsSupportedMediaType(mediaType) {
-		mediaTypes := o.DecoderManager.GetSupportedMediaTypes()
+	if !o.PluginManager.IsRegisteredMediaType(mediaType) {
+		mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
 		c.Header("Accept", strings.Join(mediaTypes, ", "))
 		ReportProblem(c,
 			http.StatusUnsupportedMediaType,
@@ -148,7 +149,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	// API model.  For now, the object is created opportunistically.
 
 	// pass data to the identified plugin for normalisation
-	rsp, err := o.DecoderManager.Dispatch(mediaType, payload)
+	rsp, err := o.dispatch(mediaType, payload)
 	if err != nil {
 		o.logger.Errorw("session failed", "error", err)
 
@@ -187,6 +188,18 @@ func (o *Handler) Submit(c *gin.Context) {
 	}
 
 	sendSuccessfulProvisioningSession(c)
+}
+
+func (o *Handler) dispatch(
+	mediaType string,
+	payload []byte,
+) (*decoder.EndorsementDecoderResponse, error) {
+	decoderPlugin, err := o.PluginManager.LookupByMediaType(mediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	return decoderPlugin.Decode(payload)
 }
 
 func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {

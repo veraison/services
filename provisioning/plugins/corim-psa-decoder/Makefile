@@ -1,7 +1,7 @@
 # Copyright 2022 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../bin/veraison-provisining-decoder-corim-psa
+PLUGIN := ../bin/decoder-corim-psa.plugin
 GOPKG := github.com/veraison/services/provisioning/plugins/corim-psa-decoder
 SRCS := $(wildcard *.go)
 

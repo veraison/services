@@ -7,12 +7,27 @@ import (
 	"net/rpc"
 
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/veraison/services/plugin"
 )
 
 /*
   Server-side RPC adapter around the Decoder plugin implementation
   (plugin-side)
 */
+
+var DecoderRPC = plugin.RPCChannel[IDecoder]{
+	GetClient: getClient,
+	GetServer: getServer,
+}
+
+func getClient(c *rpc.Client) interface{} {
+	return &RPCClient{client: c}
+}
+
+func getServer(i IDecoder) interface{} {
+	return &RPCServer{Impl: i}
+}
 
 type RPCServer struct {
 	Impl IDecoder

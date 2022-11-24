@@ -36,7 +36,13 @@ check-mockgen:
 		echo ""; \
 		echo "please install mockgen using:"; \
 		echo ""; \
-		echo "    go install github.com/golang/mock/mockgen@1.6.0"; \
+		echo "    go install github.com/golang/mock/mockgen@v1.7.0-rc.1"; \
+		echo ""; \
+	elif [[ "$$($(MOCKGEN) -version)" != "v1.7.0-rc.1" ]]; then \
+		echo ""; \
+		echo "please upgrade mockgen to version v1.7.0-rc.1:"; \
+		echo ""; \
+		echo "    go install github.com/golang/mock/mockgen@v1.7.0-rc.1"; \
 		echo ""; \
 	fi
 .PHONY: check-mockgen

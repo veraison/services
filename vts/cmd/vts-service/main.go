@@ -13,9 +13,10 @@ import (
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
+	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/earsigner"
-	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
 )
@@ -60,8 +61,9 @@ func main() {
 	}
 
 	log.Info("loading plugins")
-	pluginManager := pluginmanager.New(log.Named("plugin"))
-	if err := pluginManager.Init(subs["plugin"]); err != nil {
+	pluginManager, err := plugin.CreateGoPluginManager(
+		subs["plugin"], log.Named("scheme-plugin"), "scheme", scheme.SchemeRPC)
+	if err != nil {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
@@ -77,7 +79,7 @@ func main() {
 	vts := trustedservices.NewGRPC(taStore, enStore,
 		pluginManager, policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"]); err != nil {
+	if err = vts.Init(subs["vts"], pluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

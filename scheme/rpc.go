@@ -8,21 +8,22 @@ import (
 	"log"
 	"net/rpc"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 )
 
-type Plugin struct {
-	Impl IScheme
+var SchemeRPC = plugin.RPCChannel[IScheme]{
+	GetClient: getClient,
+	GetServer: getServer,
 }
 
-func (p *Plugin) Server(*plugin.MuxBroker) (interface{}, error) {
-	return &RPCServer{Impl: p.Impl}, nil
+func getClient(c *rpc.Client) interface{} {
+	return &RPCClient{client: c}
 }
 
-func (p *Plugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
-	return &RPCClient{client: c}, nil
+func getServer(i IScheme) interface{} {
+	return &RPCServer{Impl: i}
 }
 
 type RPCServer struct {

@@ -18,11 +18,11 @@ import (
 
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/appraisal"
 	"github.com/veraison/services/vts/earsigner"
-	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 )
 
@@ -54,7 +54,7 @@ type GRPC struct {
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
-	PluginManager pluginmanager.ISchemePluginManager
+	PluginManager plugin.IManager[scheme.IScheme]
 	PolicyManager *policymanager.PolicyManager
 	EarSigner     earsigner.IEarSigner
 
@@ -68,7 +68,7 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	pluginManager pluginmanager.ISchemePluginManager,
+	pluginManager plugin.IManager[scheme.IScheme],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
@@ -92,13 +92,17 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init(v *viper.Viper) error {
+func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[scheme.IScheme]) error {
+	var err error
+
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
 
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(v); err != nil {
 		return err
 	}
+
+	o.PluginManager = pm
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -149,11 +153,7 @@ func (o *GRPC) Close() error {
 }
 
 func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceState, error) {
-
-	mediaTypes, err := o.PluginManager.SupportedVerificationMediaTypes()
-	if err != nil {
-		return nil, err
-	}
+	mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
 
 	mediaTypesList, err := proto.NewStringList(mediaTypes)
 	if err != nil {
@@ -177,8 +177,10 @@ func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest)
 		val    []byte
 	)
 
+	o.logger.Debugw("AddRefValue", "ref-value", req.ReferenceValues)
+
 	for _, refVal := range req.GetReferenceValues() {
-		scheme, err = o.PluginManager.LookupBySchemeName(refVal.GetScheme())
+		scheme, err = o.PluginManager.LookupByName(refVal.GetScheme())
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
@@ -235,13 +237,15 @@ func (o *GRPC) AddTrustAnchor(
 		val    []byte
 	)
 
+	o.logger.Debugw("AddTrustAnchor", "trust-anchor", req.TrustAnchor)
+
 	if req.TrustAnchor == nil {
 		return addTrustAnchorErrorResponse(errors.New("nil trust anchor in request")), nil
 	}
 
 	ta = req.TrustAnchor
 
-	scheme, err = o.PluginManager.LookupBySchemeName(ta.GetScheme())
+	scheme, err = o.PluginManager.LookupByName(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -402,10 +406,6 @@ func (c *GRPC) getTrustAnchor(id string) (string, error) {
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	mts, err := c.PluginManager.SupportedVerificationMediaTypes()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving supported media types: %w", err)
-	}
-
+	mts := c.PluginManager.GetRegisteredMediaTypes()
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
