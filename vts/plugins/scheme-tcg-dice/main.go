@@ -10,8 +10,8 @@ import (
 	"errors"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/veraison/ear"
 	"github.com/veraison/dice"
+	"github.com/veraison/ear"
 
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
@@ -40,7 +40,7 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 	return "dice://", nil
 }
 
-func (s Scheme) SynthKeysFromSwComponent(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s Scheme) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
 
@@ -82,8 +82,8 @@ func (s Scheme) ExtractClaims(
 	}
 
 	extracted := scheme.ExtractedClaims{
-		ClaimsSet:  claims,
-		SoftwareID: "dice://",
+		ClaimsSet:   claims,
+		ReferenceID: "dice://",
 	}
 
 	return &extracted, err

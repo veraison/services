@@ -18,5 +18,9 @@ enum AttestationFormat {
 
 	// TPM EnactTrust
 	TPM_ENACTTRUST = 3;
+
+	// CCA_SSD_PLATFORM is the Confidential Computing Architecture System Security Domain Platform based on:
+	// [Realm Management Monitor (RMM) Specification](https://developer.arm.com/documentation/den0137/latest)
+	CCA_SSD_PLATFORM = 4;
 }
 

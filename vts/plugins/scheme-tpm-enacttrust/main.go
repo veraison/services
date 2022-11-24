@@ -36,7 +36,7 @@ func (s Scheme) GetSupportedMediaTypes() []string {
 	}
 }
 
-func (s Scheme) SynthKeysFromSwComponent(
+func (s Scheme) SynthKeysFromRefValue(
 	tenantID string,
 	swComp *proto.Endorsement,
 ) ([]string, error) {
@@ -105,7 +105,7 @@ func (s Scheme) ExtractClaims(
 	if err != nil {
 		return nil, fmt.Errorf("could not decode node-id: %w", err)
 	}
-	evidence.SoftwareID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
+	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
 
 	return evidence, nil
 }

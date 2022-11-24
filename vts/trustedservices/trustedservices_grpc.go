@@ -160,7 +160,7 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 	}, nil
 }
 
-func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRequest) (*proto.AddSwComponentsResponse, error) {
+func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest) (*proto.AddRefValuesResponse, error) {
 	var (
 		err    error
 		keys   []string
@@ -168,45 +168,45 @@ func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRe
 		val    []byte
 	)
 
-	for _, swComp := range req.GetSwComponents() {
-		scheme, err = o.PluginManager.LookupByAttestationFormat(swComp.GetScheme())
+	for _, refVal := range req.GetReferenceValues() {
+		scheme, err = o.PluginManager.LookupByAttestationFormat(refVal.GetScheme())
 		if err != nil {
-			return addSwComponentErrorResponse(err), nil
+			return addRefValueErrorResponse(err), nil
 		}
 
-		keys, err = scheme.SynthKeysFromSwComponent(DummyTenantID, swComp)
+		keys, err = scheme.SynthKeysFromRefValue(DummyTenantID, refVal)
 		if err != nil {
-			return addSwComponentErrorResponse(err), nil
+			return addRefValueErrorResponse(err), nil
 		}
 
-		val, err = json.Marshal(swComp)
+		val, err = json.Marshal(refVal)
 		if err != nil {
-			return addSwComponentErrorResponse(err), nil
+			return addRefValueErrorResponse(err), nil
 		}
 	}
 
 	for _, key := range keys {
 		if err := o.EnStore.Add(key, string(val)); err != nil {
 			if err != nil {
-				return addSwComponentErrorResponse(err), nil
+				return addRefValueErrorResponse(err), nil
 			}
 		}
 	}
 
-	o.logger.Infow("added software component", "keys", keys)
+	o.logger.Infow("added reference values", "keys", keys)
 
-	return addSwComponentSuccessResponse(), nil
+	return addRefValueSuccessResponse(), nil
 }
-func addSwComponentSuccessResponse() *proto.AddSwComponentsResponse {
-	return &proto.AddSwComponentsResponse{
+func addRefValueSuccessResponse() *proto.AddRefValuesResponse {
+	return &proto.AddRefValuesResponse{
 		Status: &proto.Status{
 			Result: true,
 		},
 	}
 }
 
-func addSwComponentErrorResponse(err error) *proto.AddSwComponentsResponse {
-	return &proto.AddSwComponentsResponse{
+func addRefValueErrorResponse(err error) *proto.AddRefValuesResponse {
+	return &proto.AddRefValuesResponse{
 		Status: &proto.Status{
 			Result:      false,
 			ErrorDetail: fmt.Sprintf("%v", err),
@@ -309,13 +309,18 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	appraisal.EvidenceContext.SoftwareId = extracted.SoftwareID
+	appraisal.EvidenceContext.UpEvidence, err = structpb.NewStruct(extracted.UnprocessedClaimsSet)
+	if err != nil {
+		return nil, err
+	}
+
+	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID
 
 	o.logger.Debugw("constructed evidence context",
-		"software-id", appraisal.EvidenceContext.SoftwareId,
+		"software-id", appraisal.EvidenceContext.ReferenceId,
 		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorId)
 
-	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.SoftwareId)
+	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.ReferenceId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, err
 	}
@@ -341,7 +346,7 @@ func (o *GRPC) GetAttestation(
 	appraisal.Result = appraisedResult
 
 	// TODO(setrofim) Should we be doing appraisal.SetError() on error here?
-	// This should be decided as part of a wider policy framework desing.
+	// This should be decided as part of a wider policy framework design.
 	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
 
 	appraisal.Result.UpdateStatusFromTrustVector()
