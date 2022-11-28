@@ -26,7 +26,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.1
-	github.com/veracruz-project/go-nitro-enclave-attestation-document v0.0.0-20221112151611-0893a6c14411
+	github.com/veracruz-project/go-nitro-enclave-attestation-document v0.0.0-20221128190504-3eeb9fee39cb
 	github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/eat v0.0.0-20210331113810-3da8a4dd42ff

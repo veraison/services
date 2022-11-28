@@ -5,17 +5,15 @@ package main
 
 import (
 	"crypto/x509"
-	//"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"flag"
 	"fmt"
+	"net/url"
+
 	"github.com/hashicorp/go-plugin"
-	nitro_eclave_attestation_document "github.com/veracruz-project/go-nitro-enclave-attestation-document"
+	nitro_enclave_attestation_document "github.com/veracruz-project/go-nitro-enclave-attestation-document"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
-	"net/url"
-	"time"
 )
 
 type Endorsements struct {
@@ -58,18 +56,6 @@ func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) 
 // ExtractClaims parses the attestation token and returns claims
 // extracted therefrom.
 func (s Scheme) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*scheme.ExtractedClaims, error) {
-	return s.extractClaimsImpl(token, trustAnchor, time.Now())
-}
-
-/// Same as ExtractClaims, but allows the caller to set an alternate "current time" to allow
-/// tests to use saved attestation document data without triggering certificate expiry errors.
-/// THIS FUNCTION SHOULD ONLY BE USED IN TESTING
-func (s Scheme) ExtractClaimsTest(token *proto.AttestationToken, trustAnchor string, testTime time.Time) (*scheme.ExtractedClaims, error) {
-	return s.extractClaimsImpl(token, trustAnchor, testTime)
-}
-
-/// Implementation of the functionality for ExtracClaims and ExtracClaimsTest
-func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor string, now time.Time) (*scheme.ExtractedClaims, error) {
 	ta_unmarshalled := make(map[string]interface{})
 
 	err := json.Unmarshal([]byte(trustAnchor), &ta_unmarshalled)
@@ -89,9 +75,6 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 		return nil, new_err
 	}
 
-	// golang standard library pem.Decode function cannot handle PEM data without a header, so I have to add one to make it happy.
-	// Yes, this is stupid
-	cert_pem = "-----BEGIN CERTIFICATE-----\n" + cert_pem + "\n-----END CERTIFICATE-----\n"
 	cert_pem_bytes := []byte(cert_pem)
 	cert_block, _ := pem.Decode(cert_pem_bytes)
 	if cert_block == nil {
@@ -108,12 +91,10 @@ func (s Scheme) extractClaimsImpl(token *proto.AttestationToken, trustAnchor str
 
 	token_data := token.Data
 
-	var document *nitro_eclave_attestation_document.AttestationDocument
-	if flag.Lookup("test.v") == nil {
-		document, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
-	} else {
-		document, err = nitro_eclave_attestation_document.AuthenticateDocumentTest(token_data, *cert, now)
-	}
+	var document *nitro_enclave_attestation_document.AttestationDocument
+
+	document, err = nitro_enclave_attestation_document.AuthenticateDocument(token_data[1:], *cert)
+
 	if err != nil {
 		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims call to AuthenticateDocument failed:%v", err)
 		return nil, new_err
@@ -172,27 +153,6 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	trustAnchor string,
 	endorsementsStrings []string,
 ) error {
-	return s.validateEvidenceIntegrityImpl(token, trustAnchor, endorsementsStrings, time.Now())
-}
-
-/// Same as ValidateEvidenceIntegrity, but allows the caller to set an alternate "current time" to allow
-/// tests to use saved attestation document data without triggering certificate expiry errors.
-/// THIS FUNCTION SHOULD ONLY BE USED IN TESTING
-func (s Scheme) ValidateEvidenceIntegrityTest(
-	token *proto.AttestationToken,
-	trustAnchor string,
-	endorsementsStrings []string,
-	testTime time.Time,
-) error {
-	return s.validateEvidenceIntegrityImpl(token, trustAnchor, endorsementsStrings, testTime)
-}
-
-func (s Scheme) validateEvidenceIntegrityImpl(token *proto.AttestationToken,
-	trustAnchor string,
-	endorsementsStrings []string,
-	now time.Time,
-) error {
-
 	ta_unmarshalled := make(map[string]interface{})
 
 	err := json.Unmarshal([]byte(trustAnchor), &ta_unmarshalled)
@@ -212,9 +172,6 @@ func (s Scheme) validateEvidenceIntegrityImpl(token *proto.AttestationToken,
 		return new_err
 	}
 
-	// golang standard library pem.Decode function cannot handle PEM data without a header, so I have to add one to make it happy.
-	// Yes, this is stupid
-	cert_pem = "-----BEGIN CERTIFICATE-----\n" + cert_pem + "\n-----END CERTIFICATE-----\n"
 	cert_pem_bytes := []byte(cert_pem)
 	cert_block, _ := pem.Decode(cert_pem_bytes)
 	if cert_block == nil {
@@ -229,18 +186,9 @@ func (s Scheme) validateEvidenceIntegrityImpl(token *proto.AttestationToken,
 		return new_err
 	}
 
-	// token_data, err := base64.StdEncoding.DecodeString(string(token.Data))
-	// if err != nil {
-	// 	new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to base64.StdEncoding.DecodeString failed:%v", err)
-	// 	return nil, new_err
-	// }
 	token_data := token.Data
 
-	if flag.Lookup("test.v") == nil {
-		_, err = nitro_eclave_attestation_document.AuthenticateDocument(token_data, *cert)
-	} else {
-		_, err = nitro_eclave_attestation_document.AuthenticateDocumentTest(token_data, *cert, now)
-	}
+	_, err = nitro_enclave_attestation_document.AuthenticateDocument(token_data[1:], *cert)
 	if err != nil {
 		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to AuthenticateDocument failed:%v", err)
 		return new_err
@@ -248,13 +196,13 @@ func (s Scheme) validateEvidenceIntegrityImpl(token *proto.AttestationToken,
 	return nil
 }
 
-func claimsToMap(doc *nitro_eclave_attestation_document.AttestationDocument) (out map[string]interface{}, err error) {
+func claimsToMap(doc *nitro_enclave_attestation_document.AttestationDocument) (out map[string]interface{}, err error) {
 	out = make(map[string]interface{})
 	for index, this_pcr := range doc.PCRs {
 		var key = fmt.Sprintf("PCR%v", index)
 		out[key] = this_pcr
 	}
-	out["user_data"] = doc.User_Data
+	out["user_data"] = doc.UserData
 	out["nonce"] = doc.Nonce
 
 	return out, nil
