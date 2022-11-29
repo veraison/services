@@ -3,6 +3,10 @@ ARG workDir=/app
 ARG workDirRepo=/app/services
 ARG GoVersion=1.18
 
+# Arguments for psa demo input directories
+ARG COCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/corim@v0.0.0-20221125105155-c2835023f15e/cocli
+ARG EVCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/evcli@v0.0.0-20221031171538-734499a0aa16/misc
+
 FROM golang:$GoVersion AS build-base
 
 # Renew Arg and set working directory to /app
@@ -42,8 +46,8 @@ RUN go mod download &&\
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
     go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
-    go install github.com/veraison/corim/cocli@demo-psa-1.0.0 &&\
-    go install github.com/veraison/evcli@demo-psa-1.0.0
+    go install github.com/veraison/corim/cocli@demo-psa-1.0.1 &&\
+    go install github.com/veraison/evcli@demo-psa-1.0.1
 
 
 FROM build-base as common-build
@@ -76,7 +80,7 @@ ENV LOG_DIR $LOG_DIR
 ENV PLUGIN_DIR $PLUGIN_DIR
 ENV INPUT_FILE_DIR $INPUT_FILE_DIR
 
-# Clone deployment branch from remote (TODO: change this to clone from main once Docker change has been integrated)
+# Clone deployment branch from remote (TODO: change this to clone from main and add a tag on main (to freeze the demo), once Docker change has been integrated)
 RUN git clone --branch deployment https://github.com/veraison/services.git
 
 # Set working directory to repo
@@ -110,6 +114,14 @@ WORKDIR /
 # Copy over tar ball from build image
 COPY --from=common-build $workDirRepo/provisioning.tar /
 RUN tar -xf provisioning.tar
+
+# Create input files for psa provisioning part of the demo
+ARG COCLI_TEMPLATES
+RUN cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-integ-iakpub.json &&\
+    cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-refval.json &&\ 
+    cocli corim create --template=$COCLI_TEMPLATES/data/templates/corim-full.json --comid=comid-psa-integ-iakpub.cbor --comid=comid-psa-refval.cbor &&\
+    mv corim-full.cbor $INPUT_FILE_DIR/
+
 EXPOSE 8888
 ENTRYPOINT [ "provisioning-service" ]
 CMD [ ]
@@ -131,6 +143,16 @@ WORKDIR /
 COPY --from=common-build $workDirRepo/verification.tar /
 RUN tar -xf verification.tar && \
     touch /etc/machine-id
+
+# Create input files for psa verification part of the demo
+ARG COCLI_TEMPLATES
+ARG EVCLI_TEMPLATES
+RUN evcli psa create -c $EVCLI_TEMPLATES/psa-claims-profile-2-integ.json -k $COCLI_TEMPLATES/data/keys/ec-p256.jwk --token=psa-evidence.cbor &&\
+    mv psa-evidence.cbor $INPUT_FILE_DIR/ &&\
+    cp $COCLI_TEMPLATES/data/keys/ec-p256.jwk $INPUT_FILE_DIR/ &&\
+    cp $EVCLI_TEMPLATES/psa-claims-profile-2-integ-without-nonce.json $INPUT_FILE_DIR/
+
+
 EXPOSE 8080
 ENTRYPOINT [ "verification-service" ]
 CMD [ ]
