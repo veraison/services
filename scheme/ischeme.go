@@ -41,8 +41,16 @@ type IScheme interface {
 	// ValidateEvidenceIntegrity verifies the structural integrity and validity of the
 	// token. The exact checks performed are scheme-specific, but they
 	// would typically involve, at the least, verifying the token's
-	// signature using the provided trust anchor. If the validation fails,
-	// an error detailing what went wrong is returned.
+	// signature using the provided trust anchor and endorsements. If the
+	// validation fails, an error detailing what went wrong is returned.
+	// Note: key material required to  validate the token would typically be
+	//       provisioned as a Trust Anchor. However, depending on the
+	//       requirements of the Scheme, it maybe be provisioned as an
+	//       Endorsement instead, or in addition to the Trust Anchor. E.g.,
+	//       if the validation is performed via an x.509 cert chain, the
+	//       root cert may be provisioned as a Trust Anchor, while
+	//       intermediate certs may be provisioned as Endorsements (at a
+	//       different point in time, by a different actor).
 	// TODO(setrofim): no distinction is currently made between validation
 	// failing due to an internal error, and it failing due to bad input
 	// (i.e. signature not matching).
