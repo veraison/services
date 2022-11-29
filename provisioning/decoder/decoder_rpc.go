@@ -39,7 +39,7 @@ func (s *RPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) err
 func (s RPCServer) Decode(data []byte, resp *[]byte) error {
 	j, err := s.Impl.Decode(data)
 	if err != nil {
-		return fmt.Errorf("plugin returned error: %w", err)
+		return fmt.Errorf("plugin %q returned error: %w", s.Impl.GetName(), err)
 	}
 
 	*resp, err = protojson.Marshal(j)
