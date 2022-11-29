@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
@@ -46,7 +47,12 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 	if uc.Profiles != nil {
 		// get the profile
 		if len(*uc.Profiles) > 1 {
-			return nil, fmt.Errorf("invalid multiple profiles: %x", len(*uc.Profiles))
+			var profiles []string
+			for _, p := range *uc.Profiles {
+				name, _ := p.Get()
+				profiles = append(profiles, name)
+			}
+			return nil, fmt.Errorf("found multiple profiles (expected exactly one): %s", strings.Join(profiles, ", "))
 		}
 		p := (*uc.Profiles)[0]
 		profile, err := p.Get()
