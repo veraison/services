@@ -6,6 +6,6 @@ option go_package = "github.com/veraison/services/provisioning/decoder";
 import "vts.proto";
 
 message EndorsementDecoderResponse {
-    repeated proto.Endorsement swComponents = 1;
+    repeated proto.Endorsement referenceValues = 1;
     repeated proto.Endorsement trustAnchors = 2;
 }

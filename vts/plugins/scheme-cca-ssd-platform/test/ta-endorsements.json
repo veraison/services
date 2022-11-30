@@ -1,0 +1,12 @@
+
+{
+    "scheme":"CCA_SSD_PLATFORM",
+    "type":"VERIFICATION_KEY",
+    "attributes":{
+        "cca.hw-model":"RoadRunner",
+        "cca.hw-vendor":"ACME",
+        "cca.impl-id":"76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+        "cca.iak-pub":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETl4iCZ47zrRbRG0TVf0dw7VFlHtv\n18HInYhnmMNybo+A1wuECyVqrDSmLt4QQzZPBECV8ANHS5HgGCCSr7E/Lg==\n-----END PUBLIC KEY-----",
+        "cca.inst-id":"Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+    }
+}

@@ -7,9 +7,9 @@
 package proto
 
 import (
+	_struct "github.com/golang/protobuf/ptypes/struct"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -78,9 +78,9 @@ type ServiceState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Status              ServiceStatus                  `protobuf:"varint,1,opt,name=status,proto3,enum=proto.ServiceStatus" json:"status,omitempty"`
-	ServerVersion       string                         `protobuf:"bytes,2,opt,name=server_version,json=server-version,proto3" json:"server_version,omitempty"`
-	SupportedMediaTypes map[string]*structpb.ListValue `protobuf:"bytes,3,rep,name=supported_media_types,json=supported-media-types,proto3" json:"supported_media_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Status              ServiceStatus                 `protobuf:"varint,1,opt,name=status,proto3,enum=proto.ServiceStatus" json:"status,omitempty"`
+	ServerVersion       string                        `protobuf:"bytes,2,opt,name=server_version,json=server-version,proto3" json:"server_version,omitempty"`
+	SupportedMediaTypes map[string]*_struct.ListValue `protobuf:"bytes,3,rep,name=supported_media_types,json=supported-media-types,proto3" json:"supported_media_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *ServiceState) Reset() {
@@ -129,7 +129,7 @@ func (x *ServiceState) GetServerVersion() string {
 	return ""
 }
 
-func (x *ServiceState) GetSupportedMediaTypes() map[string]*structpb.ListValue {
+func (x *ServiceState) GetSupportedMediaTypes() map[string]*_struct.ListValue {
 	if x != nil {
 		return x.SupportedMediaTypes
 	}
@@ -186,10 +186,10 @@ func file_state_proto_rawDescGZIP() []byte {
 var file_state_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_state_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_state_proto_goTypes = []interface{}{
-	(ServiceStatus)(0),         // 0: proto.ServiceStatus
-	(*ServiceState)(nil),       // 1: proto.ServiceState
-	nil,                        // 2: proto.ServiceState.SupportedMediaTypesEntry
-	(*structpb.ListValue)(nil), // 3: google.protobuf.ListValue
+	(ServiceStatus)(0),        // 0: proto.ServiceStatus
+	(*ServiceState)(nil),      // 1: proto.ServiceState
+	nil,                       // 2: proto.ServiceState.SupportedMediaTypesEntry
+	(*_struct.ListValue)(nil), // 3: google.protobuf.ListValue
 }
 var file_state_proto_depIdxs = []int32{
 	0, // 0: proto.ServiceState.status:type_name -> proto.ServiceStatus

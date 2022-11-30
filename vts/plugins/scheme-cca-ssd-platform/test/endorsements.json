@@ -1,0 +1,15 @@
+{
+"scheme":"CCA_SSD_PLATFORM",
+"type":"REFERENCE_VALUE",
+"sub_type": "cca.sw-component",
+"attributes":{
+    "cca.hw-model":"RoadRunner",
+    "cca.hw-vendor":"ACME",
+    "cca.impl-id":"76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+    "cca.measurement-desc":1,
+    "cca.measurement-type":"BL",
+    "cca.measurement-value":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "cca.signer-id":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "cca.version":"3.4.2"
+  }
+}

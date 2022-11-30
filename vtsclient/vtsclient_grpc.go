@@ -80,11 +80,11 @@ func (o *GRPC) GetServiceState(
 	return c.GetServiceState(ctx, in, opts...)
 }
 
-func (o *GRPC) AddSwComponents(
+func (o *GRPC) AddRefValues(
 	ctx context.Context,
-	in *proto.AddSwComponentsRequest,
+	in *proto.AddRefValuesRequest,
 	opts ...grpc.CallOption,
-) (*proto.AddSwComponentsResponse, error) {
+) (*proto.AddRefValuesResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
 		return nil, NewNoConnectionError("AddSwComponents", err)
 	}
@@ -94,7 +94,7 @@ func (o *GRPC) AddSwComponents(
 		return nil, ErrNoClient
 	}
 
-	return c.AddSwComponents(ctx, in, opts...)
+	return c.AddRefValues(ctx, in, opts...)
 }
 
 func (o *GRPC) AddTrustAnchor(

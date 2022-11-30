@@ -28,7 +28,7 @@ var (
 		TrustAnchors: []*proto.Endorsement{
 			{},
 		},
-		SwComponents: []*proto.Endorsement{
+		ReferenceValues: []*proto.Endorsement{
 			{},
 		},
 	}
@@ -38,10 +38,10 @@ var (
 	testGoodTaRes = proto.AddTrustAnchorResponse{
 		Status: &proto.Status{Result: true},
 	}
-	testFailedSwCompRes = proto.AddSwComponentsResponse{
+	testFailedRefValRes = proto.AddRefValuesResponse{
 		Status: &proto.Status{Result: false},
 	}
-	testGoodSwCompRes = proto.AddSwComponentsResponse{
+	testGoodRefValRes = proto.AddRefValuesResponse{
 		Status: &proto.Status{Result: true},
 	}
 )
@@ -342,7 +342,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
 	assert.Equal(t, expectedStatus, body.Status)
 }
 
-func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
+func TestHandler_Submit_store_AddRefValues_failure1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -375,11 +375,11 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 		).
 		Return(&testGoodTaRes, nil)
 	sc.EXPECT().
-		AddSwComponents(
+		AddRefValues(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&proto.AddSwComponentsRequest{
-					SwComponents: []*proto.Endorsement{
+				&proto.AddRefValuesRequest{
+					ReferenceValues: []*proto.Endorsement{
 						{},
 					},
 				},
@@ -392,7 +392,7 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
 	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for software components: %s",
+		"endorsement store returned error: store operation failed for reference values: %s",
 		storeError,
 	)
 	expectedStatus := "failed"
@@ -416,14 +416,14 @@ func TestHandler_Submit_store_AddSwComponents_failure1(t *testing.T) {
 	assert.Equal(t, expectedStatus, body.Status)
 }
 
-func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
+func TestHandler_Submit_store_AddRefValues_failure2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mediaType := "application/good+json"
 	endo := []byte("some data")
 	storeError := "store says doh!"
-	testFailedSwCompRes.Status.ErrorDetail = storeError
+	testFailedRefValRes.Status.ErrorDetail = storeError
 
 	dm := mock_deps.NewMockIDecoderManager(ctrl)
 	dm.EXPECT().
@@ -450,24 +450,24 @@ func TestHandler_Submit_store_AddSwComponents_failure2(t *testing.T) {
 		).
 		Return(&testGoodTaRes, nil)
 	sc.EXPECT().
-		AddSwComponents(
+		AddRefValues(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&proto.AddSwComponentsRequest{
-					SwComponents: []*proto.Endorsement{
+				&proto.AddRefValuesRequest{
+					ReferenceValues: []*proto.Endorsement{
 						{},
 					},
 				},
 			),
 		).
-		Return(&testFailedSwCompRes, nil)
+		Return(&testFailedRefValRes, nil)
 
 	h := NewHandler(dm, sc, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
 	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for software components: %s",
+		"endorsement store returned error: store operation failed for reference values: %s",
 		storeError,
 	)
 	expectedStatus := "failed"
@@ -523,17 +523,17 @@ func TestHandler_Submit_ok(t *testing.T) {
 		).
 		Return(&testGoodTaRes, nil)
 	sc.EXPECT().
-		AddSwComponents(
+		AddRefValues(
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
-				&proto.AddSwComponentsRequest{
-					SwComponents: []*proto.Endorsement{
+				&proto.AddRefValuesRequest{
+					ReferenceValues: []*proto.Endorsement{
 						{},
 					},
 				},
 			),
 		).
-		Return(&testGoodSwCompRes, nil)
+		Return(&testGoodRefValRes, nil)
 
 	h := NewHandler(dm, sc, log.Named("test"))
 

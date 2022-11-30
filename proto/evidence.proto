@@ -9,7 +9,9 @@ import "attestation_format.proto";
 message EvidenceContext {
 	string tenant_id = 1 [json_name = "tenant-id"];
 	string trust_anchor_id = 2 [json_name = "trust-anchor-id"];
-	string software_id = 3 [json_name = "software-id"];
+	string reference_id = 3 [json_name = "reference-id"];
 	AttestationFormat format = 4 [json_name = "attestation-format"];
 	google.protobuf.Struct evidence = 5;
+	// unprocessed evidence not handled by the Evidence Context
+	google.protobuf.Struct up_evidence = 6;
 }
