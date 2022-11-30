@@ -392,7 +392,7 @@ func TestHandler_Submit_store_AddRefValues_failure1(t *testing.T) {
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
 	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for software components: %s",
+		"endorsement store returned error: store operation failed for reference values: %s",
 		storeError,
 	)
 	expectedStatus := "failed"
@@ -467,7 +467,7 @@ func TestHandler_Submit_store_AddRefValues_failure2(t *testing.T) {
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
 	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for software components: %s",
+		"endorsement store returned error: store operation failed for reference values: %s",
 		storeError,
 	)
 	expectedStatus := "failed"
