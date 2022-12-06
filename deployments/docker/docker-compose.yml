@@ -18,6 +18,7 @@ services:
         LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+        GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
     ports: 
       - 8888:8888
     depends_on:
@@ -42,6 +43,7 @@ services:
         LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+        GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
     ports:
       - 8080:8080
     depends_on:
@@ -67,6 +69,7 @@ services:
         LOG_DIR: ${LOG_DIR:?Please define a value for the environment variable}
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
+        GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
     networks:
       provisioning-network:
         ipv4_address: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}

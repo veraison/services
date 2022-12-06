@@ -64,6 +64,7 @@ ARG BIN_DIR
 ARG LOG_DIR
 ARG PLUGIN_DIR
 ARG INPUT_FILE_DIR
+ARG GIT_CLONE_BRANCH
 
 # Set envrionment variables for deploy directories and communication ip addresses
 ENV PROVISIONING_DEPLOY_PREFIX $workDirRepo$PROVISIONING_DEPLOY_PREFIX
@@ -80,8 +81,11 @@ ENV LOG_DIR $LOG_DIR
 ENV PLUGIN_DIR $PLUGIN_DIR
 ENV INPUT_FILE_DIR $INPUT_FILE_DIR
 
-# Clone deployment branch from remote (TODO: change this to clone from main and add a tag on main (to freeze the demo), once Docker change has been integrated)
-RUN git clone --branch deployment https://github.com/veraison/services.git
+# Set environment variable for branch/tag to git clone from
+ENV GIT_CLONE_BRANCH $GIT_CLONE_BRANCH
+
+# Clone main branch from remote (at the demo tag)
+RUN git clone --depth 1 --branch ${GIT_CLONE_BRANCH} https://github.com/veraison/services.git
 
 # Set working directory to repo
 WORKDIR $workDirRepo
