@@ -20,19 +20,20 @@ import (
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
+var (
+	TPMEnactTrustTokenMediaType = "application/vnd.enacttrust.tpm-evidence"
+	TPMEnactTrustSchemeName     = "TPM_ENACTTRUST"
+)
+
 type Scheme struct{}
 
 func (s Scheme) GetName() string {
-	return proto.AttestationFormat_TPM_ENACTTRUST.String()
-}
-
-func (s Scheme) GetFormat() proto.AttestationFormat {
-	return proto.AttestationFormat_TPM_ENACTTRUST
+	return TPMEnactTrustSchemeName
 }
 
 func (s Scheme) GetSupportedMediaTypes() []string {
 	return []string{
-		"application/vnd.enacttrust.tpm-evidence",
+		TPMEnactTrustTokenMediaType,
 	}
 }
 
@@ -48,10 +49,10 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 }
 
 func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	if token.Format != proto.AttestationFormat_TPM_ENACTTRUST {
+	if token.MediaType != TPMEnactTrustTokenMediaType {
 		return "", fmt.Errorf("wrong format: expect %q, but found %q",
-			proto.AttestationFormat_TPM_ENACTTRUST.String(),
-			token.Format.String(),
+			TPMEnactTrustTokenMediaType,
+			token.MediaType,
 		)
 	}
 
@@ -73,10 +74,10 @@ func (s Scheme) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchor string,
 ) (*scheme.ExtractedClaims, error) {
-	if token.Format != proto.AttestationFormat_TPM_ENACTTRUST {
+	if token.MediaType != TPMEnactTrustTokenMediaType {
 		return nil, fmt.Errorf("wrong format: expect %q, but found %q",
-			proto.AttestationFormat_TPM_ENACTTRUST.String(),
-			token.Format.String(),
+			TPMEnactTrustTokenMediaType,
+			token.MediaType,
 		)
 	}
 
@@ -210,7 +211,7 @@ func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
 	absPath := []string{nodeID}
 
 	u := url.URL{
-		Scheme: proto.AttestationFormat_TPM_ENACTTRUST.String(),
+		Scheme: TPMEnactTrustSchemeName,
 		Host:   tenantID,
 		Path:   strings.Join(absPath, "/"),
 	}

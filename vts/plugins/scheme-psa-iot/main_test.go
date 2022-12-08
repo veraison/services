@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/veraison/services/proto"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/proto"
 )
 
 func Test_GetTrustAnchorID_ok(t *testing.T) {
@@ -21,7 +21,6 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 
 	token := proto.AttestationToken{
 		TenantId: "1",
-		Format:   proto.AttestationFormat_PSA_IOT,
 		Data:     tokenBytes,
 	}
 
@@ -45,7 +44,6 @@ func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
 
 	token := proto.AttestationToken{
 		TenantId: "0",
-		Format:   proto.AttestationFormat_PSA_IOT,
 		Data:     tokenBytes,
 	}
 
@@ -66,7 +64,6 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 
 	token := proto.AttestationToken{
 		TenantId: "1",
-		Format:   proto.AttestationFormat_PSA_IOT,
 		Data:     tokenBytes,
 	}
 
@@ -91,7 +88,6 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 
 	token := proto.AttestationToken{
 		TenantId: "1",
-		Format:   proto.AttestationFormat_PSA_IOT,
 		Data:     tokenBytes,
 	}
 

@@ -39,7 +39,6 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 
 	token := proto.AttestationToken{
 		TenantId: "1",
-		Format:   proto.AttestationFormat_TCG_DICE,
 		Data:     deviceData,
 	}
 

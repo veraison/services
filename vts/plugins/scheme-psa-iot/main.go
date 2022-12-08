@@ -55,14 +55,12 @@ type TaEndorsements struct {
 	Attr   TaAttr `json:"attributes"`
 }
 
+const SchemeName = "PSA_IOT"
+
 type Scheme struct{}
 
 func (s Scheme) GetName() string {
-	return proto.AttestationFormat_PSA_IOT.String()
-}
-
-func (s Scheme) GetFormat() proto.AttestationFormat {
-	return proto.AttestationFormat_PSA_IOT
+	return SchemeName
 }
 
 func (s Scheme) SynthKeysFromSwComponent(
@@ -325,7 +323,7 @@ func psaSoftwareLookupKey(tenantID, implID string) string {
 	absPath := []string{implID}
 
 	u := url.URL{
-		Scheme: proto.AttestationFormat_PSA_IOT.String(),
+		Scheme: SchemeName,
 		Host:   tenantID,
 		Path:   strings.Join(absPath, "/"),
 	}
@@ -337,7 +335,7 @@ func psaTaLookupKey(tenantID, implID, instID string) string {
 	absPath := []string{implID, instID}
 
 	u := url.URL{
-		Scheme: proto.AttestationFormat_PSA_IOT.String(),
+		Scheme: SchemeName,
 		Host:   tenantID,
 		Path:   strings.Join(absPath, "/"),
 	}
