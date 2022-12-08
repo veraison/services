@@ -16,13 +16,21 @@ import (
 // HCLogger is a wrapper around zap logger used by Veraison that implements
 // go-hclog.Logger interface expected by go-plugin plugins.
 type HCLogger struct {
-	logger *zap.SugaredLogger
+	logger   *zap.SugaredLogger
+	internal bool
 
 	name *string
 }
 
 func NewLogger(logger *zap.SugaredLogger) *HCLogger {
-	return &HCLogger{logger: logger}
+	return &HCLogger{logger: logger, internal: false}
+}
+
+// NewInternalLogger returns a new logger that logs all Info level messages at
+// Debug level. This is to allow treating info-level messages form 3rd-party
+// libararies as debug-level for our services.
+func NewInternalLogger(logger *zap.SugaredLogger) *HCLogger {
+	return &HCLogger{logger: logger, internal: true}
 }
 
 func (o *HCLogger) Log(level hclog.Level, msg string, args ...interface{}) {
@@ -57,7 +65,11 @@ func (o *HCLogger) Debug(msg string, args ...interface{}) {
 
 // Emit a message and key/value pairs at the INFO level
 func (o *HCLogger) Info(msg string, args ...interface{}) {
-	o.logger.Infow(msg, args...)
+	if o.internal {
+		o.logger.Debugw(msg, args...)
+	} else {
+		o.logger.Infow(msg, args...)
+	}
 }
 
 // Emit a message and key/value pairs at the WARN level
