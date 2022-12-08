@@ -6,7 +6,6 @@ option go_package = "github.com/veraison/services/proto";
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/empty.proto";
-import "attestation_format.proto";
 import "appraisal_context.proto";
 import "token.proto";
 import "state.proto";
@@ -36,7 +35,7 @@ enum EndorsementType {
 }
 
 message Endorsement {
-    AttestationFormat scheme = 1;
+    string scheme = 1;
     EndorsementType type = 2;
     google.protobuf.Struct attributes = 3;
 }

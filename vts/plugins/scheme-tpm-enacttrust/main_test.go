@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -35,9 +35,9 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 	require.NoError(t, err)
 
 	ta := proto.AttestationToken{
-		TenantId: "0",
-		Format:   proto.AttestationFormat_TPM_ENACTTRUST,
-		Data:     data,
+		TenantId:  "0",
+		MediaType: "application/vnd.enacttrust.tpm-evidence",
+		Data:      data,
 	}
 
 	var s Scheme
@@ -65,9 +65,9 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	require.NoError(t, err)
 
 	ta := proto.AttestationToken{
-		TenantId: "0",
-		Format:   proto.AttestationFormat_TPM_ENACTTRUST,
-		Data:     data,
+		TenantId:  "0",
+		MediaType: "application/vnd.enacttrust.tpm-evidence",
+		Data:      data,
 	}
 
 	var s Scheme
@@ -96,9 +96,9 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 	require.NoError(t, err)
 
 	ta := proto.AttestationToken{
-		TenantId: "0",
-		Format:   proto.AttestationFormat_TPM_ENACTTRUST,
-		Data:     data,
+		TenantId:  "0",
+		MediaType: "application/vnd.enacttrust.tpm-evidence",
+		Data:      data,
 	}
 
 	var s Scheme
@@ -125,7 +125,6 @@ func Test_GetAttestation(t *testing.T) {
 	require.NoError(t, err)
 
 	evidenceContext := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",

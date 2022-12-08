@@ -169,7 +169,7 @@ func (o *GRPC) AddSwComponents(ctx context.Context, req *proto.AddSwComponentsRe
 	)
 
 	for _, swComp := range req.GetSwComponents() {
-		scheme, err = o.PluginManager.LookupByAttestationFormat(swComp.GetScheme())
+		scheme, err = o.PluginManager.LookupBySchemeName(swComp.GetScheme())
 		if err != nil {
 			return addSwComponentErrorResponse(err), nil
 		}
@@ -232,7 +232,7 @@ func (o *GRPC) AddTrustAnchor(
 
 	ta = req.TrustAnchor
 
-	scheme, err = o.PluginManager.LookupByAttestationFormat(ta.GetScheme())
+	scheme, err = o.PluginManager.LookupBySchemeName(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -281,8 +281,7 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
-	o.logger.Infow("get attestation", "media-type", token.MediaType,
-		"tenant-id", token.TenantId, "format", token.Format)
+	o.logger.Infow("get attestation", "media-type", token.MediaType, "tenant-id", token.TenantId)
 
 	scheme, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
@@ -357,7 +356,7 @@ func (c *GRPC) initEvidenceContext(
 ) (*appraisal.Appraisal, error) {
 	var err error
 
-	appraisal := appraisal.New(token.TenantId, token.Format)
+	appraisal := appraisal.New(token.TenantId)
 
 	appraisal.EvidenceContext.TrustAnchorId, err = scheme.GetTrustAnchorID(token)
 	if err != nil {

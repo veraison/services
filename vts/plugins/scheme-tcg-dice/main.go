@@ -10,8 +10,8 @@ import (
 	"errors"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/veraison/ear"
 	"github.com/veraison/dice"
+	"github.com/veraison/ear"
 
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
@@ -23,11 +23,7 @@ type Scheme struct {
 }
 
 func (s Scheme) GetName() string {
-	return proto.AttestationFormat_TCG_DICE.String()
-}
-
-func (s Scheme) GetFormat() proto.AttestationFormat {
-	return proto.AttestationFormat_TCG_DICE
+	return "TCG_DICE"
 }
 
 func (s Scheme) GetSupportedMediaTypes() []string {

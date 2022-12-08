@@ -37,6 +37,5 @@
   },
   "software-id": "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
   "trust-anchor-id": "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/",
-  "attestation-format": 1,
   "tenant-id": "1"
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"go.uber.org/zap"
 )
@@ -130,16 +129,16 @@ func (o *GoPluginManager) LookupByMediaType(mediaType string) (scheme.IScheme, e
 	return ctx.Handle, nil
 }
 
-func (o *GoPluginManager) LookupByAttestationFormat(format proto.AttestationFormat) (scheme.IScheme, error) {
+func (o *GoPluginManager) LookupBySchemeName(format string) (scheme.IScheme, error) {
 	// XXX this is obviously sub-optimal, however since this interface will go away once
 	// XXX the provisioning plugins are migrated under VTS, we don't bother
 	for _, v := range o.DispatchTable {
-		if v.Handle.GetFormat() == format {
+		if v.Handle.GetName() == format {
 			return v.Handle, nil
 		}
 	}
 
-	return nil, fmt.Errorf("no active plugin found for format %s", format.String())
+	return nil, fmt.Errorf("no active plugin found for scheme %s", format)
 }
 
 func (o *GoPluginManager) SupportedVerificationMediaTypes() ([]string, error) {

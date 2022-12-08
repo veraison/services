@@ -19,9 +19,6 @@ type IScheme interface {
 	// there are multiple schemes associated with the same format) .
 	GetName() string
 
-	// GetFormat returns the AttestationFormat associated with this scheme.
-	GetFormat() proto.AttestationFormat
-
 	// GetSupportedMediaTypes returns a string slice of MIME media types
 	// handled by this scheme.
 	GetSupportedMediaTypes() []string

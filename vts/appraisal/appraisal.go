@@ -16,11 +16,10 @@ type Appraisal struct {
 	Result          *ear.AttestationResult
 }
 
-func New(tenantID string, format proto.AttestationFormat) *Appraisal {
+func New(tenantID string) *Appraisal {
 	return &Appraisal{
 		EvidenceContext: &proto.EvidenceContext{
 			TenantId: tenantID,
-			Format:   format,
 		},
 		Result: ear.NewAttestationResult(),
 	}

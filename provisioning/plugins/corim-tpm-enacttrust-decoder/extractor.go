@@ -11,6 +11,8 @@ import (
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
+const schemeName = "TPM_ENACTTRUST"
+
 type Extractor struct {
 	Profile string
 }
@@ -46,7 +48,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	}
 
 	swComponent := proto.Endorsement{
-		Scheme:     proto.AttestationFormat_TPM_ENACTTRUST,
+		Scheme:     schemeName,
 		Type:       proto.EndorsementType_REFERENCE_VALUE,
 		Attributes: swAttrs,
 	}
@@ -90,7 +92,7 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	}
 
 	ta := &proto.Endorsement{
-		Scheme:     proto.AttestationFormat_TPM_ENACTTRUST,
+		Scheme:     schemeName,
 		Type:       proto.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}

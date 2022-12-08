@@ -36,7 +36,6 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 	require.NoError(t, err)
 
 	ec := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
@@ -68,7 +67,6 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 	require.NoError(t, err)
 
 	ec := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
@@ -116,7 +114,6 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
@@ -144,7 +141,6 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
-		Format:        proto.AttestationFormat_TPM_ENACTTRUST,
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",

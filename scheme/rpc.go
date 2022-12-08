@@ -34,11 +34,6 @@ func (s *RPCServer) GetName(args interface{}, resp *string) error {
 	return nil
 }
 
-func (s *RPCServer) GetFormat(args interface{}, resp *proto.AttestationFormat) error {
-	*resp = s.Impl.GetFormat()
-	return nil
-}
-
 func (s *RPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = s.Impl.GetSupportedMediaTypes()
 	return nil
@@ -179,22 +174,6 @@ func (s *RPCClient) GetName() string {
 	if err != nil {
 		log.Printf("Plugin.GetName RPC call failed: %v", err) // nolint
 		return ""
-	}
-
-	return resp
-}
-
-func (s *RPCClient) GetFormat() proto.AttestationFormat {
-	var (
-		err    error
-		resp   proto.AttestationFormat
-		unused interface{}
-	)
-
-	err = s.client.Call("Plugin.GetFormat", &unused, &resp)
-	if err != nil {
-		log.Printf("Plugin.GetFormat RPC call failed: %v", err)
-		return proto.AttestationFormat_UNKNOWN_FORMAT
 	}
 
 	return resp

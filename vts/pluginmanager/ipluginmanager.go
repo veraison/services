@@ -4,7 +4,6 @@ package pluginmanager
 
 import (
 	"github.com/spf13/viper"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 )
 
@@ -13,6 +12,6 @@ type ISchemePluginManager interface {
 	Close() error
 
 	LookupByMediaType(mediaType string) (scheme.IScheme, error)
-	LookupByAttestationFormat(format proto.AttestationFormat) (scheme.IScheme, error)
+	LookupBySchemeName(format string) (scheme.IScheme, error)
 	SupportedVerificationMediaTypes() ([]string, error)
 }

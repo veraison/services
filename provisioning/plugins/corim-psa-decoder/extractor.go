@@ -15,6 +15,7 @@ import (
 const (
 	psaProfile = "http://arm.com/psa/iot/1"
 	ccaProfile = "http://arm.com/cca/ssd/1"
+	schemeName = "PSA_IOT"
 )
 
 type Extractor struct {
@@ -104,7 +105,7 @@ func ExtractMeas(obj MeasurementExtractor, m comid.Measurement, class PSAClassAt
 		return &proto.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
 	refVal := proto.Endorsement{
-		Scheme:     proto.AttestationFormat_PSA_IOT,
+		Scheme:     schemeName,
 		Type:       proto.EndorsementType_REFERENCE_VALUE,
 		Attributes: refAttrs,
 	}
@@ -141,7 +142,7 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	}
 
 	ta := &proto.Endorsement{
-		Scheme:     proto.AttestationFormat_PSA_IOT,
+		Scheme:     schemeName,
 		Type:       proto.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}
