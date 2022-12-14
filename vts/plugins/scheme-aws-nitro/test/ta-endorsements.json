@@ -2,6 +2,6 @@
     "scheme":"AWS_NITRO",
     "type":"VERIFICATION_KEY",
     "attributes":{
-        "key": "<CERT>"
+        "nitro.cert": "<CERT>"
     }
 }

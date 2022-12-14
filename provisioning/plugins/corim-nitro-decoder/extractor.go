@@ -105,11 +105,11 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 		return nil, errors.New("expecting exactly one IAK public key")
 	}
 
-	iakPub := avk.VerifKeys[0].Key
+	cert := avk.VerifKeys[0].Key
 
 	// TODO(tho) check that format of IAK pub is as expected
 
-	taAttrs, err := makeTaAttrs(psaInstanceAttrs, nitroClassAttrs, iakPub)
+	taAttrs, err := makeTaAttrs(psaInstanceAttrs, nitroClassAttrs, cert)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor attributes: %w", err)
 	}
@@ -123,9 +123,9 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	return ta, nil
 }
 
-func makeTaAttrs(i NitroInstanceAttributes, c NitroClassAttributes, key string) (*structpb.Struct, error) {
+func makeTaAttrs(i NitroInstanceAttributes, c NitroClassAttributes, cert string) (*structpb.Struct, error) {
 	taID := map[string]interface{}{
-		"nitro.iak-pub": key,
+		"nitro.cert": cert,
 	}
 
 	if c.Vendor != "" {

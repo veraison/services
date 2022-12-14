@@ -7,14 +7,14 @@
   "scheme": "AWS_NITRO",
   "type": "REFERENCE_VALUE",
   "attributes": {
-    "psa.hw-model": "RoadRunner",
-    "psa.hw-vendor": "ACME",
-    "psa.impl-id": "IllXTnRaUzFwYlhCc1pXMWxiblJoZEdsdmJpMXBaQzB3TURBd01EQXdNREU9Ig==",
-    "psa.measurement-desc": 1,
-    "psa.measurement-type": "BL",
-    "psa.measurement-value": "h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc=",
-    "psa.signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs=",
-    "psa.version": "2.1.0"
+    "nitro.hw-model": "RoadRunner",
+    "nitro.hw-vendor": "ACME",
+    "nitro.impl-id": "IllXTnRaUzFwYlhCc1pXMWxiblJoZEdsdmJpMXBaQzB3TURBd01EQXdNREU9Ig==",
+    "nitro.measurement-desc": 1,
+    "nitro.measurement-type": "BL",
+    "nitro.measurement-value": "h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc=",
+    "nitro.signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs=",
+    "nitro.version": "2.1.0"
   }
 }
 ```
@@ -26,11 +26,11 @@
   "scheme": "AWS_NITRO",
   "type": "VERIFICATION_KEY",
   "attributes": {
-    "psa.hw-model": "RoadRunner",
-    "psa.hw-vendor": "ACME",
-    "psa.iak-pub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Vwqe7hy3O8Ypa+BUETLUjBNU3rEXVUyt9XHR7HJWLG7XTKQd9i1kVRXeBPDLFnfYru1/euxRnJM7H9UoFDLdA==",
-    "psa.impl-id": "IllXTnRaUzFwYlhCc1pXMWxiblJoZEdsdmJpMXBaQzB3TURBd01EQXdNREU9Ig==",
-    "psa.inst-id": "AUyj5PUL8kjDl4cCDWj/0FyIdndRvyZFypI/V6mL7NKW"
+    "nitro.hw-model": "RoadRunner",
+    "nitro.hw-vendor": "ACME",
+    "nitro.cert": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Vwqe7hy3O8Ypa+BUETLUjBNU3rEXVUyt9XHR7HJWLG7XTKQd9i1kVRXeBPDLFnfYru1/euxRnJM7H9UoFDLdA==",
+    "nitro.impl-id": "IllXTnRaUzFwYlhCc1pXMWxiblJoZEdsdmJpMXBaQzB3TURBd01EQXdNREU9Ig==",
+    "nitro.inst-id": "AUyj5PUL8kjDl4cCDWj/0FyIdndRvyZFypI/V6mL7NKW"
   }
 }
 ```

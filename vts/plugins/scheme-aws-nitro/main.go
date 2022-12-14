@@ -68,10 +68,9 @@ func (s Scheme) ExtractClaims(token *proto.AttestationToken, trustAnchor string)
 		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims cast of %v to map[string]interface{} failed", ta_unmarshalled["attributes"])
 		return nil, new_err
 	}
-
-	cert_pem, ok := contents["key"].(string)
+	cert_pem, ok := contents["nitro.cert"].(string)
 	if !ok {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims cast of %v to string failed", contents["nitro.iak-pub"])
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ExtractVerifiedClaims cast of %v to string failed", contents["nitro.cert"])
 		return nil, new_err
 	}
 
@@ -157,32 +156,32 @@ func (s Scheme) ValidateEvidenceIntegrity(
 
 	err := json.Unmarshal([]byte(trustAnchor), &ta_unmarshalled)
 	if err != nil {
-		new_err := fmt.Errorf("ValidateEvidenceIntegrityImpl call to json.Unmarshall failed:%v", err)
+		new_err := fmt.Errorf("ValidateEvidenceIntegrity call to json.Unmarshall failed:%v", err)
 		return new_err
 	}
 	contents, ok := ta_unmarshalled["attributes"].(map[string]interface{})
 	if !ok {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl cast of %v to map[string]interface{} failed", ta_unmarshalled["attributes"])
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrity cast of %v to map[string]interface{} failed", ta_unmarshalled["attributes"])
 		return new_err
 	}
 
-	cert_pem, ok := contents["key"].(string)
+	cert_pem, ok := contents["nitro.cert"].(string)
 	if !ok {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl cast of %v to string failed", contents["nitro.iak-pub"])
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrity cast of %v to string failed", contents["nitro.cert"])
 		return new_err
 	}
 
 	cert_pem_bytes := []byte(cert_pem)
 	cert_block, _ := pem.Decode(cert_pem_bytes)
 	if cert_block == nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to pem.Decode failed, but I don't know why")
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrity call to pem.Decode failed, but I don't know why")
 		return new_err
 	}
 
 	cert_der := cert_block.Bytes
 	cert, err := x509.ParseCertificate(cert_der)
 	if err != nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to x509.ParseCertificate failed:%v", err)
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrity call to x509.ParseCertificate failed:%v", err)
 		return new_err
 	}
 
@@ -190,7 +189,7 @@ func (s Scheme) ValidateEvidenceIntegrity(
 
 	_, err = nitro_enclave_attestation_document.AuthenticateDocument(token_data[1:], *cert)
 	if err != nil {
-		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrityImpl call to AuthenticateDocument failed:%v", err)
+		new_err := fmt.Errorf("scheme-aws-nitro.Scheme.ValidateEvidenceIntegrity call to AuthenticateDocument failed:%v", err)
 		return new_err
 	}
 	return nil
