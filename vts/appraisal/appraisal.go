@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package appraisal
@@ -14,6 +14,7 @@ import (
 type Appraisal struct {
 	EvidenceContext *proto.EvidenceContext
 	Result          *ear.AttestationResult
+	SignedEAR       []byte
 }
 
 func New(tenantID string) *Appraisal {
@@ -34,23 +35,9 @@ func (o *Appraisal) SetError() {
 	o.Result.TrustVector.SetAll(ear.VerifierMalfunctionClaim)
 }
 
-func (o Appraisal) GetContext() (*proto.AppraisalContext, error) {
-	resultBytes, err := o.Result.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-
+func (o Appraisal) GetContext() *proto.AppraisalContext {
 	return &proto.AppraisalContext{
 		Evidence: o.EvidenceContext,
-		Result:   resultBytes,
-	}, nil
-}
-
-func (o Appraisal) MustGetContext() *proto.AppraisalContext {
-	ctx, err := o.GetContext()
-	if err != nil {
-		panic(err)
+		Result:   o.SignedEAR,
 	}
-
-	return ctx
 }
