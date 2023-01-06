@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 // The api package implements the REST API defined in
@@ -76,7 +76,7 @@ type ChallengeResponseSession struct {
 	Expiry   time.Time     `json:"expiry"`
 	Accept   []string      `json:"accept"`
 	Evidence *EvidenceBlob `json:"evidence,omitempty"`
-	Result   *[]byte       `json:"result,omitempty"`
+	Result   *string       `json:"result,omitempty"`
 }
 
 func (o *ChallengeResponseSession) SetEvidence(mt string, evidence []byte) {
@@ -88,7 +88,6 @@ func (o *ChallengeResponseSession) SetStatus(status Status) {
 }
 
 func (o *ChallengeResponseSession) SetResult(result []byte) {
-	tmp := make([]byte, len(result))
-	copy(tmp, result)
-	o.Result = &tmp
+	rs := string(result)
+	o.Result = &rs
 }

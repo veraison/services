@@ -10,6 +10,7 @@ configuration:
 - `plugin`: plugin manager configuration. See [plugin config](/vts/pluginmanager/README.md#Configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
+- `ear-signer`: Attestation Result signing configuration. See [signer config](/vts/ear-signer/README.md#Configuration).
 
 ### Example
 
@@ -37,4 +38,7 @@ plugin:
     folder: ../../plugins/bin/
 vts:
   server-addr: 127.0.0.1:50051
+ear-signer:
+  alg: ES256
+  key: ./skey.jwk
 ```

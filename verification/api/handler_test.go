@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -88,7 +88,7 @@ var (
 		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
 		"value":"eyAiayI6ICJ2IiB9"
 	},
-	"result": "e30="
+	"result": "{}"
 }`
 	testUUIDString     = "5c5bd88b-c922-482b-ad9f-097e187b42a1"
 	testUUID           = uuid.MustParse(testUUIDString)

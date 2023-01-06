@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -21,6 +21,7 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 )
@@ -31,11 +32,12 @@ import (
 const DummyTenantID = "0"
 
 // Supported parameters:
-// * vts.server-addr: string w/ syntax specified in
-//   https://github.com/grpc/grpc/blob/master/doc/naming.md
 //
-// * TODO(tho) load balancing config
-//   See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
+//   - vts.server-addr: string w/ syntax specified in
+//     https://github.com/grpc/grpc/blob/master/doc/naming.md
+//
+//   - TODO(tho) load balancing config
+//     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
 //
 // * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
 type GRPCConfig struct {
@@ -54,6 +56,7 @@ type GRPC struct {
 	EnStore       kvstore.IKVStore
 	PluginManager pluginmanager.ISchemePluginManager
 	PolicyManager *policymanager.PolicyManager
+	EarSigner     earsigner.IEarSigner
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -67,6 +70,7 @@ func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
 	pluginManager pluginmanager.ISchemePluginManager,
 	policyManager *policymanager.PolicyManager,
+	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
@@ -74,6 +78,7 @@ func NewGRPC(
 		EnStore:       enStore,
 		PluginManager: pluginManager,
 		PolicyManager: policyManager,
+		EarSigner:     earSigner,
 		logger:        logger,
 	}
 }
@@ -134,6 +139,10 @@ func (o *GRPC) Close() error {
 
 	if err := o.EnStore.Close(); err != nil {
 		o.logger.Errorf("endorsement store closure failed: %v", err)
+	}
+
+	if err := o.EarSigner.Close(); err != nil {
+		o.logger.Errorf("EAR signer closure failed: %v", err)
 	}
 
 	return nil
@@ -332,22 +341,34 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
+	// TODO(tho) we need to clearly define what it means for a plugin to return
+	// an error and decide whether / how such condition gets mapped into the
+	// AR4SI trust vector (ISTM that a VerifierMalfunctionClaim (-1) may be the
+	// right signal.)
 	appraisedResult, err := scheme.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
-		appraisal.SetError()
-		return appraisal.MustGetContext(), err
+		return nil, err
 	}
 	appraisal.Result = appraisedResult
 
 	// TODO(setrofim) Should we be doing appraisal.SetError() on error here?
-	// This should be decided as part of a wider policy framework desing.
+	// This should be decided as part of a wider policy framework design.
 	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
+	if err != nil {
+		return nil, err
+	}
 
 	appraisal.Result.UpdateStatusFromTrustVector()
 
+	ear, err := o.EarSigner.Sign(*appraisal.Result)
+	if err != nil {
+		return nil, err
+	}
+	appraisal.SignedEAR = ear
+
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
-	return appraisal.MustGetContext(), err
+	return appraisal.GetContext(), err
 }
 
 func (c *GRPC) initEvidenceContext(

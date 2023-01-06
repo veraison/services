@@ -1068,10 +1068,6 @@ github.com/urfave/cli v1.22.2/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/vektah/gqlparser/v2 v2.4.6 h1:Yjzp66g6oVq93Jihbi0qhGnf/6zIWjcm8H6gA27zstE=
 github.com/vektah/gqlparser/v2 v2.4.6/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
 github.com/veraison/apiclient v0.0.2/go.mod h1:H8YDx1ixM24GYP/aLbhq+HJsej0lVUqFCRIL5Uu4B0o=
-github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c h1:+qOmTV5aI475VuNXDfy8Klg8m2ovSISmdZlS63w0J64=
-github.com/veraison/corim v0.0.0-20220801100627-a48aacbd333c/go.mod h1:FOUHHZ7fOyWKk4oKUjO5Zw5gnkjz0rtzcJDvUZZFRSg=
-github.com/veraison/corim v0.0.0-20221101140255-8462ea7c8990 h1:Jcxd6h5xN8jHgC7lH3DjadhK5jotG+jY232u35AHwro=
-github.com/veraison/corim v0.0.0-20221101140255-8462ea7c8990/go.mod h1:FOUHHZ7fOyWKk4oKUjO5Zw5gnkjz0rtzcJDvUZZFRSg=
 github.com/veraison/corim v0.0.0-20221101190258-b8e2d544a0a3 h1:ILszRwMhWop0sDMb5HJfDMKZ7uRGTlTn6L9cLxSQi1w=
 github.com/veraison/corim v0.0.0-20221101190258-b8e2d544a0a3/go.mod h1:FOUHHZ7fOyWKk4oKUjO5Zw5gnkjz0rtzcJDvUZZFRSg=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=

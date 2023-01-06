@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -8,11 +8,13 @@ import (
 	"syscall"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/afero"
 
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
+	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
@@ -25,7 +27,7 @@ func main() {
 	}
 
 	subs, err := config.GetSubs(v, "ta-store", "en-store", "po-store",
-		"*po-agent", "plugin", "*vts", "*logging")
+		"*po-agent", "plugin", "*vts", "ear-signer", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,10 +65,17 @@ func main() {
 		log.Fatalf("plugin manager initialization failed: %v", err)
 	}
 
+	log.Info("loading EAR signer")
+	earSigner, err := earsigner.New(subs["ear-signer"], afero.NewOsFs())
+	if err != nil {
+		log.Fatalf("EAR signer initialization failed: %v", err)
+	}
+
 	log.Info("initializing service")
-	// from this point onwards taStore, enStore and pluginManager are owned by vts
+	// from this point onwards taStore, enStore, pluginManager, policyManager
+	// and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		pluginManager, policyManager, log.Named("vts"))
+		pluginManager, policyManager, earSigner, log.Named("vts"))
 
 	if err = vts.Init(subs["vts"]); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)

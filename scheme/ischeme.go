@@ -1,4 +1,4 @@
-// Copyright 2021-2022 Contributors to the Veraison project.
+// Copyright 2021-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package scheme
