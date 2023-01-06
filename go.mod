@@ -15,7 +15,6 @@ require (
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jellydator/ttlcache/v3 v3.0.0
-	github.com/lestrrat-go/jwx v1.2.23
 	github.com/lestrrat-go/jwx/v2 v2.0.6
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/mitchellh/mapstructure v1.5.0
@@ -64,6 +63,7 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/jwx v1.2.23 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
