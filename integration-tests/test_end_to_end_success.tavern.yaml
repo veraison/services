@@ -1,0 +1,99 @@
+test_name: Test veraison end to end success
+
+includes:
+  - !include include.yaml
+
+strict:
+  - json:off
+
+stages:
+  - name: submit post request to the provisioning service sucessfully 
+    request:
+      method: POST
+      url: http://docker-provisioning-1.docker_provisioning-network:8888/endorsement-provisioning/v1/submit
+      headers:
+        Content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+      file_body: ./integration-tests/provisioning/corim-full.cbor
+    response:
+      status_code: 200
+    
+  
+
+  - name: verify as relying party - creation of resource
+    request:
+      method: POST
+      url: "http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/newSession?nonce={nonce:s}"
+    response:
+      status_code: 201 
+      save:
+        headers:
+          location-relyp: Location
+
+  - name: verify as relying party - submitting the evidence
+    request:
+      method: POST
+      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-relyp}'
+      file_body: ./integration-tests/verification/psa-evidence.cbor
+      headers:
+        Content-type: application/psa-attestation-token
+    response:
+      status_code: 200
+      json:
+        nonce: "{nonce:s}"
+      verify_response_with:
+        - function: test_utils:verify_attestation_results
+          extra_args:
+          - ./integration-tests/verification/psa-claims-profile-2-integ.json
+      
+      
+  - name: verify as relying party - deleting the evidence
+    request:
+      method: DELETE
+      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-relyp}'
+      headers:
+        Content-type: application/psa-attestation-token
+    response:
+      status_code: 204
+
+
+  - name: verify as attester - creation of resource
+    request:
+      method: POST
+      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/newSession?nonceSize=32'
+    response:
+      status_code: 201
+      verify_response_with:
+        function: test_utils:generate_token
+      save:
+        headers:
+          location-attester: Location
+
+
+  - name: verify as attester - submitting the evidence
+    request:
+      method: POST
+      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-attester}'
+      headers:
+        Content-type: application/psa-attestation-token
+      file_body: ./integration-tests/verification/my.cbor
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: test_utils:verify_attestation_results
+          extra_args:
+          - ./integration-tests/verification/psa-claims-profile-2-integ-without-nonce.json
+
+  - name: verify as attester - deleting the evidence
+    request:
+      method: DELETE
+      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-attester}'
+      headers:
+        Content-type: application/psa-attestation-token
+    response:
+      status_code: 204
+
+ 
+
+  
+
+  

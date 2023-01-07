@@ -1,4 +1,5 @@
-verifier:
+verification:
+  listen-addr: {{ "localhost:8080" | env_override('VERIFICATION_LISTENING_ADDRESS_AND_PORT')}}
 
 vts:
-  server-addr: {{ "127.0.0.1" | env_override('VTS_VERIFICATION_LOCAL_IP_ADDRESS') }}:{{ "50051" | env_override('VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT') }}
+  server-addr: docker-vts-1.docker_verification-network:{{ "50051" | env_override('VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT') }}

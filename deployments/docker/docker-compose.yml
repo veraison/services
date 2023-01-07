@@ -10,8 +10,6 @@ services:
         PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
-        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
-        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
         VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
@@ -19,6 +17,10 @@ services:
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
         GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
+        PROVISIONING_LISTENING_ADDRESS_AND_PORT: ${PROVISIONING_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        VERIFICATION_LISTENING_ADDRESS_AND_PORT: ${VERIFICATION_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        JWT_SIGNING_ALGORITHM: ${JWT_SIGNING_ALGORITHM:?Please define a value for the environment variable}
+        JWT_KEY_FILE_PATH: ${JWT_KEY_FILE_PATH:?Please define a value for the environment variable}
     ports: 
       - 8888:8888
     depends_on:
@@ -35,8 +37,6 @@ services:
         PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
-        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
-        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
         VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
@@ -44,6 +44,10 @@ services:
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
         GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
+        PROVISIONING_LISTENING_ADDRESS_AND_PORT: ${PROVISIONING_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        VERIFICATION_LISTENING_ADDRESS_AND_PORT: ${VERIFICATION_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        JWT_SIGNING_ALGORITHM: ${JWT_SIGNING_ALGORITHM:?Please define a value for the environment variable}
+        JWT_KEY_FILE_PATH: ${JWT_KEY_FILE_PATH:?Please define a value for the environment variable}
     ports:
       - 8080:8080
     depends_on:
@@ -61,8 +65,6 @@ services:
         PROVISIONING_DEPLOY_PREFIX: ${PROVISIONING_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VERIFICATION_DEPLOY_PREFIX: ${VERIFICATION_DEPLOY_PREFIX:?Please define a value for the environment variable}
         VTS_DEPLOY_PREFIX: ${VTS_DEPLOY_PREFIX:?Please define a value for the environment variable}
-        VTS_PROVISIONING_LOCAL_IP_ADDRESS: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
-        VTS_VERIFICATION_LOCAL_IP_ADDRESS: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
         VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT:?Please define a value for the environment variable}
         BIN_DIR: ${BIN_DIR:?Please define a value for the environment variable}
@@ -70,11 +72,23 @@ services:
         PLUGIN_DIR: ${PLUGIN_DIR:?Please define a value for the environment variable}
         INPUT_FILE_DIR: ${INPUT_FILE_DIR:?Please define a value for the environment variable}
         GIT_CLONE_BRANCH: ${GIT_CLONE_BRANCH:?Please define a value for the environment variable}
+        PROVISIONING_LISTENING_ADDRESS_AND_PORT: ${PROVISIONING_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        VERIFICATION_LISTENING_ADDRESS_AND_PORT: ${VERIFICATION_LISTENING_ADDRESS_AND_PORT:?Please define a value for the environment variable}
+        JWT_SIGNING_ALGORITHM: ${JWT_SIGNING_ALGORITHM:?Please define a value for the environment variable}
+        JWT_KEY_FILE_PATH: ${JWT_KEY_FILE_PATH:?Please define a value for the environment variable}
     networks:
-      provisioning-network:
-        ipv4_address: ${VTS_PROVISIONING_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
-      verification-network:
-        ipv4_address: ${VTS_VERIFICATION_LOCAL_IP_ADDRESS:?Please define a value for the environment variable}
+      - provisioning-network
+      - verification-network
+  
+  tavern:
+    build:
+      context: ../../
+      dockerfile: ./deployments/docker/Dockerfile
+      target: tavern-integration-tests
+    command: sleep infinity
+    networks:
+      - provisioning-network
+      - verification-network
 
 networks:
   default:
@@ -85,12 +99,8 @@ networks:
   provisioning-network:
     ipam:
       driver: default
-      config:
-        - subnet: 172.28.0.0/16
   
   verification-network:
     ipam:
       driver: default
-      config:
-        - subnet: 172.29.0.0/16
 
