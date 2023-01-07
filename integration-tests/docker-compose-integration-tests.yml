@@ -4,7 +4,7 @@ services:
   provisioning:
     container_name: provisioning
     build:
-      context: ../../
+      context: ../
       dockerfile: ./deployments/docker/Dockerfile
       target: provisioning-run
       args:
@@ -37,7 +37,7 @@ services:
   verification:
     container_name: verification
     build:
-      context: ../../
+      context: ../
       dockerfile: ./deployments/docker/Dockerfile
       target: verification-run
       args:
@@ -71,7 +71,7 @@ services:
   vts:
     container_name: vts
     build:
-      context: ../../
+      context: ../
       dockerfile: ./deployments/docker/Dockerfile
       target: vts-run
       args:
@@ -94,6 +94,27 @@ services:
         VTS_CONTAINER_NAME: ${VTS_CONTAINER_NAME:?Please define a value for the environment variable}
         VTS_PROVISIONING_NETWORK_ALIAS: ${VTS_PROVISIONING_NETWORK_ALIAS:?Please define a value for the environment variable}
         VTS_VERIFICATION_NETWORK_ALIAS: ${VTS_VERIFICATION_NETWORK_ALIAS:?Please define a value for the environment variable}
+    networks:
+      - provisioning-network
+      - verification-network
+  
+  tavern:
+    container_name: tavern
+    build:
+      context: ../
+      dockerfile: ./integration-tests/tavern.Dockerfile
+      target: tavern-integration-tests
+      args:
+        PROVISIONING_CONTAINER_NAME: ${PROVISIONING_CONTAINER_NAME:?Please define a value for the environment variable}
+        VERIFICATION_CONTAINER_NAME: ${VERIFICATION_CONTAINER_NAME:?Please define a value for the environment variable}
+        VTS_CONTAINER_NAME: ${VTS_CONTAINER_NAME:?Please define a value for the environment variable}
+        VTS_PROVISIONING_NETWORK_ALIAS: ${VTS_PROVISIONING_NETWORK_ALIAS:?Please define a value for the environment variable}
+        VTS_VERIFICATION_NETWORK_ALIAS: ${VTS_VERIFICATION_NETWORK_ALIAS:?Please define a value for the environment variable}
+
+    depends_on:
+      - provisioning
+      - verification
+      - vts
     networks:
       - provisioning-network
       - verification-network

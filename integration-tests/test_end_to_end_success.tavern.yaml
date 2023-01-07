@@ -7,35 +7,33 @@ strict:
   - json:off
 
 stages:
-  - name: submit post request to the provisioning service sucessfully 
+  - name: submit post request to the provisioning service successfully 
     request:
       method: POST
-      url: http://docker-provisioning-1.docker_provisioning-network:8888/endorsement-provisioning/v1/submit
+      url: http://{tavern.env_vars.PROVISIONING_CONTAINER_NAME}.{tavern.env_vars.VTS_PROVISIONING_NETWORK_ALIAS}:8888/endorsement-provisioning/v1/submit
       headers:
-        Content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
       file_body: ./integration-tests/provisioning/corim-full.cbor
     response:
       status_code: 200
     
-  
-
   - name: verify as relying party - creation of resource
     request:
       method: POST
-      url: "http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/newSession?nonce={nonce:s}"
+      url: "http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/newSession?nonce={nonce:s}"
     response:
       status_code: 201 
       save:
         headers:
-          location-relyp: Location
+          relying-party-session: Location
 
   - name: verify as relying party - submitting the evidence
     request:
       method: POST
-      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-relyp}'
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
       file_body: ./integration-tests/verification/psa-evidence.cbor
       headers:
-        Content-type: application/psa-attestation-token
+        content-type: application/psa-attestation-token
     response:
       status_code: 200
       json:
@@ -44,37 +42,38 @@ stages:
         - function: test_utils:verify_attestation_results
           extra_args:
           - ./integration-tests/verification/psa-claims-profile-2-integ.json
+          - ./integration-tests/verification/skey.jwk
       
       
-  - name: verify as relying party - deleting the evidence
+  - name: verify as relying party - deleting the session object
     request:
       method: DELETE
-      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-relyp}'
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
       headers:
-        Content-type: application/psa-attestation-token
+        content-type: application/psa-attestation-token
     response:
       status_code: 204
 
 
-  - name: verify as attester - creation of resource
+  - name: verify as attester - creation of session resource
     request:
       method: POST
-      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/newSession?nonceSize=32'
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/newSession?nonceSize=32'
     response:
       status_code: 201
       verify_response_with:
         function: test_utils:generate_token
       save:
         headers:
-          location-attester: Location
+          attester-session: Location
 
 
   - name: verify as attester - submitting the evidence
     request:
       method: POST
-      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-attester}'
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{attester-session}'
       headers:
-        Content-type: application/psa-attestation-token
+        content-type: application/psa-attestation-token
       file_body: ./integration-tests/verification/my.cbor
     response:
       status_code: 200
@@ -82,13 +81,14 @@ stages:
         - function: test_utils:verify_attestation_results
           extra_args:
           - ./integration-tests/verification/psa-claims-profile-2-integ-without-nonce.json
+          - ./integration-tests/verification/skey.jwk
 
-  - name: verify as attester - deleting the evidence
+  - name: verify as attester - deleting the session object
     request:
       method: DELETE
-      url: 'http://docker-verification-1.docker_verification-network:8080/challenge-response/v1/{location-attester}'
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{attester-session}'
       headers:
-        Content-type: application/psa-attestation-token
+        content-type: application/psa-attestation-token
     response:
       status_code: 204
 

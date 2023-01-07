@@ -2,7 +2,8 @@
 
 import json
 import subprocess
-import jwt
+from jose import jwt
+
 
 def write_json(new_data, filename):
     with open(filename,'r+') as file:
@@ -34,11 +35,15 @@ def generate_token(response):
 
     assert success_nonce == 0 and evcli_create.returncode == 0
 
-def verify_attestation_results(response, template):
+def verify_attestation_results(response, template, key):
     currJWT = response.json()["result"]
-    decoded = jwt.decode(currJWT, options={"verify_signature": False})
 
-    # template = './integration-tests/verification/psa-claims-profile-2-integ.json'
+    with open(key,'r+') as key_file:
+        ecdsa_key = json.load(key_file)
+    
+    ecdsa_key.pop("d")
+    decoded = jwt.decode(currJWT, key=ecdsa_key, algorithms=['ES256'])
+
     with open(template,'r+') as file:
         # Load existing data into a dict
         file_data = json.load(file)
@@ -47,6 +52,10 @@ def verify_attestation_results(response, template):
             return 1
 
     assert decoded["ear.status"] == "affirming"
+
+    # TODO Tighten conditions when there are references for the trustworthiness vector
+    for vec in decoded["ear.trustworthiness-vector"]:
+        assert decoded["ear.trustworthiness-vector"][vec] == 0 or decoded["ear.trustworthiness-vector"][vec] == 2 or decoded["ear.trustworthiness-vector"][vec] == 3
 
     for key in decoded["ear.veraison.processed-evidence"]:
         assert decoded["ear.veraison.processed-evidence"][key] == file_data[key]
