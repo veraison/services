@@ -10,6 +10,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang/mock v1.6.0
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-tpm v0.3.3
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-hclog v1.2.0
@@ -27,11 +28,12 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
+	github.com/veraison/ccatoken v0.0.0-20221129100525-5e7c18ed29a4
 	github.com/veraison/corim v0.0.0-20221101190258-b8e2d544a0a3
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
-	github.com/veraison/eat v0.0.0-20210331113810-3da8a4dd42ff
-	github.com/veraison/psatoken v0.0.2-0.20220729120948-5bec1d03670c
+	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
+	github.com/veraison/psatoken v0.0.2-0.20221010113344-b92196b83882
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.3.7
 	google.golang.org/grpc v1.49.0
@@ -51,7 +53,6 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
@@ -63,7 +64,8 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.23 // indirect
+	github.com/lestrrat-go/jwx v1.2.25 // indirect
+	github.com/lestrrat-go/jwx/v2 v2.0.6 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -91,7 +93,7 @@ require (
 	github.com/yashtewari/glob-intersection v0.1.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
+	golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b // indirect
 	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect

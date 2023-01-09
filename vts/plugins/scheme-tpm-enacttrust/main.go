@@ -37,7 +37,7 @@ func (s Scheme) GetSupportedMediaTypes() []string {
 	}
 }
 
-func (s Scheme) SynthKeysFromSwComponent(
+func (s Scheme) SynthKeysFromRefValue(
 	tenantID string,
 	swComp *proto.Endorsement,
 ) ([]string, error) {
@@ -50,7 +50,7 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 
 func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
 	if token.MediaType != TPMEnactTrustTokenMediaType {
-		return "", fmt.Errorf("wrong format: expect %q, but found %q",
+		return "", fmt.Errorf("wrong mediaType: expect %q, but found %q",
 			TPMEnactTrustTokenMediaType,
 			token.MediaType,
 		)
@@ -75,7 +75,7 @@ func (s Scheme) ExtractClaims(
 	trustAnchor string,
 ) (*scheme.ExtractedClaims, error) {
 	if token.MediaType != TPMEnactTrustTokenMediaType {
-		return nil, fmt.Errorf("wrong format: expect %q, but found %q",
+		return nil, fmt.Errorf("wrong mediaType: expect %q, but found %q",
 			TPMEnactTrustTokenMediaType,
 			token.MediaType,
 		)
@@ -106,7 +106,7 @@ func (s Scheme) ExtractClaims(
 	if err != nil {
 		return nil, fmt.Errorf("could not decode node-id: %w", err)
 	}
-	evidence.SoftwareID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
+	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
 
 	return evidence, nil
 }

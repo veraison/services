@@ -38,7 +38,7 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 	ec := &proto.EvidenceContext{
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
 
@@ -69,7 +69,7 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 	ec := &proto.EvidenceContext{
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
 
@@ -116,7 +116,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	ec := &proto.EvidenceContext{
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
@@ -143,7 +143,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	ec := &proto.EvidenceContext{
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}

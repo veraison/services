@@ -37,24 +37,24 @@ func (m *MockIVTSClient) EXPECT() *MockIVTSClientMockRecorder {
 	return m.recorder
 }
 
-// AddSwComponents mocks base method.
-func (m *MockIVTSClient) AddSwComponents(ctx context.Context, in *proto.AddSwComponentsRequest, opts ...grpc.CallOption) (*proto.AddSwComponentsResponse, error) {
+// AddRefValues mocks base method.
+func (m *MockIVTSClient) AddRefValues(ctx context.Context, in *proto.AddRefValuesRequest, opts ...grpc.CallOption) (*proto.AddRefValuesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AddSwComponents", varargs...)
-	ret0, _ := ret[0].(*proto.AddSwComponentsResponse)
+	ret := m.ctrl.Call(m, "AddRefValues", varargs...)
+	ret0, _ := ret[0].(*proto.AddRefValuesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AddSwComponents indicates an expected call of AddSwComponents.
-func (mr *MockIVTSClientMockRecorder) AddSwComponents(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+// AddRefValues indicates an expected call of AddRefValues.
+func (mr *MockIVTSClientMockRecorder) AddRefValues(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSwComponents", reflect.TypeOf((*MockIVTSClient)(nil).AddSwComponents), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRefValues", reflect.TypeOf((*MockIVTSClient)(nil).AddRefValues), varargs...)
 }
 
 // AddTrustAnchor mocks base method.

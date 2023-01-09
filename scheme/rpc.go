@@ -44,7 +44,7 @@ type SynthKeysArgs struct {
 	EndorsementJSON []byte
 }
 
-func (s *RPCServer) SynthKeysFromSwComponent(args SynthKeysArgs, resp *[]string) error {
+func (s *RPCServer) SynthKeysFromRefValue(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err    error
 		swComp proto.Endorsement
@@ -55,7 +55,7 @@ func (s *RPCServer) SynthKeysFromSwComponent(args SynthKeysArgs, resp *[]string)
 		return fmt.Errorf("unmarshaling software component: %w", err)
 	}
 
-	*resp, err = s.Impl.SynthKeysFromSwComponent(args.TenantID, &swComp)
+	*resp, err = s.Impl.SynthKeysFromRefValue(args.TenantID, &swComp)
 
 	return err
 }
@@ -195,7 +195,7 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (s *RPCClient) SynthKeysFromSwComponent(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -209,9 +209,9 @@ func (s *RPCClient) SynthKeysFromSwComponent(tenantID string, swComp *proto.Endo
 		return nil, fmt.Errorf("marshaling software component: %w", err)
 	}
 
-	err = s.client.Call("Plugin.SynthKeysFromSwComponent", args, &resp)
+	err = s.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)
 	if err != nil {
-		return nil, fmt.Errorf("Plugin.SynthKeysFromSwComponent RPC call failed: %w", err) // nolint
+		return nil, fmt.Errorf("Plugin.SynthKeysFromRefValue RPC call failed: %w", err) // nolint
 	}
 
 	return resp, nil

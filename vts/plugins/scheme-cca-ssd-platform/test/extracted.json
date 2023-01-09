@@ -1,13 +1,12 @@
 {
   "evidence": {
-    "psa-boot-seed": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-    "psa-implementation-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-    "psa-instance-id": "AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
-    "psa-nonce": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
-    "psa-client-id": 2,
-    "psa-profile": "PSA_IOT_PROFILE_1",
-    "psa-security-lifecycle": 12288,
-    "psa-software-components": [
+    "cca-platform-profile": "http://arm.com/CCA-SSD/1.0.0",
+    "cca-platform-challenge": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "cca-platform-implementation-id": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "cca-platform-instance-id": "AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
+    "cca-platform-config":"AQID",
+    "cca-platform-lifecycle": 12288,
+    "cca-platform-sw-components": [
       {
         "measurement-description": "TF-M_SHA256MemPreXIP",
         "measurement-type": "BL",
@@ -33,9 +32,11 @@
         "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
         "version": "1.0.0"
       }
-    ]
+    ],
+    "cca-platform-service-indicator" : "https://veraison.example/v1/challenge-response",
+    "cca-platform-hash-algo-id": "sha-256"
   },
-  "reference-id": "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
-  "trust-anchor-id": "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/",
+  "reference-id": "CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
+  "trust-anchor-id": "CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/",
   "tenant-id": "1"
 }

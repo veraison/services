@@ -99,7 +99,8 @@ func UnsignedCorimDecoder(data []byte, xtr IExtractor) (*decoder.EndorsementDeco
 				}
 
 				for i := range refVal {
-					rsp.SwComponents = append(rsp.SwComponents, refVal[i])
+					rsp.ReferenceValues = append(rsp.ReferenceValues, refVal[i])
+
 				}
 			}
 		}

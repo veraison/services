@@ -85,7 +85,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		0x7a, 0xf, 0xde, 0x60, 0xc4, 0xcf, 0x25, 0xc7,
 	}
 
-	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.SoftwareID)
+	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.ReferenceID)
 	assert.Equal(t, []int64{1, 2, 3, 4}, ev.ClaimsSet["pcr-selection"])
 	assert.Equal(t, int64(11), ev.ClaimsSet["hash-algorithm"])
 	assert.Equal(t, expectedPCRDigest, ev.ClaimsSet["pcr-digest"])
@@ -127,7 +127,7 @@ func Test_GetAttestation(t *testing.T) {
 	evidenceContext := &proto.EvidenceContext{
 		TenantId:      "0",
 		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		SoftwareId:    "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}

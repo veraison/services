@@ -4,9 +4,12 @@ package proto;
 option go_package = "github.com/veraison/services/proto";
 import "google/protobuf/struct.proto";
 
+
 message EvidenceContext {
 	string tenant_id = 1 [json_name = "tenant-id"];
 	string trust_anchor_id = 2 [json_name = "trust-anchor-id"];
-	string software_id = 3 [json_name = "software-id"];
+	string reference_id = 3 [json_name = "reference-id"];
 	google.protobuf.Struct evidence = 5;
+	// unprocessed evidence not handled by the Evidence Context
+	google.protobuf.Struct up_evidence = 6;
 }

@@ -206,22 +206,22 @@ func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
 		}
 	}
 
-	for _, swComp := range rsp.SwComponents {
-		swCompReq := &proto.AddSwComponentsRequest{
-			SwComponents: []*proto.Endorsement{
-				swComp,
+	for _, refVal := range rsp.ReferenceValues {
+		refValReq := &proto.AddRefValuesRequest{
+			ReferenceValues: []*proto.Endorsement{
+				refVal,
 			},
 		}
 
-		swCompRes, err := o.VTSClient.AddSwComponents(context.TODO(), swCompReq)
+		refValRes, err := o.VTSClient.AddRefValues(context.TODO(), refValReq)
 		if err != nil {
-			return fmt.Errorf("store operation failed for software components: %w", err)
+			return fmt.Errorf("store operation failed for reference values: %w", err)
 		}
 
-		if !swCompRes.GetStatus().Result {
+		if !refValRes.GetStatus().Result {
 			return fmt.Errorf(
-				"store operation failed for software components: %s",
-				swCompRes.Status.GetErrorDetail(),
+				"store operation failed for reference values: %s",
+				refValRes.Status.GetErrorDetail(),
 			)
 		}
 	}

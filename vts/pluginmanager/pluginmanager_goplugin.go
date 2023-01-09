@@ -56,7 +56,7 @@ func New(logger *zap.SugaredLogger) *GoPluginManager {
 }
 
 // variables read from the config store:
-//   * "go-plugin.folder"
+//   - "go-plugin.folder"
 func (o *GoPluginManager) Init(v *viper.Viper) error {
 	cfg := cfg{Backend: "go-plugin"}
 	loader := config.NewLoader(&cfg)
@@ -94,7 +94,7 @@ func (o *GoPluginManager) Init(v *viper.Viper) error {
 			// advertised by another plugin.  Should raise fatal error if this
 			// is the case.
 			tbl[mt] = ctx
-			o.logger.Infow("media type registred", "media-type", mt)
+			o.logger.Infow("media type registered", "media-type", mt)
 		}
 	}
 

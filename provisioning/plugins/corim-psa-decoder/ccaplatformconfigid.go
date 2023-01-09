@@ -33,19 +33,23 @@ func (o *CCAPlatformConfigID) FromMeasurement(m comid.Measurement) error {
 	return nil
 }
 
-func (o CCAPlatformConfigID) MakeRefAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
+func (o CCAPlatformConfigID) GetRefValType() string {
+	return "platform-config"
+}
+
+func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (*structpb.Struct, error) {
 	refAttrs := map[string]interface{}{
-		"psa.impl-id":               c.ImplID,
-		"cca.platform-config-label": o.Label,
-		"cca.platform-config-id":    o.Value,
+		scheme + ".impl-id":               c.ImplID,
+		scheme + ".platform-config-label": o.Label,
+		scheme + ".platform-config-id":    o.Value,
 	}
 
 	if c.Vendor != "" {
-		refAttrs["psa.hw-vendor"] = c.Vendor
+		refAttrs[scheme+".hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		refAttrs["psa.hw-model"] = c.Model
+		refAttrs[scheme+".hw-model"] = c.Model
 	}
 
 	return structpb.NewStruct(refAttrs)

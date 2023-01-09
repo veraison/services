@@ -64,9 +64,9 @@ type IScheme interface {
 		endorsements []string,
 	) (*ear.AttestationResult, error)
 
-	// SynthKeysFromSwComponent synthesizes lookup key(s) for the
-	// provided software component endorsement.
-	SynthKeysFromSwComponent(tenantID string, swComp *proto.Endorsement) ([]string, error)
+	// SynthKeysFromRefValue synthesizes lookup key(s) for the
+	// provided reference value endorsement.
+	SynthKeysFromRefValue(tenantID string, refVal *proto.Endorsement) ([]string, error)
 
 	// SynthKeysFromTrustAnchor synthesizes lookup key(s) for the provided
 	// trust anchor.
@@ -74,13 +74,18 @@ type IScheme interface {
 }
 
 // ExtractedClaims contains a map of claims extracted from an attestation
-// token along with the corresponding SoftwareID that is used to fetch
+// token along with the corresponding ReferenceID that is used to fetch
 // the associated endorsements.
 //
 // XXX(tho) -- not clear why SoftwareID is treated differently from TrustAnchorID
+// XXX(yd) Thomas to answer your question: Here basically this is the key used
+// to fetch all the Endorsements (using reference value key), generated from claims
+// extracted from the token
 type ExtractedClaims struct {
-	ClaimsSet  map[string]interface{} `json:"claims-set"`
-	SoftwareID string                 `json:"software-id"`
+	ClaimsSet   map[string]interface{} `json:"claims-set"`
+	ReferenceID string                 `json:"reference-id"`
+	// UnprocessedClaimsSet are claims decoded by Scheme but not appraised
+	UnprocessedClaimsSet map[string]interface{} `json:"unprocessed-claims-set"`
 }
 
 func NewExtractedClaims() *ExtractedClaims {
