@@ -15,3 +15,6 @@ po-agent:
   backend: {{ "opa" }}
 vts:
   server-addr: {{ "127.0.0.1:50051" }}
+ear-signer:
+  alg: {{  "ES256" | env_override('JWT_SIGNING_ALGORITHM') }}
+  key: {{  "./skey.jwk " | env_override('JWT_KEY_FILE_PATH') }}

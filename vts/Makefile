@@ -16,6 +16,7 @@ install:
 	install $(TOPDIR)/vts/cmd/vts-service/vts-service $(VTS_DEPLOY_PREFIX)$(BIN_DIR)/vts-service
 	install -D $(TOPDIR)/vts/plugins/bin/* $(VTS_DEPLOY_PREFIX)$(PLUGIN_DIR)
 	install $(TOPDIR)/vts/cmd/vts-service/config.yaml $(VTS_DEPLOY_PREFIX)/config.yaml
-	install $(TOPDIR)/vts/test-harness/init-kvstores.sh $(VTS_DEPLOY_PREFIX)
+	install $(TOPDIR)/vts/test-harness/init-kvstores.sh $(VTS_DEPLOY_PREFIX)/init-kvstores.sh
+	install $(TOPDIR)/vts/cmd/vts-service/skey.jwk $(VTS_DEPLOY_PREFIX)/skey.jwk
 
 include ../mk/subdir.mk

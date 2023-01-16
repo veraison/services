@@ -1,0 +1,34 @@
+# End to end integration tests - GitHub Actions
+name: integration tests
+on: [push, pull_request]
+jobs:
+  integration-tests-push:
+    name: Run integration tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Prepare environment variable
+      shell: bash
+      run: |
+        if [ "$GITHUB_EVENT_NAME" == "push" ]
+        then
+          echo $'\nGIT_CLONE_BRANCH=${GITHUB_REF_NAME}' >> ./deployments/docker/default.env
+        else
+          echo $'\nGIT_CLONE_BRANCH=${GITHUB_HEAD_REF}' >> ./deployments/docker/default.env
+        fi
+    - name: Setup services and integration tests containers
+      run: make -C integration-tests integration-tests-up
+    - name: Save test log and check for failures
+      run: |
+        docker logs -t -f tavern >> tavernTestLogs.log
+        grep 'FAILURES' tavernTestLogs.log | python3 scripts/integ-fail.py
+    - name: Save docker compose logs
+      run: docker-compose --env-file=deployments/docker/default.env --file=docker-compose-integration-tests.yml logs -f -t >> integration-tests.log &
+    - name: Archive container logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-logs
+        path: ./integration-tests.log
+    - name: Tear down services  
+      run: make -C integration-tests integration-tests-down

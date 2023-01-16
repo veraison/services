@@ -4,8 +4,9 @@ ARG workDirRepo=/app/services
 ARG GoVersion=1.18
 
 # Arguments for psa demo input directories
+# TODO create version associated with the tag by adding a release
 ARG COCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/corim@v0.0.0-20221125105155-c2835023f15e/cocli
-ARG EVCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/evcli@v0.0.0-20221031171538-734499a0aa16/misc
+ARG EVCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/evcli@v0.0.0-20221212172836-49c7b2bdcf38/misc
 
 FROM golang:$GoVersion AS build-base
 
@@ -24,6 +25,7 @@ RUN apt-get update \
         --no-install-recommends \
         apt-transport-https \
         apt-utils \
+        iputils-ping \
         jq \
         tree \
         protobuf-compiler \
@@ -31,7 +33,9 @@ RUN apt-get update \
         python3-pip \
         libprotobuf-dev \
         libsqlite3-dev \
+        net-tools \
         sqlite3 \
+        vim \
         zlib1g-dev \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
@@ -56,8 +60,6 @@ ARG workDirRepo
 ARG PROVISIONING_DEPLOY_PREFIX
 ARG VERIFICATION_DEPLOY_PREFIX
 ARG VTS_DEPLOY_PREFIX
-ARG VTS_PROVISIONING_LOCAL_IP_ADDRESS
-ARG VTS_VERIFICATION_LOCAL_IP_ADDRESS
 ARG VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT
 ARG VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT
 ARG BIN_DIR
@@ -65,13 +67,20 @@ ARG LOG_DIR
 ARG PLUGIN_DIR
 ARG INPUT_FILE_DIR
 ARG GIT_CLONE_BRANCH
+ARG PROVISIONING_LISTENING_ADDRESS_AND_PORT
+ARG VERIFICATION_LISTENING_ADDRESS_AND_PORT
+ARG JWT_SIGNING_ALGORITHM
+ARG JWT_KEY_FILE_PATH
+ARG PROVISIONING_CONTAINER_NAME
+ARG VERIFICATION_CONTAINER_NAME
+ARG VTS_CONTAINER_NAME
+ARG VTS_PROVISIONING_NETWORK_ALIAS
+ARG VTS_VERIFICATION_NETWORK_ALIAS
 
-# Set envrionment variables for deploy directories and communication ip addresses
+# Set envrionment variables for deploy directories and communication ports
 ENV PROVISIONING_DEPLOY_PREFIX $workDirRepo$PROVISIONING_DEPLOY_PREFIX
 ENV VERIFICATION_DEPLOY_PREFIX $workDirRepo$VERIFICATION_DEPLOY_PREFIX
 ENV VTS_DEPLOY_PREFIX $workDirRepo$VTS_DEPLOY_PREFIX
-ENV VTS_PROVISIONING_LOCAL_IP_ADDRESS $VTS_PROVISIONING_LOCAL_IP_ADDRESS
-ENV VTS_VERIFICATION_LOCAL_IP_ADDRESS $VTS_VERIFICATION_LOCAL_IP_ADDRESS 
 ENV VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT $VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT
 ENV VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT $VTS_VERIFICATION_LOCAL_IP_ADDRESS_PORT
 
@@ -83,6 +92,21 @@ ENV INPUT_FILE_DIR $INPUT_FILE_DIR
 
 # Set environment variable for branch/tag to git clone from
 ENV GIT_CLONE_BRANCH $GIT_CLONE_BRANCH
+
+# Set environment variable for provisioning and verification listening address and port
+ENV PROVISIONING_LISTENING_ADDRESS_AND_PORT $PROVISIONING_LISTENING_ADDRESS_AND_PORT
+ENV VERIFICATION_LISTENING_ADDRESS_AND_PORT $VERIFICATION_LISTENING_ADDRESS_AND_PORT
+
+# Set environment variable for JWT signing algorithm and key location
+ENV JWT_SIGNING_ALGORITHM $JWT_SIGNING_ALGORITHM
+ENV JWT_KEY_FILE_PATH $JWT_KEY_FILE_PATH
+
+# Set envrionment variables for host name and network aliases
+ENV PROVISIONING_CONTAINER_NAME $PROVISIONING_CONTAINER_NAME
+ENV VERIFICATION_CONTAINER_NAME $VERIFICATION_CONTAINER_NAME
+ENV VTS_CONTAINER_NAME $VTS_CONTAINER_NAME
+ENV VTS_PROVISIONING_NETWORK_ALIAS $VTS_PROVISIONING_NETWORK_ALIAS
+ENV VTS_VERIFICATION_NETWORK_ALIAS $VTS_VERIFICATION_NETWORK_ALIAS
 
 # Clone main branch from remote (at the demo tag)
 RUN git clone --depth 1 --branch ${GIT_CLONE_BRANCH} https://github.com/veraison/services.git
