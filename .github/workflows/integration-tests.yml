@@ -2,7 +2,7 @@
 name: integration tests
 on: [push, pull_request]
 jobs:
-  integration-tests-push:
+  integration-tests:
     name: Run integration tests
     runs-on: ubuntu-latest
     steps:
@@ -19,16 +19,24 @@ jobs:
         fi
     - name: Setup services and integration tests containers
       run: make -C integration-tests integration-tests-up
-    - name: Save test log and check for failures
-      run: |
-        docker logs -t -f tavern >> tavernTestLogs.log
-        grep 'FAILURES' tavernTestLogs.log | python3 scripts/integ-fail.py
+    - name: Save test log
+      run: docker logs -t -f tavern | tee tavern-tests.log &
+    - name: Archive tavern container log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: tavern-logs
+        path: ./tavern-tests.log
+    - name: Check for failures
+      run: grep 'FAILURES' tavern-tests.log | python3 scripts/integ-fail.py
     - name: Save docker compose logs
-      run: docker-compose --env-file=deployments/docker/default.env --file=docker-compose-integration-tests.yml logs -f -t >> integration-tests.log &
+      if: always()
+      run: docker-compose --env-file=deployments/docker/default.env --file=integration-tests/docker-compose-integration-tests.yml logs -f -t --no-color | tee container.log &
     - name: Archive container logs
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: container-logs
-        path: ./integration-tests.log
+        path: ./container.log
     - name: Tear down services  
       run: make -C integration-tests integration-tests-down

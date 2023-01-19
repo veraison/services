@@ -110,6 +110,15 @@ services:
         VTS_CONTAINER_NAME: ${VTS_CONTAINER_NAME:?Please define a value for the environment variable}
         VTS_PROVISIONING_NETWORK_ALIAS: ${VTS_PROVISIONING_NETWORK_ALIAS:?Please define a value for the environment variable}
         VTS_VERIFICATION_NETWORK_ALIAS: ${VTS_VERIFICATION_NETWORK_ALIAS:?Please define a value for the environment variable}
+        COCLI_TEMPLATES: ${COCLI_TEMPLATES:?Please define a value for the environment variable}
+        EVCLI_TEMPLATES: ${EVCLI_TEMPLATES:?Please define a value for the environment variable}
+        DIAG_FILES: ${DIAG_FILES:?Please define a value for the environment variable}
+    volumes:
+      # Volume to mount local integration test files into container
+      - type: bind
+        source: ../integration-tests/
+        target: /integration-tests
+
 
     depends_on:
       - provisioning

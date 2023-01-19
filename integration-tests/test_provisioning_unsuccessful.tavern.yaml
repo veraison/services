@@ -1,0 +1,21 @@
+test_name: Test unsuccessful provisioning (no cbor file provided)
+
+
+includes:
+  - !include include.yaml
+
+strict:
+  - json:off
+
+stages:
+  - name: submit post request to the provisioning service successfully 
+    request:
+      method: POST
+      url: http://{tavern.env_vars.PROVISIONING_CONTAINER_NAME}.{tavern.env_vars.VTS_PROVISIONING_NETWORK_ALIAS}:8888/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+    response:
+      status_code: 400
+      json:
+        title: Bad Request
+        detail: empty body
