@@ -96,6 +96,7 @@ func (s Scheme) SynthKeysFromRefValue(
 
 	finalstr := ccaReferenceLookupKey(tenantID, implID)
 	log.Printf("CCA Plugin CCA Reference Value Look Up Key= %s\n", finalstr)
+
 	return []string{ccaReferenceLookupKey(tenantID, implID)}, nil
 }
 
@@ -129,7 +130,7 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 
 func (s Scheme) GetSupportedMediaTypes() []string {
 	return []string{
-		"application/eat-cwt; profile=http://arm.com/CCA-SSD/1.0.0",
+		"application/eat-collection; profile=http://arm.com/CCA-SSD/1.0.0",
 	}
 }
 
