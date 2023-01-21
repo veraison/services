@@ -177,7 +177,7 @@ func (s Scheme) ExtractClaims(
 	return &extracted, nil
 }
 
-// ValidateEvidenceIntegrity, decodes CCA collection and then invokes Verify API of ccatoken library.
+// ValidateEvidenceIntegrity, decodes CCA collection and then invokes Verify API of ccatoken library
 // which verifies the signature on the platform part of CCA collection, using supplied trust anchor
 // and internally verifies the realm part of CCA token using realm public key extracted from
 // realm token.
@@ -189,14 +189,12 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	var endorsement TaEndorsements
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Println("Could not decode Endorsements in ExtractVerifiedClaims")
 		return fmt.Errorf("could not decode endorsement: %w", err)
 	}
 	ta := endorsement.Attr.VerifKey
 	block, rest := pem.Decode([]byte(ta))
 
 	if block == nil {
-		log.Println("could not get TA PEM Block during validating evidence integrity")
 		return errors.New("could not extract trust anchor PEM block")
 	}
 
@@ -245,12 +243,8 @@ func (s Scheme) AppraiseEvidence(
 
 	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
 
-	// TO DO: Need to populate Unprocessed Evidence in a suitable format in AR
-	/*
-		// Unprocessed evidence should be a JSON Byte Array, which can be UnMarshalled by EAR Library
-		result.unprocessed_evidence = json.Marshal(ec.UpEvidence.AsMap())
-	*/
-
+	// TO DO: Handle Unprocessed evidence when new Attestation Result interface
+	// is ready. Please see issue #105
 	return result, err
 }
 
