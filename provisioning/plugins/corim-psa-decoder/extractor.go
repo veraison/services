@@ -28,7 +28,7 @@ func (o *Extractor) SetProfile(p string) {
 }
 
 // MeasurementExtractor is an interface to extract measurements from comid
-// and to make ref attributes from them
+// to construct Reference Value Endorsements using Reference Value type
 type MeasurementExtractor interface {
 	FromMeasurement(comid.Measurement) error
 	GetRefValType() string

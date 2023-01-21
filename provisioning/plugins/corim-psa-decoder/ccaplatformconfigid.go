@@ -37,6 +37,9 @@ func (o CCAPlatformConfigID) GetRefValType() string {
 	return "platform-config"
 }
 
+// MakeRefAttrs is an interface function to populate reference attributes.
+// For PlatformConfig scheme argument is not strictly required, but is required for other
+// usage of the same interface
 func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (*structpb.Struct, error) {
 	refAttrs := map[string]interface{}{
 		scheme + ".impl-id":               c.ImplID,
