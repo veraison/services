@@ -318,11 +318,6 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	appraisal.EvidenceContext.UpEvidence, err = structpb.NewStruct(extracted.UnprocessedClaimsSet)
-	if err != nil {
-		return nil, err
-	}
-
 	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID
 
 	o.logger.Debugw("constructed evidence context",

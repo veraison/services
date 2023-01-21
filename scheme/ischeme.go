@@ -77,15 +77,12 @@ type IScheme interface {
 // token along with the corresponding ReferenceID that is used to fetch
 // the associated endorsements.
 //
-// XXX(tho) -- not clear why SoftwareID is treated differently from TrustAnchorID
-// XXX(yd) Thomas to answer your question: Here basically this is the key used
-// to fetch all the Endorsements (using reference value key), generated from claims
-// extracted from the token
+//	ReferenceID is the key used to fetch all the Endorsements
+//	generated from claims extracted from the token
 type ExtractedClaims struct {
 	ClaimsSet   map[string]interface{} `json:"claims-set"`
 	ReferenceID string                 `json:"reference-id"`
-	// UnprocessedClaimsSet are claims decoded by Scheme but not appraised
-	UnprocessedClaimsSet map[string]interface{} `json:"unprocessed-claims-set"`
+	// please refer issue #106 for unprocessed claim set
 }
 
 func NewExtractedClaims() *ExtractedClaims {

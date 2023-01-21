@@ -169,12 +169,6 @@ func (s Scheme) ExtractClaims(
 
 	extracted.ClaimsSet = claimsSet
 
-	unprocessedclaimsSet, err := claimsToMap(ccaToken.RealmClaims)
-	if err != nil {
-		return nil, err
-	}
-	extracted.UnprocessedClaimsSet = unprocessedclaimsSet
-
 	extracted.ReferenceID = ccaReferenceLookupKey(
 		token.TenantId,
 		MustImplIDString(ccaToken.PlatformClaims),
