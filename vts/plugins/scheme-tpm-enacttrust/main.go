@@ -50,7 +50,7 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 
 func (s Scheme) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
 	if token.MediaType != TPMEnactTrustTokenMediaType {
-		return "", fmt.Errorf("wrong mediaType: expect %q, but found %q",
+		return "", fmt.Errorf("wrong media type: expect %q, but found %q",
 			TPMEnactTrustTokenMediaType,
 			token.MediaType,
 		)
@@ -75,7 +75,7 @@ func (s Scheme) ExtractClaims(
 	trustAnchor string,
 ) (*scheme.ExtractedClaims, error) {
 	if token.MediaType != TPMEnactTrustTokenMediaType {
-		return nil, fmt.Errorf("wrong mediaType: expect %q, but found %q",
+		return nil, fmt.Errorf("wrong media type: expect %q, but found %q",
 			TPMEnactTrustTokenMediaType,
 			token.MediaType,
 		)

@@ -200,7 +200,7 @@ func Test_ValidateEvidenceIntegrity_invalid_key(t *testing.T) {
 }
 
 func Test_GetSupportedMediaType_ok(t *testing.T) {
-	expectedMt := "application/eat-cwt; profile=http://arm.com/CCA-SSD/1.0.0"
+	expectedMt := "application/eat-collection; profile=http://arm.com/CCA-SSD/1.0.0"
 	scheme := &Scheme{}
 	mtList := scheme.GetSupportedMediaTypes()
 	assert.Len(t, mtList, 1)
