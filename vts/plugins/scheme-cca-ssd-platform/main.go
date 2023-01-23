@@ -11,7 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
+
 	"net/url"
 	"strings"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/plugins/common"
@@ -95,7 +96,7 @@ func (s Scheme) SynthKeysFromRefValue(
 	}
 
 	finalstr := ccaReferenceLookupKey(tenantID, implID)
-	log.Printf("CCA Plugin CCA Reference Value Look Up Key= %s\n", finalstr)
+	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", finalstr)
 
 	return []string{ccaReferenceLookupKey(tenantID, implID)}, nil
 }
@@ -124,7 +125,7 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 	}
 
 	finalstr := ccaTaLookupKey(tenantID, implID, instID)
-	log.Printf("CCA Plugin TA CCA Look Up Key= %s\n", finalstr)
+	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", finalstr)
 	return []string{ccaTaLookupKey(tenantID, implID, instID)}, nil
 }
 
@@ -173,7 +174,7 @@ func (s Scheme) ExtractClaims(
 		token.TenantId,
 		MustImplIDString(ccaToken.PlatformClaims),
 	)
-	log.Printf("\n Extracted Reference ID Key = %s", extracted.ReferenceID)
+	log.Debug("\n Extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
 
@@ -220,7 +221,7 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	if err = ccaToken.Verify(pk); err != nil {
 		return err
 	}
-	log.Println("\n CCA platform token signature, realm token signature and cryptographic binding verified")
+	log.Debug("\n CCA platform token signature, realm token signature and cryptographic binding verified")
 	return nil
 }
 
@@ -291,11 +292,11 @@ func populateAttestationResult(
 	match := matchSoftware(claims, swComps)
 	if match {
 		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		log.Println("\n matchSoftware Success")
+		log.Debug("\n matchSoftware Success")
 
 	} else {
 		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Println("\n matchSoftware Failed")
+		log.Debug("\n matchSoftware Failed")
 	}
 
 	platformConfig := filterRefVal(endorsements, "cca.platform-config")
@@ -303,11 +304,11 @@ func populateAttestationResult(
 
 	if match {
 		result.TrustVector.Configuration = ear.ApprovedConfigClaim
-		log.Println("\n matchPlatformConfig Success")
+		log.Debug("\n matchPlatformConfig Success")
 
 	} else {
 		result.TrustVector.Configuration = ear.UnsafeConfigClaim
-		log.Println("\n matchPlatformConfig Failed")
+		log.Debug("\n matchPlatformConfig Failed")
 	}
 	result.UpdateStatusFromTrustVector()
 
@@ -344,7 +345,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 		matched = true
 		var attr SwAttr
 		if err := json.Unmarshal(endorsement.Attr, &attr); err != nil {
-			log.Println("Could not decode sw attributes from endorsements")
+			log.Debug("Could not decode sw attributes from endorsements")
 			return false
 		}
 
@@ -355,7 +356,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 			break
 		}
 
-		log.Printf("MeasType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasType)
+		log.Debug("MeasType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasType)
 		typeMatched := attr.MeasType == "" || attr.MeasType == *evComp.MeasurementType
 		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
 		versionMatched := attr.Version == "" || attr.Version == *evComp.Version
@@ -375,11 +376,11 @@ func matchPlatformConfig(evidence psatoken.IClaims, endorsements []Endorsements)
 		return false
 	}
 	if len(endorsements) > 1 {
-		log.Printf("matchPlatformConfig failed number of cca config %d > 1 ", len(endorsements))
+		log.Debug("matchPlatformConfig failed number of cca config %d > 1 ", len(endorsements))
 	}
 	var attr CcaPlatformCfg
 	if err := json.Unmarshal(endorsements[0].Attr, &attr); err != nil {
-		log.Println("Could not decode cca platform config in matchPlatformConfig")
+		log.Debug("Could not decode cca platform config in matchPlatformConfig")
 		return false
 	}
 
