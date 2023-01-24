@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jellydator/ttlcache/v3 v3.0.0
-	github.com/lestrrat-go/jwx/v2 v2.0.6
+	github.com/lestrrat-go/jwx/v2 v2.0.8
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moogar0880/problems v0.1.1
@@ -26,13 +26,13 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
-	github.com/stretchr/testify v1.8.0
-	github.com/veraison/ccatoken v0.0.0-20221129100525-5e7c18ed29a4
-	github.com/veraison/corim v0.0.0-20221101190258-b8e2d544a0a3
+	github.com/stretchr/testify v1.8.1
+	github.com/veraison/ccatoken v0.0.0-20230124001940-24f056f6cf0c
+	github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/psatoken v0.0.2-0.20221010113344-b92196b83882
+	github.com/veraison/psatoken v1.0.0-rc2.0.20230124001050-d5d26fdd5322
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.3.7
 	google.golang.org/grpc v1.49.0
@@ -59,12 +59,10 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.25 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
