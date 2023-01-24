@@ -1,7 +1,7 @@
 plugin:
   backend: go-plugin
   go-plugin:
-    dir: ../../plugins/bin/
+    dir: ../../../scheme/bin/
 ta-store:
   backend: sql
   sql:
@@ -18,9 +18,11 @@ po-store:
     driver: sqlite3
     datasource: po-store.sql
 po-agent:
-    backend: opa
+  backend: opa
 vts:
   server-addr: 127.0.0.1:50051
 ear-signer:
   alg: ES256
-  key: skey.jwk
+  key: ./skey.jwk
+logging:
+  level: debug
