@@ -32,6 +32,7 @@ func (o *Extractor) SetProfile(p string) {
 type MeasurementExtractor interface {
 	FromMeasurement(comid.Measurement) error
 	GetRefValType() string
+	// MakeRefAttrs is an interface method to populate reference attributes.
 	MakeRefAttrs(ClassAttributes, string) (*structpb.Struct, error)
 }
 

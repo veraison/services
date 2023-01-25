@@ -27,14 +27,14 @@ import (
 )
 
 type SwAttr struct {
-	ImplID    []byte `json:"cca.impl-id"`
-	Model     string `json:"cca.hw-model"`
-	Vendor    string `json:"cca.hw-vendor"`
-	MeasDesc  uint64 `json:"cca.measurement-desc"`
-	MeasType  string `json:"cca.measurement-type"`
-	MeasValue []byte `json:"cca.measurement-value"`
-	SignerID  []byte `json:"cca.signer-id"`
-	Version   string `json:"cca.version"`
+	ImplID           []byte `json:"cca.impl-id"`
+	Model            string `json:"cca.hw-model"`
+	Vendor           string `json:"cca.hw-vendor"`
+	MeasDesc         uint64 `json:"cca.measurement-desc"`
+	MeasurementType  string `json:"cca.measurement-type"`
+	MeasurementValue []byte `json:"cca.measurement-value"`
+	SignerID         []byte `json:"cca.signer-id"`
+	Version          string `json:"cca.version"`
 }
 
 type CcaPlatformCfg struct {
@@ -95,10 +95,10 @@ func (s Scheme) SynthKeysFromRefValue(
 		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
 	}
 
-	finalstr := ccaReferenceLookupKey(tenantID, implID)
-	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", finalstr)
+	lookupKey := ccaReferenceLookupKey(tenantID, implID)
+	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", lookupKey)
 
-	return []string{ccaReferenceLookupKey(tenantID, implID)}, nil
+	return []string{lookupKey}, nil
 }
 
 func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
@@ -124,9 +124,9 @@ func (s Scheme) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement)
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	finalstr := ccaTaLookupKey(tenantID, implID, instID)
-	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", finalstr)
-	return []string{ccaTaLookupKey(tenantID, implID, instID)}, nil
+	lookupKey := ccaTaLookupKey(tenantID, implID, instID)
+	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", lookupKey)
+	return []string{lookupKey}, nil
 }
 
 func (s Scheme) GetSupportedMediaTypes() []string {
@@ -174,7 +174,7 @@ func (s Scheme) ExtractClaims(
 		token.TenantId,
 		MustImplIDString(ccaToken.PlatformClaims),
 	)
-	log.Debug("\n Extracted Reference ID Key = %s", extracted.ReferenceID)
+	log.Debug("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
 
@@ -221,7 +221,7 @@ func (s Scheme) ValidateEvidenceIntegrity(
 	if err = ccaToken.Verify(pk); err != nil {
 		return err
 	}
-	log.Debug("\n CCA platform token signature, realm token signature and cryptographic binding verified")
+	log.Debug("CCA platform token signature, realm token signature and cryptographic binding verified")
 	return nil
 }
 
@@ -292,11 +292,11 @@ func populateAttestationResult(
 	match := matchSoftware(claims, swComps)
 	if match {
 		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		log.Debug("\n matchSoftware Success")
+		log.Debug("matchSoftware Success")
 
 	} else {
 		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Debug("\n matchSoftware Failed")
+		log.Debug("matchSoftware Failed")
 	}
 
 	platformConfig := filterRefVal(endorsements, "cca.platform-config")
@@ -304,11 +304,11 @@ func populateAttestationResult(
 
 	if match {
 		result.TrustVector.Configuration = ear.ApprovedConfigClaim
-		log.Debug("\n matchPlatformConfig Success")
+		log.Debug("matchPlatformConfig Success")
 
 	} else {
 		result.TrustVector.Configuration = ear.UnsafeConfigClaim
-		log.Debug("\n matchPlatformConfig Failed")
+		log.Debug("matchPlatformConfig Failed")
 	}
 	result.UpdateStatusFromTrustVector()
 
@@ -345,19 +345,19 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 		matched = true
 		var attr SwAttr
 		if err := json.Unmarshal(endorsement.Attr, &attr); err != nil {
-			log.Debug("Could not decode sw attributes from endorsements")
+			log.Error("could not decode sw attributes from endorsements")
 			return false
 		}
 
-		key := base64.StdEncoding.EncodeToString(attr.MeasValue)
+		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue)
 		evComp, ok := evidenceComponents[key]
 		if !ok {
 			matched = false
 			break
 		}
 
-		log.Debug("MeasType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasType)
-		typeMatched := attr.MeasType == "" || attr.MeasType == *evComp.MeasurementType
+		log.Debug("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
+		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
 		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
 		versionMatched := attr.Version == "" || attr.Version == *evComp.Version
 
@@ -376,11 +376,12 @@ func matchPlatformConfig(evidence psatoken.IClaims, endorsements []Endorsements)
 		return false
 	}
 	if len(endorsements) > 1 {
-		log.Debug("matchPlatformConfig failed number of cca config %d > 1 ", len(endorsements))
+		log.Error("got %d CCA configuration endorsements, want 1", len(endorsements))
+		return false
 	}
 	var attr CcaPlatformCfg
 	if err := json.Unmarshal(endorsements[0].Attr, &attr); err != nil {
-		log.Debug("Could not decode cca platform config in matchPlatformConfig")
+		log.Error("could not decode cca platform config in matchPlatformConfig")
 		return false
 	}
 

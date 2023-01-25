@@ -40,7 +40,7 @@ message Endorsement {
     /* sub_type is opaque to Veraison and is used by schemes to classify range of 
     Endorsement sub types for a given Endorsement type. It is assumed that 
     there is going to be only one single sub type required */
-    string   sub_type = 3;  
+    string sub_type = 3;  
     google.protobuf.Struct attributes = 4;
 }
 
