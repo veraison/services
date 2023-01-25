@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test
 
@@ -11,6 +11,7 @@ import (
 
 type IMook interface {
 	GetName() string
+	GetAttestationScheme() string
 	GetSupportedMediaTypes() []string
 	Shoot() string
 }
@@ -28,6 +29,21 @@ func (o *MookRPCClient) GetName() string {
 	err := o.client.Call("Plugin.GetName", &unused, &resp)
 	if err != nil {
 		log.Printf("Plugin.GetName RPC call failed: %v", err) // nolint
+		return ""
+	}
+
+	return resp
+}
+
+func (o *MookRPCClient) GetAttestationScheme() string {
+	var (
+		resp   string
+		unused interface{}
+	)
+
+	err := o.client.Call("Plugin.GetAttestationScheme", &unused, &resp)
+	if err != nil {
+		log.Printf("Plugin.GetAttestationScheme RPC call failed: %v", err) // nolint
 		return ""
 	}
 
@@ -73,6 +89,11 @@ func (o *MookRPCServer) GetName(args interface{}, resp *string) error {
 	return nil
 }
 
+func (o *MookRPCServer) GetAttestationScheme(args interface{}, resp *string) error {
+	*resp = o.Impl.GetAttestationScheme()
+	return nil
+}
+
 func (o *MookRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = o.Impl.GetSupportedMediaTypes()
 	return nil
@@ -91,11 +112,14 @@ func GetMookServer(i IMook) interface{} {
 	return &MookRPCServer{Impl: i}
 }
 
-var MookRPC = plugin.RPCChannel[IMook]{
+var MookRPC = &plugin.RPCChannel[IMook]{
 	GetClient: GetMookClient,
 	GetServer: GetMookServer,
 }
 
 func RegisterMookImplementation(v IMook) {
-	plugin.RegisterImplementation("mook", v, MookRPC)
+	err := plugin.RegisterImplementation("mook", v, MookRPC)
+	if err != nil {
+		panic(err)
+	}
 }

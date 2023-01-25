@@ -14,6 +14,10 @@ func (o GasCartridge) GetName() string {
 	return "gas cartridge"
 }
 
+func (o GasCartridge) GetAttestationScheme() string {
+	return "star-wars"
+}
+
 func (o GasCartridge) GetSupportedMediaTypes() []string {
 	return []string{"tibanna gas"}
 }

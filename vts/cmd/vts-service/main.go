@@ -10,12 +10,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/afero"
 
+	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/decoder"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
-	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
@@ -60,11 +61,24 @@ func main() {
 		log.Fatalf("policy manager initialization failed: %v", err)
 	}
 
-	log.Info("loading plugins")
-	pluginManager, err := plugin.CreateGoPluginManager(
-		subs["plugin"], log.Named("scheme-plugin"), "scheme", scheme.SchemeRPC)
-	if err != nil {
-		log.Fatalf("plugin manager initialization failed: %v", err)
+	log.Info("loading schemes")
+	var pluginManager plugin.IManager[decoder.IEvidenceDecoder]
+
+	if config.SchemeLoader == "plugins" {
+		pluginManager, err = plugin.CreateGoPluginManager(
+			subs["plugin"], log.Named("plugin"),
+			"evidence-decoder", decoder.EvidenceDecoderRPC)
+		if err != nil {
+			log.Fatalf("plugin manager initialization failed: %v", err)
+		}
+	} else if config.SchemeLoader == "builtin" {
+		pluginManager, err = builtin.CreateBuiltinManager[decoder.IEvidenceDecoder](
+			subs["plugin"], log.Named("builtin"), "evidence-decoder")
+		if err != nil {
+			log.Fatalf("scheme manager initialization failed: %v", err)
+		}
+	} else {
+		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
 
 	log.Info("loading EAR signer")

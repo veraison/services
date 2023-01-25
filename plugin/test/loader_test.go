@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test
 
@@ -21,25 +21,25 @@ func TestLoader_discover_and_load(t *testing.T) {
 	cfg := map[string]interface{}{"dir": "bin"}
 	logger := log.Named("test")
 
-	ldr, err := plugin.CreateLoader(cfg, logger)
+	ldr, err := plugin.CreateGoPluginLoader(cfg, logger)
 	require.NoError(t, err)
 	defer ldr.Close()
 
-	plugin.RegisterUsing(ldr, "mook", MookRPC)
-	err = plugin.DiscoverUsing[IMook](ldr)
+	err = plugin.RegisterGoPluginUsing(ldr, "mook", MookRPC)
 	require.NoError(t, err)
 
-	plugin.RegisterUsing(ldr, "ammo", AmmoRPC)
-	err = plugin.DiscoverUsing[IAmmo](ldr)
+	err = plugin.DiscoverGoPluginUsing[IMook](ldr)
+	require.NoError(t, err)
+
+	err = plugin.RegisterGoPluginUsing(ldr, "ammo", AmmoRPC)
+	require.NoError(t, err)
+
+	err = plugin.DiscoverGoPluginUsing[IAmmo](ldr)
 	require.NoError(t, err)
 
 	mediaTypes := ldr.GetRegisteredMediaTypes()
 	expected := []string{"blaster", "phaser", "tibanna gas", "plasma"}
 	assert.ElementsMatch(t, expected, mediaTypes)
-
-	mook, err := plugin.GetHandleByMediaTypeUsing[IMook](ldr, "blaster")
-	require.NoError(t, err)
-	assert.Equal(t, `blaster goes "pew, pew"`, mook.Shoot())
 }
 
 func buildPlugins(names []string) error {

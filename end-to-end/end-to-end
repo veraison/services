@@ -18,7 +18,7 @@ function deploy() {
     cp $REPO_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
     cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
     cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
-    cp $REPO_DIR/plugins/bin/* $DEPLOY_DIR/plugins/
+    cp $REPO_DIR/scheme/bin/* $DEPLOY_DIR/plugins/
     cp $THIS_DIR/config.yaml $DEPLOY_DIR/
     cp $THIS_DIR/skey.jwk $DEPLOY_DIR/
 

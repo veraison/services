@@ -4,16 +4,15 @@
 *.dll
 *.so
 *.dylib
-protogen
-vts/plugins/scheme-tpm-enacttrust/test/tokens/*.token
-vts/plugins/scheme-tpm-enacttrust/test/cmd/gen-token
-vts/plugins/bin
-vts/cmd/vts-service/vts-service
-provisioning/cmd/provisioning-service/provisioning-service
-provisioning/plugins/bin/
-provisioning/decoder/*.pb.json.go
-verification/cmd/verification-service/verification-service
 policy/cmd/polcli/polcli
+protogen
+provisioning/cmd/provisioning-service/provisioning-service
+scheme/bin
+plugin/test/bin
+scheme/enacttrust/test/tokens/*.token
+scheme/tpm-enacttrust/test/cmd/gen-token
+verification/cmd/verification-service/verification-service
+vts/cmd/vts-service/vts-service
 
 # Test binary, built with `go test -c`
 *.test

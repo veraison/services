@@ -9,11 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/decoder"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/provisioning/api"
-	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -54,11 +55,24 @@ func main() {
 		log.Fatalf("Could not load config: %v", err)
 	}
 
-	log.Info("loading plugins")
-	pluginManager, err := plugin.CreateGoPluginManager(
-		subs["plugin"], log.Named("decoder-plugin"), "decoder", decoder.DecoderRPC)
-	if err != nil {
-		log.Fatalf("Could not load plugins: %v", err)
+	log.Info("loading schemes")
+	var pluginManager plugin.IManager[decoder.IEndorsementDecoder]
+
+	if config.SchemeLoader == "plugins" {
+		pluginManager, err = plugin.CreateGoPluginManager(
+			subs["plugin"], log.Named("plugin"),
+			"endorsement-decoder", decoder.EndorsementDecoderRPC)
+		if err != nil {
+			log.Fatalf("plugin manager initialization failed: %v", err)
+		}
+	} else if config.SchemeLoader == "builtin" {
+		pluginManager, err = builtin.CreateBuiltinManager[decoder.IEndorsementDecoder](
+			subs["plugin"], log.Named("builtin"), "endorsement-decoder")
+		if err != nil {
+			log.Fatalf("scheme manager initialization failed: %v", err)
+		}
+	} else {
+		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
 
 	log.Info("initializing VTS client")
@@ -90,7 +104,7 @@ func main() {
 func terminator(
 	sigs chan os.Signal,
 	done chan bool,
-	pluginManager plugin.IManager[decoder.IDecoder],
+	pluginManager plugin.IManager[decoder.IEndorsementDecoder],
 ) {
 	sig := <-sigs
 

@@ -63,7 +63,7 @@ func (mr *MockIManagerMockRecorder[I]) GetRegisteredMediaTypes() *gomock.Call {
 }
 
 // Init mocks base method.
-func (m *MockIManager[I]) Init(name string, ch plugin.RPCChannel[I]) error {
+func (m *MockIManager[I]) Init(name string, ch *plugin.RPCChannel[I]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", name, ch)
 	ret0, _ := ret[0].(error)
@@ -88,6 +88,21 @@ func (m *MockIManager[I]) IsRegisteredMediaType(mediaType string) bool {
 func (mr *MockIManagerMockRecorder[I]) IsRegisteredMediaType(mediaType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRegisteredMediaType", reflect.TypeOf((*MockIManager[I])(nil).IsRegisteredMediaType), mediaType)
+}
+
+// LookupByAttestationScheme mocks base method.
+func (m *MockIManager[I]) LookupByAttestationScheme(name string) (I, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LookupByAttestationScheme", name)
+	ret0, _ := ret[0].(I)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LookupByAttestationScheme indicates an expected call of LookupByAttestationScheme.
+func (mr *MockIManagerMockRecorder[I]) LookupByAttestationScheme(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupByAttestationScheme", reflect.TypeOf((*MockIManager[I])(nil).LookupByAttestationScheme), name)
 }
 
 // LookupByMediaType mocks base method.

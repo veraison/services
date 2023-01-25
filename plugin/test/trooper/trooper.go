@@ -14,6 +14,10 @@ func (o ImperialTrooper) GetName() string {
 	return "Galactic Imperial trooper"
 }
 
+func (o ImperialTrooper) GetAttestationScheme() string {
+	return "star-wars"
+}
+
 func (o ImperialTrooper) GetSupportedMediaTypes() []string {
 	return []string{"blaster"}
 }

@@ -15,7 +15,19 @@ ifndef CMD
   $(error CMD must be set when including cmd.mk)
 endif
 
-$(CMD): $(SRCS) $(CMD_DEPS) ; go build -o $(CMD) -ldflags "-X 'github.com/veraison/services/config.Version=$(VERSION_FROM_GIT)'"
+SCHEME_LOADER ?= plugins
+
+.PHONY: _check_scheme_loader
+_check_scheme_loader:
+	@if [[ "$(SCHEME_LOADER)" != "plugins" && "$(SCHEME_LOADER)" != "builtin" ]]; then \
+	    echo 'ERROR: invalid SCHEME_LOADER value: $(SCHEME_LOADER); ' \
+	    	 'must be "plugins" or "builtin"'; \
+	    exit 1; \
+	fi
+
+$(CMD): $(SRCS) $(CMD_DEPS) _check_scheme_loader ; go build -o $(CMD) -ldflags \
+	"-X 'github.com/veraison/services/config.Version=$(VERSION_FROM_GIT)' \
+	 -X 'github.com/veraison/services/config.SchemeLoader=$(SCHEME_LOADER)'"
 
 CLEANFILES += $(CMD)
 

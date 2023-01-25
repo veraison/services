@@ -13,9 +13,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/decoder"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -28,14 +28,14 @@ type IHandler interface {
 }
 
 type Handler struct {
-	PluginManager plugin.IManager[decoder.IDecoder]
+	PluginManager plugin.IManager[decoder.IEndorsementDecoder]
 	VTSClient     vtsclient.IVTSClient
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
-	pm plugin.IManager[decoder.IDecoder],
+	pm plugin.IManager[decoder.IEndorsementDecoder],
 	sc vtsclient.IVTSClient,
 	logger *zap.SugaredLogger,
 ) IHandler {
@@ -85,7 +85,7 @@ func (o *Handler) GetServiceState(c *gin.Context) {
 	}
 
 	state.SupportedMediaTypes = map[string]*structpb.ListValue{
-		"endrosement-provisioning/v1": apiMediaTypeList,
+		"endorsement-provisioning/v1": apiMediaTypeList,
 		"decoder":                     decoderMediaTypeList.AsListValue(),
 	}
 

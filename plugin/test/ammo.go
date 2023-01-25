@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test
 
@@ -11,6 +11,7 @@ import (
 
 type IAmmo interface {
 	GetName() string
+	GetAttestationScheme() string
 	GetSupportedMediaTypes() []string
 	GetCapacity() int
 }
@@ -28,6 +29,21 @@ func (o *AmmoRPCClient) GetName() string {
 	err := o.client.Call("Plugin.GetName", &unused, &resp)
 	if err != nil {
 		log.Printf("Plugin.GetName RPC call failed: %v", err) // nolint
+		return ""
+	}
+
+	return resp
+}
+
+func (o *AmmoRPCClient) GetAttestationScheme() string {
+	var (
+		resp   string
+		unused interface{}
+	)
+
+	err := o.client.Call("Plugin.GetAttestationScheme", &unused, &resp)
+	if err != nil {
+		log.Printf("Plugin.GetAttestationScheme RPC call failed: %v", err) // nolint
 		return ""
 	}
 
@@ -73,6 +89,11 @@ func (o *AmmoRPCServer) GetName(args interface{}, resp *string) error {
 	return nil
 }
 
+func (o *AmmoRPCServer) GetAttestationScheme(args interface{}, resp *string) error {
+	*resp = o.Impl.GetAttestationScheme()
+	return nil
+}
+
 func (o *AmmoRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = o.Impl.GetSupportedMediaTypes()
 	return nil
@@ -91,11 +112,14 @@ func GetAmmoServer(i IAmmo) interface{} {
 	return &AmmoRPCServer{Impl: i}
 }
 
-var AmmoRPC = plugin.RPCChannel[IAmmo]{
+var AmmoRPC = &plugin.RPCChannel[IAmmo]{
 	GetClient: GetAmmoClient,
 	GetServer: GetAmmoServer,
 }
 
 func RegisterAmmoImplementation(v IAmmo) {
-	plugin.RegisterImplementation("ammo", v, AmmoRPC)
+	err := plugin.RegisterImplementation("ammo", v, AmmoRPC)
+	if err != nil {
+		panic(err)
+	}
 }

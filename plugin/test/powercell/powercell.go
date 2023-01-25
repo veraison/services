@@ -14,6 +14,10 @@ func (o PowerCell) GetName() string {
 	return "power cell"
 }
 
+func (o PowerCell) GetAttestationScheme() string {
+	return "star-trek"
+}
+
 func (o PowerCell) GetSupportedMediaTypes() []string {
 	return []string{"plasma"}
 }

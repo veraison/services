@@ -14,6 +14,10 @@ func (o RedShirt) GetName() string {
 	return "Federation Starship Officer"
 }
 
+func (o RedShirt) GetAttestationScheme() string {
+	return "star-trek"
+}
+
 func (o RedShirt) GetSupportedMediaTypes() []string {
 	return []string{"phaser"}
 }

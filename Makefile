@@ -3,11 +3,12 @@
 
 export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
+SUBDIR += builtin
 SUBDIR += config
+SUBDIR += decoder
 SUBDIR += kvstore
 SUBDIR += log
 SUBDIR += plugin
-SUBDIR += plugins
 SUBDIR += policy
 SUBDIR += proto
 SUBDIR += provisioning
