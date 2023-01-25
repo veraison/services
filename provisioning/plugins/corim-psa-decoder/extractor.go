@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	psaProfile = "http://arm.com/psa/iot/1"
-	ccaProfile = "http://arm.com/cca/ssd/1"
-	schemeName = "PSA_IOT"
+	psaProfile    = "http://arm.com/psa/iot/1"
+	ccaProfile    = "http://arm.com/cca/ssd/1"
+	psaSchemeName = "PSA_IOT"
+	ccaSchemeName = "CCA_SSD_PLATFORM"
 )
 
 type Extractor struct {
@@ -27,16 +28,18 @@ func (o *Extractor) SetProfile(p string) {
 }
 
 // MeasurementExtractor is an interface to extract measurements from comid
-// and to make ref attributes from them
+// to construct Reference Value Endorsements using Reference Value type
 type MeasurementExtractor interface {
 	FromMeasurement(comid.Measurement) error
-	MakeRefAttrs(PSAClassAttributes) (*structpb.Struct, error)
+	GetRefValType() string
+	// MakeRefAttrs is an interface method to populate reference attributes.
+	MakeRefAttrs(ClassAttributes, string) (*structpb.Struct, error)
 }
 
 func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
-	var psaClassAttrs PSAClassAttributes
+	var classAttrs ClassAttributes
 
-	if err := psaClassAttrs.FromEnvironment(rv.Environment); err != nil {
+	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 	}
 
@@ -53,9 +56,11 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 		if m.Key == nil {
 			return nil, fmt.Errorf("measurement key is not present")
 		}
+
 		if !m.Key.IsSet() {
 			return nil, fmt.Errorf("measurement key is not set")
 		}
+
 		// Check which MKey is present and then decide which extractor to invoke
 		if m.Key.IsPSARefValID() {
 			// Check correct profile and then proceed
@@ -66,9 +71,9 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
 			}
 
-			var psaSwCompAttrs PSASwCompAttributes
+			var swCompAttrs SwCompAttributes
 
-			refVal, err = ExtractMeas(&psaSwCompAttrs, m, psaClassAttrs)
+			refVal, err = extractMeasurement(&swCompAttrs, m, classAttrs, o.Profile)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
@@ -77,7 +82,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Profile)
 			}
 			var ccaPlatformConfigID CCAPlatformConfigID
-			refVal, err = ExtractMeas(&ccaPlatformConfigID, m, psaClassAttrs)
+			refVal, err = extractMeasurement(&ccaPlatformConfigID, m, classAttrs, o.Profile)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
@@ -94,19 +99,23 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	return refVals, nil
 }
 
-func ExtractMeas(obj MeasurementExtractor, m comid.Measurement, class PSAClassAttributes) (*proto.Endorsement, error) {
-
+func extractMeasurement(obj MeasurementExtractor, m comid.Measurement, class ClassAttributes, profile string) (*proto.Endorsement, error) {
 	if err := obj.FromMeasurement(m); err != nil {
 		return nil, err
 	}
+	schemeName, scheme, err := profileToSchemeParams(profile)
+	if err != nil {
+		return nil, err
+	}
 
-	refAttrs, err := obj.MakeRefAttrs(class)
+	refAttrs, err := obj.MakeRefAttrs(class, scheme)
 	if err != nil {
 		return &proto.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
 	refVal := proto.Endorsement{
 		Scheme:     schemeName,
 		Type:       proto.EndorsementType_REFERENCE_VALUE,
+		SubType:    scheme + "." + obj.GetRefValType(),
 		Attributes: refAttrs,
 	}
 	return &refVal, nil
@@ -114,16 +123,16 @@ func ExtractMeas(obj MeasurementExtractor, m comid.Measurement, class PSAClassAt
 
 func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, error) {
 	// extract instance ID
-	var psaInstanceAttrs PSAInstanceAttributes
+	var instanceAttrs InstanceAttributes
 
-	if err := psaInstanceAttrs.FromEnvironment(avk.Environment); err != nil {
+	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA instance-id: %w", err)
 	}
 
 	// extract implementation ID
-	var psaClassAttrs PSAClassAttributes
+	var classAttrs ClassAttributes
 
-	if err := psaClassAttrs.FromEnvironment(avk.Environment); err != nil {
+	if err := classAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 	}
 
@@ -133,14 +142,19 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	}
 
 	iakPub := avk.VerifKeys[0].Key
-
 	// TODO(tho) check that format of IAK pub is as expected
 
-	taAttrs, err := makeTaAttrs(psaInstanceAttrs, psaClassAttrs, iakPub)
+	schemeName, scheme, err := profileToSchemeParams(o.Profile)
+	if err != nil {
+		return nil, err
+	}
+
+	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub, scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor attributes: %w", err)
 	}
 
+	// note we do not need a subType for TA
 	ta := &proto.Endorsement{
 		Scheme:     schemeName,
 		Type:       proto.EndorsementType_VERIFICATION_KEY,
@@ -150,20 +164,32 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	return ta, nil
 }
 
-func makeTaAttrs(i PSAInstanceAttributes, c PSAClassAttributes, key string) (*structpb.Struct, error) {
+func makeTaAttrs(i InstanceAttributes, c ClassAttributes, key string, scheme string) (*structpb.Struct, error) {
 	taID := map[string]interface{}{
-		"psa.impl-id": c.ImplID,
-		"psa.inst-id": []byte(i.InstID),
-		"psa.iak-pub": key,
+		scheme + ".impl-id": c.ImplID,
+		scheme + ".inst-id": []byte(i.InstID),
+		scheme + ".iak-pub": key,
 	}
 
 	if c.Vendor != "" {
-		taID["psa.hw-vendor"] = c.Vendor
+		taID[scheme+".hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		taID["psa.hw-model"] = c.Model
+		taID[scheme+".hw-model"] = c.Model
 	}
 
 	return structpb.NewStruct(taID)
+}
+
+func profileToSchemeParams(profile string) (string, string, error) {
+	// Check correct profile and then proceed
+	switch profile {
+	case psaProfile:
+		return psaSchemeName, "psa", nil
+	case ccaProfile:
+		return ccaSchemeName, "cca", nil
+	default:
+		return "", "", fmt.Errorf("could not map profile %s to scheme", profile)
+	}
 }

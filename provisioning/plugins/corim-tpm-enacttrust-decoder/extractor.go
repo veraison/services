@@ -50,6 +50,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	swComponent := proto.Endorsement{
 		Scheme:     schemeName,
 		Type:       proto.EndorsementType_REFERENCE_VALUE,
+		SubType:    "enacttrust-tpm.sw-component",
 		Attributes: swAttrs,
 	}
 

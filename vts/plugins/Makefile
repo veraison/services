@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 SUBDIR := common
+SUBDIR += scheme-cca-ssd-platform
 SUBDIR += scheme-tcg-dice
 SUBDIR += scheme-psa-iot
 SUBDIR += scheme-tpm-enacttrust

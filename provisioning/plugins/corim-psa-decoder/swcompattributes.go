@@ -9,7 +9,7 @@ import (
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
-type PSASwCompAttributes struct {
+type SwCompAttributes struct {
 	MeasurementType  string
 	Version          string
 	SignerID         []byte
@@ -17,7 +17,7 @@ type PSASwCompAttributes struct {
 	MeasurementValue []byte
 }
 
-func (o *PSASwCompAttributes) FromMeasurement(m comid.Measurement) error {
+func (o *SwCompAttributes) FromMeasurement(m comid.Measurement) error {
 
 	if m.Key == nil {
 		return fmt.Errorf("measurement key is not present")
@@ -60,28 +60,32 @@ func (o *PSASwCompAttributes) FromMeasurement(m comid.Measurement) error {
 	return nil
 }
 
-func (o *PSASwCompAttributes) MakeRefAttrs(c PSAClassAttributes) (*structpb.Struct, error) {
+func (o SwCompAttributes) GetRefValType() string {
+	return "sw-component"
+}
+
+func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, scheme string) (*structpb.Struct, error) {
 	swAttrs := map[string]interface{}{
-		"psa.impl-id":           c.ImplID,
-		"psa.signer-id":         o.SignerID,
-		"psa.measurement-value": o.MeasurementValue,
-		"psa.measurement-desc":  o.AlgID,
+		scheme + ".impl-id":           c.ImplID,
+		scheme + ".signer-id":         o.SignerID,
+		scheme + ".measurement-value": o.MeasurementValue,
+		scheme + ".measurement-desc":  o.AlgID,
 	}
 
 	if c.Vendor != "" {
-		swAttrs["psa.hw-vendor"] = c.Vendor
+		swAttrs[scheme+".hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		swAttrs["psa.hw-model"] = c.Model
+		swAttrs[scheme+".hw-model"] = c.Model
 	}
 
 	if o.MeasurementType != "" {
-		swAttrs["psa.measurement-type"] = o.MeasurementType
+		swAttrs[scheme+".measurement-type"] = o.MeasurementType
 	}
 
 	if o.Version != "" {
-		swAttrs["psa.version"] = o.Version
+		swAttrs[scheme+".version"] = o.Version
 	}
 
 	return structpb.NewStruct(swAttrs)

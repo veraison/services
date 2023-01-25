@@ -1,0 +1,12 @@
+{
+    "scheme": "CCA_SSD_PLATFORM",
+    "type":"REFERENCE_VALUE",
+    "sub_type": "cca.platform-config",
+    "attributes":{
+        "cca.hw-model":"RoadRunner",
+        "cca.hw-vendor":"ACME", 
+        "cca.impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "cca.platform-config-label": "abcd",
+        "cca.platform-config-id": "AQID"
+    }
+}

@@ -4,10 +4,10 @@ package proto
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,14 +20,14 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VTSClient interface {
 	// Return the summary state of the service.
-	GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error)
+	GetServiceState(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
-	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
-	// Service endpoints that are used to store Software Components
+	GetSupportedVerificationMediaTypes(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	// Service endpoints that are used to store Reference Values
 	// and Trust Anchors to the endorsement store
-	AddSwComponents(ctx context.Context, in *AddSwComponentsRequest, opts ...grpc.CallOption) (*AddSwComponentsResponse, error)
+	AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error)
 	AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error)
 }
 
@@ -39,7 +39,7 @@ func NewVTSClient(cc grpc.ClientConnInterface) VTSClient {
 	return &vTSClient{cc}
 }
 
-func (c *vTSClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error) {
+func (c *vTSClient) GetServiceState(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ServiceState, error) {
 	out := new(ServiceState)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetServiceState", in, out, opts...)
 	if err != nil {
@@ -57,7 +57,7 @@ func (c *vTSClient) GetAttestation(ctx context.Context, in *AttestationToken, op
 	return out, nil
 }
 
-func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
 	out := new(MediaTypeList)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedVerificationMediaTypes", in, out, opts...)
 	if err != nil {
@@ -66,9 +66,9 @@ func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *vTSClient) AddSwComponents(ctx context.Context, in *AddSwComponentsRequest, opts ...grpc.CallOption) (*AddSwComponentsResponse, error) {
-	out := new(AddSwComponentsResponse)
-	err := c.cc.Invoke(ctx, "/proto.VTS/AddSwComponents", in, out, opts...)
+func (c *vTSClient) AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error) {
+	out := new(AddRefValuesResponse)
+	err := c.cc.Invoke(ctx, "/proto.VTS/AddRefValues", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,14 +89,14 @@ func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorReques
 // for forward compatibility
 type VTSServer interface {
 	// Return the summary state of the service.
-	GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error)
+	GetServiceState(context.Context, *empty.Empty) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
-	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
-	// Service endpoints that are used to store Software Components
+	GetSupportedVerificationMediaTypes(context.Context, *empty.Empty) (*MediaTypeList, error)
+	// Service endpoints that are used to store Reference Values
 	// and Trust Anchors to the endorsement store
-	AddSwComponents(context.Context, *AddSwComponentsRequest) (*AddSwComponentsResponse, error)
+	AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error)
 	AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error)
 	mustEmbedUnimplementedVTSServer()
 }
@@ -105,17 +105,17 @@ type VTSServer interface {
 type UnimplementedVTSServer struct {
 }
 
-func (UnimplementedVTSServer) GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error) {
+func (UnimplementedVTSServer) GetServiceState(context.Context, *empty.Empty) (*ServiceState, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServiceState not implemented")
 }
 func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAttestation not implemented")
 }
-func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *empty.Empty) (*MediaTypeList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedVerificationMediaTypes not implemented")
 }
-func (UnimplementedVTSServer) AddSwComponents(context.Context, *AddSwComponentsRequest) (*AddSwComponentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddSwComponents not implemented")
+func (UnimplementedVTSServer) AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddRefValues not implemented")
 }
 func (UnimplementedVTSServer) AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddTrustAnchor not implemented")
@@ -134,7 +134,7 @@ func RegisterVTSServer(s grpc.ServiceRegistrar, srv VTSServer) {
 }
 
 func _VTS_GetServiceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func _VTS_GetServiceState_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/proto.VTS/GetServiceState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetServiceState(ctx, req.(*emptypb.Empty))
+		return srv.(VTSServer).GetServiceState(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -170,7 +170,7 @@ func _VTS_GetAttestation_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -182,25 +182,25 @@ func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx contex
 		FullMethod: "/proto.VTS/GetSupportedVerificationMediaTypes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*emptypb.Empty))
+		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_AddSwComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddSwComponentsRequest)
+func _VTS_AddRefValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddRefValuesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).AddSwComponents(ctx, in)
+		return srv.(VTSServer).AddRefValues(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/AddSwComponents",
+		FullMethod: "/proto.VTS/AddRefValues",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).AddSwComponents(ctx, req.(*AddSwComponentsRequest))
+		return srv.(VTSServer).AddRefValues(ctx, req.(*AddRefValuesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -243,8 +243,8 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VTS_GetSupportedVerificationMediaTypes_Handler,
 		},
 		{
-			MethodName: "AddSwComponents",
-			Handler:    _VTS_AddSwComponents_Handler,
+			MethodName: "AddRefValues",
+			Handler:    _VTS_AddRefValues_Handler,
 		},
 		{
 			MethodName: "AddTrustAnchor",

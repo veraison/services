@@ -20,11 +20,11 @@ message Evidence {
     google.protobuf.Struct value = 1;
 }
 
-message AddSwComponentsRequest {
-    repeated Endorsement sw_components = 1;
+message AddRefValuesRequest {
+    repeated Endorsement reference_values = 1;
 }
 
-message AddSwComponentsResponse {
+message AddRefValuesResponse {
     Status status = 1;
 }
 
@@ -37,7 +37,11 @@ enum EndorsementType {
 message Endorsement {
     string scheme = 1;
     EndorsementType type = 2;
-    google.protobuf.Struct attributes = 3;
+    /* sub_type is opaque to Veraison and is used by schemes to classify range of 
+    Endorsement sub types for a given Endorsement type. It is assumed that 
+    there is going to be only one single sub type required */
+    string sub_type = 3;  
+    google.protobuf.Struct attributes = 4;
 }
 
 message AddTrustAnchorRequest {
@@ -62,9 +66,9 @@ service VTS {
     rpc GetAttestation(AttestationToken) returns (AppraisalContext);
     rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 
-    // Service endpoints that are used to store Software Components
+    // Service endpoints that are used to store Reference Values
     // and Trust Anchors to the endorsement store
-    rpc AddSwComponents(AddSwComponentsRequest) returns (AddSwComponentsResponse);
+    rpc AddRefValues(AddRefValuesRequest) returns (AddRefValuesResponse);
     rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
     // TODO When we move the provisiong plugins under VTS we need to enable this
     // TODO interface too.

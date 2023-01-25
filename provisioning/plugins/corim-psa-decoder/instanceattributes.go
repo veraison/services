@@ -9,11 +9,11 @@ import (
 	"github.com/veraison/eat"
 )
 
-type PSAInstanceAttributes struct {
+type InstanceAttributes struct {
 	InstID eat.UEID
 }
 
-func (o *PSAInstanceAttributes) FromEnvironment(e comid.Environment) error {
+func (o *InstanceAttributes) FromEnvironment(e comid.Environment) error {
 	var err error
 
 	if e.Instance == nil {

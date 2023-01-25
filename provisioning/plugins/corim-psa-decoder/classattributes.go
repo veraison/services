@@ -8,14 +8,14 @@ import (
 	"github.com/veraison/corim/comid"
 )
 
-type PSAClassAttributes struct {
+type ClassAttributes struct {
 	ImplID []byte
 	Vendor string
 	Model  string
 }
 
 // extract mandatory ImplID and optional vendor & model
-func (o *PSAClassAttributes) FromEnvironment(e comid.Environment) error {
+func (o *ClassAttributes) FromEnvironment(e comid.Environment) error {
 	class := e.Class
 
 	if class == nil {
