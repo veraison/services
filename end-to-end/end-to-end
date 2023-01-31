@@ -22,6 +22,7 @@ function deploy() {
     cp $REPO_DIR/provisioning/plugins/bin/* $DEPLOY_DIR/plugins-provisioning/
     cp $REPO_DIR/vts/plugins/bin/* $DEPLOY_DIR/plugins/
     cp $THIS_DIR/config.yaml $DEPLOY_DIR/
+    cp $THIS_DIR/skey.jwk $DEPLOY_DIR/
 
     echo "initializing stores"
     for t in en ta po
