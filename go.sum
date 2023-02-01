@@ -1062,8 +1062,8 @@ github.com/urfave/cli v1.22.2/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/vektah/gqlparser/v2 v2.4.6 h1:Yjzp66g6oVq93Jihbi0qhGnf/6zIWjcm8H6gA27zstE=
 github.com/vektah/gqlparser/v2 v2.4.6/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
 github.com/veraison/apiclient v0.0.2/go.mod h1:H8YDx1ixM24GYP/aLbhq+HJsej0lVUqFCRIL5Uu4B0o=
-github.com/veraison/ccatoken v0.0.0-20230124001940-24f056f6cf0c h1:r224mZrlj17lGNsVtSyxuiZSPeNYCzF/wetgWXxP9nQ=
-github.com/veraison/ccatoken v0.0.0-20230124001940-24f056f6cf0c/go.mod h1:0Hg77kG/6pkF9F3xgs8JGFyylVCT2OEzOalyuVp316g=
+github.com/veraison/ccatoken v0.0.0-20230126092956-f7bb240c763c h1:07a/5cI61NiJnsQMgEOaeVEzb7r9l6HYAA9hftxlCzw=
+github.com/veraison/ccatoken v0.0.0-20230126092956-f7bb240c763c/go.mod h1:tHh48NBedUooX/DguS+cUC27yCgdv7bBtZ188jZ3fqo=
 github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a h1:/aZoeXMIhWDT7SnHi1mnuKuGtdSv5ym11SCcYrbPiOU=
 github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a/go.mod h1:AdIMc2lCYORuG8Pa4fXemyP1KzpgMg+cnPgks32xjAU=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=

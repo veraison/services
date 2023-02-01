@@ -24,3 +24,5 @@ vts:
 ear-signer:
   alg: ES256
   key: skey.jwk
+logging:
+  level: debug

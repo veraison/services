@@ -295,6 +295,7 @@ func (o *GRPC) GetAttestation(
 
 	scheme, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
+		o.logger.Info("o.PluginManager.LookupByMediaType Failed")
 		return nil, err
 	}
 
@@ -305,11 +306,15 @@ func (o *GRPC) GetAttestation(
 
 	ta, err := o.getTrustAnchor(appraisal.EvidenceContext.TrustAnchorId)
 	if err != nil {
+		o.logger.Info("o.getTrustAnchor Failed")
 		return nil, err
 	}
 
+	o.logger.Info("getTrustAnchor", appraisal.EvidenceContext.TrustAnchorId)
+
 	extracted, err := scheme.ExtractClaims(token, ta)
 	if err != nil {
+		o.logger.Info("scheme.ExtractClaims Failed")
 		return nil, err
 	}
 
@@ -320,11 +325,17 @@ func (o *GRPC) GetAttestation(
 
 	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID
 
-	o.logger.Debugw("constructed evidence context",
-		"software-id", appraisal.EvidenceContext.ReferenceId,
-		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorId)
-
+	o.logger.Info("referenceId", extracted.ReferenceID)
+	/*
+		o.logger.Infow("constructed evidence context",
+			"reference-id", appraisal.EvidenceContext.ReferenceId,
+			"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorId)
+	*/
 	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.ReferenceId)
+	if err != nil {
+		o.logger.Info("o.EnStore.Get Failed")
+	}
+
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, err
 	}

@@ -46,9 +46,10 @@ type CcaPlatformCfg struct {
 }
 
 type Endorsements struct {
-	Scheme  string          `json:"scheme"`
-	Type    string          `json:"type"`
-	SubType string          `json:"sub_type"`
+	Scheme string `json:"scheme"`
+	Type   string `json:"type"`
+	//SubType string          `json:"sub_type"`
+	SubType string          `json:"subType"`
 	Attr    json.RawMessage `json:"attributes"`
 }
 
@@ -158,6 +159,7 @@ func (s Scheme) ExtractClaims(
 	var ccaToken ccatoken.Evidence
 
 	if err := ccaToken.FromCBOR(token.Data); err != nil {
+		log.Debug("CCA PLUGIN: ExtractClaims : Token Decoding Failed")
 		return nil, err
 	}
 
@@ -165,6 +167,7 @@ func (s Scheme) ExtractClaims(
 
 	claimsSet, err := claimsToMap(ccaToken.PlatformClaims)
 	if err != nil {
+		log.Debug("CCA PLUGIN: ExtractClaims : claimsToMap Failed")
 		return nil, err
 	}
 
@@ -174,7 +177,7 @@ func (s Scheme) ExtractClaims(
 		token.TenantId,
 		MustImplIDString(ccaToken.PlatformClaims),
 	)
-	log.Debug("extracted Reference ID Key = %s", extracted.ReferenceID)
+	log.Debug("CCA PLUGIN: extracted Reference ID Key =", extracted.ReferenceID)
 	return &extracted, nil
 }
 
@@ -283,12 +286,12 @@ func populateAttestationResult(
 	if err != nil {
 		return err
 	}
-
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
 	result.TrustVector.Hardware = ear.GenuineHardwareClaim
 
 	swComps := filterRefVal(endorsements, "cca.sw-component")
+
 	match := matchSoftware(claims, swComps)
 	if match {
 		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
@@ -296,7 +299,7 @@ func populateAttestationResult(
 
 	} else {
 		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Debug("matchSoftware Failed")
+		log.Error("matchSoftware Failed")
 	}
 
 	platformConfig := filterRefVal(endorsements, "cca.platform-config")
@@ -308,7 +311,7 @@ func populateAttestationResult(
 
 	} else {
 		result.TrustVector.Configuration = ear.UnsafeConfigClaim
-		log.Debug("matchPlatformConfig Failed")
+		log.Error("matchPlatformConfig Failed")
 	}
 	result.UpdateStatusFromTrustVector()
 
@@ -332,7 +335,15 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 
 	swComps, err := evidence.GetSoftwareComponents()
 	if err != nil {
+		log.Error("Evidence does not have any SW COMPONENTS")
 		return false
+	}
+	if len(swComps) == 0 {
+		log.Error("Evidence does not have any SW COMPONENTS")
+	}
+
+	if len(endorsements) == 0 {
+		log.Error("no endorsements while matching software")
 	}
 
 	for _, c := range swComps {
@@ -352,11 +363,23 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue)
 		evComp, ok := evidenceComponents[key]
 		if !ok {
+			log.Error("matchSoftware unable to get evComp from key", key)
 			matched = false
 			break
 		}
+		if evComp.MeasurementType == nil {
+			log.Error("Evidence Measurement Type is NIL")
+			return false
+		}
+		if evComp.SignerID == nil {
+			log.Error("Evidence SignerID is NIL")
+			return false
+		}
+		if evComp.Version == nil {
+			log.Error("Evidence Version is NIL")
+			return false
+		}
 
-		log.Debug("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
 		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
 		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
 		versionMatched := attr.Version == "" || attr.Version == *evComp.Version

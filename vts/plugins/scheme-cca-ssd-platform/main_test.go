@@ -33,6 +33,24 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 	assert.Equal(t, expectedTaID, taID)
 }
 
+func Test_GetTrustAnchorID_Integ_ok(t *testing.T) {
+	tokenBytes, err := os.ReadFile("test/cca-integ.cbor")
+	require.NoError(t, err)
+
+	token := proto.AttestationToken{
+		TenantId: "1",
+		Data:     tokenBytes,
+	}
+
+	expectedTaID := "CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"
+
+	scheme := &Scheme{}
+
+	taID, err := scheme.GetTrustAnchorID(&token)
+	require.NoError(t, err)
+	assert.Equal(t, expectedTaID, taID)
+}
+
 func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/ta-endorsements.json")
 	require.NoError(t, err)
@@ -138,6 +156,32 @@ func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) {
 
 func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/cca-token.cbor")
+	require.NoError(t, err)
+
+	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
+	require.NoError(t, err)
+
+	scheme := &Scheme{}
+
+	token := proto.AttestationToken{
+		TenantId: "1",
+		Data:     tokenBytes,
+	}
+
+	extracted, err := scheme.ExtractClaims(&token, string(taEndValBytes))
+
+	require.NoError(t, err)
+	assert.Equal(t, "http://arm.com/CCA-SSD/1.0.0", extracted.ClaimsSet["cca-platform-profile"].(string))
+
+	swComponents := extracted.ClaimsSet["cca-platform-sw-components"].([]interface{})
+	assert.Len(t, swComponents, 4)
+	assert.Equal(t, "BL", swComponents[0].(map[string]interface{})["measurement-type"].(string))
+	ccaPlatformCfg := extracted.ClaimsSet["cca-platform-config"]
+	assert.Equal(t, "AQID", ccaPlatformCfg)
+}
+
+func Test_ExtractVerifiedClaims_Integ_ok(t *testing.T) {
+	tokenBytes, err := os.ReadFile("test/cca-integ.cbor")
 	require.NoError(t, err)
 
 	taEndValBytes, err := os.ReadFile("test/ta-endorsements.json")
