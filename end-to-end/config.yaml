@@ -7,6 +7,9 @@ provisioning:
   listen-addr: localhost:8888
 vts:
   server-addr: 127.0.0.1:50051
+ear-signer:
+  alg: ES256
+  key: skey.jwk
 plugin:
   backend: go-plugin
   go-plugin:
