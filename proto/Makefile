@@ -12,7 +12,7 @@ PROTOSRCS += vts.proto
 
 lint-hook-pre: protogen
 
-lint lint-extra test:
+lint test:
 
 clean: ; $(RM) protogen
 

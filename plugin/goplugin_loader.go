@@ -77,7 +77,7 @@ func (o *GoPluginLoader) Close() {
 }
 
 func (o *GoPluginLoader) GetRegisteredMediaTypes() []string {
-	var mediaTypes []string
+	var mediaTypes []string // nolint:prealloc
 
 	for mt := range o.loadedByMediaType {
 		mediaTypes = append(mediaTypes, mt)
@@ -192,7 +192,8 @@ func GetGoPluginHandleByMediaTypeUsing[I IPluggable](
 	plugged, ok := ldr.loadedByMediaType[mediaType].(*PluginContext[I])
 	if !ok {
 		iface := GetTypeName[I]()
-		return *new(I), fmt.Errorf("plugin providing %q with interface %s not found",
+		return *new(I), fmt.Errorf( // nolint:gocritic
+			"plugin providing %q with interface %s not found",
 			mediaType, iface)
 	}
 
@@ -203,7 +204,8 @@ func GetGoPluginHandleByNameUsing[I IPluggable](ldr *GoPluginLoader, name string
 	plugged, ok := ldr.loadedByName[name].(*PluginContext[I])
 	if !ok {
 		iface := GetTypeName[I]()
-		return *new(I), fmt.Errorf("plugin named %q with interface %s not found",
+		return *new(I), fmt.Errorf( // nolint:gocritic
+			"plugin named %q with interface %s not found",
 			name, iface)
 	}
 

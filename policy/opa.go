@@ -85,7 +85,7 @@ func constructInput(
 	evidence map[string]interface{},
 	endorsementStrings []string,
 ) (map[string]interface{}, error) {
-	var endorsements []map[string]interface{}
+	var endorsements []map[string]interface{} // nolint:prealloc
 
 	for i, es := range endorsementStrings {
 		var e map[string]interface{}

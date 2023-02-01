@@ -58,7 +58,7 @@ func main() {
 	log.Info("loading attestation schemes")
 	var pluginManager plugin.IManager[handler.IEndorsementHandler]
 
-	if config.SchemeLoader == "plugins" {
+	if config.SchemeLoader == "plugins" { // nolint:gocritic
 		pluginManager, err = plugin.CreateGoPluginManager(
 			subs["plugin"], log.Named("plugin"),
 			"endorsement-handler", handler.EndorsementHandlerRPC)

@@ -227,7 +227,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 func (s EvidenceHandler) AppraiseEvidence(
 	ec *proto.EvidenceContext, endorsementsStrings []string,
 ) (*ear.AttestationResult, error) {
-	var endorsements []Endorsements
+	var endorsements []Endorsements // nolint:prealloc
 
 	result := ear.NewAttestationResult()
 

@@ -106,7 +106,7 @@ func (s EvidenceHandler) ExtractClaims(
 			tpm2.TagAttestQuote, decoded.AttestationData.Type)
 	}
 
-	var pcrs []int64
+	var pcrs []int64 // nolint:prealloc
 	for _, pcr := range decoded.AttestationData.AttestedQuoteInfo.PCRSelection.PCRs {
 		pcrs = append(pcrs, int64(pcr))
 	}

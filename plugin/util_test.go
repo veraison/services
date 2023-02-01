@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/assert/v2"
 )
 
-func Test_getTypeName(t *testing.T) {
+func Test_GetTypeName(t *testing.T) {
 	n := GetTypeName[IPluggable]()
 	assert.Equal(t, "IPluggable", n)
 }

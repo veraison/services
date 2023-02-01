@@ -17,7 +17,7 @@ func ListValuetoStringList(v *structpb.ListValue) *StringList {
 }
 
 func NewStringList(vs []string) (*StringList, error) {
-	var in []interface{}
+	var in []interface{} // nolint:prealloc
 	for _, v := range vs {
 		in = append(in, v)
 	}
@@ -35,7 +35,7 @@ func (o StringList) AsListValue() *structpb.ListValue {
 }
 
 func (o StringList) AsSlice() []string {
-	var out []string
+	var out []string // nolint:prealloc
 
 	for _, v := range o.list.AsSlice() {
 		out = append(out, fmt.Sprint(v))

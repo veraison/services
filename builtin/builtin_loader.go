@@ -43,7 +43,7 @@ func (o *BuiltinLoader) Init(m map[string]interface{}) error {
 }
 
 func (o *BuiltinLoader) GetRegisteredMediaTypes() []string {
-	var mediaTypes []string
+	var mediaTypes []string // nolint:prealloc
 
 	for mt := range o.loadedByMediaType {
 		mediaTypes = append(mediaTypes, mt)
@@ -92,7 +92,8 @@ func GetBuiltinHandleByMediaTypeUsing[I plugin.IPluggable](
 	handle, ok := ldr.loadedByMediaType[mediaType].(I)
 	if !ok {
 		iface := plugin.GetTypeName[I]()
-		return *new(I), fmt.Errorf("implementation providing %q with interface %s not found",
+		return *new(I), fmt.Errorf( // nolint:gocritic
+			"implementation providing %q with interface %s not found",
 			mediaType, iface)
 	}
 
@@ -103,7 +104,8 @@ func GetBuiltinHandleByNameUsing[I plugin.IPluggable](ldr *BuiltinLoader, name s
 	handle, ok := ldr.loadedByName[name].(I)
 	if !ok {
 		iface := plugin.GetTypeName[I]()
-		return *new(I), fmt.Errorf("plugin named %q with interface %s not found",
+		return *new(I), fmt.Errorf( // nolint:gocritic
+			"plugin named %q with interface %s not found",
 			name, iface)
 	}
 

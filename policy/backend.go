@@ -17,7 +17,7 @@ func IsValidAgentBackend(name string) bool {
 
 // GetSupportedBackends returns a string slice of supported backend names.
 func GetSupportedAgentBackends() []string {
-	var names []string
+	var names []string // nolint:prealloc
 
 	for name := range backends {
 		names = append(names, name)

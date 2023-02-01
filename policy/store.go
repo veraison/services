@@ -53,7 +53,7 @@ func (o *Store) Update(id, rules string) error {
 
 	oldPolicy, err := o.GetLatest(id)
 
-	if err == nil {
+	if err == nil { // nolint:gocritic
 		oldVersion = oldPolicy.Version
 	} else if errors.Is(err, ErrNoPolicy) {
 		oldVersion = 0
@@ -82,7 +82,7 @@ func (o *Store) Get(id string) ([]Policy, error) {
 		return nil, err
 	}
 
-	var policies []Policy
+	var policies []Policy // nolint:prealloc
 
 	for _, v := range vals {
 		var p Policy
@@ -105,7 +105,7 @@ func (o *Store) List() ([]Policy, error) {
 		return nil, err
 	}
 
-	var policies []Policy
+	var policies []Policy // nolint:prealloc
 	for _, key := range keys {
 		policy, err := o.GetLatest(key)
 		if err != nil {

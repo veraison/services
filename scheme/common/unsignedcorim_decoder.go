@@ -83,10 +83,7 @@ func UnsignedCorimDecoder(
 					return nil, fmt.Errorf("bad software component in CoMID at index %d: %w", i, err)
 				}
 
-				for i := range refVal {
-					rsp.ReferenceValues = append(rsp.ReferenceValues, refVal[i])
-
-				}
+				rsp.ReferenceValues = append(rsp.ReferenceValues, refVal...)
 			}
 		}
 

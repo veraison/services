@@ -38,5 +38,3 @@ jobs:
         go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
     - name: Run required linters in .golangci.yml plus hard-coded ones here
       run: make -w GOLINT=$(go env GOPATH)/bin/golangci-lint lint
-    - name: Run optional linters (not required to pass)
-      run: make -w GOLINT=$(go env GOPATH)/bin/golangci-lint lint-extra

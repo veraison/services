@@ -244,7 +244,7 @@ func Init(v *viper.Viper, classifiers map[string]interface{}) error {
 }
 
 func resolveTemplates(texts *[]string, vals map[string]interface{}) error {
-	var processed []string
+	var processed []string // nolint:prealloc
 	var rawBuff []byte
 
 	if vals == nil {

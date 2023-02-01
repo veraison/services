@@ -20,8 +20,8 @@ tokens: $(wildcard *.json)
 test: ;
 .PHONY: test
 
-lint lint-extra: ;
-.PHONY: lint lint-extra
+lint: ;
+.PHONY: lint
 
 
 include ../../../../mk/common.mk
