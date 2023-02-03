@@ -1,0 +1,28 @@
+test_name: Test with bad nonce value in replying party session
+
+includes:
+  - !include include.yaml
+
+strict:
+  - json:off
+
+stages:
+  - name: submit post request to the provisioning service successfully 
+    request:
+      method: POST
+      url: http://{tavern.env_vars.PROVISIONING_CONTAINER_NAME}.{tavern.env_vars.VTS_PROVISIONING_NETWORK_ALIAS}:8888/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+      file_body: /test-vectors/provisioning/cbor/corim-full.cbor
+    response:
+      status_code: 200
+
+  - name: verify as relying party - creation of resource with bad nonce
+    request:
+      method: POST
+      url: "http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/newSession?nonce={bad-nonce:s}"
+    response:
+      status_code: 400
+      json:
+        title: Bad Request
+        detail: 'failed handling nonce request: nonce must be valid base64'

@@ -1,10 +1,10 @@
-test_name: Test veraison end to end success
+test_name: Test use of bad BL software component measurement value in evidence
 
 marks:
   - usefixtures:
       - remove_cbor
       - psa_generate_good_provisioning_cbor
-      - psa_generate_good_evidence
+      - psa_generate_bad_swcomp_evidence
 
 includes:
   - !include include.yaml
@@ -37,65 +37,26 @@ stages:
     request:
       method: POST
       url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
-      file_body: /test-vectors/verification/cbor/psa-good-evidence.cbor
+      file_body: /test-vectors/verification/cbor/psa-bad-swcomp-evidence.cbor
       headers:
         content-type: application/psa-attestation-token
     response:
       status_code: 200
       json:
         nonce: "{good-nonce:s}"
+        status: complete
       verify_response_with:
-        - function: test_utils:verify_good_attestation_results
+        - function: test_utils:verify_bad_swcomp_attestation_results
           extra_args:
-          - /test-vectors/verification/json/psa-claims-profile-2-integ.json
+          - /test-vectors/verification/json/psa-claims-profile-2-integ-bad-swcomp.json
           - /test-vectors/verification/keys/skey.jwk
-      
+     
       
   - name: verify as relying party - deleting the session object
     request:
       method: DELETE
       url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
-    response:
-      status_code: 204
-
-
-  - name: verify as attester - creation of session resource
-    request:
-      method: POST
-      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/newSession?nonceSize=32'
-    response:
-      status_code: 201
-      verify_response_with:
-        function: test_utils:generate_token
-      save:
-        headers:
-          attester-session: Location
-
-
-  - name: verify as attester - submitting the evidence
-    request:
-      method: POST
-      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{attester-session}'
       headers:
         content-type: application/psa-attestation-token
-      file_body: /test-vectors/verification/cbor/attester.cbor
-    response:
-      status_code: 200
-      verify_response_with:
-        - function: test_utils:verify_good_attestation_results
-          extra_args:
-          - /test-vectors/verification/json/psa-claims-profile-2-integ-with-nonce.json
-          - /test-vectors/verification/keys/skey.jwk
-
-  - name: verify as attester - deleting the session object
-    request:
-      method: DELETE
-      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{attester-session}'
     response:
       status_code: 204
-
- 
-
-  
-
-  

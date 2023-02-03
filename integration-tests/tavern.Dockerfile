@@ -1,16 +1,17 @@
 # go version for container image
 ARG GoVersion=1.18
 
-# Arguments for psa demo input directories
-# TODO create version associated with the tag by adding a release
-ARG COCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/corim@v0.0.0-20221125105155-c2835023f15e/cocli
-ARG EVCLI_TEMPLATES=/go/pkg/mod/github.com/veraison/evcli@v0.0.0-20221212172836-49c7b2bdcf38/misc
-
 FROM golang:$GoVersion AS tavern-integration-tests
 WORKDIR /
 
 ARG COCLI_TEMPLATES
 ARG EVCLI_TEMPLATES
+ARG DIAG_FILES
+
+# Set environment variables for psa demo input directories
+ENV COCLI_TEMPLATES $COCLI_TEMPLATES
+ENV EVCLI_TEMPLATES $EVCLI_TEMPLATES
+ENV DIAG_FILES $DIAG_FILES
 
 ARG PROVISIONING_CONTAINER_NAME
 ARG VERIFICATION_CONTAINER_NAME
@@ -32,33 +33,37 @@ RUN apt-get update \
         apt-transport-https \
         apt-utils \
         python3-pip \
+        ruby-full \
+        xxd \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
     && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
+#  Install tools
 RUN go install github.com/veraison/corim/cocli@demo-psa-1.0.1 &&\
     go install github.com/veraison/evcli@demo-psa-1.0.1 &&\
+    go install github.com/thomas-fossati/go-cose-cli@latest &&\
+    go install github.com/thomas-fossati/go-psa@latest &&\
     pip3 install tavern &&\
-    pip3 install python-jose
+    pip3 install python-jose &&\
+    pip install cbor-json &&\
+    gem install cbor-diag
 
+# Make test vector directories
+RUN mkdir -p /test-vectors/provisioning/cbor &&\
+    mkdir -p /test-vectors/provisioning/json &&\
+    mkdir -p /test-vectors/provisioning/keys &&\
+    mkdir -p /test-vectors/verification/cbor &&\
+    mkdir -p /test-vectors/verification/json &&\
+    mkdir -p /test-vectors/verification/keys
 
-COPY integration-tests/ /integration-tests/
+# Copy over important keys and base templates
+RUN cp $COCLI_TEMPLATES/data/keys/ec-p256.jwk /test-vectors/verification/keys &&\
+    cp $EVCLI_TEMPLATES/ec256.json /test-vectors/verification/keys &&\
+    cp $EVCLI_TEMPLATES/psa-claims-profile-2-integ.json /test-vectors/verification/json &&\
+    cp $EVCLI_TEMPLATES/psa-claims-profile-2-integ-without-nonce.json test-vectors/verification/json
 
-WORKDIR /integration-tests/extra
-RUN cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-integ-iakpub.json &&\
-    cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-refval.json &&\ 
-    cocli corim create --template=$COCLI_TEMPLATES/data/templates/corim-full.json --comid=comid-psa-integ-iakpub.cbor --comid=comid-psa-refval.cbor &&\
-    mkdir /integration-tests/provisioning/ &&\
-    mv corim-full.cbor /integration-tests/provisioning/
-
-RUN evcli psa create -c $EVCLI_TEMPLATES/psa-claims-profile-2-integ.json -k $COCLI_TEMPLATES/data/keys/ec-p256.jwk --token=psa-evidence.cbor &&\
-    mkdir /integration-tests/verification/ &&\
-    mv psa-evidence.cbor /integration-tests/verification/ &&\
-    cp $COCLI_TEMPLATES/data/keys/ec-p256.jwk /integration-tests/verification/ &&\
-    cp $EVCLI_TEMPLATES/psa-claims-profile-2-integ.json /integration-tests/verification/ &&\
-    cp $EVCLI_TEMPLATES/psa-claims-profile-2-integ-without-nonce.json /integration-tests/verification/
-
-WORKDIR /integration-tests/verification
+WORKDIR /test-vectors/verification/keys
 RUN wget --progress=dot:giga https://raw.githubusercontent.com/veraison/services/main/vts/cmd/vts-service/skey.jwk 
 
 WORKDIR /
