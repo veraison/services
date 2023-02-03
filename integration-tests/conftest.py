@@ -38,6 +38,36 @@ def psa_generate_good_evidence():
     success = subprocess.run(evcli_cmd, shell=True)
     assert success.returncode == 0
 
+@pytest.fixture
+def psa_generate_unknown_instance_id_evidence():
+    template = "/test-vectors/verification/json/psa-claims-profile-2-integ.json"
+    unknown_instance_id_template = "/test-vectors/verification/json/psa-claims-profile-2-integ-unknown-instance-id.json"
+    create_new_file = subprocess.run(["cp " + template + " " + unknown_instance_id_template], shell=True)
+    assert create_new_file.returncode == 0
+
+    with open(unknown_instance_id_template,'r+') as file:
+        # Load existing data into a dict
+        file_data = json.load(file)
+        
+        if file_data == None:
+            return 1
+
+        # Generate random base64 instance id
+        bad_instance_id = subprocess.run(["echo 01aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233 | xxd -p -r  | base64"], shell=True, stdout=subprocess.PIPE)
+        file_data["psa-instance-id"] = bad_instance_id.stdout.decode("utf-8")
+
+        # Set file's current position at offset.
+        file.seek(0)
+        # Convert back to json
+        json.dump(file_data, file, indent = 4)
+    
+    evcli_cmd = """
+                evcli psa create -c /test-vectors/verification/json/psa-claims-profile-2-integ-unknown-instance-id.json -k /test-vectors/verification/keys/ec-p256.jwk --token=psa-unknown-instance-id-evidence.cbor &&
+                mv psa-unknown-instance-id-evidence.cbor /test-vectors/verification/cbor
+    """
+
+    success = subprocess.run(evcli_cmd, shell=True)
+    assert success.returncode == 0
 
 @pytest.fixture
 def psa_generate_bad_swcomp_evidence():

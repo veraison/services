@@ -71,6 +71,24 @@ def verify_good_attestation_results(response, template, key):
     for key in decoded["ear.veraison.processed-evidence"]:
         assert decoded["ear.veraison.processed-evidence"][key] == file_data[key]
 
+# TODO add this function to the relevant tavern test. See example in test_end_to_end_success.tavern.yaml (line 84-88)
+def verify_unknown_instance_id_attestation_results(response, template, key):
+    decoded = decode_attestation_result(response, key)
+
+    with open(template,'r+') as file:
+        # Load existing data into a dict
+        file_data = json.load(file)
+        
+        if file_data == None:
+            return 1
+
+    assert decoded["ear.status"] == "warning"
+
+    assert decoded["ear.trustworthiness-vector"]["instance-id"] == 97
+
+    for key in decoded["ear.veraison.processed-evidence"]:
+        assert decoded["ear.veraison.processed-evidence"][key] == file_data[key]
+
 
 def verify_bad_swcomp_attestation_results(response, template, key):
     decoded = decode_attestation_result(response, key)
