@@ -1,0 +1,55 @@
+test_name: Test use of bad signature over cbor evidence
+
+marks:
+  - usefixtures:
+      - psa_generate_good_provisioning_cbor
+      - psa_generate_bad_signature_evidence
+
+includes:
+  - !include include.yaml
+
+strict:
+  - json:off
+
+stages:
+  - name: submit post request to the provisioning service successfully 
+    request:
+      method: POST
+      url: http://{tavern.env_vars.PROVISIONING_CONTAINER_NAME}.{tavern.env_vars.VTS_PROVISIONING_NETWORK_ALIAS}:8888/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+      file_body: /test-vectors/provisioning/cbor/corim-full.cbor
+    response:
+      status_code: 200
+    
+  - name: verify as relying party - creation of session resource
+    request:
+      method: POST
+      url: "http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/newSession?nonce={good-nonce:s}"
+    response:
+      status_code: 201 
+      save:
+        headers:
+          relying-party-session: Location
+
+  - name: verify as relying party - submitting the evidence
+    request:
+      method: POST
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
+      file_body: /test-vectors/verification/cbor/psa-token-bad-signage.cbor
+      headers:
+        content-type: application/psa-attestation-token
+    response:
+      status_code: 200
+      json:
+        nonce: "{good-nonce:s}"
+        status: complete
+      
+  - name: verify as relying party - deleting the session object
+    request:
+      method: DELETE
+      url: 'http://{tavern.env_vars.VERIFICATION_CONTAINER_NAME}.{tavern.env_vars.VTS_VERIFICATION_NETWORK_ALIAS}:8080/challenge-response/v1/{relying-party-session}'
+      headers:
+        content-type: application/psa-attestation-token
+    response:
+      status_code: 204
