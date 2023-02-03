@@ -1,7 +1,7 @@
 # Args needs to be renewed for each build stage that uses these args
 ARG workDir=/app
 ARG workDirRepo=/app/services
-ARG GoVersion=1.18
+ARG GoVersion=1.19
 
 # Arguments for psa demo input directories
 # TODO create version associated with the tag by adding a release

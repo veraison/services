@@ -17,6 +17,16 @@ endif
 
 SCHEME_LOADER ?= plugins
 
+_MIN_GO_VERSION = 1.19
+_GO_VERSION = $(shell go version | sed 's/^[^0-9]*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
+
+.PHONY: _check_version
+_check_version:
+	@if [[ "$(shell echo -e "$(_GO_VERSION)\n$(_MIN_GO_VERSION)" | sort -V | head -n 1)" != "$(_MIN_GO_VERSION)" ]]; then \
+		echo -e "\n\tERROR: Please upgrade Go. Must be at least v$(_MIN_GO_VERSION) (found v$(_GO_VERSION)).\n"; \
+		exit 1; \
+	fi
+
 .PHONY: _check_scheme_loader
 _check_scheme_loader:
 	@if [[ "$(SCHEME_LOADER)" != "plugins" && "$(SCHEME_LOADER)" != "builtin" ]]; then \
@@ -25,7 +35,8 @@ _check_scheme_loader:
 	    exit 1; \
 	fi
 
-$(CMD): $(SRCS) $(CMD_DEPS) _check_scheme_loader ; go build -o $(CMD) -ldflags \
+$(CMD): $(SRCS) $(CMD_DEPS) _check_scheme_loader _check_version
+	go build -o $(CMD) -ldflags \
 	"-X 'github.com/veraison/services/config.Version=$(VERSION_FROM_GIT)' \
 	 -X 'github.com/veraison/services/config.SchemeLoader=$(SCHEME_LOADER)'"
 
