@@ -50,6 +50,7 @@ jobs:
     - name: Go Coverage
       run: |
         go version
-        make TEST_ARGS="-short -cover" all test | grep -o "coverage:.*of statements$" | python scripts/cov.py
+        make coverage \
+          COVER_THRESHOLD=$(echo "${{ vars.GITHUB_WORKFLOW }}" | grep -o --regex '[0-9]\+\.[0-9]\+')
 
       shell: bash
