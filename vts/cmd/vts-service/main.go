@@ -61,7 +61,7 @@ func main() {
 		log.Fatalf("policy manager initialization failed: %v", err)
 	}
 
-	log.Info("loading schemes")
+	log.Info("loading attestation schemes")
 	var pluginManager plugin.IManager[decoder.IEvidenceDecoder]
 
 	if config.SchemeLoader == "plugins" {
@@ -79,6 +79,11 @@ func main() {
 		}
 	} else {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
+	}
+
+	log.Info("Registered media types:")
+	for _, mt := range pluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
 	}
 
 	log.Info("loading EAR signer")
