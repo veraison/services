@@ -10,13 +10,13 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 )
 
 func UnsignedCorimDecoder(
 	data []byte,
 	xtr IExtractor,
-) (*decoder.EndorsementDecoderResponse, error) {
+) (*handler.EndorsementHandlerResponse, error) {
 	if len(data) == 0 {
 		return nil, errors.New("empty data")
 	}
@@ -49,7 +49,7 @@ func UnsignedCorimDecoder(
 		return nil, fmt.Errorf("no profile information set in CoRIM")
 	}
 
-	rsp := decoder.EndorsementDecoderResponse{}
+	rsp := handler.EndorsementHandlerResponse{}
 
 	for i, tag := range uc.Tags {
 		// need at least 3 bytes for the tag and 1 for the smallest bstr

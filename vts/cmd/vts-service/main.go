@@ -12,7 +12,7 @@ import (
 
 	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
@@ -62,18 +62,18 @@ func main() {
 	}
 
 	log.Info("loading attestation schemes")
-	var pluginManager plugin.IManager[decoder.IEvidenceDecoder]
+	var pluginManager plugin.IManager[handler.IEvidenceHandler]
 
 	if config.SchemeLoader == "plugins" {
 		pluginManager, err = plugin.CreateGoPluginManager(
 			subs["plugin"], log.Named("plugin"),
-			"evidence-decoder", decoder.EvidenceDecoderRPC)
+			"evidence-handler", handler.EvidenceHandlerRPC)
 		if err != nil {
 			log.Fatalf("plugin manager initialization failed: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
-		pluginManager, err = builtin.CreateBuiltinManager[decoder.IEvidenceDecoder](
-			subs["plugin"], log.Named("builtin"), "evidence-decoder")
+		pluginManager, err = builtin.CreateBuiltinManager[handler.IEvidenceHandler](
+			subs["plugin"], log.Named("builtin"), "evidence-handler")
 		if err != nil {
 			log.Fatalf("scheme manager initialization failed: %v", err)
 		}

@@ -4,13 +4,13 @@ package trustedservices
 
 import (
 	"github.com/spf13/viper"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 )
 
 type ITrustedServices interface {
-	Init(cfg *viper.Viper, pm plugin.IManager[decoder.IEvidenceDecoder]) error
+	Init(cfg *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error
 	Close() error
 	Run() error
 

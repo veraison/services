@@ -78,8 +78,8 @@ here](https://pkg.go.dev/github.com/hashicorp/go-plugin) for further details.
 ## Creating plugins
 
 > :information_source: For the specifics of how to create implementations of the already
-> defined `IEndorsmentDecoder` and `IEvidinceDecoder` Veraison plugins, [see
-> here](../decoder/README.md).
+> defined `IEndorsmentHandler` and `IEvidinceHandler` Veraison plugins, [see
+> here](../handler/README.md).
 
 Plugins are created by implementing the corresponding interface, registering
 this implementation under an appropriate name (matching the name the manager

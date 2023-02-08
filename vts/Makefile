@@ -13,7 +13,7 @@ install:
 	mkdir -p $(VTS_DEPLOY_PREFIX)/usr/share/veraison/stores
 	install $(TOPDIR)/vts/cmd/vts-service/vts-service $(VTS_DEPLOY_PREFIX)$(BIN_DIR)/vts-service
 	if [[ "x$(COMBINED_PLUGINS)" == "x" ]]; then \
-		install -D $(TOPDIR)/scheme/bin/*-evidence-decoder.plugin $(VTS_DEPLOY_PREFIX)$(PLUGIN_DIR); \
+		install -D $(TOPDIR)/scheme/bin/*-evidence-handler.plugin $(VTS_DEPLOY_PREFIX)$(PLUGIN_DIR); \
 	else \
 		install -D $(TOPDIR)/scheme/bin/*.plugin $(VTS_DEPLOY_PREFIX)$(PLUGIN_DIR); \
 	fi

@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
@@ -54,7 +54,7 @@ type GRPC struct {
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
-	PluginManager plugin.IManager[decoder.IEvidenceDecoder]
+	PluginManager plugin.IManager[handler.IEvidenceHandler]
 	PolicyManager *policymanager.PolicyManager
 	EarSigner     earsigner.IEarSigner
 
@@ -68,7 +68,7 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	pluginManager plugin.IManager[decoder.IEvidenceDecoder],
+	pluginManager plugin.IManager[handler.IEvidenceHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
@@ -92,7 +92,7 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[decoder.IEvidenceDecoder]) error {
+func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error {
 	var err error
 
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
@@ -173,19 +173,19 @@ func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest)
 	var (
 		err     error
 		keys    []string
-		decoder decoder.IEvidenceDecoder
+		handler handler.IEvidenceHandler
 		val     []byte
 	)
 
 	o.logger.Debugw("AddRefValue", "ref-value", req.ReferenceValues)
 
 	for _, refVal := range req.GetReferenceValues() {
-		decoder, err = o.PluginManager.LookupByAttestationScheme(refVal.GetScheme())
+		handler, err = o.PluginManager.LookupByAttestationScheme(refVal.GetScheme())
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
 
-		keys, err = decoder.SynthKeysFromRefValue(DummyTenantID, refVal)
+		keys, err = handler.SynthKeysFromRefValue(DummyTenantID, refVal)
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
@@ -232,7 +232,7 @@ func (o *GRPC) AddTrustAnchor(
 	var (
 		err     error
 		keys    []string
-		decoder decoder.IEvidenceDecoder
+		handler handler.IEvidenceHandler
 		ta      *proto.Endorsement
 		val     []byte
 	)
@@ -245,12 +245,12 @@ func (o *GRPC) AddTrustAnchor(
 
 	ta = req.TrustAnchor
 
-	decoder, err = o.PluginManager.LookupByAttestationScheme(ta.GetScheme())
+	handler, err = o.PluginManager.LookupByAttestationScheme(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
 
-	keys, err = decoder.SynthKeysFromTrustAnchor(DummyTenantID, ta)
+	keys, err = handler.SynthKeysFromTrustAnchor(DummyTenantID, ta)
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -297,12 +297,12 @@ func (o *GRPC) GetAttestation(
 	o.logger.Infow("get attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	decoder, err := o.PluginManager.LookupByMediaType(token.MediaType)
+	handler, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
 		return nil, err
 	}
 
-	appraisal, err := o.initEvidenceContext(decoder, token)
+	appraisal, err := o.initEvidenceContext(handler, token)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	extracted, err := decoder.ExtractClaims(token, ta)
+	extracted, err := handler.ExtractClaims(token, ta)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func (o *GRPC) GetAttestation(
 		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
 	}
 
-	if err = decoder.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
+	if err = handler.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
 		// TODO(setrofim): we should distinguish between validation
 		// failing due to bad signature vs actual error here, and only
 		// return actual err. Bad sig should be reported as a failure
@@ -350,7 +350,7 @@ func (o *GRPC) GetAttestation(
 	// an error and decide whether / how such condition gets mapped into the
 	// AR4SI trust vector (ISTM that a VerifierMalfunctionClaim (-1) may be the
 	// right signal.)
-	appraisedResult, err := decoder.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
+	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
 		return nil, err
 	}
@@ -377,14 +377,14 @@ func (o *GRPC) GetAttestation(
 }
 
 func (c *GRPC) initEvidenceContext(
-	decoder decoder.IEvidenceDecoder,
+	handler handler.IEvidenceHandler,
 	token *proto.AttestationToken,
 ) (*appraisal.Appraisal, error) {
 	var err error
 
 	appraisal := appraisal.New(token.TenantId)
 
-	appraisal.EvidenceContext.TrustAnchorId, err = decoder.GetTrustAnchorID(token)
+	appraisal.EvidenceContext.TrustAnchorId, err = handler.GetTrustAnchorID(token)
 	if err != nil {
 		return nil, err
 	}

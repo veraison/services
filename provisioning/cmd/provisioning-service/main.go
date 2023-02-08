@@ -11,7 +11,7 @@ import (
 
 	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/provisioning/api"
@@ -56,18 +56,18 @@ func main() {
 	}
 
 	log.Info("loading attestation schemes")
-	var pluginManager plugin.IManager[decoder.IEndorsementDecoder]
+	var pluginManager plugin.IManager[handler.IEndorsementHandler]
 
 	if config.SchemeLoader == "plugins" {
 		pluginManager, err = plugin.CreateGoPluginManager(
 			subs["plugin"], log.Named("plugin"),
-			"endorsement-decoder", decoder.EndorsementDecoderRPC)
+			"endorsement-handler", handler.EndorsementHandlerRPC)
 		if err != nil {
 			log.Fatalf("plugin manager initialization failed: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
-		pluginManager, err = builtin.CreateBuiltinManager[decoder.IEndorsementDecoder](
-			subs["plugin"], log.Named("builtin"), "endorsement-decoder")
+		pluginManager, err = builtin.CreateBuiltinManager[handler.IEndorsementHandler](
+			subs["plugin"], log.Named("builtin"), "endorsement-handler")
 		if err != nil {
 			log.Fatalf("scheme manager initialization failed: %v", err)
 		}
@@ -109,7 +109,7 @@ func main() {
 func terminator(
 	sigs chan os.Signal,
 	done chan bool,
-	pluginManager plugin.IManager[decoder.IEndorsementDecoder],
+	pluginManager plugin.IManager[handler.IEndorsementHandler],
 ) {
 	sig := <-sigs
 

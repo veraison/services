@@ -1,0 +1,11 @@
+syntax = "proto3";
+package endorsement_handler_response;
+
+option go_package = "github.com/veraison/services/handler";
+
+import "vts.proto";
+
+message EndorsementHandlerResponse {
+    repeated proto.Endorsement referenceValues = 1;
+    repeated proto.Endorsement trustAnchors = 2;
+}

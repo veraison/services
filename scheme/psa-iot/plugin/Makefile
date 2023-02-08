@@ -1,7 +1,7 @@
 
 ifndef COMBINED_PLUGINS
-  SUBDIR += endorsement-decoder
-  SUBDIR += evidence-decoder
+  SUBDIR += endorsement-handler
+  SUBDIR += evidence-handler
 else
   SUBDIR += combined
 endif

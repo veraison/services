@@ -3,12 +3,12 @@
 package main
 
 import (
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	scheme "github.com/veraison/services/scheme/tcg-dice"
 )
 
 func main() {
-	decoder.RegisterEvidenceDecoder(&scheme.EvidenceDecoder{})
+	handler.RegisterEvidenceHandler(&scheme.EvidenceHandler{})
 	plugin.Serve()
 }

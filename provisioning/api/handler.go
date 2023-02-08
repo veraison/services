@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vtsclient"
@@ -28,14 +28,14 @@ type IHandler interface {
 }
 
 type Handler struct {
-	PluginManager plugin.IManager[decoder.IEndorsementDecoder]
+	PluginManager plugin.IManager[handler.IEndorsementHandler]
 	VTSClient     vtsclient.IVTSClient
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
-	pm plugin.IManager[decoder.IEndorsementDecoder],
+	pm plugin.IManager[handler.IEndorsementHandler],
 	sc vtsclient.IVTSClient,
 	logger *zap.SugaredLogger,
 ) IHandler {
@@ -75,18 +75,18 @@ func (o *Handler) GetServiceState(c *gin.Context) {
 		panic(err) // Should never happen as the value above is hard-coded.
 	}
 
-	decoderMediaTypeList, err := proto.NewStringList(o.PluginManager.GetRegisteredMediaTypes())
+	handlerMediaTypeList, err := proto.NewStringList(o.PluginManager.GetRegisteredMediaTypes())
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
-			fmt.Sprintf("could not retrieve decoder media types: %v", err),
+			fmt.Sprintf("could not retrieve handler media types: %v", err),
 		)
 		return
 	}
 
 	state.SupportedMediaTypes = map[string]*structpb.ListValue{
 		"endorsement-provisioning/v1": apiMediaTypeList,
-		"decoder":                     decoderMediaTypeList.AsListValue(),
+		"handler":                     handlerMediaTypeList.AsListValue(),
 	}
 
 	if vtsState.Status == proto.ServiceStatus_DOWN {
@@ -163,7 +163,7 @@ func (o *Handler) Submit(c *gin.Context) {
 
 		sendFailedProvisioningSession(
 			c,
-			fmt.Sprintf("decoder manager returned error: %s", err),
+			fmt.Sprintf("handler manager returned error: %s", err),
 		)
 		return
 	}
@@ -193,16 +193,16 @@ func (o *Handler) Submit(c *gin.Context) {
 func (o *Handler) dispatch(
 	mediaType string,
 	payload []byte,
-) (*decoder.EndorsementDecoderResponse, error) {
-	decoderPlugin, err := o.PluginManager.LookupByMediaType(mediaType)
+) (*handler.EndorsementHandlerResponse, error) {
+	handlerPlugin, err := o.PluginManager.LookupByMediaType(mediaType)
 	if err != nil {
 		return nil, err
 	}
 
-	return decoderPlugin.Decode(payload)
+	return handlerPlugin.Decode(payload)
 }
 
-func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
+func (o *Handler) store(rsp *handler.EndorsementHandlerResponse) error {
 	for _, ta := range rsp.TrustAnchors {
 		taReq := &proto.AddTrustAnchorRequest{TrustAnchor: ta}
 

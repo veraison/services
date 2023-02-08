@@ -8,12 +8,12 @@ CMD := provisioning-service
 SRCS := main.go
 
 CMD_DEPS := $(wildcard ../../api/*.go)
-CMD_DEPS += $(wildcard ../../decoder/*.go)
+CMD_DEPS += $(wildcard ../../.../handler/*.go)
 CMD_DEPS += $(wildcard ../../storeclient/*.go)
 
 cmd-hook-pre test-hook-pre lint-hook-pre:
 	$(MAKE) -C ../../../proto protogen
-	$(MAKE) -C ../../../decoder protogen
+	$(MAKE) -C ../../../handler protogen
 
 include ../../../mk/common.mk
 include ../../../mk/cmd.mk

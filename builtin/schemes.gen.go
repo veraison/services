@@ -10,11 +10,11 @@ import (
 )
 
 var plugins = []plugin.IPluggable{
-	&scheme1.EvidenceDecoder{},
-	&scheme1.EndorsementDecoder{},
-	&scheme2.EvidenceDecoder{},
-	&scheme3.EvidenceDecoder{},
-	&scheme3.EndorsementDecoder{},
-	&scheme4.EvidenceDecoder{},
-	&scheme4.EndorsementDecoder{},
+	&scheme1.EvidenceHandler{},
+	&scheme1.EndorsementHandler{},
+	&scheme2.EvidenceHandler{},
+	&scheme3.EvidenceHandler{},
+	&scheme3.EndorsementHandler{},
+	&scheme4.EvidenceHandler{},
+	&scheme4.EndorsementHandler{},
 }

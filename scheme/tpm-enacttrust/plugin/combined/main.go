@@ -3,13 +3,13 @@
 package main
 
 import (
-	"github.com/veraison/services/decoder"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	scheme "github.com/veraison/services/scheme/tpm-enacttrust"
 )
 
 func main() {
-	decoder.RegisterEndorsementDecoder(&scheme.EndorsementDecoder{})
-	decoder.RegisterEvidenceDecoder(&scheme.EvidenceDecoder{})
+	handler.RegisterEndorsementHandler(&scheme.EndorsementHandler{})
+	handler.RegisterEvidenceHandler(&scheme.EvidenceHandler{})
 	plugin.Serve()
 }

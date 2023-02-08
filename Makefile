@@ -5,7 +5,7 @@ export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 SUBDIR += builtin
 SUBDIR += config
-SUBDIR += decoder
+SUBDIR += handler
 SUBDIR += kvstore
 SUBDIR += log
 SUBDIR += plugin

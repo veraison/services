@@ -18,8 +18,8 @@ schemes. Currently the following schemes are implemented:
 
 Supporting a new attestation scheme requires defining how to provision
 endorsements (if any) and how to process evidence tokens. The former is done by
-implementing [`IEndorsementDecoder`](../decoder/iendorsementdecoder.go), and the
-latter by implementing [`IEvidenceDecoder`](../decoder/ievidencedecoder.go).
+implementing [`IEndorsementHandler`](../decoder/iendorsementdecoder.go), and the
+latter by implementing [`IEvidenceHandler`](../decoder/ievidencedecoder.go).
 Finally, an executable should be created that [registers](../decoder/plugin.go)
 and serves them.
 
@@ -31,23 +31,39 @@ import (
 	"github.com/veraison/services/plugin"
 )
 
-type MyEvidenceDecoder struct {}
+type MyEvidenceHandler struct {}
 
 // ...
-// Implementation of IEvidenceDecoder for MyEvidenceDecoder
+// Implementation of IEvidenceHandler for MyEvidenceHandler
 // ...
 
-type MyEndrosementDecoder struct {}
+type MyEndrosementHandler struct {}
 
 // ...
-// Implementation of IEndrosementDecoder for MyEndrosementDecoder
+// Implementation of IEndrosementHandler for MyEndrosementHandler
 // ...
 
 
 func main() {
-	decoder.RegisterEndorsementDecoder(&MyEndorsementDecoder{})
-	decoder.RegisterEvidenceDecoder(&MyEvidenceDecoder{})
+	handler.RegisterEndorsementHandler(&MyEndorsementHandler{})
+	handler.RegisterEvidenceHandler(&MyEvidenceHandler{})
 
 	plugin.Serve()
 }
 ```
+
+## Debugging
+
+Handler code is a lot easier to debug when it runs as part of the service
+processes, rather than as a plugin. This can be achieved by using the "builtin"
+plugin loader.
+
+Attestation scheme loading method is a build-time configuration. Since `devle`
+does its own building, it will ignore the normal build configuration. Instead,
+you will have to configure this when invoking `delve`:
+
+```sh
+dlv debug --build-flags "-ldflags '-X github.com/veraison/services/config.SchemeLoader=builtin'"
+```
+
+This will allow you to step into and set break points inside scheme code.

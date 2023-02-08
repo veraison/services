@@ -5,7 +5,7 @@ all: all-hook-pre
 clean:
 
 all-hook-pre all-test-pre all-lint-pre:
-	$(MAKE) -C ../../decoder protogen
+	$(MAKE) -C ../../handler protogen
 
 include ../../mk/common.mk
 include ../../mk/lint.mk
