@@ -4,6 +4,7 @@
 
 DEPLOY_DIR=${DEPLOY_DIR:-/tmp/veraison}
 TMUX_SESSION=${TMUX_SESSION:-veraison}
+SCHEME=${SCHEME:-psa}
 
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_DIR=$THIS_DIR/..
@@ -59,8 +60,23 @@ function clean() {
 }
 
 function provision() {
+    case $SCHEME  in
+        psa)
+            local corim_file=$THIS_DIR/input/psa-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+            ;;
+        cca)
+            local corim_file=$THIS_DIR/input/cca-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1"
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
     set -x
-    cocli corim submit --corim-file=$THIS_DIR/input/corim-full.cbor --api-server="http://localhost:8888/endorsement-provisioning/v1/submit" --media-type="application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+    cocli corim submit --corim-file=$corim_file --api-server="http://localhost:8888/endorsement-provisioning/v1/submit" --media-type="$media_type"
 }
 
 function check() {
@@ -78,18 +94,48 @@ function check() {
 }
 
 function verify_as_attester() {
+    case $SCHEME  in
+        psa)
+            local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
+            local key_args="--key=$THIS_DIR/input/ec-p256.jwk"
+            local nonce_args="--nonce-size=32"
+            ;;
+        cca)
+            local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
+            local key_args="--pak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
+            local nonce_args=""
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
     set -x
-    evcli psa verify-as attester \
+    evcli $SCHEME verify-as attester \
         --api-server=http://localhost:8080/challenge-response/v1/newSession \
-        --claims=$THIS_DIR/input/psa-claims-profile-2-without-nonce.json \
-        --key=$THIS_DIR/input/ec-p256.jwk --nonce-size=32
+        --claims=$claims \
+        $key_args $nonce_args
 }
 
 function verify_as_relying_party() {
+    case $SCHEME  in
+        psa)
+            local token=$THIS_DIR/input/psa-evidence.cbor
+            ;;
+        cca)
+            local token=$THIS_DIR/input/cca-evidence.cbor
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
     set -x
-    evcli psa verify-as relying-party \
+    evcli $SCHEME verify-as relying-party \
         --api-server=http://localhost:8080/challenge-response/v1/newSession \
-        --token=$THIS_DIR/input/psa-evidence.cbor
+        --token=$token
 }
 
 function verify() {
@@ -138,6 +184,18 @@ Command:
 
 EOF
 }
+
+function _check_scheme() {
+    case $SCHEME in
+        psa | cca)
+            ;;
+        *)
+            echo "ERROR: unknown SCHEME: '$SCHEME'; must be 'cca' or 'psa'"; exit 1
+            ;;
+    esac
+}
+
+_check_scheme
 
 command=$1
 case $command in
