@@ -19,9 +19,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -48,12 +50,15 @@ type IHandler interface {
 type Handler struct {
 	SessionManager sessionmanager.ISessionManager
 	Verifier       verifier.IVerifier
+
+	logger *zap.SugaredLogger
 }
 
 func NewHandler(sm sessionmanager.ISessionManager, v verifier.IVerifier) IHandler {
 	return &Handler{
 		SessionManager: sm,
 		Verifier:       v,
+		logger:         log.Named("api-handler"),
 	}
 }
 
@@ -380,6 +385,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// forward evidence to verifier
 	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, evidence, mediaType)
 	if err != nil {
+		o.logger.Error(err)
 		session.SetStatus(StatusFailed)
 		s := mustStoreSession(o.SessionManager, session, id, tenantID)
 		sendChallengeResponseSessionWithStatus(c, http.StatusOK, s)
