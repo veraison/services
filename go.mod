@@ -27,12 +27,12 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.1
-	github.com/veraison/ccatoken v0.0.0-20230124001940-24f056f6cf0c
+	github.com/veraison/ccatoken v1.0.0
 	github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/psatoken v1.0.0-rc2.0.20230124001050-d5d26fdd5322
+	github.com/veraison/psatoken v1.0.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.3.7
 	google.golang.org/grpc v1.49.0
