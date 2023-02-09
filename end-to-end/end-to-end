@@ -60,6 +60,8 @@ function clean() {
 }
 
 function provision() {
+    _check_command cocli "go install github.com/veraison/corim/cocli@latest"
+
     case $SCHEME  in
         psa)
             local corim_file=$THIS_DIR/input/psa-endorsements.cbor
@@ -94,6 +96,8 @@ function check() {
 }
 
 function verify_as_attester() {
+    _check_command evcli "go install github.com/veraison/evcli@latest"
+
     case $SCHEME  in
         psa)
             local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
@@ -119,6 +123,8 @@ function verify_as_attester() {
 }
 
 function verify_as_relying_party() {
+    _check_command evcli "go install github.com/veraison/evcli@latest"
+
     case $SCHEME  in
         psa)
             local token=$THIS_DIR/input/psa-evidence.cbor
@@ -193,6 +199,21 @@ function _check_scheme() {
             echo "ERROR: unknown SCHEME: '$SCHEME'; must be 'cca' or 'psa'"; exit 1
             ;;
     esac
+}
+
+function _check_command() {
+    local name=$1
+    local installCommand=$2
+
+    which $name 2> /dev/null
+
+    if [ $? -ne 0 ]; then
+        echo -e "ERROR: missing '$name' executable; please make sure that it is installed\n"
+        echo -e "\t$installCommand"
+        echo ""
+        echo "and is in PATH."
+        exit 1
+    fi
 }
 
 _check_scheme
