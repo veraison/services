@@ -10,7 +10,7 @@ provisioning/cmd/provisioning-service/provisioning-service
 scheme/bin
 plugin/test/bin
 scheme/enacttrust/test/tokens/*.token
-scheme/tpm-enacttrust/test/cmd/gen-token
+scheme/tpm-enacttrust/test/cmd/gen-token/gen-token
 verification/cmd/verification-service/verification-service
 vts/cmd/vts-service/vts-service
 
