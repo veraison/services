@@ -1,7 +1,7 @@
 # Args needs to be renewed for each build stage that uses these args
 ARG workDir=/app
 ARG workDirRepo=/app/services
-ARG GoVersion=1.18
+ARG GoVersion=1.19
 
 # Arguments for psa demo input directories
 # TODO create version associated with the tag by adding a release
@@ -46,7 +46,9 @@ RUN pip install --no-cache-dir Jinja2
 
 # Download Go modules
 RUN go mod download &&\
-    go install github.com/golang/mock/mockgen@v1.6.0 &&\
+    go install golang.org/x/tools/gopls@latest &&\
+    go install golang.org/x/tools/cmd/guru@latest &&\
+    go install github.com/golang/mock/mockgen@v1.7.0-rc.1 &&\
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
     go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
@@ -146,7 +148,7 @@ RUN tar -xf provisioning.tar
 # Create input files for psa provisioning part of the demo
 ARG COCLI_TEMPLATES
 RUN cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-integ-iakpub.json &&\
-    cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-refval.json &&\ 
+    cocli comid create --template=$COCLI_TEMPLATES/data/templates/comid-psa-refval.json &&\
     cocli corim create --template=$COCLI_TEMPLATES/data/templates/corim-full.json --comid=comid-psa-integ-iakpub.cbor --comid=comid-psa-refval.cbor &&\
     mv corim-full.cbor $INPUT_FILE_DIR/
 

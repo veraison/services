@@ -17,14 +17,14 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/provisioning/api/mocks"
-	"github.com/veraison/services/provisioning/decoder"
 )
 
 var (
-	testGoodDecoderResponse = decoder.EndorsementDecoderResponse{
+	testGoodHandlerResponse = handler.EndorsementHandlerResponse{
 		TrustAnchors: []*proto.Endorsement{
 			{},
 		},
@@ -45,6 +45,20 @@ var (
 		Status: &proto.Status{Result: true},
 	}
 )
+
+type MockHandler struct {
+	Response *handler.EndorsementHandlerResponse
+}
+
+func (o MockHandler) Init(handler.EndorsementHandlerParams) error { return nil }
+func (o MockHandler) Close() error                                { return nil }
+func (o MockHandler) GetName() string                             { return "mock" }
+func (o MockHandler) GetAttestationScheme() string                { return "mock" }
+func (o MockHandler) GetSupportedMediaTypes() []string            { return nil }
+
+func (o MockHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
+	return o.Response, nil
+}
 
 func TestHandler_Submit_UnsupportedAccept(t *testing.T) {
 	h := &Handler{}
@@ -81,14 +95,14 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 	mediaType := "application/unsupported+json"
 	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(false)
 	dm.EXPECT().
-		GetSupportedMediaTypes().
+		GetRegisteredMediaTypes().
 		Return(supportedMediaTypes)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
@@ -129,9 +143,9 @@ func TestHandler_Submit_NoBody(t *testing.T) {
 
 	mediaType := "application/good+json"
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
@@ -174,20 +188,19 @@ func TestHandler_Submit_DecodeFailure(t *testing.T) {
 
 	mediaType := "application/good+json"
 	endo := []byte("some data")
-	decoderError := "decoder manager says: doh!"
+	handlerError := "handler manager says: doh!"
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(nil, errors.New(decoderError))
+		Return(nil, errors.New(handlerError))
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 
@@ -195,7 +208,7 @@ func TestHandler_Submit_DecodeFailure(t *testing.T) {
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf("decoder manager returned error: %s", decoderError)
+	expectedFailureReason := fmt.Sprintf("handler manager returned error: %s", handlerError)
 	expectedStatus := "failed"
 
 	w := httptest.NewRecorder()
@@ -225,18 +238,17 @@ func TestHandler_Submit_store_AddTrustAnchor_failure1(t *testing.T) {
 	endo := []byte("some data")
 	storeError := "store says doh!"
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(&testGoodDecoderResponse, nil)
+		Return(MockHandler{&testGoodHandlerResponse}, nil)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 	sc.EXPECT().
@@ -244,7 +256,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure1(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
+					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
 				},
 			),
 		).
@@ -288,18 +300,17 @@ func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
 	storeError := "store says doh!"
 	testFailedTaRes.Status.ErrorDetail = storeError
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(&testGoodDecoderResponse, nil)
+		Return(MockHandler{&testGoodHandlerResponse}, nil)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 	sc.EXPECT().
@@ -307,7 +318,7 @@ func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
+					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
 				},
 			),
 		).
@@ -350,18 +361,17 @@ func TestHandler_Submit_store_AddRefValues_failure1(t *testing.T) {
 	endo := []byte("some data")
 	storeError := "store says doh!"
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(&testGoodDecoderResponse, nil)
+		Return(MockHandler{&testGoodHandlerResponse}, nil)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 	sc.EXPECT().
@@ -369,7 +379,7 @@ func TestHandler_Submit_store_AddRefValues_failure1(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
+					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
 				},
 			),
 		).
@@ -425,18 +435,17 @@ func TestHandler_Submit_store_AddRefValues_failure2(t *testing.T) {
 	storeError := "store says doh!"
 	testFailedRefValRes.Status.ErrorDetail = storeError
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(&testGoodDecoderResponse, nil)
+		Return(MockHandler{&testGoodHandlerResponse}, nil)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 	sc.EXPECT().
@@ -444,7 +453,7 @@ func TestHandler_Submit_store_AddRefValues_failure2(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
+					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
 				},
 			),
 		).
@@ -498,18 +507,17 @@ func TestHandler_Submit_ok(t *testing.T) {
 	mediaType := "application/good+json"
 	endo := []byte("some data")
 
-	dm := mock_deps.NewMockIDecoderManager(ctrl)
+	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
 	dm.EXPECT().
-		IsSupportedMediaType(
+		IsRegisteredMediaType(
 			gomock.Eq(mediaType),
 		).
 		Return(true)
 	dm.EXPECT().
-		Dispatch(
+		LookupByMediaType(
 			gomock.Eq(mediaType),
-			gomock.Eq(endo),
 		).
-		Return(&testGoodDecoderResponse, nil)
+		Return(MockHandler{&testGoodHandlerResponse}, nil)
 
 	sc := mock_deps.NewMockIVTSClient(ctrl)
 	sc.EXPECT().
@@ -517,7 +525,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 			gomock.Eq(context.TODO()),
 			gomock.Eq(
 				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodDecoderResponse.TrustAnchors[0],
+					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
 				},
 			),
 		).

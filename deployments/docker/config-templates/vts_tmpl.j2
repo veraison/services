@@ -1,11 +1,11 @@
 plugin:
   backend: {{ "go-plugin" }}
   go-plugin:
-    folder: {{  "../../plugins/bin/" | env_override('PLUGIN_DIR') }}
+    dir: {{  "../../plugins/bin/" | env_override('PLUGIN_DIR') }}
 {% set stores = ['ta-store', 'en-store', 'po-store'] %}
 
 {% for store in stores %}
-{{ store }}: 
+{{ store }}:
   backend: {{ "sql" }}
   sql:
     driver: {{ "sqlite3" }}

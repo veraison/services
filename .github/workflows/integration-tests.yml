@@ -38,5 +38,5 @@ jobs:
       with:
         name: container-logs
         path: ./container.log
-    - name: Tear down services  
+    - name: Tear down services
       run: make -C integration-tests integration-tests-down

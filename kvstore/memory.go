@@ -71,7 +71,7 @@ func (o Memory) GetKeys() ([]string, error) {
 	lk.RLock()
 	defer lk.RUnlock()
 
-	var keys []string
+	var keys []string // nolint:prealloc
 	for k := range o.Data {
 		keys = append(keys, k)
 	}

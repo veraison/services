@@ -15,8 +15,8 @@ repositories under the Veraison project. If you do not already have them
 installed, you can do so with:
 
 ```sh
-go install github.com/veraison/corim/cocli@demo-psa-1.0.0
-go install github.com/veraison/evcli@demo-psa-1.0.0
+go install github.com/veraison/corim/cocli@latest
+go install github.com/veraison/evcli@latest
 ```
 
 ## Configuration

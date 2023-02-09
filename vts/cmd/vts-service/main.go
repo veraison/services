@@ -10,12 +10,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/afero"
 
+	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/earsigner"
-	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
 )
@@ -59,10 +61,29 @@ func main() {
 		log.Fatalf("policy manager initialization failed: %v", err)
 	}
 
-	log.Info("loading plugins")
-	pluginManager := pluginmanager.New(log.Named("plugin"))
-	if err := pluginManager.Init(subs["plugin"]); err != nil {
-		log.Fatalf("plugin manager initialization failed: %v", err)
+	log.Info("loading attestation schemes")
+	var pluginManager plugin.IManager[handler.IEvidenceHandler]
+
+	if config.SchemeLoader == "plugins" { // nolint:gocritic
+		pluginManager, err = plugin.CreateGoPluginManager(
+			subs["plugin"], log.Named("plugin"),
+			"evidence-handler", handler.EvidenceHandlerRPC)
+		if err != nil {
+			log.Fatalf("plugin manager initialization failed: %v", err)
+		}
+	} else if config.SchemeLoader == "builtin" {
+		pluginManager, err = builtin.CreateBuiltinManager[handler.IEvidenceHandler](
+			subs["plugin"], log.Named("builtin"), "evidence-handler")
+		if err != nil {
+			log.Fatalf("scheme manager initialization failed: %v", err)
+		}
+	} else {
+		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
+	}
+
+	log.Info("Registered media types:")
+	for _, mt := range pluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
 	}
 
 	log.Info("loading EAR signer")
@@ -77,7 +98,7 @@ func main() {
 	vts := trustedservices.NewGRPC(taStore, enStore,
 		pluginManager, policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"]); err != nil {
+	if err = vts.Init(subs["vts"], pluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

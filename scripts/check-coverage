@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# Copyright 2022-2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+# pylint: disable=missing-module-docstring,invalid-name
+import argparse
+import logging
+import re
+import sys
+
+
+COVERAGE_REPORT_REGEX = re.compile(
+    r'^(?:ok)?\s+(?P<package>\S+)\s+(?:\(cached\)\s+)?'
+    r'coverage: (?P<coverage>\d+.\d+)% of statements'
+)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--threshold', type=float, default=80.0,
+                       help='Report error if coverage falls below this percentage threshsold.')
+    parser.add_argument('-i', '--ignore', action='append', metavar='PACKAGE',
+                        help='Specified Go package will not be checked '
+                             '(can be specified multiple times).')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output.')
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(levelname)s: %(message)s',
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        stream=sys.stderr
+    )
+
+    logging.info('Using coverage threshold of %s%%', args.threshold)
+
+    below_threshold = []
+    for line in sys.stdin:
+        match = COVERAGE_REPORT_REGEX.search(line)
+        if not match:
+            continue
+
+        package = match.group('package')
+        cover = float(match.group('coverage'))
+
+        logging.debug('%s coverage: %s', package, cover)
+
+        if package in args.ignore:
+            logging.info('Skipping ignored package %s.', package)
+            continue
+
+        if cover < args.threshold:
+            below_threshold.append((package, cover))
+
+    if below_threshold:
+        print(f'ERROR: {len(below_threshold)} packages are below coverage threshold:\n')
+        for package, cover in below_threshold:
+            print(f'\t{package}: {cover}%')
+        print('')
+
+        logging.error('Coverage check failed.')
+        sys.exit(1)
+    else:
+        logging.info('Coverage check passed.')

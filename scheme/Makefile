@@ -1,11 +1,12 @@
-# Copyright 2022 Contributors to the Veraison project.
+# Copyright 2021-2022 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-.DEFAULT_GOAL := test
+SUBDIR := common
+SUBDIR += cca-ssd-platform
+SUBDIR += tcg-dice
+SUBDIR += psa-iot
+SUBDIR += tpm-enacttrust
 
-GOPKG := github.com/veraison/services/scheme
+clean: ; $(RM) -rf ./bin
 
-include ../mk/common.mk
-include ../mk/pkg.mk
-include ../mk/lint.mk
-include ../mk/test.mk
+include ../mk/subdir.mk

@@ -1,4 +1,4 @@
-# Copyright 2021 Contributors to the Veraison project.
+# Copyright 2021-2023 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 #
 # variables:
@@ -15,8 +15,13 @@ endif
 .DEFAULT_GOAL := all
 MAKECMDGOALS ?= $(.DEFAULT_GOAL)
 
+# "coverage" target invokes "make test", and therefore automatically covers
+# (pun intended) subdirectories without the need to explicitly recurse into
+# them.
+_FILTERED_GOALS := $(filter-out coverage, $(MAKECMDGOALS))
+
 # all targets (plain and hooks)
-G = $(foreach T,$(MAKECMDGOALS),$(T)-pre $(addsuffix .$(T),$(SUBDIR)) $(T)-post)
+G = $(foreach T,$(_FILTERED_GOALS),$(T)-pre $(addsuffix .$(T),$(SUBDIR)) $(T)-post)
 
 # the cartesian product between MAKECMDGOALS and SUBDIR sets
 G_PLAIN = $(filter-out %-pre %-post, $(G))

@@ -13,8 +13,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/handler"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/provisioning/decoder"
 	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -27,21 +28,21 @@ type IHandler interface {
 }
 
 type Handler struct {
-	DecoderManager decoder.IDecoderManager
-	VTSClient      vtsclient.IVTSClient
+	PluginManager plugin.IManager[handler.IEndorsementHandler]
+	VTSClient     vtsclient.IVTSClient
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
-	dm decoder.IDecoderManager,
+	pm plugin.IManager[handler.IEndorsementHandler],
 	sc vtsclient.IVTSClient,
 	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
-		DecoderManager: dm,
-		VTSClient:      sc,
-		logger:         logger,
+		PluginManager: pm,
+		VTSClient:     sc,
+		logger:        logger,
 	}
 }
 
@@ -74,18 +75,18 @@ func (o *Handler) GetServiceState(c *gin.Context) {
 		panic(err) // Should never happen as the value above is hard-coded.
 	}
 
-	decoderMediaTypeList, err := proto.NewStringList(o.DecoderManager.GetSupportedMediaTypes())
+	handlerMediaTypeList, err := proto.NewStringList(o.PluginManager.GetRegisteredMediaTypes())
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
-			fmt.Sprintf("could not retrieve decoder media types: %v", err),
+			fmt.Sprintf("could not retrieve handler media types: %v", err),
 		)
 		return
 	}
 
 	state.SupportedMediaTypes = map[string]*structpb.ListValue{
-		"endrosement-provisioning/v1": apiMediaTypeList,
-		"decoder":                     decoderMediaTypeList.AsListValue(),
+		"endorsement-provisioning/v1": apiMediaTypeList,
+		"handler":                     handlerMediaTypeList.AsListValue(),
 	}
 
 	if vtsState.Status == proto.ServiceStatus_DOWN {
@@ -113,8 +114,8 @@ func (o *Handler) Submit(c *gin.Context) {
 	// read media type
 	mediaType := c.Request.Header.Get("Content-Type")
 
-	if !o.DecoderManager.IsSupportedMediaType(mediaType) {
-		mediaTypes := o.DecoderManager.GetSupportedMediaTypes()
+	if !o.PluginManager.IsRegisteredMediaType(mediaType) {
+		mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
 		c.Header("Accept", strings.Join(mediaTypes, ", "))
 		ReportProblem(c,
 			http.StatusUnsupportedMediaType,
@@ -148,7 +149,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	// API model.  For now, the object is created opportunistically.
 
 	// pass data to the identified plugin for normalisation
-	rsp, err := o.DecoderManager.Dispatch(mediaType, payload)
+	rsp, err := o.dispatch(mediaType, payload)
 	if err != nil {
 		o.logger.Errorw("session failed", "error", err)
 
@@ -162,7 +163,7 @@ func (o *Handler) Submit(c *gin.Context) {
 
 		sendFailedProvisioningSession(
 			c,
-			fmt.Sprintf("decoder manager returned error: %s", err),
+			fmt.Sprintf("handler manager returned error: %s", err),
 		)
 		return
 	}
@@ -189,7 +190,19 @@ func (o *Handler) Submit(c *gin.Context) {
 	sendSuccessfulProvisioningSession(c)
 }
 
-func (o *Handler) store(rsp *decoder.EndorsementDecoderResponse) error {
+func (o *Handler) dispatch(
+	mediaType string,
+	payload []byte,
+) (*handler.EndorsementHandlerResponse, error) {
+	handlerPlugin, err := o.PluginManager.LookupByMediaType(mediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	return handlerPlugin.Decode(payload)
+}
+
+func (o *Handler) store(rsp *handler.EndorsementHandlerResponse) error {
 	for _, ta := range rsp.TrustAnchors {
 		taReq := &proto.AddTrustAnchorRequest{TrustAnchor: ta}
 

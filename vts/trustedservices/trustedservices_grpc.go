@@ -17,12 +17,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/kvstore"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme"
 	"github.com/veraison/services/vts/appraisal"
 	"github.com/veraison/services/vts/earsigner"
-	"github.com/veraison/services/vts/pluginmanager"
 	"github.com/veraison/services/vts/policymanager"
 )
 
@@ -54,7 +54,7 @@ type GRPC struct {
 
 	TaStore       kvstore.IKVStore
 	EnStore       kvstore.IKVStore
-	PluginManager pluginmanager.ISchemePluginManager
+	PluginManager plugin.IManager[handler.IEvidenceHandler]
 	PolicyManager *policymanager.PolicyManager
 	EarSigner     earsigner.IEarSigner
 
@@ -68,7 +68,7 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	pluginManager pluginmanager.ISchemePluginManager,
+	pluginManager plugin.IManager[handler.IEvidenceHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
@@ -92,13 +92,17 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init(v *viper.Viper) error {
+func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error {
+	var err error
+
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
 
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(v); err != nil {
 		return err
 	}
+
+	o.PluginManager = pm
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -149,11 +153,7 @@ func (o *GRPC) Close() error {
 }
 
 func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceState, error) {
-
-	mediaTypes, err := o.PluginManager.SupportedVerificationMediaTypes()
-	if err != nil {
-		return nil, err
-	}
+	mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
 
 	mediaTypesList, err := proto.NewStringList(mediaTypes)
 	if err != nil {
@@ -171,19 +171,21 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 
 func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest) (*proto.AddRefValuesResponse, error) {
 	var (
-		err    error
-		keys   []string
-		scheme scheme.IScheme
-		val    []byte
+		err     error
+		keys    []string
+		handler handler.IEvidenceHandler
+		val     []byte
 	)
 
+	o.logger.Debugw("AddRefValue", "ref-value", req.ReferenceValues)
+
 	for _, refVal := range req.GetReferenceValues() {
-		scheme, err = o.PluginManager.LookupBySchemeName(refVal.GetScheme())
+		handler, err = o.PluginManager.LookupByAttestationScheme(refVal.GetScheme())
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
 
-		keys, err = scheme.SynthKeysFromRefValue(DummyTenantID, refVal)
+		keys, err = handler.SynthKeysFromRefValue(DummyTenantID, refVal)
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
@@ -228,12 +230,14 @@ func (o *GRPC) AddTrustAnchor(
 	req *proto.AddTrustAnchorRequest,
 ) (*proto.AddTrustAnchorResponse, error) {
 	var (
-		err    error
-		keys   []string
-		scheme scheme.IScheme
-		ta     *proto.Endorsement
-		val    []byte
+		err     error
+		keys    []string
+		handler handler.IEvidenceHandler
+		ta      *proto.Endorsement
+		val     []byte
 	)
+
+	o.logger.Debugw("AddTrustAnchor", "trust-anchor", req.TrustAnchor)
 
 	if req.TrustAnchor == nil {
 		return addTrustAnchorErrorResponse(errors.New("nil trust anchor in request")), nil
@@ -241,12 +245,12 @@ func (o *GRPC) AddTrustAnchor(
 
 	ta = req.TrustAnchor
 
-	scheme, err = o.PluginManager.LookupBySchemeName(ta.GetScheme())
+	handler, err = o.PluginManager.LookupByAttestationScheme(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
 
-	keys, err = scheme.SynthKeysFromTrustAnchor(DummyTenantID, ta)
+	keys, err = handler.SynthKeysFromTrustAnchor(DummyTenantID, ta)
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -293,12 +297,12 @@ func (o *GRPC) GetAttestation(
 	o.logger.Infow("get attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	scheme, err := o.PluginManager.LookupByMediaType(token.MediaType)
+	handler, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
 		return nil, err
 	}
 
-	appraisal, err := o.initEvidenceContext(scheme, token)
+	appraisal, err := o.initEvidenceContext(handler, token)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +312,7 @@ func (o *GRPC) GetAttestation(
 		return nil, err
 	}
 
-	extracted, err := scheme.ExtractClaims(token, ta)
+	extracted, err := handler.ExtractClaims(token, ta)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +337,7 @@ func (o *GRPC) GetAttestation(
 		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
 	}
 
-	if err = scheme.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
+	if err = handler.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
 		// TODO(setrofim): we should distinguish between validation
 		// failing due to bad signature vs actual error here, and only
 		// return actual err. Bad sig should be reported as a failure
@@ -346,7 +350,7 @@ func (o *GRPC) GetAttestation(
 	// an error and decide whether / how such condition gets mapped into the
 	// AR4SI trust vector (ISTM that a VerifierMalfunctionClaim (-1) may be the
 	// right signal.)
-	appraisedResult, err := scheme.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
+	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
 		return nil, err
 	}
@@ -373,14 +377,14 @@ func (o *GRPC) GetAttestation(
 }
 
 func (c *GRPC) initEvidenceContext(
-	scheme scheme.IScheme,
+	handler handler.IEvidenceHandler,
 	token *proto.AttestationToken,
 ) (*appraisal.Appraisal, error) {
 	var err error
 
 	appraisal := appraisal.New(token.TenantId)
 
-	appraisal.EvidenceContext.TrustAnchorId, err = scheme.GetTrustAnchorID(token)
+	appraisal.EvidenceContext.TrustAnchorId, err = handler.GetTrustAnchorID(token)
 	if err != nil {
 		return nil, err
 	}
@@ -402,10 +406,6 @@ func (c *GRPC) getTrustAnchor(id string) (string, error) {
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	mts, err := c.PluginManager.SupportedVerificationMediaTypes()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving supported media types: %w", err)
-	}
-
+	mts := c.PluginManager.GetRegisteredMediaTypes()
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
