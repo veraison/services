@@ -1083,6 +1083,8 @@ github.com/veraison/psatoken v1.0.0-rc2.0.20230124001050-d5d26fdd5322 h1:ad6FTMF
 github.com/veraison/psatoken v1.0.0-rc2.0.20230124001050-d5d26fdd5322/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
 github.com/veraison/psatoken v1.0.0 h1:TYrRTxi4nDSKqYVvKxGMmfyin46xOBxB9M6xia/HNxc=
 github.com/veraison/psatoken v1.0.0/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
+github.com/veraison/psatoken v1.0.1 h1:QtoJviwuSQOOk9GEQXcAWVAqm2w/0MIYYqTkJgmINVw=
+github.com/veraison/psatoken v1.0.1/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
 github.com/veraison/swid v0.0.1-beta.6 h1:ysDyCOPwGyjiBnhAM+/kgTEcc/PWieIbUQJOjnSTK48=
 github.com/veraison/swid v0.0.1-beta.6/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
