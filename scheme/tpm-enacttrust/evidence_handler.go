@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	tpm2 "github.com/google/go-tpm/tpm2"
-	uuid "github.com/google/uuid"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/ear"
@@ -68,12 +67,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 		return "", err
 	}
 
-	nodeID, err := uuid.FromBytes(decoded.AttestationData.ExtraData)
-	if err != nil {
-		return "", fmt.Errorf("could not decode node-id: %v", err)
-	}
-
-	return tpmEnactTrustLookupKey(token.TenantId, nodeID.String()), nil
+	return tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String()), nil
 }
 
 func (s EvidenceHandler) ExtractClaims(
@@ -115,12 +109,7 @@ func (s EvidenceHandler) ExtractClaims(
 	evidence.ClaimsSet["pcr-selection"] = pcrs
 	evidence.ClaimsSet["hash-algorithm"] = int64(decoded.AttestationData.AttestedQuoteInfo.PCRSelection.Hash)
 	evidence.ClaimsSet["pcr-digest"] = []byte(decoded.AttestationData.AttestedQuoteInfo.PCRDigest)
-
-	nodeID, err := uuid.FromBytes(decoded.AttestationData.ExtraData)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode node-id: %w", err)
-	}
-	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, nodeID.String())
+	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())
 
 	return evidence, nil
 }
