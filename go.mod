@@ -32,7 +32,7 @@ require (
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/psatoken v1.0.0-rc2.0.20230124001050-d5d26fdd5322
+	github.com/veraison/psatoken v1.0.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.3.7
 	google.golang.org/grpc v1.49.0
