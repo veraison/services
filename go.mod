@@ -27,7 +27,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.1
-	github.com/veraison/ccatoken v0.0.0-20230126092956-f7bb240c763c
+	github.com/veraison/ccatoken v1.0.0
 	github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v0.0.3
