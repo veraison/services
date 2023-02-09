@@ -50,3 +50,7 @@ cmd-hook-pre:
 
 .PHONY: all
 all: cmd-hook-pre realall
+
+.PHONY: debug
+debug:
+	dlv debug --build-flags "-ldflags '-X github.com/veraison/services/config.SchemeLoader=builtin'"
