@@ -33,15 +33,21 @@ function deploy() {
 
 function run() {
     echo "starting services inside a tmux session"
-    tmux new-session -d -s $TMUX_SESSION -c $DEPLOY_DIR "bash -c './vts-service'"
-    tmux rename-window -t $TMUX_SESSION:0 services
+    tmux new-session -d -s $TMUX_SESSION -c $DEPLOY_DIR "/bin/bash"
+    tmux send-keys -t $TMUX_SESSION:0.0 ./vts-service C-m
 
     sleep 0.5 # wait for VTS to start
 
-    tmux split-window -t $TMUX_SESSION:0.0 -c $DEPLOY_DIR "bash -c './verification-service'"
-    tmux split-window -t $TMUX_SESSION:0.1 -c $DEPLOY_DIR "bash -c './provisioning-service'"
+    tmux split-window -t $TMUX_SESSION:0.0 -c $DEPLOY_DIR "/bin/bash"
+    tmux send-keys -t $TMUX_SESSION:0.1 ./verification-service C-m
+
+    tmux split-window -t $TMUX_SESSION:0.1 -c $DEPLOY_DIR "/bin/bash"
+    tmux send-keys -t $TMUX_SESSION:0.2 ./provisioning-service C-m
+
+    tmux rename-window -t $TMUX_SESSION:0 services
     tmux resize-pane -t $TMUX_SESSION:0.0 -y 33%
     tmux resize-pane -t $TMUX_SESSION:0.1 -y 33%
+
     echo "done."
     echo ""
     echo "    use \"tmux attach -t $TMUX_SESSION\" to attach to the session."
@@ -60,6 +66,8 @@ function clean() {
 }
 
 function provision() {
+    _check_command cocli "go install github.com/veraison/corim/cocli@latest"
+
     case $SCHEME  in
         psa)
             local corim_file=$THIS_DIR/input/psa-endorsements.cbor
@@ -94,6 +102,8 @@ function check() {
 }
 
 function verify_as_attester() {
+    _check_command evcli "go install github.com/veraison/evcli@latest"
+
     case $SCHEME  in
         psa)
             local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
@@ -119,6 +129,7 @@ function verify_as_attester() {
 }
 
 function verify_as_relying_party() {
+    _check_command evcli "go install github.com/veraison/evcli@latest"
     case $SCHEME  in
         psa)
             local token=$THIS_DIR/input/psa-evidence.cbor
@@ -193,6 +204,21 @@ function _check_scheme() {
             echo "ERROR: unknown SCHEME: '$SCHEME'; must be 'cca' or 'psa'"; exit 1
             ;;
     esac
+}
+
+function _check_command() {
+    local name=$1
+    local installCommand=$2
+
+    which $name 2> /dev/null
+
+    if [ $? -ne 0 ]; then
+        echo -e "ERROR: missing '$name' executable; please make sure that it is installed\n"
+        echo -e "\t$installCommand"
+        echo ""
+        echo "and is in PATH."
+        exit 1
+    fi
 }
 
 _check_scheme
