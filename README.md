@@ -6,7 +6,7 @@ This repository contains attestation services assembled using Veraison component
 
 Provisioning service provides a REST-based API for external trusted supply chain actors (for example, Endorsers) to provision Reference Values, Endorsed Values (known as Endorsements), and Trust Anchors into Veraison Trusted Services.
 
-It uses Attestation Format (e.g. PSA) specific decoders  to extract the Endorsements from received payload. On the back end it communicates with [VTS](#Veraison-Trusted-Services) to store, retrieve, and manage the Endorsements and Trust Anchors. The API details are documented under [Endorsement Provisioning Interface](https://github.com/veraison/docs/tree/main/api/endorsement-provisioning). Provisioning service acts as a front end to accept a variety of Endorsement Formats. For now, only PSA (Profile 1 & Profile 2) and TPM based Endorsements are supported.
+It uses Attestation Format (e.g. PSA) specific decoders  to extract the Endorsements from received payload. On the back end it communicates with [VTS](#Veraison-Trusted-Services) to store, retrieve, and manage the Endorsements and Trust Anchors. The API details are documented under [Endorsement Provisioning Interface](https://github.com/veraison/docs/tree/main/api/endorsement-provisioning). Provisioning service acts as a front end to accept a variety of Endorsement Formats. For now, PSA (Profile 1 & Profile 2), CCA and TPM based Endorsements are supported.
 
 Refer to [scope](https://github.com/veraison/docs/blob/main/project-overview.md#scope---provisioning) for full set of services that shall be provided by the provisioning service.
 
@@ -14,7 +14,7 @@ Refer to [scope](https://github.com/veraison/docs/blob/main/project-overview.md#
 
 Verification service provides a REST-based API for external Attesters or Relying Parties (known as Challengers) to submit Attestation token, containing Attestation Evidence claims. On the back end, it communicates with [VTS](#Veraison-Trusted-Services) to appraise the received Evidence and receive the Attestation Verification Results, which are then passed to the challenger.
 
-This service acts as a frontend for accepting a variety of attestation token formats. For now, only PSA (Profile 1 & Profile 2) and TPM-based attestation tokens are supported.
+This service acts as a frontend for accepting a variety of attestation token formats. For now, PSA (Profile 1 & Profile 2), CCA and TPM-based attestation tokens are supported.
 
 The API is based on the Challenge/Response Interaction Models as documented in [challenge-response](https://github.com/veraison/docs/tree/main/api/challenge-response)
 
