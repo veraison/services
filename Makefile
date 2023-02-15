@@ -15,7 +15,6 @@ SUBDIR += provisioning
 SUBDIR += scheme
 SUBDIR += verification
 SUBDIR += vts
-SUBDIR += vtsclient
 
 COVERAGE_THRESHOLD := 60.0
 # plugin coverage is low because it is mostly tested via plugin/test, a

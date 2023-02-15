@@ -10,7 +10,7 @@ import (
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
-	"github.com/veraison/services/vtsclient"
+	"github.com/veraison/services/vts"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -44,7 +44,7 @@ func main() {
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
 
 	log.Info("initializing VTS client")
-	vtsClient := vtsclient.NewGRPC()
+	vtsClient := vts.NewGRPC()
 	if err := vtsClient.Init(subs["vts"]); err != nil {
 		log.Fatalf("Could not initialize VTS client: %v", err)
 	}

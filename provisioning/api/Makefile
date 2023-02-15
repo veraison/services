@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := test
 
-INTERFACES := ../../vtsclient/ivtsclient.go
+INTERFACES := ../../vts/iclient.go
 INTERFACES += ../../plugin/imanager.go
 
 MOCKPKG := mocks

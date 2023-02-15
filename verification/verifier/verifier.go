@@ -7,15 +7,15 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/vtsclient"
+	"github.com/veraison/services/vts"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Verifier struct {
-	VTSClient vtsclient.IVTSClient
+	VTSClient vts.IVTSClient
 }
 
-func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IVerifier {
+func New(v *viper.Viper, vtsClient vts.IVTSClient) IVerifier {
 	return &Verifier{
 		VTSClient: vtsClient,
 	}
