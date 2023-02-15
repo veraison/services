@@ -63,7 +63,7 @@ type GRPC struct {
 
 	logger *zap.SugaredLogger
 
-	proto.UnimplementedVTSServer
+	proto.UnimplementedTrustedServicesServer
 }
 
 func NewGRPC(
@@ -72,7 +72,7 @@ func NewGRPC(
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
-) ITrustedServices {
+) ITrustedServicesServer {
 	return &GRPC{
 		TaStore:       taStore,
 		EnStore:       enStore,
@@ -120,7 +120,7 @@ func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]
 	var opts []grpc.ServerOption
 
 	server := grpc.NewServer(opts...)
-	proto.RegisterVTSServer(server, o)
+	proto.RegisterTrustedServicesServer(server, o)
 
 	o.Socket = lsd
 	o.Server = server

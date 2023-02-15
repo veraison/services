@@ -9,10 +9,10 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-type ITrustedServices interface {
+type ITrustedServicesServer interface {
 	Init(cfg *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error
 	Close() error
 	Run() error
 
-	proto.VTSServer
+	proto.TrustedServicesServer
 }

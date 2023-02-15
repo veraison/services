@@ -6,6 +6,6 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-type ITrustedServices interface {
+type IVTSClient interface {
 	proto.TrustedServicesClient
 }

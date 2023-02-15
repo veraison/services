@@ -144,12 +144,12 @@ func (o *GRPC) GetSupportedVerificationMediaTypes(
 	return c.GetSupportedVerificationMediaTypes(ctx, in, opts...)
 }
 
-func (o *GRPC) GetProvisionerClient() proto.VTSClient {
+func (o *GRPC) GetProvisionerClient() proto.TrustedServicesClient {
 	if o.Connection == nil {
 		return nil
 	}
 
-	return proto.NewVTSClient(o.Connection)
+	return proto.NewTrustedServicesClient(o.Connection)
 }
 
 func (o *GRPC) EnsureConnection() error {

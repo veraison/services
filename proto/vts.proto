@@ -37,10 +37,10 @@ enum EndorsementType {
 message Endorsement {
     string scheme = 1;
     EndorsementType type = 2;
-    /* sub_type is opaque to Veraison and is used by schemes to classify range of 
-    Endorsement sub types for a given Endorsement type. It is assumed that 
+    /* sub_type is opaque to Veraison and is used by schemes to classify range of
+    Endorsement sub types for a given Endorsement type. It is assumed that
     there is going to be only one single sub type required */
-    string sub_type = 3;  
+    string sub_type = 3;
     google.protobuf.Struct attributes = 4;
 }
 
@@ -56,8 +56,8 @@ message MediaTypeList {
     repeated string media_types = 1;
 }
 
-// Client interface for the Veraison Trusted Services component.
-service VTS {
+// Interface for the Veraison Trusted Services component.
+service TrustedServices {
     // Return the summary state of the service.
     rpc GetServiceState(google.protobuf.Empty) returns (ServiceState);
 
@@ -70,8 +70,5 @@ service VTS {
     // and Trust Anchors to the endorsement store
     rpc AddRefValues(AddRefValuesRequest) returns (AddRefValuesResponse);
     rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
-    // TODO When we move the provisiong plugins under VTS we need to enable this
-    // TODO interface too.
-    // rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 }
 

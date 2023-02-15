@@ -15,10 +15,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// VTSClient is the client API for VTS service.
+// TrustedServicesClient is the client API for TrustedServices service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type VTSClient interface {
+type TrustedServicesClient interface {
 	// Return the summary state of the service.
 	GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
@@ -31,63 +31,63 @@ type VTSClient interface {
 	AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error)
 }
 
-type vTSClient struct {
+type trustedServicesClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewVTSClient(cc grpc.ClientConnInterface) VTSClient {
-	return &vTSClient{cc}
+func NewTrustedServicesClient(cc grpc.ClientConnInterface) TrustedServicesClient {
+	return &trustedServicesClient{cc}
 }
 
-func (c *vTSClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error) {
+func (c *trustedServicesClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceState, error) {
 	out := new(ServiceState)
-	err := c.cc.Invoke(ctx, "/proto.VTS/GetServiceState", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TrustedServices/GetServiceState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *vTSClient) GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error) {
+func (c *trustedServicesClient) GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error) {
 	out := new(AppraisalContext)
-	err := c.cc.Invoke(ctx, "/proto.VTS/GetAttestation", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TrustedServices/GetAttestation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+func (c *trustedServicesClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
 	out := new(MediaTypeList)
-	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedVerificationMediaTypes", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TrustedServices/GetSupportedVerificationMediaTypes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *vTSClient) AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error) {
+func (c *trustedServicesClient) AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error) {
 	out := new(AddRefValuesResponse)
-	err := c.cc.Invoke(ctx, "/proto.VTS/AddRefValues", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TrustedServices/AddRefValues", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error) {
+func (c *trustedServicesClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error) {
 	out := new(AddTrustAnchorResponse)
-	err := c.cc.Invoke(ctx, "/proto.VTS/AddTrustAnchor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TrustedServices/AddTrustAnchor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// VTSServer is the server API for VTS service.
-// All implementations must embed UnimplementedVTSServer
+// TrustedServicesServer is the server API for TrustedServices service.
+// All implementations must embed UnimplementedTrustedServicesServer
 // for forward compatibility
-type VTSServer interface {
+type TrustedServicesServer interface {
 	// Return the summary state of the service.
 	GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error)
 	// Returns attestation information -- evidences, endorsed claims, trust
@@ -98,157 +98,157 @@ type VTSServer interface {
 	// and Trust Anchors to the endorsement store
 	AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error)
 	AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error)
-	mustEmbedUnimplementedVTSServer()
+	mustEmbedUnimplementedTrustedServicesServer()
 }
 
-// UnimplementedVTSServer must be embedded to have forward compatible implementations.
-type UnimplementedVTSServer struct {
+// UnimplementedTrustedServicesServer must be embedded to have forward compatible implementations.
+type UnimplementedTrustedServicesServer struct {
 }
 
-func (UnimplementedVTSServer) GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error) {
+func (UnimplementedTrustedServicesServer) GetServiceState(context.Context, *emptypb.Empty) (*ServiceState, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServiceState not implemented")
 }
-func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
+func (UnimplementedTrustedServicesServer) GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAttestation not implemented")
 }
-func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+func (UnimplementedTrustedServicesServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedVerificationMediaTypes not implemented")
 }
-func (UnimplementedVTSServer) AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error) {
+func (UnimplementedTrustedServicesServer) AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRefValues not implemented")
 }
-func (UnimplementedVTSServer) AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error) {
+func (UnimplementedTrustedServicesServer) AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddTrustAnchor not implemented")
 }
-func (UnimplementedVTSServer) mustEmbedUnimplementedVTSServer() {}
+func (UnimplementedTrustedServicesServer) mustEmbedUnimplementedTrustedServicesServer() {}
 
-// UnsafeVTSServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to VTSServer will
+// UnsafeTrustedServicesServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TrustedServicesServer will
 // result in compilation errors.
-type UnsafeVTSServer interface {
-	mustEmbedUnimplementedVTSServer()
+type UnsafeTrustedServicesServer interface {
+	mustEmbedUnimplementedTrustedServicesServer()
 }
 
-func RegisterVTSServer(s grpc.ServiceRegistrar, srv VTSServer) {
-	s.RegisterService(&VTS_ServiceDesc, srv)
+func RegisterTrustedServicesServer(s grpc.ServiceRegistrar, srv TrustedServicesServer) {
+	s.RegisterService(&TrustedServices_ServiceDesc, srv)
 }
 
-func _VTS_GetServiceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TrustedServices_GetServiceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).GetServiceState(ctx, in)
+		return srv.(TrustedServicesServer).GetServiceState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/GetServiceState",
+		FullMethod: "/proto.TrustedServices/GetServiceState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetServiceState(ctx, req.(*emptypb.Empty))
+		return srv.(TrustedServicesServer).GetServiceState(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_GetAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TrustedServices_GetAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AttestationToken)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).GetAttestation(ctx, in)
+		return srv.(TrustedServicesServer).GetAttestation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/GetAttestation",
+		FullMethod: "/proto.TrustedServices/GetAttestation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetAttestation(ctx, req.(*AttestationToken))
+		return srv.(TrustedServicesServer).GetAttestation(ctx, req.(*AttestationToken))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TrustedServices_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, in)
+		return srv.(TrustedServicesServer).GetSupportedVerificationMediaTypes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/GetSupportedVerificationMediaTypes",
+		FullMethod: "/proto.TrustedServices/GetSupportedVerificationMediaTypes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*emptypb.Empty))
+		return srv.(TrustedServicesServer).GetSupportedVerificationMediaTypes(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_AddRefValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TrustedServices_AddRefValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddRefValuesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).AddRefValues(ctx, in)
+		return srv.(TrustedServicesServer).AddRefValues(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/AddRefValues",
+		FullMethod: "/proto.TrustedServices/AddRefValues",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).AddRefValues(ctx, req.(*AddRefValuesRequest))
+		return srv.(TrustedServicesServer).AddRefValues(ctx, req.(*AddRefValuesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_AddTrustAnchor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TrustedServices_AddTrustAnchor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddTrustAnchorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).AddTrustAnchor(ctx, in)
+		return srv.(TrustedServicesServer).AddTrustAnchor(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/AddTrustAnchor",
+		FullMethod: "/proto.TrustedServices/AddTrustAnchor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).AddTrustAnchor(ctx, req.(*AddTrustAnchorRequest))
+		return srv.(TrustedServicesServer).AddTrustAnchor(ctx, req.(*AddTrustAnchorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// VTS_ServiceDesc is the grpc.ServiceDesc for VTS service.
+// TrustedServices_ServiceDesc is the grpc.ServiceDesc for TrustedServices service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var VTS_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.VTS",
-	HandlerType: (*VTSServer)(nil),
+var TrustedServices_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.TrustedServices",
+	HandlerType: (*TrustedServicesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetServiceState",
-			Handler:    _VTS_GetServiceState_Handler,
+			Handler:    _TrustedServices_GetServiceState_Handler,
 		},
 		{
 			MethodName: "GetAttestation",
-			Handler:    _VTS_GetAttestation_Handler,
+			Handler:    _TrustedServices_GetAttestation_Handler,
 		},
 		{
 			MethodName: "GetSupportedVerificationMediaTypes",
-			Handler:    _VTS_GetSupportedVerificationMediaTypes_Handler,
+			Handler:    _TrustedServices_GetSupportedVerificationMediaTypes_Handler,
 		},
 		{
 			MethodName: "AddRefValues",
-			Handler:    _VTS_AddRefValues_Handler,
+			Handler:    _TrustedServices_AddRefValues_Handler,
 		},
 		{
 			MethodName: "AddTrustAnchor",
-			Handler:    _VTS_AddTrustAnchor_Handler,
+			Handler:    _TrustedServices_AddTrustAnchor_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

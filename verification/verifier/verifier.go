@@ -12,10 +12,10 @@ import (
 )
 
 type Verifier struct {
-	VTSClient vts.IVTSClient
+	VTSClient vts.ITrustedServices
 }
 
-func New(v *viper.Viper, vtsClient vts.IVTSClient) IVerifier {
+func New(v *viper.Viper, vtsClient vts.ITrustedServices) IVerifier {
 	return &Verifier{
 		VTSClient: vtsClient,
 	}

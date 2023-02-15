@@ -118,7 +118,7 @@ func main() {
 	log.Info("bye!")
 }
 
-func vtsRun(vts trustedservices.ITrustedServices, done chan bool) {
+func vtsRun(vts trustedservices.ITrustedServicesServer, done chan bool) {
 	if err := vts.Run(); err != nil {
 		log.Error("VTS failed:", err)
 	}
