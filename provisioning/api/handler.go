@@ -29,14 +29,14 @@ type IHandler interface {
 
 type Handler struct {
 	PluginManager plugin.IManager[handler.IEndorsementHandler]
-	VTSClient     trustedservices.ITrustedServices
+	VTSClient     trustedservices.ITrustedServicesClient
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
 	pm plugin.IManager[handler.IEndorsementHandler],
-	sc trustedservices.ITrustedServices,
+	sc trustedservices.ITrustedServicesClient,
 	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{

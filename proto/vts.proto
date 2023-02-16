@@ -56,7 +56,7 @@ message MediaTypeList {
     repeated string media_types = 1;
 }
 
-// Interface for the Veraison Trusted Services component.
+// Interface for the Trusted Services component.
 service TrustedServices {
     // Return the summary state of the service.
     rpc GetServiceState(google.protobuf.Empty) returns (ServiceState);
