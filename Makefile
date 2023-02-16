@@ -13,8 +13,8 @@ SUBDIR += policy
 SUBDIR += proto
 SUBDIR += provisioning
 SUBDIR += scheme
+SUBDIR += trustedservices
 SUBDIR += verification
-SUBDIR += vts
 
 COVERAGE_THRESHOLD := 60.0
 # plugin coverage is low because it is mostly tested via plugin/test, a

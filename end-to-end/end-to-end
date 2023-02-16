@@ -17,8 +17,8 @@ function deploy() {
     echo "deploying services"
     cp $REPO_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
     cp $REPO_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
-    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
-    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $REPO_DIR/trustedservices/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $REPO_DIR/trustedservices/cmd/vts-service/vts-service $DEPLOY_DIR/
     cp $REPO_DIR/scheme/bin/* $DEPLOY_DIR/plugins/
     cp $THIS_DIR/config.yaml $DEPLOY_DIR/
     cp $THIS_DIR/skey.jwk $DEPLOY_DIR/

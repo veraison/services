@@ -15,7 +15,7 @@ import (
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/provisioning/api"
-	"github.com/veraison/services/vts"
+	"github.com/veraison/services/trustedservices"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	log.Info("initializing VTS client")
-	vtsClient := vts.NewGRPC()
+	vtsClient := trustedservices.NewGRPCClient()
 	if err := vtsClient.Init(subs["vts"]); err != nil {
 		log.Fatalf("Could not initilize VTS client: %v", err)
 	}

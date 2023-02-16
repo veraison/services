@@ -7,20 +7,21 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/vts"
+	"github.com/veraison/services/trustedservices"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Verifier struct {
-	VTSClient vts.ITrustedServices
+	VTSClient trustedservices.ITrustedServices
 }
 
-func New(v *viper.Viper, vtsClient vts.ITrustedServices) IVerifier {
+func New(v *viper.Viper, vtsClient trustedservices.ITrustedServices) IVerifier {
 	return &Verifier{
 		VTSClient: vtsClient,
 	}
 }
 
+// TODO(setrofim): this should not be part of the verifier.
 func (o *Verifier) GetVTSState() (*proto.ServiceState, error) {
 	return o.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/vts"
+	"github.com/veraison/services/trustedservices"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -29,14 +29,14 @@ type IHandler interface {
 
 type Handler struct {
 	PluginManager plugin.IManager[handler.IEndorsementHandler]
-	VTSClient     vts.ITrustedServices
+	VTSClient     trustedservices.ITrustedServices
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
 	pm plugin.IManager[handler.IEndorsementHandler],
-	sc vts.ITrustedServices,
+	sc trustedservices.ITrustedServices,
 	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
@@ -153,7 +153,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	if err != nil {
 		o.logger.Errorw("session failed", "error", err)
 
-		if errors.As(err, &vts.NoConnectionError{}) {
+		if errors.As(err, &trustedservices.NoConnectionError{}) {
 			ReportProblem(c,
 				http.StatusInternalServerError,
 				err.Error(),
@@ -172,7 +172,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	if err := o.store(rsp); err != nil {
 		o.logger.Errorw("session failed", "error", err)
 
-		if errors.As(err, &vts.NoConnectionError{}) {
+		if errors.As(err, &trustedservices.NoConnectionError{}) {
 			ReportProblem(c,
 				http.StatusInternalServerError,
 				err.Error(),
