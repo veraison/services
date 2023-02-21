@@ -4,6 +4,7 @@ package trustedservices
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -371,6 +372,12 @@ func (o *GRPC) GetAttestation(
 	}
 	appraisal.SignedEAR = ear
 
+	appraisal.Result.VerifierID.Build = &config.Version
+	appraisal.Result.VerifierID.Developer = &config.Developer
+
+	encodedNonce := base64.URLEncoding.EncodeToString(token.Nonce)
+	appraisal.Result.Nonce = &encodedNonce
+
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
 	return appraisal.GetContext(), err
@@ -382,7 +389,7 @@ func (c *GRPC) initEvidenceContext(
 ) (*appraisal.Appraisal, error) {
 	var err error
 
-	appraisal := appraisal.New(token.TenantId)
+	appraisal := appraisal.New(token.TenantId, handler.GetAttestationScheme())
 
 	appraisal.EvidenceContext.TrustAnchorId, err = handler.GetTrustAnchorID(token)
 	if err != nil {

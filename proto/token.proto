@@ -7,4 +7,5 @@ message AttestationToken {
 	string tenant_id = 1;
 	bytes data = 3;
 	string media_type = 4;
+	bytes nonce = 5;
 }

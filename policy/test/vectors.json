@@ -41,20 +41,28 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"ear.status": 0,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"eat_profile": "tag:github.com,2023:veraison/ear",
 				"iat": 1666091373,
-				"ear.trustworthiness-vector": {
-					"instance-identity": 0,
-					"configuration":     0,
-					"executables":       0,
-					"file-system":       0,
-					"hardware":          0,
-					"runtime-opaque":    0,
-					"storage-opaque":    0,
-					"sourced-data":      0
+				"ear.verifier-id": {
+					"build": "test",
+					"developer": "test"
 				},
-				"ear.veraison.verifier-added-claims": {}
+				"submods": {
+					"test": {
+						"ear.status": 0,
+						"ear.trustworthiness-vector": {
+							"instance-identity": 0,
+							"configuration":     0,
+							"executables":       0,
+							"file-system":       0,
+							"hardware":          0,
+							"runtime-opaque":    0,
+							"storage-opaque":    0,
+							"sourced-data":      0
+						},
+						"ear.veraison.policy-claims": {}
+					}
+				}
 			}
 		}
 	},
@@ -67,20 +75,28 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"ear.status": 0,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"eat_profile": "tag:github.com,2023:veraison/ear",
 				"iat": 1666091373,
-				"ear.trustworthiness-vector": {
-					"instance-identity": 0,
-					"configuration":     0,
-					"executables":       32,
-					"file-system":       0,
-					"hardware":          0,
-					"runtime-opaque":    0,
-					"storage-opaque":    0,
-					"sourced-data":      0
+				"ear.verifier-id": {
+					"build": "test",
+					"developer": "test"
 				},
-				"ear.veraison.verifier-added-claims": {}
+				"submods": {
+					"test": {
+						"ear.status": 0,
+						"ear.trustworthiness-vector": {
+							"instance-identity": 0,
+							"configuration":     0,
+							"executables":       32,
+							"file-system":       0,
+							"hardware":          0,
+							"runtime-opaque":    0,
+							"storage-opaque":    0,
+							"sourced-data":      0
+						},
+						"ear.veraison.policy-claims": {}
+					}
+				}
 			}
 		}
 	},
@@ -93,20 +109,28 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"ear.status": 0,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"eat_profile": "tag:github.com,2023:veraison/ear",
 				"iat": 1666091373,
-				"ear.trustworthiness-vector": {
-					"instance-identity": 0,
-					"configuration":     0,
-					"executables":       2,
-					"file-system":       0,
-					"hardware":          0,
-					"runtime-opaque":    0,
-					"storage-opaque":    0,
-					"sourced-data":      0
+				"ear.verifier-id": {
+					"build": "test",
+					"developer": "test"
 				},
-				"ear.veraison.verifier-added-claims": {}
+				"submods": {
+					"test": {
+						"ear.status": 0,
+						"ear.trustworthiness-vector": {
+							"instance-identity": 0,
+							"configuration":     0,
+							"executables":       2,
+							"file-system":       0,
+							"hardware":          0,
+							"runtime-opaque":    0,
+							"storage-opaque":    0,
+							"sourced-data":      0
+						},
+						"ear.veraison.policy-claims": {}
+					}
+				}
 			}
 		}
 	},
@@ -119,20 +143,28 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"ear.status": 0,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"eat_profile": "tag:github.com,2023:veraison/ear",
 				"iat": 1666091373,
-				"ear.trustworthiness-vector": {
-					"instance-identity": 0,
-					"configuration":     0,
-					"executables":       32,
-					"file-system":       0,
-					"hardware":          0,
-					"runtime-opaque":    0,
-					"storage-opaque":    0,
-					"sourced-data":      0
+				"ear.verifier-id": {
+					"build": "test",
+					"developer": "test"
 				},
-				"ear.veraison.verifier-added-claims": {}
+				"submods": {
+					"test": {
+						"ear.status": 0,
+						"ear.trustworthiness-vector": {
+							"instance-identity": 0,
+							"configuration":     0,
+							"executables":       32,
+							"file-system":       0,
+							"hardware":          0,
+							"runtime-opaque":    0,
+							"storage-opaque":    0,
+							"sourced-data":      0
+						},
+						"ear.veraison.policy-claims": {}
+					}
+				}
 			}
 		}
 	},
@@ -145,20 +177,28 @@
 		"expected": {
 			"error": null,
 			"outcome": {
-				"ear.status": 0,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
+				"eat_profile": "tag:github.com,2023:veraison/ear",
 				"iat": 1666091373,
-				"ear.trustworthiness-vector": {
-					"instance-identity": 0,
-					"configuration":     0,
-					"executables":       2,
-					"file-system":       0,
-					"hardware":          0,
-					"runtime-opaque":    0,
-					"storage-opaque":    0,
-					"sourced-data":      0
+				"ear.verifier-id": {
+					"build": "test",
+					"developer": "test"
 				},
-				"ear.veraison.verifier-added-claims": {}
+				"submods": {
+					"test": {
+						"ear.status": 0,
+						"ear.trustworthiness-vector": {
+							"instance-identity": 0,
+							"configuration":     0,
+							"executables":       2,
+							"file-system":       0,
+							"hardware":          0,
+							"runtime-opaque":    0,
+							"storage-opaque":    0,
+							"sourced-data":      0
+						},
+						"ear.veraison.policy-claims": {}
+					}
+				}
 			}
 		}
 	}

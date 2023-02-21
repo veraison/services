@@ -146,18 +146,20 @@ func getUpdateMap(ar *ear.AttestationResult) map[string]interface{} {
 
 	status := ear.TrustTierNone
 
+	app := ar.Submods["test"]
+
 	return map[string]interface{}{
 		"ear.status": &status,
 		"ear.trustworthiness-vector": map[string]interface{}{
-			"instance-identity": ar.TrustVector.InstanceIdentity,
-			"configuration":     ar.TrustVector.Configuration,
-			"executables":       ar.TrustVector.Executables,
-			"file-system":       ar.TrustVector.FileSystem,
-			"hardware":          ar.TrustVector.Hardware,
-			"runtime-opaque":    ar.TrustVector.RuntimeOpaque,
-			"storage-opaque":    ar.TrustVector.StorageOpaque,
-			"sourced-data":      ar.TrustVector.SourcedData,
+			"instance-identity": app.TrustVector.InstanceIdentity,
+			"configuration":     app.TrustVector.Configuration,
+			"executables":       app.TrustVector.Executables,
+			"file-system":       app.TrustVector.FileSystem,
+			"hardware":          app.TrustVector.Hardware,
+			"runtime-opaque":    app.TrustVector.RuntimeOpaque,
+			"storage-opaque":    app.TrustVector.StorageOpaque,
+			"sourced-data":      app.TrustVector.SourcedData,
 		},
-		"ear.veraison.verifier-added-claims": ar.VeraisonVerifierAddedClaims,
+		"ear.veraison.policy-claims": app.VeraisonPolicyClaims,
 	}
 }

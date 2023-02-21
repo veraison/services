@@ -383,7 +383,8 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	session.SetEvidence(mediaType, evidence)
 
 	// forward evidence to verifier
-	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, evidence, mediaType)
+	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
+		evidence, mediaType)
 	if err != nil {
 		o.logger.Error(err)
 		session.SetStatus(StatusFailed)

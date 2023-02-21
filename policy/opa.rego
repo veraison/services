@@ -45,6 +45,7 @@ TRUSTED_SOURCES := 2
 UNTRUSTED_SOURCES := 32
 CONTRAINDICATED_SOURCES := 96
 
+submod := input.submod
 result := input.result
 evidence := input.evidence["evidence"]
 endorsements := input.endorsements

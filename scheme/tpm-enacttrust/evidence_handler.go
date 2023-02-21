@@ -141,7 +141,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 	ec *proto.EvidenceContext,
 	endorsementStrings []string,
 ) (*ear.AttestationResult, error) {
-	result := ear.NewAttestationResult()
+	result := handler.CreateAttestationResult(SchemeName)
 
 	digestValue, ok := ec.Evidence.AsMap()["pcr-digest"]
 	if !ok {
@@ -163,9 +163,11 @@ func (s EvidenceHandler) AppraiseEvidence(
 		return result, err
 	}
 
+	appraisal := result.Submods[SchemeName]
+
 	if endorsements.Digest == evidenceDigest {
-		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		*result.Status = ear.TrustTierAffirming
+		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
+		*appraisal.Status = ear.TrustTierAffirming
 	}
 
 	return result, nil

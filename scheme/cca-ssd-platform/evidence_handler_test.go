@@ -64,7 +64,7 @@ func Test_SynthKeysFromRefValue_ok(t *testing.T) {
 	assert.Equal(t, expectedKey, key_list[0])
 }
 
-func Test_AppraiseEvidence_ok(t *testing.T) {
+func Test_AppraiseEvidence_ok(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -80,15 +80,17 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 
 	scheme := &EvidenceHandler{}
 
-	attestation, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
+	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
+
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.ApprovedRuntimeClaim)
 	assert.Equal(t, attestation.TrustVector.Configuration, ear.ApprovedConfigClaim)
 }
 
-func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) {
+func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -104,15 +106,17 @@ func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) {
 
 	scheme := &EvidenceHandler{}
 
-	attestation, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
+	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
+
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierWarning, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.UnrecognizedRuntimeClaim)
 	assert.Equal(t, attestation.TrustVector.Configuration, ear.ApprovedConfigClaim)
 }
 
-func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) {
+func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -128,8 +132,10 @@ func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) {
 
 	scheme := &EvidenceHandler{}
 
-	attestation, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
+	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
+
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierWarning, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.ApprovedRuntimeClaim)

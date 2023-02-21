@@ -162,9 +162,9 @@ func processUpdateValue(value interface{}) (map[string]interface{}, error) {
 	}
 
 	update := map[string]interface{}{
-		"ear.status":                         updatedStatus,
-		"ear.trustworthiness-vector":         updateTv,
-		"ear.veraison.verifier-added-claims": &addedClaims,
+		"ear.status":                 updatedStatus,
+		"ear.trustworthiness-vector": updateTv,
+		"ear.veraison.policy-claims": &addedClaims,
 	}
 
 	return update, nil
