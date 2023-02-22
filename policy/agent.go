@@ -4,7 +4,6 @@ package policy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -70,11 +69,14 @@ func (o *Agent) GetBackendName() string {
 func (o *Agent) Evaluate(
 	ctx context.Context,
 	policy *Policy,
-	result *ear.AttestationResult,
+	submod string,
+	appraisal *ear.Appraisal,
 	evidence *proto.EvidenceContext,
 	endorsements []string,
-) (*ear.AttestationResult, error) {
-	resultMap := result.AsMap()
+) (*ear.Appraisal, error) {
+
+	resultMap := appraisal.AsMap()
+	appraisalUpdated := false
 
 	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
@@ -95,6 +97,7 @@ func (o *Agent) Evaluate(
 	}
 
 	if updatedStatus != "" {
+		appraisalUpdated = true
 		resultMap["ear.status"] = updatedByPolicy["ear.status"]
 	}
 
@@ -105,35 +108,28 @@ func (o *Agent) Evaluate(
 
 	for k, v := range updatedTV {
 		if v != "" {
-			tc, err := ear.ToTrustClaim(v)
-			if err != nil {
-				msg := "could not get TrustClaim for %q from %v"
-				return nil, fmt.Errorf(msg, k, v)
-			}
-
-			resultMap["ear.trustworthiness-vector"].(map[string]ear.TrustClaim)[k] = *tc
+			appraisalUpdated = true
+			resultMap["ear.trustworthiness-vector"].(map[string]interface{})[k] = v
 		}
 	}
 
-	updatedAddedClaims, ok := updatedByPolicy["ear.veraison.verifier-added-claims"].(*map[string]interface{})
+	updatedAddedClaims, ok := updatedByPolicy["ear.veraison.policy-claims"].(*map[string]interface{})
 	if ok {
-		resultMap["ear.veraison.verifier-added-claims"] = updatedAddedClaims
+		appraisalUpdated = true
+		resultMap["ear.veraison.policy-claims"] = updatedAddedClaims
 	}
 
-	evalBytes, err := json.Marshal(resultMap)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal updated result: %w", err)
+	if appraisalUpdated {
+		evaluatedAppraisal, err := ear.ToAppraisal(resultMap)
+		if err != nil {
+			return nil, fmt.Errorf("bad appraisal data from policy: %w", err)
+		}
+		evaluatedAppraisal.AppraisalPolicyID = &policy.ID
+		return evaluatedAppraisal, nil
+	} else {
+		// policy did not update anything, so return the original appraisal
+		return appraisal, nil
 	}
-
-	var evaluatedResult ear.AttestationResult
-
-	if err = evaluatedResult.UnmarshalJSON(evalBytes); err != nil {
-		return nil, fmt.Errorf(ErrBadResult, err, evalBytes)
-	}
-
-	evaluatedResult.AppraisalPolicyID = &policy.ID
-
-	return &evaluatedResult, nil
 }
 
 func (o *Agent) GetBackend() IBackend {

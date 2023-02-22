@@ -65,18 +65,18 @@ func (mr *MockIVerifierMockRecorder) IsSupportedMediaType(mt interface{}) *gomoc
 }
 
 // ProcessEvidence mocks base method.
-func (m *MockIVerifier) ProcessEvidence(tenantID string, data []byte, mt string) ([]byte, error) {
+func (m *MockIVerifier) ProcessEvidence(tenantID string, nonce, data []byte, mt string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessEvidence", tenantID, data, mt)
+	ret := m.ctrl.Call(m, "ProcessEvidence", tenantID, nonce, data, mt)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProcessEvidence indicates an expected call of ProcessEvidence.
-func (mr *MockIVerifierMockRecorder) ProcessEvidence(tenantID, data, mt interface{}) *gomock.Call {
+func (mr *MockIVerifierMockRecorder) ProcessEvidence(tenantID, nonce, data, mt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEvidence", reflect.TypeOf((*MockIVerifier)(nil).ProcessEvidence), tenantID, data, mt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEvidence", reflect.TypeOf((*MockIVerifier)(nil).ProcessEvidence), tenantID, nonce, data, mt)
 }
 
 // SupportedMediaTypes mocks base method.

@@ -99,11 +99,11 @@ func (s EvidenceHandler) AppraiseEvidence(
 	ec *proto.EvidenceContext,
 	endorsementsString []string,
 ) (*ear.AttestationResult, error) {
-	result := ear.NewAttestationResult()
+	result := handler.CreateAttestationResult(SchemeName)
 
 	// If we got this far, this means the cert chain has been verfied, and
 	// thus, the identity has been established as valid.
-	result.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
+	result.Submods[SchemeName].TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 
 	return result, nil
 }

@@ -52,9 +52,13 @@ func (o *PolicyManager) Evaluate(
 		return err
 	}
 
-	appraisal.Result, err = o.Agent.Evaluate(ctx, pol, appraisal.Result, evidence, endorsements)
-	if err != nil {
-		return err
+	for submod, submodAppraisal := range appraisal.Result.Submods {
+		evaluated, err := o.Agent.Evaluate(
+			ctx, pol, submod, submodAppraisal, evidence, endorsements)
+		if err != nil {
+			return err
+		}
+		appraisal.Result.Submods[submod] = evaluated
 	}
 
 	return nil

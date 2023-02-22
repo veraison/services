@@ -229,7 +229,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 ) (*ear.AttestationResult, error) {
 	var endorsements []Endorsements // nolint:prealloc
 
-	result := ear.NewAttestationResult()
+	result := handler.CreateAttestationResult(SchemeName)
 
 	for i, e := range endorsementsStrings {
 		var endorsement Endorsements
@@ -283,18 +283,20 @@ func populateAttestationResult(
 		return err
 	}
 
+	appraisal := result.Submods[SchemeName]
+
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
-	result.TrustVector.Hardware = ear.GenuineHardwareClaim
+	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
 
 	swComps := filterRefVal(endorsements, "CCA_SSD_PLATFORM.sw-component")
 	match := matchSoftware(claims, swComps)
 	if match {
-		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
+		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		log.Debug("matchSoftware Success")
 
 	} else {
-		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 		log.Debug("matchSoftware Failed")
 	}
 
@@ -302,16 +304,16 @@ func populateAttestationResult(
 	match = matchPlatformConfig(claims, platformConfig)
 
 	if match {
-		result.TrustVector.Configuration = ear.ApprovedConfigClaim
+		appraisal.TrustVector.Configuration = ear.ApprovedConfigClaim
 		log.Debug("matchPlatformConfig Success")
 
 	} else {
-		result.TrustVector.Configuration = ear.UnsafeConfigClaim
+		appraisal.TrustVector.Configuration = ear.UnsafeConfigClaim
 		log.Debug("matchPlatformConfig Failed")
 	}
-	result.UpdateStatusFromTrustVector()
+	appraisal.UpdateStatusFromTrustVector()
 
-	result.VeraisonProcessedEvidence = &evidence
+	appraisal.VeraisonAnnotatedEvidence = &evidence
 
 	return nil
 }

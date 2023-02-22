@@ -215,7 +215,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 ) (*ear.AttestationResult, error) {
 	var endorsements []Endorsements // nolint:prealloc
 
-	result := ear.NewAttestationResult()
+	result := handler.CreateAttestationResult(SchemeName)
 
 	for i, e := range endorsementsStrings {
 		var endorsement Endorsements
@@ -263,23 +263,25 @@ func populateAttestationResult(
 		return err
 	}
 
+	appraisal := result.Submods[SchemeName]
+
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
-	result.TrustVector.Hardware = ear.GenuineHardwareClaim
+	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
 
 	match := matchSoftware(claims, endorsements)
 	if match {
-		result.TrustVector.Executables = ear.ApprovedRuntimeClaim
+		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		log.Println("\n matchSoftware Success")
 
 	} else {
-		result.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 		log.Println("\n matchSoftware Failed")
 	}
 
-	result.UpdateStatusFromTrustVector()
+	appraisal.UpdateStatusFromTrustVector()
 
-	result.VeraisonProcessedEvidence = &evidence
+	appraisal.VeraisonAnnotatedEvidence = &evidence
 
 	return nil
 }

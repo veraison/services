@@ -34,25 +34,21 @@ func Test_CreateAgent(t *testing.T) {
 }
 
 type AgentEvaluateTestVector struct {
-	Name           string
-	ExpectedError  string
-	ReturnResult   map[string]interface{}
-	ReturnError    error
-	ExpectedResult *ear.AttestationResult
+	Name              string
+	ExpectedError     string
+	ReturnAppraisal   map[string]interface{}
+	ReturnError       error
+	ExpectedAppraisal *ear.Appraisal
 }
 
 func Test_Agent_Evaluate(t *testing.T) {
 	affirmingStatus := ear.TrustTierAffirming
-	profile := ear.EatProfile
-	timestamp := int64(1666091373)
 
 	vectors := []AgentEvaluateTestVector{
 		{
 			Name: "success",
-			ReturnResult: map[string]interface{}{
-				"ear.status":  2,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
-				"iat":         1666091373,
+			ReturnAppraisal: map[string]interface{}{
+				"ear.status": 2,
 				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
@@ -66,10 +62,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 			},
 			ReturnError:   nil,
 			ExpectedError: "",
-			ExpectedResult: &ear.AttestationResult{
-				Status:   &affirmingStatus,
-				Profile:  &profile,
-				IssuedAt: &timestamp,
+			ExpectedAppraisal: &ear.Appraisal{
+				Status: &affirmingStatus,
 				TrustVector: &ear.TrustVector{
 					Executables: ear.ApprovedRuntimeClaim,
 				},
@@ -77,10 +71,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 		},
 		{
 			Name: "bad status",
-			ReturnResult: map[string]interface{}{
-				"ear.status":  "MEH",
-				"eat_profile": "tag:github.com,2022:veraison/ear",
-				"iat":         1666091373,
+			ReturnAppraisal: map[string]interface{}{
+				"ear.status": "MEH",
 				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
@@ -92,13 +84,13 @@ func Test_Agent_Evaluate(t *testing.T) {
 					"sourced-data":      0,
 				},
 			},
-			ReturnError:    nil,
-			ExpectedError:  "invalid values(s) for  'ear.status' from JSON",
-			ExpectedResult: nil,
+			ReturnError:       nil,
+			ExpectedError:     "invalid value(s) for 'ear.status' (not a valid TrustTier name: \"MEH\")",
+			ExpectedAppraisal: nil,
 		},
 		{
 			Name: "bad result, no status",
-			ReturnResult: map[string]interface{}{
+			ReturnAppraisal: map[string]interface{}{
 				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
@@ -110,27 +102,23 @@ func Test_Agent_Evaluate(t *testing.T) {
 					"sourced-data":      0,
 				},
 			},
-			ReturnError:    nil,
-			ExpectedError:  "backend returned outcome with no status field",
-			ExpectedResult: nil,
+			ReturnError:       nil,
+			ExpectedError:     "backend returned outcome with no status field",
+			ExpectedAppraisal: nil,
 		},
 		{
 			Name: "bad result, no trust vector",
-			ReturnResult: map[string]interface{}{
-				"ear.status":  "affirming",
-				"eat_profile": "tag:github.com,2022:veraison/ear",
-				"iat":         1666091373,
+			ReturnAppraisal: map[string]interface{}{
+				"ear.status": "affirming",
 			},
-			ReturnError:    nil,
-			ExpectedError:  "backend returned no trust-vector field, or its not a map[string]interface{}",
-			ExpectedResult: nil,
+			ReturnError:       nil,
+			ExpectedError:     "backend returned no trust-vector field, or its not a map[string]interface{}",
+			ExpectedAppraisal: nil,
 		},
 		{
 			Name: "bad result, bad trust vector",
-			ReturnResult: map[string]interface{}{
-				"ear.status":  2,
-				"eat_profile": "tag:github.com,2022:veraison/ear",
-				"iat":         1666091373,
+			ReturnAppraisal: map[string]interface{}{
+				"ear.status": 2,
 				"ear.trustworthiness-vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
@@ -143,9 +131,9 @@ func Test_Agent_Evaluate(t *testing.T) {
 					"wrong-field":       0,
 				},
 			},
-			ReturnError:    nil,
-			ExpectedError:  "found unexpected fields: wrong-field",
-			ExpectedResult: nil,
+			ReturnError:       nil,
+			ExpectedError:     "invalid value(s) for 'ear.trustworthiness-vector' (unexpected: wrong-field)",
+			ExpectedAppraisal: nil,
 		},
 	}
 
@@ -160,10 +148,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 
 	var endorsements []string
 	contraStatus := ear.TrustTierContraindicated
-	result := &ear.AttestationResult{
+	appraisal := &ear.Appraisal{
 		Status:      &contraStatus,
-		Profile:     &profile,
-		IssuedAt:    &timestamp,
 		TrustVector: &ear.TrustVector{},
 	}
 	evidence := &proto.EvidenceContext{}
@@ -181,10 +167,12 @@ func Test_Agent_Evaluate(t *testing.T) {
 				gomock.Any(),
 				gomock.Eq(endorsements)).
 			AnyTimes().
-			Return(v.ReturnResult, v.ReturnError)
+			Return(v.ReturnAppraisal, v.ReturnError)
 
 		agent := &Agent{Backend: backend, logger: logger}
-		res, err := agent.Evaluate(ctx, policy, result, evidence, endorsements)
+		submod := "test"
+		res, err := agent.Evaluate(ctx, policy,
+			submod, appraisal, evidence, endorsements)
 
 		if v.ExpectedError == "" {
 			require.NoError(t, err)
@@ -192,26 +180,26 @@ func Test_Agent_Evaluate(t *testing.T) {
 			assert.ErrorContains(t, err, v.ExpectedError)
 		}
 
-		if v.ExpectedResult == nil {
+		if v.ExpectedAppraisal == nil {
 			assert.Nil(t, res)
 		} else {
 			assert.Equal(t, policy.ID, *res.AppraisalPolicyID)
-			assert.Equal(t, *v.ExpectedResult.Status, *res.Status)
-			assert.Equal(t, v.ExpectedResult.TrustVector.InstanceIdentity,
+			assert.Equal(t, *v.ExpectedAppraisal.Status, *res.Status)
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.InstanceIdentity,
 				res.TrustVector.InstanceIdentity)
-			assert.Equal(t, v.ExpectedResult.TrustVector.Configuration,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.Configuration,
 				res.TrustVector.Configuration)
-			assert.Equal(t, v.ExpectedResult.TrustVector.Executables,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.Executables,
 				res.TrustVector.Executables)
-			assert.Equal(t, v.ExpectedResult.TrustVector.FileSystem,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.FileSystem,
 				res.TrustVector.FileSystem)
-			assert.Equal(t, v.ExpectedResult.TrustVector.Hardware,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.Hardware,
 				res.TrustVector.Hardware)
-			assert.Equal(t, v.ExpectedResult.TrustVector.RuntimeOpaque,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.RuntimeOpaque,
 				res.TrustVector.RuntimeOpaque)
-			assert.Equal(t, v.ExpectedResult.TrustVector.StorageOpaque,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.StorageOpaque,
 				res.TrustVector.StorageOpaque)
-			assert.Equal(t, v.ExpectedResult.TrustVector.SourcedData,
+			assert.Equal(t, v.ExpectedAppraisal.TrustVector.SourcedData,
 				res.TrustVector.SourcedData)
 		}
 	}

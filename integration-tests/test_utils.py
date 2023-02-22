@@ -9,7 +9,7 @@ def write_json(new_data, filename):
     with open(filename,'r+') as file:
         # Load existing data into a dict
         file_data = json.load(file)
-        
+
         if file_data == None:
             return 1
 
@@ -18,15 +18,15 @@ def write_json(new_data, filename):
         # Set file's current position at offset.
         file.seek(0)
         # Convert back to json
-        json.dump(file_data, file, indent = 4) 
+        json.dump(file_data, file, indent = 4)
 
         return 0
 
 
 def generate_token(response):
-    # Obtain nonce value from resource creation response 
+    # Obtain nonce value from resource creation response
     nonce_val = {"psa-nonce": response.json()["nonce"]}
-    
+
     # Create new json template
     template_without_nonce = "/test-vectors/verification/json/psa-claims-profile-2-integ-without-nonce.json"
     template_with_nonce = "/test-vectors/verification/json/psa-claims-profile-2-integ-with-nonce.json"
@@ -46,11 +46,14 @@ def decode_attestation_result(response, key):
 
     with open(key,'r+') as key_file:
         ecdsa_key = json.load(key_file)
-    
+
     ecdsa_key.pop("d")
     decoded = jwt.decode(currJWT, key=ecdsa_key, algorithms=['ES256'])
-    
-    return decoded
+
+    appraisals = list(decoded["submods"].values())
+    assert len(appraisals) == 1
+
+    return appraisals[0]
 
 def verify_good_attestation_results(response, template, key):
     decoded = decode_attestation_result(response, key)
@@ -58,7 +61,7 @@ def verify_good_attestation_results(response, template, key):
     with open(template,'r+') as file:
         # Load existing data into a dict
         file_data = json.load(file)
-        
+
         if file_data == None:
             return 1
 
@@ -68,8 +71,8 @@ def verify_good_attestation_results(response, template, key):
     for vec in decoded["ear.trustworthiness-vector"]:
         assert decoded["ear.trustworthiness-vector"][vec] == 0 or decoded["ear.trustworthiness-vector"][vec] == 2 or decoded["ear.trustworthiness-vector"][vec] == 3
 
-    for key in decoded["ear.veraison.processed-evidence"]:
-        assert decoded["ear.veraison.processed-evidence"][key] == file_data[key]
+    for key in decoded["ear.veraison.annotated-evidence"]:
+        assert decoded["ear.veraison.annotated-evidence"][key] == file_data[key]
 
 
 def verify_bad_swcomp_attestation_results(response, template, key):
@@ -78,7 +81,7 @@ def verify_bad_swcomp_attestation_results(response, template, key):
     with open(template,'r+') as file:
         # Load existing data into a dict
         file_data = json.load(file)
-        
+
         if file_data == None:
             return 1
 
@@ -86,6 +89,6 @@ def verify_bad_swcomp_attestation_results(response, template, key):
 
     assert decoded["ear.trustworthiness-vector"]["executables"] == 33
 
-    for key in decoded["ear.veraison.processed-evidence"]:
-        assert decoded["ear.veraison.processed-evidence"][key] == file_data[key]
-    
+    for key in decoded["ear.veraison.annotated-evidence"]:
+        assert decoded["ear.veraison.annotated-evidence"][key] == file_data[key]
+

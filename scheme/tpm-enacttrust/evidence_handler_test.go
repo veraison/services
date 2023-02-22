@@ -136,7 +136,9 @@ func Test_GetAttestation(t *testing.T) {
 	result, err := scheme.AppraiseEvidence(evidenceContext, endorsements)
 	require.NoError(t, err)
 
-	assert.Equal(t, ear.TrustTierAffirming, *result.Status)
+	appraisal := result.Submods["TPM_ENACTTRUST"]
+
+	assert.Equal(t, ear.TrustTierAffirming, *appraisal.Status)
 	assert.Equal(t, ear.TrustTierAffirming,
-		result.TrustVector.Executables.GetTier())
+		appraisal.TrustVector.Executables.GetTier())
 }

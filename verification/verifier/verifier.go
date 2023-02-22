@@ -55,11 +55,17 @@ func (o *Verifier) SupportedMediaTypes() ([]string, error) {
 	return mts.GetMediaTypes(), nil
 }
 
-func (o *Verifier) ProcessEvidence(tenantID string, data []byte, mt string) ([]byte, error) {
+func (o *Verifier) ProcessEvidence(
+	tenantID string,
+	nonce []byte,
+	data []byte,
+	mt string,
+) ([]byte, error) {
 	token := &proto.AttestationToken{
 		TenantId:  tenantID,
 		Data:      data,
 		MediaType: mt,
+		Nonce:     nonce,
 	}
 
 	appraisalCtx, err := o.VTSClient.GetAttestation(

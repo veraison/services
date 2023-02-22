@@ -5,6 +5,7 @@ package appraisal
 
 import (
 	"github.com/veraison/ear"
+	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 )
 
@@ -17,22 +18,13 @@ type Appraisal struct {
 	SignedEAR       []byte
 }
 
-func New(tenantID string) *Appraisal {
+func New(tenantID string, submodName string) *Appraisal {
 	return &Appraisal{
 		EvidenceContext: &proto.EvidenceContext{
 			TenantId: tenantID,
 		},
-		Result: ear.NewAttestationResult(),
+		Result: ear.NewAttestationResult(submodName, config.Version, config.Developer),
 	}
-}
-
-func (o *Appraisal) SetError() {
-	if o.Result == nil {
-		return
-	}
-
-	*o.Result.Status = ear.TrustTierNone
-	o.Result.TrustVector.SetAll(ear.VerifierMalfunctionClaim)
 }
 
 func (o Appraisal) GetContext() *proto.AppraisalContext {

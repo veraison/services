@@ -15,8 +15,9 @@ type IAgent interface {
 	GetBackendName() string
 	Evaluate(ctx context.Context,
 		policy *Policy,
-		result *ear.AttestationResult,
+		submod string,
+		appraisal *ear.Appraisal,
 		evidence *proto.EvidenceContext,
-		endorsements []string) (*ear.AttestationResult, error)
+		endorsements []string) (*ear.Appraisal, error)
 	Close()
 }

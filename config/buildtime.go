@@ -6,6 +6,8 @@ import "fmt"
 
 var Version = "N/A"
 
+var Developer = "Veraison Project"
+
 // Valid values: "plugins", "builtin"
 var SchemeLoader = "plugins"
 

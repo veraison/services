@@ -108,8 +108,10 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 
 	handler := &EvidenceHandler{}
 
-	attestation, err := handler.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
+	result, err := handler.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
 	require.NoError(t, err)
+
+	attestation := result.Submods["PSA_IOT"]
 
 	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 }
@@ -130,8 +132,10 @@ func Test_AppraiseEvidenceMultEndorsement_ok(t *testing.T) {
 
 	handler := &EvidenceHandler{}
 
-	attestation, err := handler.AppraiseEvidence(&ec, endorsemementsArray)
+	result, err := handler.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
+
+	attestation := result.Submods["PSA_IOT"]
 
 	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 }

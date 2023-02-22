@@ -95,6 +95,10 @@ var (
 	testResult         = `{}`
 	testNewSessionURL  = "/challenge-response/v1/newSession"
 	testSessionBaseURL = "/challenge-response/v1/session"
+	testNonce          = []byte{0x99, 0x5b, 0x9b, 0xaa, 0xd8, 0x37, 0x59, 0xae,
+		0x46, 0x4a, 0xbc, 0x77, 0x2f, 0xfd, 0x81, 0xf7,
+		0xd7, 0x10, 0x53, 0x66, 0xcc, 0x40, 0x55, 0x58,
+		0x50, 0x8f, 0x5a, 0x4e, 0x60, 0xd8, 0x8b, 0xae}
 )
 
 func TestHandler_NewChallengeResponse_UnsupportedAccept(t *testing.T) {
@@ -601,7 +605,7 @@ func TestHandler_SubmitEvidence_process_evidence_failed(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
-		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
+		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, errors.New(vmErr))
 
 	h := NewHandler(sm, v)
@@ -644,7 +648,7 @@ func TestHandler_SubmitEvidence_process_ok_sync(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
-		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
+		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return([]byte(testResult), nil)
 
 	h := NewHandler(sm, v)
@@ -687,7 +691,7 @@ func TestHandler_SubmitEvidence_process_ok_async(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
-		ProcessEvidence(tenantID, []byte(testJSONBody), testSupportedMediaTypeA).
+		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, nil)
 
 	h := NewHandler(sm, v)

@@ -30,7 +30,7 @@ require (
 	github.com/veraison/ccatoken v1.0.0
 	github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a
 	github.com/veraison/dice v0.0.1
-	github.com/veraison/ear v0.0.3
+	github.com/veraison/ear v1.0.1
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/psatoken v1.0.1
 	go.uber.org/zap v1.23.0
