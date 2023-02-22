@@ -1068,8 +1068,6 @@ github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a h1:/aZoeXMIhWDT7SnH
 github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a/go.mod h1:AdIMc2lCYORuG8Pa4fXemyP1KzpgMg+cnPgks32xjAU=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=
 github.com/veraison/dice v0.0.1/go.mod h1:QPMLc5LVMj08VZ+HNMYk4XxWoVYGAUBVm8Rd5V1hzxs=
-github.com/veraison/ear v1.0.0 h1:ykWxjC8YZnjHSYkQelZnuLfxjdIJknbUBrAcPuMRYI4=
-github.com/veraison/ear v1.0.0/go.mod h1:O3yKgZR04DWKHHiNxfXCMX9ky0cLVoC67TFks6JwEhI=
 github.com/veraison/ear v1.0.1 h1:Wf1dbJK29kBQM7xafKM1m0L5pUh3MqPqzEaDRLUu9FY=
 github.com/veraison/ear v1.0.1/go.mod h1:O3yKgZR04DWKHHiNxfXCMX9ky0cLVoC67TFks6JwEhI=
 github.com/veraison/eat v0.0.0-20210331113810-3da8a4dd42ff/go.mod h1:+kxt8iuFiVvKRs2VQ1Ho7bbAScXAB/kHFFuP5Biw19I=
@@ -1077,8 +1075,8 @@ github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53 h1:5gnX2TrGd/Xz8DOp2O
 github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53/go.mod h1:+kxt8iuFiVvKRs2VQ1Ho7bbAScXAB/kHFFuP5Biw19I=
 github.com/veraison/go-cose v1.0.0-rc.1 h1:4qA7dbFJGvt7gcqv5MCIyCQvN+NpHFPkW7do3EeDLb8=
 github.com/veraison/go-cose v1.0.0-rc.1/go.mod h1:7ziE85vSq4ScFTg6wyoMXjucIGOf4JkFEZi/an96Ct4=
-github.com/veraison/psatoken v1.0.1 h1:QtoJviwuSQOOk9GEQXcAWVAqm2w/0MIYYqTkJgmINVw=
-github.com/veraison/psatoken v1.0.1/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
+github.com/veraison/psatoken v1.1.0 h1:TG0+UWPCMrP0B69zteZyjHGhzYG1JYb5IX+66wuDlGw=
+github.com/veraison/psatoken v1.1.0/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
 github.com/veraison/swid v0.0.1-beta.6 h1:ysDyCOPwGyjiBnhAM+/kgTEcc/PWieIbUQJOjnSTK48=
 github.com/veraison/swid v0.0.1-beta.6/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
