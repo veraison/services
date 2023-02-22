@@ -269,6 +269,22 @@ func populateAttestationResult(
 	// authentic
 	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
 
+	rawLifeCycle, err := claims.GetSecurityLifeCycle()
+	if err != nil {
+		return err
+	}
+
+	lifeCycle := psatoken.PsaLifeCycleToState(rawLifeCycle)
+	if lifeCycle == psatoken.PsaStateSecured || lifeCycle == psatoken.PsaStateNonPsaRotDebug {
+		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
+		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
+		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim
+	} else {
+		appraisal.TrustVector.InstanceIdentity = ear.UntrustworthyInstanceClaim
+		appraisal.TrustVector.RuntimeOpaque = ear.VisibleMemoryRuntimeClaim
+		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
+	}
+
 	match := matchSoftware(claims, endorsements)
 	if match {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim

@@ -289,6 +289,23 @@ func populateAttestationResult(
 	// authentic
 	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
 
+	rawLifeCycle, err := claims.GetSecurityLifeCycle()
+	if err != nil {
+		return err
+	}
+
+	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)
+	if lifeCycle == psatoken.CcaStateSecured ||
+		lifeCycle == psatoken.CcaStateNonCcaPlatformDebug {
+		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
+		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
+		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim
+	} else {
+		appraisal.TrustVector.InstanceIdentity = ear.UntrustworthyInstanceClaim
+		appraisal.TrustVector.RuntimeOpaque = ear.VisibleMemoryRuntimeClaim
+		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
+	}
+
 	swComps := filterRefVal(endorsements, "CCA_SSD_PLATFORM.sw-component")
 	match := matchSoftware(claims, swComps)
 	if match {
