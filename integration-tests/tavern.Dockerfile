@@ -1,5 +1,5 @@
 # go version for container image
-ARG GoVersion=1.18
+ARG GoVersion=1.19
 
 FROM golang:$GoVersion AS tavern-integration-tests
 WORKDIR /
