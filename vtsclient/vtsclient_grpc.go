@@ -174,3 +174,12 @@ func (o *GRPC) EnsureConnection() error {
 
 	return nil
 }
+
+func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetEARSigningPublicKey(ctx, in, opts...)
+}

@@ -78,3 +78,7 @@ func (o *Verifier) ProcessEvidence(
 
 	return appraisalCtx.Result, nil
 }
+
+func (o *Verifier) GetPublicKey() (*proto.PublicKey, error) {
+	return o.VTSClient.GetEARSigningPublicKey(context.Background(), &emptypb.Empty{})
+}

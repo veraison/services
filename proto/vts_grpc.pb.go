@@ -29,6 +29,8 @@ type VTSClient interface {
 	// and Trust Anchors to the endorsement store
 	AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error)
 	AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error)
+	// Returns the public key used to sign evidence.
+	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 }
 
 type vTSClient struct {
@@ -84,6 +86,15 @@ func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorReques
 	return out, nil
 }
 
+func (c *vTSClient) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error) {
+	out := new(PublicKey)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetEARSigningPublicKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VTSServer is the server API for VTS service.
 // All implementations must embed UnimplementedVTSServer
 // for forward compatibility
@@ -98,6 +109,8 @@ type VTSServer interface {
 	// and Trust Anchors to the endorsement store
 	AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error)
 	AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error)
+	// Returns the public key used to sign evidence.
+	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	mustEmbedUnimplementedVTSServer()
 }
 
@@ -119,6 +132,9 @@ func (UnimplementedVTSServer) AddRefValues(context.Context, *AddRefValuesRequest
 }
 func (UnimplementedVTSServer) AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddTrustAnchor not implemented")
+}
+func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEARSigningPublicKey not implemented")
 }
 func (UnimplementedVTSServer) mustEmbedUnimplementedVTSServer() {}
 
@@ -223,6 +239,24 @@ func _VTS_AddTrustAnchor_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VTS_GetEARSigningPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetEARSigningPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetEARSigningPublicKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetEARSigningPublicKey(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VTS_ServiceDesc is the grpc.ServiceDesc for VTS service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,6 +283,10 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddTrustAnchor",
 			Handler:    _VTS_AddTrustAnchor_Handler,
+		},
+		{
+			MethodName: "GetEARSigningPublicKey",
+			Handler:    _VTS_GetEARSigningPublicKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

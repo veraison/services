@@ -34,6 +34,21 @@ func (m *MockIVerifier) EXPECT() *MockIVerifierMockRecorder {
 	return m.recorder
 }
 
+// GetPublicKey mocks base method.
+func (m *MockIVerifier) GetPublicKey() (*proto.PublicKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublicKey")
+	ret0, _ := ret[0].(*proto.PublicKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPublicKey indicates an expected call of GetPublicKey.
+func (mr *MockIVerifierMockRecorder) GetPublicKey() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicKey", reflect.TypeOf((*MockIVerifier)(nil).GetPublicKey))
+}
+
 // GetVTSState mocks base method.
 func (m *MockIVerifier) GetVTSState() (*proto.ServiceState, error) {
 	m.ctrl.T.Helper()

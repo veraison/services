@@ -6,15 +6,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var publicApiMap = make(map[string]string)
+
+const (
+	provisioningSubmitUrl           = "/endorsement-provisioning/v1/submit"
+	getServiceStateUrl              = "/status"
+	getWellKnownProvisioningInfoUrl = "/.well-known/veraison/provisioning"
+)
+
 func NewRouter(handler IHandler) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	router.Group("/endorsement-provisioning/v1").
-		POST("/submit", handler.Submit)
-	router.GET("/status", handler.GetServiceState)
+	router.POST(provisioningSubmitUrl, handler.Submit)
+	publicApiMap["provisioningSubmit"] = provisioningSubmitUrl
+
+	router.GET(getServiceStateUrl, handler.GetServiceState)
+
+	router.GET(getWellKnownProvisioningInfoUrl, handler.GetWellKnownProvisioningInfo)
 
 	return router
 }

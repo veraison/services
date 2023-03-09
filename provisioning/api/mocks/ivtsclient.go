@@ -97,6 +97,26 @@ func (mr *MockIVTSClientMockRecorder) GetAttestation(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAttestation", reflect.TypeOf((*MockIVTSClient)(nil).GetAttestation), varargs...)
 }
 
+// GetEARSigningPublicKey mocks base method.
+func (m *MockIVTSClient) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetEARSigningPublicKey", varargs...)
+	ret0, _ := ret[0].(*proto.PublicKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEARSigningPublicKey indicates an expected call of GetEARSigningPublicKey.
+func (mr *MockIVTSClientMockRecorder) GetEARSigningPublicKey(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEARSigningPublicKey", reflect.TypeOf((*MockIVTSClient)(nil).GetEARSigningPublicKey), varargs...)
+}
+
 // GetServiceState mocks base method.
 func (m *MockIVTSClient) GetServiceState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.ServiceState, error) {
 	m.ctrl.T.Helper()
