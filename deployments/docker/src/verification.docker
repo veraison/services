@@ -1,0 +1,28 @@
+# Verification service container.
+# The context for building this image is assumed to be the Veraison deployment
+# directory (/tmp/veraison is the default for make build).
+FROM debian as veraison-verification
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install \
+        --assume-yes \
+        --no-install-recommends \
+	uuid-runtime \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && apt-get clean \
+    && apt-get autoremove --assume-yes \
+    && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
+
+RUN groupadd -g 616 veraison && \
+    useradd -m  -g veraison  --system veraison
+
+USER veraison
+
+WORKDIR /opt/veraison
+
+RUN mkdir logs
+
+ADD --chown=veraison:nogroup config.yaml verification-service ./
+
+ENTRYPOINT ["/opt/veraison/verification-service"]
+

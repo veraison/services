@@ -1,8 +1,0 @@
-provisioning:
-  listen-addr: {{ "localhost:8888" | env_override('PROVISIONING_LISTENING_ADDRESS_AND_PORT')}}
-plugin:
-  backend: {{ "go-plugin" }}
-  go-plugin:
-    dir: {{  "../../plugins/bin/" | env_override('PLUGIN_DIR') }}
-vts:
-  server-addr: {{ "" | env_override('VTS_CONTAINER_NAME') }}.{{ "" | env_override('VTS_PROVISIONING_NETWORK_ALIAS') }}:{{ "50051" | env_override('VTS_PROVISIONING_LOCAL_IP_ADDRESS_PORT') }}

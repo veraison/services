@@ -1,0 +1,78 @@
+#!/bin/bash
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+# This script is the entry point for the builder docker container.
+
+_error='\e[0;31mERROR\e[0m'
+_utils_dir=/opt/veraison/utils
+_stores_dir=/opt/veraison/stores/vts
+_logs_dir=/opt/veraison/logs
+_host_root=/opt/veraison/hostroot
+
+function stores() {
+    local query=${1:-.}
+
+    echo "TRUST ANCHORS:"
+    echo "--------------"
+    sqlite3 $_stores_dir/ta-store.sql 'select distinct vals from kvstore' | jq $query
+
+    echo ""
+
+    echo "ENDORSEMENTS:"
+    echo "-------------"
+    sqlite3 $_stores_dir/en-store.sql 'select distinct vals from kvstore' | jq $query
+
+    echo ""
+}
+
+function clear_stores() {
+    sqlite3 $_stores_dir/en-store.sql 'delete from kvstore'
+    sqlite3 $_stores_dir/po-store.sql 'delete from kvstore'
+    sqlite3 $_stores_dir/ta-store.sql 'delete from kvstore'
+}
+
+function logs() {
+    local dest="$@"
+    if [[ -f $dest ]]; then
+        echo -e "$_error: '$dest' is a file; must specify a directory."
+    fi
+
+    mkdir -p $dest
+    cp $_logs_dir/* $dest/
+}
+
+function cocli() {
+    local cmd="$_utils_dir/cocli $@"
+    /bin/bash -c "$cmd"
+}
+
+function evcli() {
+    local cmd="$_utils_dir/evcli $@"
+    /bin/bash -c "$cmd"
+}
+
+function polcli() {
+    local cmd="$_utils_dir/polcli $@"
+    /bin/bash -c "$cmd"
+}
+
+function _check_is_mount_point() {
+    local -a expected=$1
+    local mounts=$(df | tail -n +2 | tr -s ' '  | cut -d' ' -f6)
+
+    if [[ "$(echo $mounts | grep $expected)" == "" ]]; then
+        echo -e "$_error: '$expected' must be mounted from the host (-v missing from docker run invocation?)."
+        exit 1
+    fi
+}
+
+command=$1; shift
+case $command in
+    stores | check-stores) stores "$@";;
+    clear-stores) clear_stores "$@";;
+    logs | get-logs) logs "$@";;
+    cocli)  cocli "$@";;
+    evcli)  evcli "$@";;
+    polcli)  polcli "$@";;
+    *) echo -e "$_error: unexpected command: \"$command\"";;
+esac

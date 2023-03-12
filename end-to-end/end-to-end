@@ -2,72 +2,15 @@
 # Copyright 2022-2023 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-DEPLOY_DIR=${DEPLOY_DIR:-/tmp/veraison}
-TMUX_SESSION=${TMUX_SESSION:-veraison}
 SCHEME=${SCHEME:-psa}
 
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-REPO_DIR=$THIS_DIR/..
+DEPLOY_BIN=$THIS_DIR/../deployments/docker/.bin
+VERAISON=$THIS_DIR/../deployments/docker/veraison
 
-function deploy() {
-    echo "creating deployment directory structure under $DEPLOY_DIR"
-    mkdir -p $DEPLOY_DIR/plugins
-    mkdir -p $DEPLOY_DIR/stores
-    mkdir -p $DEPLOY_DIR/logs
-    echo "deploying services"
-    cp $REPO_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
-    cp $REPO_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
-    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
-    cp $REPO_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
-    cp $REPO_DIR/scheme/bin/* $DEPLOY_DIR/plugins/
-    cp $THIS_DIR/config.yaml $DEPLOY_DIR/
-    cp $THIS_DIR/skey.jwk $DEPLOY_DIR/
-
-    echo "initializing stores"
-    for t in en ta po
-    do
-        echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
-            sqlite3 $DEPLOY_DIR/stores/$t-store.sql
-    done
-}
-
-function run() {
-    echo "starting services inside a tmux session"
-    tmux new-session -d -s $TMUX_SESSION -c $DEPLOY_DIR "/bin/bash"
-    tmux send-keys -t $TMUX_SESSION:0.0 ./vts-service C-m
-
-    sleep 0.5 # wait for VTS to start
-
-    tmux split-window -t $TMUX_SESSION:0.0 -c $DEPLOY_DIR "/bin/bash"
-    tmux send-keys -t $TMUX_SESSION:0.1 ./verification-service C-m
-
-    tmux split-window -t $TMUX_SESSION:0.1 -c $DEPLOY_DIR "/bin/bash"
-    tmux send-keys -t $TMUX_SESSION:0.2 ./provisioning-service C-m
-
-    tmux rename-window -t $TMUX_SESSION:0 services
-    tmux resize-pane -t $TMUX_SESSION:0.0 -y 33%
-    tmux resize-pane -t $TMUX_SESSION:0.1 -y 33%
-
-    echo "done."
-    echo ""
-    echo "    use \"tmux attach -t $TMUX_SESSION\" to attach to the session."
-    echo ""
-}
-
-function terminate() {
-    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $TMUX_SESSION)" != "" ]]; then
-        echo "killing exististing tmux session"
-        tmux kill-session -t $TMUX_SESSION
-    fi
-}
-
-function clean() {
-    rm -rf $DEPLOY_DIR
-}
+source $THIS_DIR/../deployments/docker/env.bash
 
 function provision() {
-    _check_command cocli "go install github.com/veraison/corim/cocli@latest"
-
     case $SCHEME  in
         psa)
             local corim_file=$THIS_DIR/input/psa-endorsements.cbor
@@ -84,26 +27,14 @@ function provision() {
     esac
 
     set -x
-    cocli corim submit --corim-file=$corim_file --api-server="http://localhost:8888/endorsement-provisioning/v1/submit" --media-type="$media_type"
+    $VERAISON -- cocli corim submit --corim-file=$corim_file --api-server="http://provisioning-service:8888/endorsement-provisioning/v1/submit" --media-type="'$media_type'"
 }
 
 function check() {
-    echo "TRUST ANCHORS:"
-    echo "--------------"
-    sqlite3 $DEPLOY_DIR/stores/ta-store.sql 'select distinct vals from kvstore' | jq .
-
-    echo ""
-
-    echo "ENDORSEMENTS:"
-    echo "-------------"
-    sqlite3 $DEPLOY_DIR/stores/en-store.sql 'select distinct vals from kvstore' | jq .
-
-    echo ""
+    $VERAISON stores
 }
 
 function verify_as_attester() {
-    _check_command evcli "go install github.com/veraison/evcli@latest"
-
     case $SCHEME  in
         psa)
             local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
@@ -122,14 +53,13 @@ function verify_as_attester() {
     esac
 
     set -x
-    evcli $SCHEME verify-as attester \
-        --api-server=http://localhost:8080/challenge-response/v1/newSession \
+    $VERAISON -- evcli $SCHEME verify-as attester \
+        --api-server=http://verification-service.${VERAISON_NETWORK}:8080/challenge-response/v1/newSession \
         --claims=$claims \
         $key_args $nonce_args
 }
 
 function verify_as_relying_party() {
-    _check_command evcli "go install github.com/veraison/evcli@latest"
     case $SCHEME  in
         psa)
             local token=$THIS_DIR/input/psa-evidence.cbor
@@ -144,8 +74,8 @@ function verify_as_relying_party() {
     esac
 
     set -x
-    evcli $SCHEME verify-as relying-party \
-        --api-server=http://localhost:8080/challenge-response/v1/newSession \
+    $VERAISON -- evcli $SCHEME verify-as relying-party \
+        --api-server=http://verification-service.${VERAISON_NETWORK}:8080/challenge-response/v1/newSession \
         --token=$token
 }
 
@@ -159,32 +89,12 @@ function verify() {
     esac
 }
 
-function build() {
-    make -C $REPO_DIR
-}
 
 function help() {
 cat <<'EOF'
 Usage: ./end-to-end [command]
 
 Command:
-
-  Deployment commands:
-  --------------------
-
-  build
-      Build Veraison (equivalent to `make -C ..`).
-  deploy
-      Create deployment location and copy built artefacts into it.
-  run | start
-      Run veraison services inside a tmux session.
-  stop | terminate
-      Terminate the tmux session and the services therein.
-  clean
-      Delete the deployment location
-
-  End-to-end test commands:
-  -------------------------
 
   provision
       Provision endorsements and trust anchors via the provisioning API.
@@ -206,34 +116,26 @@ function _check_scheme() {
     esac
 }
 
-function _check_command() {
-    local name=$1
-    local installCommand=$2
+set -- $(getopt "hs:" "$@")
+while [ ! -z "$1" ]
+do
+  case "$1" in
+    -h) help; exit;;
+    -s) SCHEME=$2; shift;;
+     *) break;;
+  esac
 
-    which $name 2> /dev/null
-
-    if [ $? -ne 0 ]; then
-        echo -e "ERROR: missing '$name' executable; please make sure that it is installed\n"
-        echo -e "\t$installCommand"
-        echo ""
-        echo "and is in PATH."
-        exit 1
-    fi
-}
+  shift
+done
+shift
 
 _check_scheme
 
 command=$1
 case $command in
-    help | -h ) help;;
-    deploy) deploy;;
-    redeploy) build && terminate && deploy && run;;
-    start | run) run;;
-    stop | terminate) terminate;;
-    clean | rm) terminate && clean;;
+    help) help;;
     provision) provision;;
     check | check-stores) check;;
     verify) verify $2;;
-    build) build;;
     *) echo "ERROR: unexpected command: \"$command\""; help;;
 esac

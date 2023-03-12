@@ -1,0 +1,69 @@
+# Go version that will be used to build the project. Due to the use of generics
+# within the project, it must be at least 1.19.
+ARG GO_VERSION=1.19
+
+FROM golang:${GO_VERSION} as veraison-builder
+
+# User identity that will be used to build the project. This should be
+# overriden at build time to match the host user running the builder, who owns
+# the git checkout of the source.
+ARG BUILDER_UID=1000
+ARG BUILDER_GID=1000
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install \
+        --assume-yes \
+        --no-install-recommends \
+        protobuf-compiler \
+        libprotobuf-dev \
+        sqlite3 \
+	uuid-runtime \
+	gettext-base \
+        vim \
+        jq \
+        iputils-ping \
+        nmap \
+        sudo \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && apt-get clean \
+    && apt-get autoremove --assume-yes \
+    && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
+
+SHELL ["/bin/bash", "-c"]
+
+# Builder password is "builder" (sans quotes).
+RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${BUILDER_UID}" | cut -d: -f1); \
+    groupdel -f $(cat /etc/group | awk -F: "\$3 == ${BUILDER_GID}" | cut -d: -f1); \
+    groupadd -g ${BUILDER_GID} builder && \
+    groupadd -g 616 veraison && \
+    useradd -m -u ${BUILDER_UID} -g builder -G sudo,veraison \
+    -p paxyJoB0NZsNU -s /bin/bash builder
+
+
+WORKDIR /veraison
+
+RUN chown builder:builder /veraison
+
+USER builder
+
+RUN mkdir --mode=775 logs stores
+
+ADD --chown=builder:builder go.mod go.sum ./
+
+# Download Go modules
+RUN go mod download &&\
+    go install golang.org/x/tools/gopls@latest &&\
+    go install golang.org/x/tools/cmd/guru@latest &&\
+    go install github.com/golang/mock/mockgen@v1.7.0-rc.1 &&\
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
+    go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
+    go install github.com/veraison/corim/cocli@latest &&\
+    go install github.com/veraison/evcli@latest &&\
+    go install github.com/go-delve/delve/cmd/dlv@latest
+
+ADD --chown=builder:builder builder-dispatcher .
+ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc
+
+ENTRYPOINT ["/veraison/builder-dispatcher"]
+CMD ["help"]

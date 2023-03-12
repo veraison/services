@@ -1,0 +1,438 @@
+#!/bin/bash
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+
+function status() {
+    _check_installed jq
+
+    local vts=$(_get_container_state vts-service)
+    local prov=$(_get_container_state provisioning-service)
+    local verif=$(_get_container_state verification-service)
+
+    if [[ $_quiet == true ]]; then
+        local vts=$(_strip_color $vts)
+        local prov=$(_strip_color $prov)
+        local verif=$(_strip_color $verif)
+
+        local status="${_yell}stopped${_reset}"
+
+        if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" ]]; then
+            status="${_yell}partial${_yell}"
+        fi
+
+        if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running" ]]; then
+            status="${_green}running${_reset}"
+        fi
+
+        echo -e "$status"
+    else
+        echo -e "         vts: $vts"
+        echo -e "provisioning: $prov"
+        echo -e "verification: $verif"
+    fi
+}
+
+function start() {
+    local what=$1
+
+    if [[ "x$what" == "x" ]]; then
+        start_vts
+        sleep 0.5 # wait for vts to start before starting the services that depend on it.
+        start_provisioning
+        start_verification
+    elif [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
+        start_vts
+    elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
+        start_provisioning
+    elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
+        start_verification
+    else
+        echo -e "$_error: unknown serivice: $what"
+        exit 1
+    fi
+}
+
+function stop() {
+    local what=$1
+
+    if [[ "x$what" == "x" ]]; then
+        stop_verification
+        stop_provisioning
+        stop_vts
+    elif [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
+        stop_vts
+    elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
+        stop_provisioning
+    elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
+        stop_verification
+    else
+        echo -e "$_error: unknown serivice: $what"
+        exit 1
+    fi
+}
+
+function follow() {
+    local what=$1
+
+    if [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
+        follow_vts
+    elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
+        follow_provisioning
+    elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
+        follow_verification
+    else
+        echo -e "$_error: unknown serivice: $what"
+        exit 1
+    fi
+}
+
+function start_vts() {
+    docker container start vts-service
+}
+
+function stop_vts() {
+    docker container stop vts-service
+}
+
+function follow_vts() {
+    docker container logs --follow --timestamps vts-service
+}
+
+function start_provisioning() {
+    docker container start provisioning-service
+}
+
+function stop_provisioning() {
+    docker container stop provisioning-service
+}
+
+function follow_provisioning() {
+    docker container logs --follow --timestamps provisioning-service
+}
+
+function start_verification() {
+    docker container start verification-service
+}
+
+function stop_verification() {
+    docker container stop verification-service
+}
+
+function follow_verification() {
+    docker container logs --follow --timestamps verification-service
+}
+
+function manager() {
+    docker container run --rm -t \
+	    --network veraison-net \
+            -v ${STORES_VOLUME}:/opt/veraison/stores \
+            -v ${LOGS_VOLUME}:/opt/veraison/logs \
+            -v /:/opt/veraison/hostroot \
+            -v "$PWD:$PWD" -w "$PWD" \
+            veraison/manager $@
+}
+
+function manager_debug() {
+    docker container run --rm -t -i\
+	    --network veraison-net \
+            -v ${STORES_VOLUME}:/opt/veraison/stores \
+            -v ${LOGS_VOLUME}:/opt/veraison/logs \
+            -v /:/opt/veraison/hostroot \
+            -v "$PWD:$PWD" -w "$PWD" \
+            --entrypoint /bin/bash \
+            veraison/manager
+}
+
+function stores() {
+    manager check-stores $@
+}
+
+function clear_stores() {
+    manager clear-stores $@
+}
+
+function logs() {
+    # Note: this would be more neatly done via "docker cp", however that
+    # requires a pre-built container to exist. We're using ephemeral manager
+    # containers, as we're mapping $PWD to allow passing arguments to
+    # evcli/cocli.
+    local dest="${1:-veraison-logs}"
+
+    manager get-logs __veraison_logs
+
+    mkdir -p "$dest"
+    mv __veraison_logs/* "$dest"
+    rmdir __veraison_logs
+}
+
+function create_tmux_session() {
+    _check_installed tmux
+
+    local session_name="${1:-veraison}"
+
+    tmux new-session -d -s $session_name -c $_this_dir "$SHELL"
+    tmux send-keys -t $session_name:0.0 source Space ./env.bash C-m
+    tmux send-keys -t $session_name:0.0 veraison Space follow Space vts C-m
+
+    tmux split-window -t $session_name:0.0 -c $_this_dir "$SHELL"
+    tmux send-keys -t $session_name:0.1 source Space ./env.bash C-m
+    tmux send-keys -t $session_name:0.1 veraison Space follow Space provisioning C-m
+
+    tmux split-window -t $session_name:0.1 -c $_this_dir "$SHELL"
+    tmux send-keys -t $session_name:0.2 source Space ./env.bash C-m
+    tmux send-keys -t $session_name:0.2 veraison Space follow Space verification C-m
+
+    tmux rename-window -t $session_name:0 services
+    tmux resize-pane -t $session_name:0.0 -y 33%
+    tmux resize-pane -t $session_name:0.1 -y 33%
+}
+
+function attach_tmux_session() {
+    _check_installed tmux
+
+    local session_name="${1:-veraison}"
+
+    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" == "" ]]; then
+        create_tmux_session
+    fi
+        TMUX= tmux attach -t $session_name
+}
+
+function kill_tmux_session() {
+    _check_installed tmux
+
+    local session_name="${1:-veraison}"
+
+    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" != "" ]]; then
+        tmux kill-session -t $session_name
+    fi
+}
+
+function cocli() {
+    local translated_args=$(_translate_host_paths "$@")
+    manager cocli $translated_args
+}
+
+function evcli() {
+    local translated_args=$(_translate_host_paths "$@")
+    manager evcli $translated_args
+}
+
+function polcli() {
+    local translated_args=$(_translate_host_paths "$@")
+    manager evcli $translated_args
+}
+
+function help() {
+	read -r -d '' usage <<-EOF
+	Usage: veraison [-q] [-h] [-C] COMMAND [ARG...]
+
+	This is the frontend of for the Docker deployment of Veraison services.
+
+	Options:
+
+	    -q  Enables "quiet" output for commands that support it.
+	    -h  Prints this message and exits.
+	    -C  Disables color output. T
+
+	Commands:
+
+	    help
+	            Print this message and exist (same as -h).
+
+	    start [vts | provisioning | verification]
+
+	            Start a single Veraison service (by specifying its name), or all
+	            of them (if no name is specified).
+
+	    stop [vts | provisioning | verification]
+
+	            Stop a single Veraison service (by specifying its name), or all
+	            of them (if no name is specified).
+
+	    status
+
+	            Show the status of each of the Veraison services. If -q option is
+	            used, a single word summary status for all services will be shown.
+
+	    short-status
+
+                    Same as "status -q -C". This more reliable as does not depend on
+                    getopt.
+
+	    stores
+
+	            Output the contents of the VTS stores.
+
+            clear-stores
+
+                    Clear the contents of the VTS stores.
+
+	    follow SERVICE
+
+	            Follow the STDOUT from the Docker container running the specified
+	            SERVICE (must be either vts, provisioning, or verification).
+
+	    logs [DIR]
+
+	            Download logs from the Veraison services into the sepcified
+	            directory. The directory will be created if it does not exit. If
+	            DIR is not specified, "veraison-logs" will be created in the
+	            current directory.
+
+	    tmux
+
+	            Attach to a tmux session with panes following the outputs of each
+	            of the services. The sesion will be created if it does not exist.
+	            Note: tmux must be installed for this to work.
+
+	    kill-tmux
+
+	            Kill the tmux session created with the "tmux" command (see above).
+	            Note: this does NOT stop the services.
+
+	EOF
+	echo "$usage"
+}
+
+function _get_container_state() {
+    local container=$1
+    local status=$(docker container inspect $container 2>/dev/null| jq .[0].State.Status)
+
+    if [[ "x$status" == "xnull" ]]; then
+        echo "${_red}not created${_reset}"
+    elif [[ "$status" == '"running"' ]]; then
+        echo "${_green}running${_reset}"
+    else
+        echo "${_yell}stopped${_reset}"
+    fi
+}
+
+function _check_installed() {
+    local what=$1
+    if [[ "x$(which $what 2>/dev/null)" == "x" ]]; then
+        echo -e "$_error: $what executable must be installed to use this command."
+        exit
+    fi
+}
+
+function _strip_color() {
+    local _bash_color='\\033\[[0-9]{1,3}(;[0-9]{1,2};?)?m'
+    echo "$*" | sed -r "s/$_bash_color//g"
+}
+
+function _translate_host_paths() {
+    local split_args=$(echo "$@" | sed 's/=\// \//g')
+    local ammened=()
+
+    for part in $split_args; do
+       if [[  $part == /* ]]; then
+            local realpart=$(realpath -q $part)
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                # Terrible, horrible, no good, very bad CLUDGE for MocOS X:
+                # On MacOS, all top-level locations in the file system are in
+                # fact symlinks (or something) to locations under /host_mnt/.
+                # These do not get resolved by realpath, so we have to do it
+                # manually. Hopefully, this doesn't break for different MacOS
+                # versions...
+                ammended+=("${_host_root}/host_mnt$realpart")
+            else
+                ammended+=("$_host_root$realpart")
+            fi
+        else
+            ammended+=("$part")
+       fi
+    done
+
+    echo "${ammended[@]}";
+}
+
+_this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+_quiet=false
+_color=true
+# This is the location  that the host root file system has been mapped to inside manager
+_host_root=/opt/veraison/hostroot
+
+_purp=''
+_red=''
+_reset=''
+_yell=''
+_green=''
+_blue=''
+_magen=''
+_white=''
+
+_error="${_red}ERROR${_reset}"
+
+function _reset_colors() {
+    if [[ $_color == true ]]; then
+        _purp='\033[1;34m'
+        _red='\033[0;31m'
+        _reset='\033[0m'
+        _yell='\033[0;33m'
+        _green='\033[0;32m'
+        _blue='\033[0;34m'
+        _magen='\033[0;35m'
+        _white='\033[0;37m'
+    else
+        _purp=''
+        _red=''
+        _reset=''
+        _yell=''
+        _green=''
+        _blue=''
+        _magen=''
+        _white=''
+    fi
+    _error="${_red}ERROR${_reset}"
+}
+
+set -a
+source $_this_dir/deployment.cfg
+set +a
+
+set -- $(getopt "hqC" "$@")
+while [ ! -z "$1" ]
+do
+  case "$1" in
+    -h) help; exit;;
+    -C) _color=false;;
+    -q) _quiet=true;;
+     *) break;;
+  esac
+
+  shift
+done
+shift
+
+_reset_colors
+
+command=$1
+case $command in
+    help) help;;
+    start) start $2;;
+    stop) stop $2;;
+    follow) follow $2;;
+    start-vts) start_vts;;
+    stop-vts) stop_vts;;
+    follow-vts) follow_vts;;
+    start-provisioning) start_provisioning;;
+    stop-provisioning) stop_provisioning;;
+    follow-provisioning) follow_provisioning;;
+    start-verification) start_verification;;
+    stop-verification) stop_verification;;
+    follow-verification) follow_verification;;
+    status) status;;
+    short-status) _color=false _reset_colors; _quiet=true status;;
+    stores | check-stores) stores $2;;
+    clear-stores) clear_stores $2;;
+    logs | get-logs) logs $2;;
+    start-tmux) create_tmux_session $2;;
+    tmux | attach-tmux) attach_tmux_session $2;;
+    stop-tmux | kill-tmux) kill_tmux_session $2;;
+    cocli) shift; cocli $@;;
+    evcli) shift; evcli $@;;
+    polcli) shift; polcli $@;;
+    debug) manager_debug $@;;
+    *) echo -e "$_error: unexpected command: \"$command\" (use -h for help)";;
+esac

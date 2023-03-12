@@ -13,6 +13,8 @@ scheme/enacttrust/test/tokens/*.token
 scheme/tpm-enacttrust/test/cmd/gen-token/gen-token
 verification/cmd/verification-service/verification-service
 vts/cmd/vts-service/vts-service
+deployments/docker/.built
+deployments/docker/.bin
 
 # Test binary, built with `go test -c`
 *.test
