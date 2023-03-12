@@ -25,4 +25,58 @@ IGNORE_COVERAGE += github.com/veraison/services/plugin
 IGNORE_COVERAGE += github.com/veraison/services/plugin/test
 
 include mk/cover.mk
+
+define __MAKEFILE_HELP
+Available targets:
+
+	test:          run unit tests
+	integ-test:    run integration tests
+	lint:          run the Go linter against the source
+	coverage:      run a check to make sure that unit test coverage is
+	               above a pre-determined threshold ($(COVERAGE_THRESHOLD)%)
+	clean:         clean up build artefacts
+	docker-deploy: create and start the docker deployment (docker must be
+	               installed, and the user must be in the docker group).
+endef
+export __MAKEFILE_HELP
+
+.PHONY: help
+help:
+	@echo "$$__MAKEFILE_HELP"
+
+ifeq ($(filter help,$(MAKECMDGOALS)),help)
+__NO_RECURSE = true
+endif
+
+define __DOCKER_DEPLOY_MESSAGE
+
+=============================================================================
+Veraison has been deployed on the local system via Docker. If you're using
+bash you can access to the frontend via the following command:
+
+	source deployments/docker/env.bash
+
+(there is an equivalent env.zsh for zsh). You can then view frontend help via
+
+	veraison -h
+
+In addition to the veraison frontend, env.bash will also set up aliases for
+cocli, evcli, and polcli utilities.
+
+=============================================================================
+endef
+export __DOCKER_DEPLOY_MESSAGE
+
+.PHONY: docker-deploy
+docker-deploy:
+	make -C deployments/docker all
+	deployments/docker/veraison start
+	@echo "$$__DOCKER_DEPLOY_MESSAGE"
+
+ifeq ($(filter docker-deploy,$(MAKECMDGOALS)),docker-deploy)
+__NO_RECURSE = true
+endif
+
+ifndef __NO_RECURSE
 include mk/subdir.mk
+endif

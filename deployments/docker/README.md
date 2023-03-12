@@ -1,84 +1,135 @@
-# Docker Deployment
+This directory contains the [Docker](https://www.docker.com/) source for the
+deployment of Veraison. In order to build it, you need to have Docker
+installed, and current user must be in the docker group.
 
-The structure of the docker deployment is as follows:
-- There are 3 containers; one for each service (provisioning, verification and vts)
-- There are two networks:
-    - `provisioning-network`: This network allows communication between VTS and
-      the provisioning service
-    - `verification-network`: This network allows communication between VTS and
-      the verification service
+> **Warning** for `Ubuntu` users:
+> Make sure you have docker installed natively (via `sudo apt
+> install docker.io`), and _not_ via `snap`, as the later won't have access to
+> the default build contexts under `/tmp`. You could, of course, change those
+> locations via the config, however we cannot guarantee that there won't be
+> other issues -- if you decide to stick with `snap`, you're on your own.
 
-## Dockerfile
+Once you have the pre-requisites, you can create the deployment on your local
+system simply by running
 
-A [Dockerfile](./Dockerfile) is used to perform a multi-stage build that
-outputs the final image for each container:
-1. `build-base`: In this stage, the working directory is setup and project
-   dependencies and libraries are installed
-2. `common-build`:
-    - In this stage, build arguments that are passed in from the
-      `docker-compose.yml` file, are used to establish the appropriate
-      environment variables and the configs for each service are generated.
-    - Files for each service are installed into the directory denoted by the
-      environment variable `<service>_DEPLOY_PREFIX` using `make install`
-    - Individual service directories are bundled into an individual tar file.
-3. `provisioning-run`: In this stage the `provisioning.tar` file is copied from
-   the common-build image and extracted
-4. `verification-run`: In this stage the `verification.tar` file is copied from
-   the common-build image and extracted
-5. `vts-run`: In this stage the `vts.tar` file is copied from the common-build
-   image and extracted
+    make
 
-## Docker-compose
+Once the deployment is created, you can set up the front end by executing
 
-The [docker-compose](./docker-compose.yml) functionality defines the
-configuration for each container and networks between each container.
+    source env.bash
 
-For dynamic configuration we pass in a `.env` file with the `docker compose up`
-command:
+Inside a bash shell. There is an equivalent `env.zsh` for zsh (other shells are
+currently not supported). You can interact with the deployment via the
+`veraison` command. E.g.:
+
+    $ veraison status
+            vts: stopped
+    provisioning: stopped
+    verification: stopped
+
+To start Veraison services run:
+
+    veraison start
+
+The provisioning service is now listening on port 8888, and verification
+service on port 8080 (these can be changed via configuration -- see below).
+
+Use the `-h` option to see the full list of available commands.
 
 
--  Builds the images for the 3 containers
-```bash
-docker compose --env-file default.env build
-```
+## Deployment Composition
 
--  Runs all 3 containers using the images built in the previous step
-```bash
-docker compose --env-file default.env up
-```
+The deployment exists on its own Docker network. Each of the three services
+runs in its own container. Service logs and VTS stores reside inside docker
+volumes, independent of any container.
 
-- Tears down all 3 containers (this only removes the containers, not the images)
-```bash
-docker compose --env-file default.env down
-```
-NOTE: Ensure the above commands are run in the same directory as the
-      `docker-compose.yml` and `Dockerfile`
+![deployment composition](./misc/veraison-docker-deployment.png)
 
-NOTE: The command in 3. is only needed if you need to rebuild the images
-      (possibly because new input file, plugins, or code has been added)
+On the diagram above, the network is shown in orange, the volumes in purple,
+the containers in blue, and the images the containers are based on in green.
 
-## Environment variables
+In addition to the service container images, there also two images without
+permanent containers. They are used to spawn ephemeral containers via `docker
+run --rm`.
 
-A `default.env` file which provides docker service configurations in the
-following way:
-- The `default.env` file is read into docker compose as the `--env-file`
-  argument is specified in the 'build' and 'up' command
-- These environment variables are passed in as build arguments (variable
-  substitution happens here) in the `docker-compose.yml` file
-- The `Dockerfile` takes the build arguments and initialises them as
-  environment variables, ready for the build and installation process
+The `builder` image contains the Go toolchain and other tools necessary to
+build Veraison. It is used to compile the service binaries and their plugins
+that are then used to construct the service containers. This image is also used
+to spawn debug shells.
 
-The `default.env` aims to provide a single source of configuration for
-individual services and docker configuration. The documentation on the current
-environment variables is provided in the [.env](default.env) file.
+The `manager` image is used by the `veraison` frontend to, among other things,
+access the volumes where the logs and provisioned values are stored.
 
-## Configuration templating
 
-The [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/templates/) templating
-engine is used to generate the configuration file for each individual service
-(provisioning, verification and vts). The templates are parsed and populated
-using the python script [generate-config.py](./generate-config.py). The
-templates take in environment variables to configure the service's settings. If
-the environment variable is unset or empty, the template is populated with its
-default value.
+## Configuration
 
+The deployment may be configured by changing the settings inside
+[deployment.cfg](./deployment.cfg). See the comments inside that file for the
+explanation of the individual configuration values.
+
+
+### `make` Options
+
+You can set the following variables to influence the behaviour while executing
+make targets:
+
+`DEBUG_HOST`: sets the host name for the debug container. This is useful if you
+want to substitute the debug container in place of one of the service
+containers.
+
+`DOCKER_BUILD_FLAGS`: additional flags to be passed to Docker when building
+various images. This is passed to all image build invocations, so should only
+be used for globally-applicable flags such as `--no-cache`.
+
+
+## Debugging
+
+Running `make debug` will pop up a "debug" shell inside the builder image. The
+image has the build toolchain and the debugger installed, and
+`/veraison/build/` directory is mapped onto the root of Veraison repo on your
+host. This means you can make modifications to the source using your preferred
+editor/IDE on the host, and then build and debug them in the debug shell.
+
+
+### Example: debugging scheme verification plugin
+
+For example, say you are implementing a new attestation scheme, and are running
+into issues when attempting to verify your token (e.g. via an integration
+tests test-case). There is not enough output in the logs to identify the issue,
+and so, you'd like to set a breakpoint inside your code.
+
+This needs to be done inside `vts-service`, as this is the component that
+loads the evidence handler plugin used on the verification path.
+
+First, assuming you have frontend set up, and the services running, (if not,
+you can do so with `source env.bash; veraison start`), you will need to stop
+the "production" VTS service with:
+
+    veraison stop vts
+
+this will stop `vts-service` but should leave the other services running (you
+can verify that by running `veraison status`).
+
+Next, enter the debug shell:
+
+    make DEBUG_HOST=vts-service debug
+
+this will pop open a `bash` shell inside the builder. The `DEBUG_HOST` argument
+will set the hostname of the builder container. Here, we're setting it to the
+hostname of the VTS service we just stopped, so that the provisioning and
+verification services that are still running will now talk to our debug container
+instead.
+
+Next, navigate to the location of the VTS service executable (keeping in mind
+that the root of the repo is mapped to `/veraison/build` inside the container),
+and start the debugger:
+
+    # inside the debug shell:
+    cd /veraison/build/vts/cmd/vts-service
+    debug
+
+The `debug` command is an alias for `dlv debug` that will make sure that the
+debug executable will be built with evidence handling plugins compiled in (same
+as if you ran `make SCHEME_LOADER=builtin`). This means you can set the
+breakpoint inside your code directly from here, and you don't need to worry
+about attaching the debugger to a separate plugin process.

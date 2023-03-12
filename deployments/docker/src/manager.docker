@@ -1,0 +1,40 @@
+# VTS service container.
+# The context for building this image is assumed to be the Veraison deployment
+# directory (/tmp/veraison is the default for make build).
+FROM debian as veraison-verification
+
+# User identity that will be used to build the project. This should be
+# overriden at build time to match the host user running the builder, who owns
+# the git checkout of the source.
+ARG MANAGER_UID=1000
+ARG MANAGER_GID=1000
+
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install \
+        --assume-yes \
+        --no-install-recommends \
+        sqlite3 \
+        jq \
+	uuid-runtime \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && apt-get clean \
+    && apt-get autoremove --assume-yes \
+    && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
+
+RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${MANAGER_UID}" | cut -d: -f1); \
+    groupdel -f $(cat /etc/group | awk -F: "\$3 == ${MANAGER_GID}" | cut -d: -f1); \
+    groupadd -g ${MANAGER_GID} manager && \
+    groupadd -g 616 veraison && \
+    useradd -m -u ${MANAGER_UID} -g manager -G veraison -s /bin/bash manager
+
+USER manager
+
+WORKDIR /opt/veraison
+
+ADD --chown=manager:nogroup utils/evcli utils/cocli utils/polcli ./utils/
+ADD --chown=manager:nogroup manager-dispatcher ./
+
+ENTRYPOINT ["/opt/veraison/manager-dispatcher"]
+CMD ["help"]
+

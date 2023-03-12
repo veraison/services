@@ -4,9 +4,11 @@ logging:
     - stdout
     - logs/{{ .service }}-stdout.log
 provisioning:
-  listen-addr: localhost:8888
+  listen-addr: 0.0.0.0:${PROVISIONING_PORT}
+verification:
+  listen-addr: 0.0.0.0:${VERIFICATION_PORT}
 vts:
-  server-addr: 127.0.0.1:50051
+  server-addr: vts-service:${VTS_PORT}
 ear-signer:
   alg: ES256
   key: skey.jwk
@@ -18,16 +20,17 @@ ta-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: stores/ta-store.sql
+    datasource: stores/vts/ta-store.sql
 en-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: stores/en-store.sql
+    datasource: stores/vts/en-store.sql
 po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: stores/en-store.sql
+    datasource: stores/vts/en-store.sql
 po-agent:
     backend: opa
+# vim: set ft=yaml:

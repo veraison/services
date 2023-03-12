@@ -1,69 +1,43 @@
-This directory contains a quick-and-dirty solution for performing deployment
-and end-to-end testing of Veraison services. It is intended as a stop-gap to
-assist with testing before a proper deployment and integration testing solution
-is implemented.
+This directory contains a quick-and-dirty example of performing provisioning
+and verification using command line tools that come with a Veraison deployment.
 
 ## Prerequisites
 
-In addition to usual Veraison development dependencies, the following utilities
-are assumed to be installed and in PATH: `sqlite3`, `jq`, `tmux`. All of these
-should be readily installable from your operating system's package
-repositories.
-
-You will also need `cocli` and `evcli` utilities that are available in other
-repositories under the Veraison project. If you do not already have them
-installed, you can do so with:
-
-```sh
-go install github.com/veraison/corim/cocli@latest
-go install github.com/veraison/evcli@latest
-```
-
-## Configuration
-
-You can optionally set the following environment variables to alter the
-script's behavior:
-
-`DEPLOY_DIR`: The location into which Veraison services will be deployed. This
-directory will be created if it doesn't already exist (its parent directory
-must be writable to by current user). If this is not specified, it defaults to
-`/tmp/veraison/`.
-
-`TMUX_SESSION`: The name of the tmux session that will be created for running
-the services. This defaults to `veraison`.
+You need to have `jq` installed in your path. Optionally, `tmux` can also be
+installed.
 
 ## Basic flow
 
-#### 1. Build Veraison
+> **Note**: by default, end-to-end flow uses PSA data. It can be switched to
+> use CCA data by setting the `SCHEME` environment variable:
+>
+>       export SCHEME=cca
 
-If you already built Veraison by running `make` in the top-level directory of
-the repo, then you can skip this step.
+#### 1. Create and start the services deployment.
 
-```sh
-./end-to-end build
-```
 
-#### 2. Deploy Veraison
-
-This creates the deployment directory structure and copies built artefacts into
-it. This also initializes the sqlite stores.
+This can be done with a single make command:
 
 ```sh
-./end-to-end deploy
+make -C .. docker-deploy
 ```
 
-#### 3. Run Veraison services
-
-This starts the provisioning and verification API services, and the vts
-backend.
+This may take a while. Once it's done, you can gain access to the frontend and
+utilities by sourcing the deployment environment file:
 
 ```sh
-./end-to-end run
+source ../deployments/docker/env.bash
 ```
 
-You should now be able to attach to the tmux session with the services using `tmux
-attach -t veraison` (assuming you haven't changed `TMUX_SESSION`). This will
-give you to terminal output from the running services.
+You can check that everything is ok with
+
+```sh
+veraison status
+```
+
+This should report that `vts`, `provisioning`, and `verification` services are
+all running.
+
 
 #### 4. Provision endorsements and trust anchors
 
@@ -77,7 +51,7 @@ verification later.
 Optionally, you can verify that the store have been populated:
 
 ```sh
-./end-to-end check-stores
+veriason check-stores
 ```
 
 #### 5. Perform verification
@@ -100,26 +74,12 @@ You can terminate the tmux session (and therefore the Veraison services that
 are running inside it) with
 
 ```sh
-./end-to-end stop
+veraison stop
 ```
 
-You can clean up the deployment directory with
+You can clean up the deployment with
 
 ```sh
-./end-to-end clean
+make -C ../deployments/docker really-clean
 ```
 
-(note: if you're using the default directory under `/tmp/`, it should be
-automatically cleaned up on next reboot.)
-
-
-## Redeployment for quick development iteration
-
-You can rebuild Veraison, terminate the tmux session and combine steps (3) and (4) in the [Basic flow](#basic-flow) above with a single command:
-
-```sh
-./end-to-end redeploy
-```
-
-This is the only command you need to run after making changes to Veraison
-before you can re-test.

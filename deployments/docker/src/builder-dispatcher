@@ -1,0 +1,84 @@
+#!/bin/bash
+# This script is the entry point for the builder docker container.
+
+_ERROR='\e[0;31mERROR\e[0m'
+
+CONTEXT_DIR=/veraison
+# build/ and deploy/ are the in-container mount points for corresponding host locations.
+BUILD_DIR=${CONTEXT_DIR}/build
+DEPLOY_DIR=${CONTEXT_DIR}/deploy
+
+function build() {
+    _check_is_mount_point $BUILD_DIR
+
+    make -C $BUILD_DIR COMBINED_PLUGINS=1
+    make -C $BUILD_DIR/scheme/tpm-enacttrust/test/cmd/gen-token COMBINED_PLUGINS=1
+}
+
+function deploy() {
+    _check_is_mount_point $BUILD_DIR
+    _check_is_mount_point $DEPLOY_DIR
+
+    local gobin=$(go env GOPATH)/bin
+
+    echo "creating deployment directory structure under $DEPLOY_DIR"
+    mkdir -p $DEPLOY_DIR/plugins
+    mkdir -p $DEPLOY_DIR/stores
+    mkdir -p $DEPLOY_DIR/logs
+    mkdir -p $DEPLOY_DIR/utils
+
+    echo "deploying services"
+    cp $BUILD_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
+    cp $BUILD_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
+    cp $BUILD_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $BUILD_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $BUILD_DIR/scheme/bin/* $DEPLOY_DIR/plugins/
+    cp $BUILD_DIR/deployments/docker/src/skey.jwk $DEPLOY_DIR/
+    cp $BUILD_DIR/policy/cmd/polcli/polcli $DEPLOY_DIR/utils/
+    cp $gobin/evcli $DEPLOY_DIR/utils/
+    cp $gobin/cocli $DEPLOY_DIR/utils/
+
+    echo "creating config"
+    set -a
+    source $BUILD_DIR/deployments/docker/deployment.cfg
+    set +a
+    cat $BUILD_DIR/deployments/docker/src/config.yaml.template | envsubst > $DEPLOY_DIR/config.yaml
+
+    echo "initializing stores"
+    for t in en ta po
+    do
+        echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+            sqlite3 $DEPLOY_DIR/stores/$t-store.sql
+    done
+}
+
+function clean() {
+    _check_is_mount_point $BUILD_DIR
+
+    make -C $BUILD_DIR clean
+}
+
+function _check_is_mount_point() {
+    local -a expected=$1
+    local mounts=$(mount | cut -d' ' -f3)
+
+    if [[ "$(echo $mounts | grep $expected)" == "" ]]; then
+        echo -e "$_ERROR: '$expected' must be mounted from the host (-v missing from docker run invocation?)."
+        exit 1
+    fi
+
+}
+
+function help() {
+    echo "Commands:"
+    # TODO
+}
+
+command=$1
+case $command in
+    help | -h ) help;;
+    deploy) deploy;;
+    clean) clean;;
+    build) build;;
+    *) echo -e "$_ERROR: unexpected command: \"$command\"";;
+esac

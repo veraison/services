@@ -6,17 +6,17 @@ ta-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: ta-store.sql
+    datasource: /veraison/stores/vts/ta-store.sql
 en-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: en-store.sql
+    datasource: /veraison/stores/vts/en-store.sql
 po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: po-store.sql
+    datasource: /veraison/stores/vts/po-store.sql
 po-agent:
   backend: opa
 vts:
