@@ -35,8 +35,9 @@ Available targets:
 	coverage:      run a check to make sure that unit test coverage is
 	               above a pre-determined threshold ($(COVERAGE_THRESHOLD)%)
 	clean:         clean up build artefacts
+	really-clean:  clean up deployment and integration-test related artefacts
 	docker-deploy: create and start the docker deployment (docker must be
-	               installed, and the user must be in the docker group).
+	               installed, and the user must be in the docker group)
 endef
 export __MAKEFILE_HELP
 
@@ -74,6 +75,23 @@ docker-deploy:
 	@echo "$$__DOCKER_DEPLOY_MESSAGE"
 
 ifeq ($(filter docker-deploy,$(MAKECMDGOALS)),docker-deploy)
+__NO_RECURSE = true
+endif
+
+.PHONY: really-clean
+really-clean:
+	make -C integration-tests really-clean
+	make -C deployments/docker really-clean
+
+ifeq ($(filter really-clean,$(MAKECMDGOALS)),really-clean)
+__NO_RECURSE = true
+endif
+
+.PHONY: integ-test
+integ-test:
+	make -C integration-tests test
+
+ifeq ($(filter integ-test,$(MAKECMDGOALS)),integ-test)
 __NO_RECURSE = true
 endif
 

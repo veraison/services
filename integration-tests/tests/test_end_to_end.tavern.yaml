@@ -1,0 +1,117 @@
+test_name: end-to-end
+
+marks:
+  - parametrize:
+      key:
+        #  Attestation scheme -- this is used to indicate how test cases should
+        #  be constructed (e.g. how the evidence token will be compiled.
+        - scheme
+        # Some attestation schemes (currently, only PSA) may support multiple
+        # profiles. If a scheme does not support multiple profiles, specify it
+        # as '_'.
+        - profile
+        # Which evidence description will be used to construct the evidence token.
+        - evidence
+        # The name of the endorsements spec within common.yaml
+        - endorsements
+        # Signing keys that will be used to construct the evidence. How this is
+        # used is dependent on the scheme.
+        - signing
+        # Expected structure of the returned EAR (EAT (Entity Attestation
+        # Token) Attestation Result).
+        - expected
+      vals:
+        - [psa, p1, good, full, ec.p256, good]
+        - [psa, p1, good, mini, ec.p256, good]
+        - [psa, p1, badswcomp, full, ec.p256, badswcomp]
+        - [cca, _, good, full, ccakeys, good]
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: '{endorsements-content-type}' # set via hook
+      file_body: __generated__/endorsements/endorsements.cbor
+    response:
+      status_code: 200
+
+  - name: verify as relying party - creation of session resource
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={good-nonce}
+    response:
+      status_code: 201
+      save:
+        headers:
+          relying-party-session: Location
+
+  - name: verify as relying party - submitting the evidence
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+      headers:
+        content-type: '{evidence-content-type}' # set via hook
+      file_body: __generated__/evidence/{scheme}.{evidence}.cbor
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:save_result
+          extra_kwargs:
+            scheme: '{scheme}'
+            evidence: '{evidence}'
+        - function: checkers:expected_result
+          extra_kwargs:
+            expected: data/results/{scheme}.{expected}.json
+            verifier_key: data/keys/verifier.jwk
+
+  - name: verify as relying party - deleting the session object
+    request:
+      method: DELETE
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+    response:
+      status_code: 204
+
+  - name: verify as attester - creation of session resource
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonceSize=32
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: generators:generate_artefacts_from_response
+          extra_kwargs:
+            scheme: '{scheme}'
+            evidence: '{evidence}'
+            signing: '{signing}'
+            keys: '{keys}'
+            expected: '{expected}'
+      save:
+        headers:
+          attester-session: Location
+
+  - name: verify as attester - submitting the evidence
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/{attester-session}
+      headers:
+        content-type: '{evidence-content-type}' # set via hook
+      file_body: __generated__/evidence/{scheme}.{evidence}.server-nonce.cbor
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:expected_result
+          extra_kwargs:
+            expected: __generated__/expected/{scheme}.{expected}.server-nonce.json
+            verifier_key: data/keys/verifier.jwk
+
+  - name: verify as attester - deleting the session object
+    request:
+      method: DELETE
+      url: http://{verification-service}/challenge-response/v1/{attester-session}
+    response:
+      status_code: 204

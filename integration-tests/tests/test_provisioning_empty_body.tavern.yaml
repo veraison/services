@@ -1,0 +1,17 @@
+test_name: provisioning fail empty-body
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+    response:
+      status_code: 400
+      json:
+        title: Bad Request
+        detail: empty body

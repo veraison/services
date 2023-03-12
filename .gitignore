@@ -15,6 +15,9 @@ verification/cmd/verification-service/verification-service
 vts/cmd/vts-service/vts-service
 deployments/docker/.built
 deployments/docker/.bin
+integration-tests/.built
+__generated__
+__pycache__
 
 # Test binary, built with `go test -c`
 *.test
