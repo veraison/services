@@ -1,0 +1,15 @@
+test_name: bad nonce
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: verify as relying party - creation of resource with bad nonce
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={bad-nonce}
+    response:
+      status_code: 400
+      json:
+        title: Bad Request
+        detail: 'failed handling nonce request: nonce must be valid base64'

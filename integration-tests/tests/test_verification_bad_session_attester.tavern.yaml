@@ -1,0 +1,49 @@
+test_name: bad session
+
+marks:
+  - parametrize:
+      key:
+        #  Attestation scheme -- this is used to indicate how test cases should
+        #  be constructed (e.g. how the evidence token will be compiled.
+        - scheme
+        # Which evidence description will be used to construct the evidence token.
+        - evidence
+        # The name of the endorsements spec within common.yaml
+        - endorsements
+        # Signing keys that will be used to construct the evidence. How this is
+        # used is dependent on the scheme.
+        - signing
+      vals:
+        - [psa, good, full, ec.p256]
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+      file_body: __generated__/endorsements/endorsements.cbor
+    response:
+      status_code: 200
+
+  - name: verify as attester - creation of session resource
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonceSize=32
+    response:
+      status_code: 201
+
+  - name: verify as attester - submitting the evidence
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/1111-2222-3333
+      headers:
+        content-type: application/psa-attestation-token
+      file_body: __generated__/evidence/{scheme}.{evidence}.cbor
+    response:
+      # Outputs a "Could not find request resource" error
+      status_code: 404

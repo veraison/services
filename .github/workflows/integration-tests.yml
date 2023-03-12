@@ -8,19 +8,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Prepare environment variable
-      shell: bash
-      run: |
-        if [ "$GITHUB_EVENT_NAME" == "push" ]
-        then
-          echo $'\nGIT_CLONE_BRANCH=${GITHUB_REF_NAME}' >> ./deployments/docker/default.env
-        else
-          echo $'\nGIT_CLONE_BRANCH=${GITHUB_HEAD_REF}' >> ./deployments/docker/default.env
-        fi
-    - name: Setup services and integration tests containers
-      run: make -C integration-tests integration-tests-up
-    - name: Save test log
-      run: docker logs -t -f tavern | tee tavern-tests.log &
+    - name: Set up Veraison deployment
+      run: make docker-deploy
+    - name: Run integration tests
+      run: make integ-test | tee tavern-tests.log
     - name: Archive tavern container log
       if: always()
       uses: actions/upload-artifact@v3
@@ -31,12 +22,12 @@ jobs:
       run: grep 'FAILURES' tavern-tests.log | python3 scripts/integ-fail.py
     - name: Save docker compose logs
       if: always()
-      run: docker-compose --env-file=deployments/docker/default.env --file=integration-tests/docker-compose-integration-tests.yml logs -f -t --no-color | tee container.log &
+      run: deployments/docker/veraison get-logs container-logs
     - name: Archive container logs
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: container-logs
-        path: ./container.log
+        path: ./container-logs
     - name: Tear down services
-      run: make -C integration-tests integration-tests-down
+      run: deployments/docker/veraison stop

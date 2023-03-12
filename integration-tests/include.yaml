@@ -1,6 +1,0 @@
-name: Common test information
-description: Response return information
-
-variables:
-  good-nonce: QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk=
-  bad-nonce: Ppfdfe2JzZLOk=
