@@ -71,7 +71,7 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
     os.makedirs(f'{GENDIR}/evidence', exist_ok=True)
     os.makedirs(f'{GENDIR}/claims', exist_ok=True)
 
-    if nonce:
+    if scheme in ['psa', 'cca'] and nonce:
         claims_file = f'{GENDIR}/claims/{scheme}.{evidence}.json'
         update_json(
                 f'data/claims/{scheme}.{evidence}.json',
@@ -145,3 +145,10 @@ def generate_cca_evidence_token(claims_file, pak_file, rak_file, token_file):
     proc = subprocess.run(evcli_command, shell=True)
     if proc.returncode:
         raise RuntimeError(f"Could not generate PSA token; evcli returned ({proc.returncode})")
+
+def generate_eancttrust_evidence_token(claims_file, key_file, token_file):
+    gentoken_command = f"gen-enacttrust-token -key {key_file} -out {token_file} {claims_file}"
+    print(gentoken_command)
+    proc = subprocess.run(gentoken_command, shell=True)
+    if proc.returncode:
+        raise RuntimeError(f"Could not generate EnactTrust token; gen-token returned ({proc.returncode})")

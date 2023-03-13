@@ -85,7 +85,8 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	}
 
 	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.ReferenceID)
-	assert.Equal(t, []int64{1, 2, 3, 4}, ev.ClaimsSet["pcr-selection"])
+	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)},
+		ev.ClaimsSet["pcr-selection"])
 	assert.Equal(t, int64(11), ev.ClaimsSet["hash-algorithm"])
 	assert.Equal(t, expectedPCRDigest, ev.ClaimsSet["pcr-digest"])
 }
@@ -102,11 +103,10 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 
 	var s EvidenceHandler
 
-	trustAnchorBytes, err := readPublicKeyBytes("test/keys/basic.pem.pub")
+	trustAnchorBytes, err := os.ReadFile("test/trustanchor.json")
 	require.NoError(t, err)
-	trustAnchor := base64.StdEncoding.EncodeToString(trustAnchorBytes)
 
-	err = s.ValidateEvidenceIntegrity(&ta, trustAnchor, nil)
+	err = s.ValidateEvidenceIntegrity(&ta, string(trustAnchorBytes), nil)
 	assert.Nil(t, err)
 
 }
@@ -129,11 +129,13 @@ func Test_GetAttestation(t *testing.T) {
 		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
 		Evidence:      evStruct,
 	}
-	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
+
+	refvalBytes, err := os.ReadFile("test/refval.json")
+	require.NoError(t, err)
 
 	var scheme EvidenceHandler
 
-	result, err := scheme.AppraiseEvidence(evidenceContext, endorsements)
+	result, err := scheme.AppraiseEvidence(evidenceContext, []string{string(refvalBytes)})
 	require.NoError(t, err)
 
 	appraisal := result.Submods["TPM_ENACTTRUST"]

@@ -3,7 +3,7 @@
 CLEANFILES += gen-token
 
 gen-token: main.go
-	go build -o gen-token
+	CGO_ENABLED=0 go build -o gen-token
 
 test: ;
 .PHONY: test

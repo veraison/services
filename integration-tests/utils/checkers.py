@@ -35,7 +35,10 @@ def expected_result(response, expected, verifier_key):
 
 
 def _extract_appraisal(response, key_file):
-    result = response.json()["result"]
+    try:
+        result = response.json()["result"]
+    except KeyError:
+        raise ValueError("Did not receive an attestation result.")
 
     with open(key_file) as fh:
         key = json.load(fh)

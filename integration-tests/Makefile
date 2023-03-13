@@ -8,6 +8,7 @@ THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 include ../deployments/docker/src/load-config.mk
 
 DEPLOYMENT_SRC_DIR := $(THIS_DIR)../deployments/docker/
+SCHEME_DIR := $(THIS_DIR)../scheme/
 DOCKER_DIR := $(THIS_DIR)docker/
 TESTER_CONTEXT := $(CONTEXT_DIR)/tester
 
@@ -28,8 +29,10 @@ CLEANFILES := .pytest_cache utils/__pycache__ __generated__
 .PHONY: image
 image: .built/image
 
-.built/image: docker/* $(DEPLOYMENT_SRC_DIR).built/deploy
+.built/image: docker/* $(DEPLOYMENT_SRC_DIR).built/deploy \
+	      $(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token/gen-token
 	mkdir -p $(TESTER_CONTEXT)
+	cp $(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token/gen-token $(TESTER_CONTEXT)/gen-enacttrust-token
 	cp $(DEPLOY_DEST)/utils/{cocli,evcli} $(TESTER_CONTEXT)/
 	cp $(THIS_DIR)docker/* $(TESTER_CONTEXT)/
 	docker build -t veraison/test $(TESTER_CONTEXT) \
@@ -67,6 +70,10 @@ docker-clean:
 
 .PHONY: really-clean
 really-clean: clean docker-clean
+
+$(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token/gen-token: \
+	  $(shell find $(SCHEME_DIR)tpm-enacttrust -name \*.go)
+	make -C $(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token
 
 define __MAKEFILE_HELP
 Available targets:
