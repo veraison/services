@@ -320,7 +320,7 @@ func (o *GRPC) GetAttestation(
 
 	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bad claims in result: %w", err)
 	}
 
 	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID

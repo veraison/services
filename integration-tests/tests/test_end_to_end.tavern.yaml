@@ -25,6 +25,7 @@ marks:
         - [psa, p1, good, mini, ec.p256, good]
         - [psa, p1, badswcomp, full, ec.p256, badswcomp]
         - [cca, _, good, full, ccakeys, good]
+        - [enacttrust, _, good, mini, ec.p256.enacttrust, good]
 
 includes:
   - !include common.yaml

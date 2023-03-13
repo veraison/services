@@ -24,7 +24,7 @@ RUN pip install --upgrade pip &&  \
                 python-jose==3.3.0 \
                 ipdb==0.13.11
 
-ADD evcli cocli run-tests /home/tavern/.local/bin/
+ADD gen-enacttrust-token evcli cocli run-tests /home/tavern/.local/bin/
 ADD bashrc /home/tavern/.bashrc
 
 ENTRYPOINT ["/home/tavern/.local/bin/run-tests"]

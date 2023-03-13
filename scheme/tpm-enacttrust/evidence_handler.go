@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -100,7 +101,7 @@ func (s EvidenceHandler) ExtractClaims(
 			tpm2.TagAttestQuote, decoded.AttestationData.Type)
 	}
 
-	var pcrs []int64 // nolint:prealloc
+	var pcrs []interface{} // nolint:prealloc
 	for _, pcr := range decoded.AttestationData.AttestedQuoteInfo.PCRSelection.PCRs {
 		pcrs = append(pcrs, int64(pcr))
 	}
@@ -108,6 +109,8 @@ func (s EvidenceHandler) ExtractClaims(
 	evidence := handler.NewExtractedClaims()
 	evidence.ClaimsSet["pcr-selection"] = pcrs
 	evidence.ClaimsSet["hash-algorithm"] = int64(decoded.AttestationData.AttestedQuoteInfo.PCRSelection.Hash)
+	evidence.ClaimsSet["firmware-version"] = decoded.AttestationData.FirmwareVersion
+	evidence.ClaimsSet["node-id"] = decoded.NodeId.String()
 	evidence.ClaimsSet["pcr-digest"] = []byte(decoded.AttestationData.AttestedQuoteInfo.PCRDigest)
 	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())
 
@@ -142,8 +145,8 @@ func (s EvidenceHandler) AppraiseEvidence(
 	endorsementStrings []string,
 ) (*ear.AttestationResult, error) {
 	result := handler.CreateAttestationResult(SchemeName)
-
-	digestValue, ok := ec.Evidence.AsMap()["pcr-digest"]
+	evidence := ec.Evidence.AsMap()
+	digestValue, ok := evidence["pcr-digest"]
 	if !ok {
 		return result, fmt.Errorf("evidence does not contain %q entry", "pcr-digest")
 	}
@@ -164,6 +167,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 	}
 
 	appraisal := result.Submods[SchemeName]
+	appraisal.VeraisonAnnotatedEvidence = &evidence
 
 	if endorsements.Digest == evidenceDigest {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
@@ -193,8 +197,14 @@ func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]strin
 	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil
 }
 
-func parseKey(keyString string) (*ecdsa.PublicKey, error) {
-	buf, err := base64.StdEncoding.DecodeString(keyString)
+func parseKey(trustAnchor string) (*ecdsa.PublicKey, error) {
+	var taEndorsement TrustAnchorEndorsement
+
+	if err := json.Unmarshal([]byte(trustAnchor), &taEndorsement); err != nil {
+		return nil, fmt.Errorf("could not decode trust anchor: %w", err)
+	}
+
+	buf, err := base64.StdEncoding.DecodeString(taEndorsement.Attr.Key)
 	if err != nil {
 		return nil, err
 	}
