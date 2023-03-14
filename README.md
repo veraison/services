@@ -2,6 +2,76 @@
 
 This repository contains attestation services assembled using Veraison components.
 
+## Getting Started
+
+This section contains the instructions for creating a test deployment of
+Veraison services and trying out the end-to-end attestation flow using sample
+inputs.
+
+### Requirements
+
+This should work on most Linux systems. You need to perform the following
+setup:
+
+- Install git
+- Install Docker, and make sure that the current user is in the `docker` group.
+- Install jq
+- (optionally) Install tmux -- this only needed if you want to use it.
+
+On Ubuntu you can do this with:
+
+    sudo apt install git docker.io jq tmux
+    sudo usermod -a -G docker $USER
+    newgrp docker
+
+### Creating a deployment
+
+You can build, deploy, and start Veraison services with the following sequence
+of commands:
+
+    git clone https://github.com/veraison/services.git
+    cd services
+    make docker-deploy
+
+The whole process might take a few minutes. Once the above finishes, Veraison
+services should be running inside Docker containers. You can use the deployment
+frontend script to check their status (you can set it up by sourcing the
+deployment's `env.bash`):
+
+    source deployments/docker/env.bash
+    veraison status
+
+See the output of `veraison -h` for the full list of available commands
+
+### End-to-end flow
+
+The end-to-end flow can be performed with the `end-to-end/end-to-end` script.
+
+> **Note**: see the [README.md](end-to-end/README.md) inside end-to-end
+> directory for a detailed explanation of the end-to-end flow.
+
+Before evidence can be attested, trust anchors and reference values need to
+provisioned. These are contained within
+`end-to-end/inputs/psa-endorsements.cbor` and can be provisioned with
+
+    end-to-end/end-to-end provision
+
+If this does not return an error, the values have been successfully
+provisioned. You can verify this by checking the contents of the Veraison
+stores with
+
+    veraison stores
+
+You should see a list of JSON structures of the provision values.
+
+You can now verify the evidence with
+
+    end-to-end/end-to-end verify rp
+
+This should output the [EAR](https://github.com/thomas-fossati/draft-ear)
+attestation result. The "rp" means you're verifying as the Relying Party; you
+can also specify "attest" to verify as an attester.
+
 ## Provisioning
 
 Provisioning service provides a REST-based API for external trusted supply chain actors (for example, Endorsers) to provision Reference Values, Endorsed Values (known as Endorsements), and Trust Anchors into Veraison Trusted Services.
