@@ -34,7 +34,7 @@ require (
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/psatoken v1.1.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.3.8
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.0
 )
