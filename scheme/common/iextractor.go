@@ -16,7 +16,7 @@ import (
 // anticipate that in the future there will to be an extractor for each of the
 // defined CoMID triples, plus maybe a way to handle cross-triples checks as
 // well as extraction from the "global" CoRIM context.
-// See also https://github.com/veraison/veraison/issues/112
+// See also https://github.com/veraison/services/issues/70
 type IExtractor interface {
 	RefValExtractor(comid.ReferenceValue) ([]*proto.Endorsement, error)
 	TaExtractor(comid.AttestVerifKey) (*proto.Endorsement, error)
