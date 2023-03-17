@@ -18,6 +18,8 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/veraison/services/capability"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
@@ -45,6 +47,7 @@ type IHandler interface {
 	SubmitEvidence(c *gin.Context)
 	GetSession(c *gin.Context)
 	DelSession(c *gin.Context)
+	GetWellKnownVerificationInfo(c *gin.Context)
 }
 
 type Handler struct {
@@ -471,4 +474,87 @@ func sendChallengeResponseSessionWithStatus(c *gin.Context, status int, jsonSess
 func sendChallengeResponseSessionCreated(c *gin.Context, id string, jsonSession []byte) {
 	c.Header("Location", path.Join("session", id))
 	sendChallengeResponseSessionWithStatus(c, http.StatusCreated, jsonSession)
+}
+
+func (o *Handler) getKey() (jwk.Key, error) {
+	var key jwk.Key
+
+	protoKey, err := o.Verifier.GetPublicKey()
+	if err != nil {
+		return key, err
+	}
+
+	key, err = jwk.ParseKey([]byte(protoKey.Key))
+	if err != nil {
+		return key, err
+	}
+
+	return key, nil
+
+}
+
+func (o *Handler) getVerificationMediaTypes() ([]string, error) {
+	return o.Verifier.SupportedMediaTypes()
+}
+
+func (o *Handler) getVerificationServerVersionAndState() (string, string, error) {
+	vtsState, err := o.Verifier.GetVTSState()
+	if err != nil {
+		return "", "", err
+	}
+	version := vtsState.ServerVersion
+	state := vtsState.Status.String()
+	return version, state, nil
+
+}
+
+func getVerificationEndpoints() map[string]string {
+	return publicApiMap
+}
+
+func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
+	// Get public key
+	key, err := o.getKey()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	// Get verification media types
+	mediaTypes, err := o.getVerificationMediaTypes()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	// Get verification server version and state
+	version, state, err := o.getVerificationServerVersionAndState()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	// Get verification endpoints
+	endpoints := getVerificationEndpoints()
+
+	// Get final object with well known information
+	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, version, state, endpoints)
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, obj)
 }

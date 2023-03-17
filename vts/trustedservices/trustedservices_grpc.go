@@ -416,3 +416,21 @@ func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empt
 	mts := c.PluginManager.GetRegisteredMediaTypes()
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
+
+func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
+	key, err := o.EarSigner.GetEARSigningPublicKeyEar()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(key)
+	if err != nil {
+		return nil, err
+	}
+
+	bstring := string(b)
+
+	return &proto.PublicKey{
+		Key: bstring,
+	}, nil
+}

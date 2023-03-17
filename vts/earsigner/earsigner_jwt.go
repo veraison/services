@@ -40,6 +40,16 @@ func (o JWT) Sign(earClaims ear.AttestationResult) ([]byte, error) {
 	return earClaims.Sign(o.Alg, o.Key)
 }
 
+func (o JWT) GetEARSigningPublicKeyEar() (jwk.Key, error) {
+	v, ok := o.Key.(jwk.Key)
+
+	if ok != true {
+		err := fmt.Errorf("error: failed conversion")
+		return nil, err
+	}
+	return v.PublicKey()
+}
+
 func (o *JWT) setAlg(alg string) error {
 	for _, a := range jwa.SignatureAlgorithms() {
 		if a.String() == alg {

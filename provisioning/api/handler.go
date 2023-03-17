@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/veraison/services/capability"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
@@ -25,6 +26,7 @@ import (
 type IHandler interface {
 	Submit(c *gin.Context)
 	GetServiceState(c *gin.Context)
+	GetWellKnownProvisioningInfo(c *gin.Context)
 }
 
 type Handler struct {
@@ -263,4 +265,61 @@ func sendSuccessfulProvisioningSession(c *gin.Context) {
 			Expiry: time.Now().Format(time.RFC3339),
 		},
 	)
+}
+
+func (o *Handler) getProvisioningMediaTypes() ([]string, error) {
+	mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
+	return mediaTypes, nil
+
+}
+
+func (o *Handler) getProvisioningServerVersionAndState() (string, string, error) {
+	vtsState, err := o.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+	if err != nil {
+		return "", "", err
+	}
+	version := vtsState.ServerVersion
+	state := vtsState.Status.String()
+	return version, state, nil
+}
+
+func getProvisioningEndpoints() map[string]string {
+	return publicApiMap
+}
+
+func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
+	// Get provisioning media types
+	mediaTypes, err := o.getProvisioningMediaTypes()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	// Get provisioning server version and state
+	version, state, err := o.getProvisioningServerVersionAndState()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	// Get provisioning server API endpoints
+	endpoints := getProvisioningEndpoints()
+
+	// Get final object with well known information
+	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, version, state, endpoints)
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, obj)
 }

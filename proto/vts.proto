@@ -56,6 +56,10 @@ message MediaTypeList {
     repeated string media_types = 1;
 }
 
+message PublicKey {
+    string key = 1;
+}
+
 // Client interface for the Veraison Trusted Services component.
 service VTS {
     // Return the summary state of the service.
@@ -73,5 +77,8 @@ service VTS {
     // TODO When we move the provisiong plugins under VTS we need to enable this
     // TODO interface too.
     // rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+
+    // Returns the public key used to sign evidence.
+    rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
 }
 
