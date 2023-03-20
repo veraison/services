@@ -43,12 +43,15 @@ deployment's `env.bash`):
 
 See the output of `veraison -h` for the full list of available commands
 
-### End-to-end flow
+### End-to-end example
 
-The end-to-end flow can be performed with the `end-to-end/end-to-end` script.
+An example of an end-to-end provisioning and verification flow exists
+within `end-to-end` directory. This can be used to quickly check the
+deployment (alternatively, you can use `make integ-test` to run the integration
+tests).
 
 > **Note**: see the [README.md](end-to-end/README.md) inside end-to-end
-> directory for a detailed explanation of the end-to-end flow.
+> directory for a more detailed explanation of the flow.
 
 Before evidence can be attested, trust anchors and reference values need to
 provisioned. These are contained within
