@@ -14,10 +14,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/capability"
+	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/verification/api/mocks"
 )
 
@@ -99,6 +102,24 @@ var (
 		0x46, 0x4a, 0xbc, 0x77, 0x2f, 0xfd, 0x81, 0xf7,
 		0xd7, 0x10, 0x53, 0x66, 0xcc, 0x40, 0x55, 0x58,
 		0x50, 0x8f, 0x5a, 0x4e, 0x60, 0xd8, 0x8b, 0xae}
+
+	testGoodServiceState = proto.ServiceState{
+		Status:        2,
+		ServerVersion: "3.2",
+	}
+
+	testKeyJSON = `{
+		"kty": "EC",
+		"alg": "ES256",
+		"crv": "P-256",
+		"x": "usWxHK2PmfnHKwXPS54m0kTcGJ90UiglWiGahtagnv8",
+		"y": "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
+		"d": "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
+	}`
+
+	testKey = proto.PublicKey{
+		Key: testKeyJSON,
+	}
 )
 
 func TestHandler_NewChallengeResponse_UnsupportedAccept(t *testing.T) {
@@ -916,6 +937,182 @@ func TestHandler_DelSession_session_id_does_not_exist(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodDelete, pathOK, http.NoBody)
 
 	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_GetWellKnownVerificationInfo_ok(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		GetPublicKey().
+		Return(&testKey, nil)
+	v.EXPECT().
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
+	v.EXPECT().
+		GetVTSState().
+		Return(&testGoodServiceState, nil)
+
+	expectedCode := http.StatusOK
+	expectedType := capability.WellKnownMediaType
+	expectedBody := capability.WellKnownInfo{
+		MediaTypes:   supportedMediaTypes,
+		Version:      testGoodServiceState.ServerVersion,
+		ServiceState: testGoodServiceState.Status.String(),
+		ApiEndpoints: publicApiMap,
+	}
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+	req.Header.Add("Accept", expectedType)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body capability.WellKnownInfo
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_GetWellKnownVerificationInfo_GetPublicKey_failure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		GetPublicKey().
+		Return(nil, errors.New("blah"))
+
+	expectedCode := http.StatusInternalServerError
+	expectedType := "application/problem+json"
+	expectedErrorTitle := "Internal Server Error"
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedErrorTitle, body.Title)
+}
+
+func TestHandler_GetWellKnownVerificationInfo_Get_SupportedMediaTypes_fail(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		GetPublicKey().
+		Return(&testKey, nil)
+	v.EXPECT().
+		SupportedMediaTypes().
+		Return(nil, errors.New("blah"))
+
+	expectedCode := http.StatusInternalServerError
+	expectedType := "application/problem+json"
+	expectedErrorTitle := "Internal Server Error"
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedErrorTitle, body.Title)
+}
+
+func TestHandler_GetWellKnownVerificationInfo_GetVTSState_fail(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		GetPublicKey().
+		Return(&testKey, nil)
+	v.EXPECT().
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
+	v.EXPECT().
+		GetVTSState().
+		Return(nil, errors.New("blah"))
+
+	expectedCode := http.StatusInternalServerError
+	expectedType := "application/problem+json"
+	expectedErrorTitle := "Internal Server Error"
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedErrorTitle, body.Title)
+}
+
+func TestHandler_GetWellKnownVerificationInfo_UnsupportedAccept(t *testing.T) {
+	h := &Handler{}
+
+	expectedCode := http.StatusNotAcceptable
+	expectedType := "application/problem+json"
+	expectedBody := problems.DefaultProblem{
+		Type:   "about:blank",
+		Title:  "Not Acceptable",
+		Status: http.StatusNotAcceptable,
+		Detail: fmt.Sprintf("the only supported output format is %s", capability.WellKnownMediaType),
+	}
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+	g.Request.Header.Add("Accept", "application/unsupported+ber")
+
+	NewRouter(h).ServeHTTP(w, g.Request)
 
 	var body problems.DefaultProblem
 	_ = json.Unmarshal(w.Body.Bytes(), &body)

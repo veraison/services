@@ -13,7 +13,6 @@ const (
 	submitEvidenceUrl               = "/challenge-response/v1/session/:id"
 	getSessionUrl                   = "/challenge-response/v1/session/:id"
 	delSessionUrl                   = "/challenge-response/v1/session/:id"
-	getServiceStateUrl              = "/status"
 	getWellKnownVerificationInfoUrl = "/.well-known/veraison/verification"
 )
 
@@ -31,8 +30,6 @@ func NewRouter(handler IHandler) *gin.Engine {
 	router.GET(getSessionUrl, handler.GetSession)
 
 	router.DELETE(delSessionUrl, handler.DelSession)
-
-	router.GET(getServiceStateUrl, handler.GetServiceState)
 
 	router.GET(getWellKnownVerificationInfoUrl, handler.GetWellKnownVerificationInfo)
 
