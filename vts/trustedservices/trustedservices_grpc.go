@@ -418,7 +418,12 @@ func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empt
 }
 
 func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
-	key, err := o.EarSigner.GetEARSigningPublicKeyEar()
+	alg, key, err := o.EarSigner.GetEARSigningPublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	err = key.Set("alg", alg.String())
 	if err != nil {
 		return nil, err
 	}
