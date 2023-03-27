@@ -165,6 +165,10 @@ function logs() {
     rmdir __veraison_logs
 }
 
+function clear_logs() {
+    manager clear-logs $@
+}
+
 function create_tmux_session() {
     _check_installed tmux
 
@@ -427,6 +431,7 @@ case $command in
     stores | check-stores) stores $2;;
     clear-stores) clear_stores $2;;
     logs | get-logs) logs $2;;
+    clear-logs) clear_logs $2;;
     start-tmux) create_tmux_session $2;;
     tmux | attach-tmux) attach_tmux_session $2;;
     stop-tmux | kill-tmux) kill_tmux_session $2;;

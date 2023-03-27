@@ -23,7 +23,8 @@ WORKDIR /opt/veraison
 RUN mkdir logs
 
 ADD --chown=veraison:nogroup plugins plugins
-ADD --chown=veraison:nogroup config.yaml provisioning-service ./
+ADD --chown=veraison:nogroup config.yaml provisioning-service service-entrypoint ./
 
-ENTRYPOINT ["/opt/veraison/provisioning-service"]
+ENTRYPOINT ["/opt/veraison/service-entrypoint"]
+CMD ["/opt/veraison/provisioning-service"]
 
