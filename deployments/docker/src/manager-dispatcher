@@ -41,6 +41,12 @@ function logs() {
     cp $_logs_dir/* $dest/
 }
 
+function clear_logs() {
+    for f in $(ls $_logs_dir); do
+        echo "" > $_logs_dir/$f
+    done
+}
+
 function cocli() {
     local cmd="$_utils_dir/cocli $@"
     /bin/bash -c "$cmd"
@@ -71,6 +77,7 @@ case $command in
     stores | check-stores) stores "$@";;
     clear-stores) clear_stores "$@";;
     logs | get-logs) logs "$@";;
+    clear-logs) clear_logs "$@";;
     cocli)  cocli "$@";;
     evcli)  evcli "$@";;
     polcli)  polcli "$@";;
