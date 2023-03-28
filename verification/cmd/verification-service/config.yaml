@@ -2,8 +2,8 @@
 # from the docker deployment debug shell.
 logging:
   level: debug  # valid levels: error, warning, info, debug
-provisioning:
-  listen-addr: 0.0.0.0:8888
+verification:
+  listen-addr: 0.0.0.0:8080
 vts:
   server-addr: vts-service:50051
 # vim: set ft=yaml:
