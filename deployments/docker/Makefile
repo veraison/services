@@ -165,7 +165,8 @@ docker-clean:
 	docker volume rm -f veraison-logs veraison-stores
 	@# ubuntu uses an older version of docker without -f option for network; hence the || : cludge
 	docker network rm $(VERAISON_NETWORK) || :
-	docker image rm -f veraison/builder veraison/vts veraison/provisioning veraison/verification
+	docker image rm -f veraison/builder veraison/vts veraison/provisioning \
+		veraison/verification veraison/manager
 	rm -rf  .built
 
 .PHONY: host-clean
