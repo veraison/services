@@ -4,6 +4,10 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
+const (
+	MediaType = "application/vnd.veraison.discovery+json"
+)
+
 type WellKnownInfo struct {
 	PublicKey    jwk.Key           `json:"ear-verification-key,omitempty"`
 	MediaTypes   []string          `json:"media-types"`

@@ -321,5 +321,6 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 		return
 	}
 
+	c.Header("Content-Type", capability.MediaType)
 	c.JSON(http.StatusOK, obj)
 }

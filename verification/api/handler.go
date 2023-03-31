@@ -556,5 +556,6 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 		return
 	}
 
+	c.Header("Content-Type", capability.MediaType)
 	c.JSON(http.StatusOK, obj)
 }
