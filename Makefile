@@ -23,6 +23,8 @@ COVERAGE_THRESHOLD := 60.0
 # tested. plugin/test coverage is low because it's purely test code).
 IGNORE_COVERAGE += github.com/veraison/services/plugin
 IGNORE_COVERAGE += github.com/veraison/services/plugin/test
+# There is protobuf-generated stuff here, which skews coverage.
+IGNORE_COVERAGE += github.com/veraison/services/handler
 
 include mk/cover.mk
 
