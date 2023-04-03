@@ -16,6 +16,7 @@ variables:
     enacttrust._: application/vnd.enacttrust.tpm-evidence
   keys:
     ec.p256: ec.p256
+    bad: ec.p256.alt
     ec.p256.enacttrust: ec.p256.enacttrust
     ccakeys: [ec.p256, ec.p384]
   endorsements:
