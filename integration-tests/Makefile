@@ -2,6 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 .DEFAULT_TARGET: test
 
+# Sets the user for the debug container. Set this to "root" to run  as root
+# (not recommended for actually running tests, but allows you to make one-off
+# modifications to the container's environment (e.g. installing additional
+# tools) before changing to tavern (via "su tavern") to start running tests.
+TEST_USER ?= tavern
+
 SHELL = /bin/bash
 
 THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -49,6 +55,7 @@ start-services: $(DEPLOYMENT_SRC_DIR).built/deployment
 debug: .built/image start-services
 	docker container run --rm --interactive  --tty \
 		$(CONTAINER_FLAGS) \
+		--user $(TEST_USER)\
 		--entrypoint /bin/bash \
 		veraison/test
 
@@ -82,7 +89,7 @@ Available targets:
 	test:            run integration tests
 	clean:           remove artefects generated while running integration
 	                 tests
-	debug:           start a shell inside a test runner container
+	debug:           start a shell inside a test runner container.
 	start-services:  start the Veraison services to be tested (this done
 	                 automatically when executing the test target)
 	image:           create the test runner docker image
