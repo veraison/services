@@ -129,7 +129,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 
 	err := psaToken.FromCOSE(token.Data)
 	if err != nil {
-		return "", err
+		return "", handler.BadEvidence(err)
 	}
 
 	return psaTaLookupKey(
@@ -146,14 +146,14 @@ func (s EvidenceHandler) ExtractClaims(
 	var psaToken psatoken.Evidence
 
 	if err := psaToken.FromCOSE(token.Data); err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 
 	var extracted handler.ExtractedClaims
 
 	claimsSet, err := claimsToMap(psaToken.Claims)
 	if err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 	extracted.ClaimsSet = claimsSet
 
@@ -200,11 +200,11 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	var psaToken psatoken.Evidence
 
 	if err = psaToken.FromCOSE(token.Data); err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 
 	if err = psaToken.Verify(pk); err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 	log.Println("\n Token Signature Verified")
 	return nil
@@ -260,7 +260,7 @@ func populateAttestationResult(
 ) error {
 	claims, err := mapToClaims(evidence)
 	if err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 
 	appraisal := result.Submods[SchemeName]
@@ -271,7 +271,7 @@ func populateAttestationResult(
 
 	rawLifeCycle, err := claims.GetSecurityLifeCycle()
 	if err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 
 	lifeCycle := psatoken.PsaLifeCycleToState(rawLifeCycle)

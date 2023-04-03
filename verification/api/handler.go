@@ -373,9 +373,28 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// read body (i.e., evidence)
 	evidence, err := io.ReadAll(c.Request.Body)
 	if err != nil || len(evidence) == 0 {
+		o.logger.Error("unable to read evidence from the request body: %v", err)
 		ReportProblem(c,
 			http.StatusBadRequest,
 			"unable to read evidence from the request body",
+		)
+		return
+	}
+
+	// Forward the evidence to the verifier. We expect the verifier to be
+	// able to cope with bad evidence, so the error here should only be
+	// reported if something in the verifier or the connection goes wrong.
+	// Any problems with the evidence are expected to be reported via the
+	// attestation result.
+	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
+		evidence, mediaType)
+	if err != nil {
+		o.logger.Error(err)
+		session.SetStatus(StatusFailed)
+		mustStoreSession(o.SessionManager, session, id, tenantID)
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			"error encountered while processing evidence",
 		)
 		return
 	}
@@ -384,17 +403,6 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// is done through the session object.
 
 	session.SetEvidence(mediaType, evidence)
-
-	// forward evidence to verifier
-	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
-		evidence, mediaType)
-	if err != nil {
-		o.logger.Error(err)
-		session.SetStatus(StatusFailed)
-		s := mustStoreSession(o.SessionManager, session, id, tenantID)
-		sendChallengeResponseSessionWithStatus(c, http.StatusOK, s)
-		return
-	}
 
 	// async (202)
 	if attestationResult == nil {

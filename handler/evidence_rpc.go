@@ -5,10 +5,10 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/rpc"
 
 	"github.com/veraison/ear"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 )
@@ -178,7 +178,7 @@ func (s *RPCClient) GetName() string {
 
 	err := s.client.Call("Plugin.GetName", &unused, &resp)
 	if err != nil {
-		log.Printf("Plugin.GetName RPC call failed: %v", err) // nolint
+		log.Errorf("Plugin.GetName RPC call failed: %v", err) // nolint
 		return ""
 	}
 
@@ -193,7 +193,7 @@ func (s *RPCClient) GetAttestationScheme() string {
 
 	err := s.client.Call("Plugin.GetAttestationScheme", &unused, &resp)
 	if err != nil {
-		log.Printf("Plugin.GetAttestationScheme RPC call failed: %v", err) // nolint
+		log.Errorf("Plugin.GetAttestationScheme RPC call failed: %v", err) // nolint
 		return ""
 	}
 
@@ -209,7 +209,7 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 
 	err = s.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
 	if err != nil {
-		log.Printf("Plugin.GetSupportedMediaTypes RPC call failed: %v", err)
+		log.Errorf("Plugin.GetSupportedMediaTypes RPC call failed: %v", err)
 		return nil
 	}
 
@@ -232,6 +232,7 @@ func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorse
 
 	err = s.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.SynthKeysFromRefValue RPC call failed: %w", err) // nolint
 	}
 
@@ -254,6 +255,7 @@ func (s *RPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsem
 
 	err = s.client.Call("Plugin.SynthKeysFromTrustAnchor", args, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.SynthKeysFromTrustAnchor RPC call failed: %w", err) // nolint
 	}
 
@@ -274,6 +276,7 @@ func (s *RPCClient) GetTrustAnchorID(token *proto.AttestationToken) (string, err
 
 	err = s.client.Call("Plugin.GetTrustAnchorID", data, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return "", fmt.Errorf("Plugin.GetTrustAnchorID RPC call failed: %w", err) // nolint
 	}
 
@@ -296,6 +299,7 @@ func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchor s
 
 	err = s.client.Call("Plugin.ExtractEvidence", args, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.ExtractEvidence RPC call failed: %w", err) // nolint
 	}
 
@@ -327,7 +331,7 @@ func (s *RPCClient) ValidateEvidenceIntegrity(
 
 	err = s.client.Call("Plugin.ValidateEvidenceIntegrity", args, &resp)
 
-	return err
+	return ParseError(err)
 }
 
 func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []string) (*ear.AttestationResult, error) {
@@ -347,6 +351,7 @@ func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []s
 
 	err = s.client.Call("Plugin.AppraiseEvidence", args, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.AppraiseEvidence RPC call failed: %w", err) // nolint
 	}
 
@@ -372,6 +377,7 @@ func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchor str
 	var resp []byte
 	err = s.client.Call("Plugin.ExtractClaims", args, &resp)
 	if err != nil {
+		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.ExtractClaims RPC call failed: %w", err) // nolint
 	}
 

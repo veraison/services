@@ -56,10 +56,12 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	}
 
 	if !supported {
-		return "", fmt.Errorf("wrong media type: expect %q, but found %q",
+		err := handler.BadEvidence(
+			"wrong media type: expect %q, but found %q",
 			strings.Join(EvidenceMediaTypes, ", "),
 			token.MediaType,
 		)
+		return "", err
 	}
 
 	var decoded Token
@@ -125,7 +127,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return fmt.Errorf("could not decode token: %w", err)
+		return handler.BadEvidence("could not decode token: %w", err)
 	}
 
 	pubKey, err := parseKey(trustAnchor)
@@ -134,7 +136,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	}
 
 	if err = decoded.VerifySignature(pubKey); err != nil {
-		return fmt.Errorf("could not verify token signature: %w", err)
+		return handler.BadEvidence("could not verify token signature: %w", err)
 	}
 
 	return nil
@@ -148,12 +150,16 @@ func (s EvidenceHandler) AppraiseEvidence(
 	evidence := ec.Evidence.AsMap()
 	digestValue, ok := evidence["pcr-digest"]
 	if !ok {
-		return result, fmt.Errorf("evidence does not contain %q entry", "pcr-digest")
+		err := handler.BadEvidence(
+			"evidence does not contain %q entry",
+			"pcr-digest",
+		)
+		return result, err
 	}
 
 	evidenceDigest, ok := digestValue.(string)
 	if !ok {
-		err := fmt.Errorf(
+		err := handler.BadEvidence(
 			"wrong type value %q entry; expected string but found %T",
 			"pcr-digest",
 			digestValue,

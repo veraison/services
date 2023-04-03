@@ -4,6 +4,8 @@
 package appraisal
 
 import (
+	"encoding/base64"
+
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
@@ -18,18 +20,42 @@ type Appraisal struct {
 	SignedEAR       []byte
 }
 
-func New(tenantID string, submodName string) *Appraisal {
-	return &Appraisal{
+func New(tenantID string, nonce []byte, submodName string) *Appraisal {
+	appraisal := Appraisal{
 		EvidenceContext: &proto.EvidenceContext{
 			TenantId: tenantID,
 		},
 		Result: ear.NewAttestationResult(submodName, config.Version, config.Developer),
 	}
+
+	encodedNonce := base64.URLEncoding.EncodeToString(nonce)
+	appraisal.Result.Nonce = &encodedNonce
+
+	appraisal.Result.VerifierID.Build = &config.Version
+	appraisal.Result.VerifierID.Developer = &config.Developer
+
+	return &appraisal
 }
 
 func (o Appraisal) GetContext() *proto.AppraisalContext {
 	return &proto.AppraisalContext{
 		Evidence: o.EvidenceContext,
 		Result:   o.SignedEAR,
+	}
+}
+
+func (o Appraisal) SetAllClaims(claim ear.TrustClaim) {
+	for _, submod := range o.Result.Submods {
+		submod.TrustVector.SetAll(claim)
+	}
+}
+
+func (o Appraisal) AddPolicyClaim(name, claim string) {
+	for _, submod := range o.Result.Submods {
+		if submod.AppraisalExtensions.VeraisonPolicyClaims == nil {
+			claimsMap := make(map[string]interface{})
+			submod.AppraisalExtensions.VeraisonPolicyClaims = &claimsMap
+		}
+		(*submod.AppraisalExtensions.VeraisonPolicyClaims)[name] = claim
 	}
 }

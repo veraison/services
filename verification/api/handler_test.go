@@ -47,19 +47,11 @@ var (
 		"application/psa-attestation-token"
 	]
 }`
-	testFailedSession = `{
-	"status": "failed",
-	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
-	"expiry": "2022-07-13T13:50:24.520525+01:00",
-	"accept": [
-		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
-		"application/psa-attestation-token"
-	],
-	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
-		"value":"eyAiayI6ICJ2IiB9"
-	}
+	testFailedProblem = `{
+	"type": "about:blank",
+	"title": "Internal Server Error",
+	"status": 500,
+	"detail": "error encountered while processing evidence"
 }`
 	testProcessingSession = `{
 	"status": "processing",
@@ -585,9 +577,9 @@ func TestHandler_SubmitEvidence_process_evidence_failed(t *testing.T) {
 
 	vmErr := "enqueueing evidence failed"
 
-	expectedCode := http.StatusOK
-	expectedType := ChallengeResponseSessionMediaType
-	expectedBody := testFailedSession
+	expectedCode := http.StatusInternalServerError
+	expectedType := "application/problem+json"
+	expectedBody := testFailedProblem
 
 	sm := mock_deps.NewMockISessionManager(ctrl)
 	sm.EXPECT().

@@ -58,7 +58,7 @@ func (s EvidenceHandler) ExtractClaims(
 
 	aliasCert, err := parseTokenCerts(token.Data, intermediates, roots)
 	if err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 
 	opts := x509.VerifyOptions{
@@ -69,13 +69,14 @@ func (s EvidenceHandler) ExtractClaims(
 
 	claims, err := extractEvidenceClaims(aliasCert)
 	if err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 
 	// note: must verify this after extracting claims so that the Subject Alternative Name
 	// gets processed; otherwise, it will be raised an unhandled critical extension.
 	if _, err = aliasCert.Verify(opts); err != nil {
-		return nil, errors.New("failed to verify alias cert: " + err.Error())
+		return nil, handler.BadEvidence(
+			"failed to verify alias cert: " + err.Error())
 	}
 
 	extracted := handler.ExtractedClaims{
@@ -83,7 +84,7 @@ func (s EvidenceHandler) ExtractClaims(
 		ReferenceID: "dice://",
 	}
 
-	return &extracted, err
+	return &extracted, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(
