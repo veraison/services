@@ -3,4 +3,11 @@ export PYTHONPATH=$PYTHONPATH:/integration-testing/utils
 export PROVISIONING_HOST=provisioning-service
 export VERIFICATION_HOST=verification-service
 export PS1='\e[0;32m\u@debug-container \e[0;34m\w\n\e[0;32m$\e[0m '
+
 alias ll='ls -lh --color=auto'
+alias jwt='step crypto jwt'
+
+function inspect-result() {
+    local file=$1
+    step crypto jwt inspect --insecure < $file
+}
