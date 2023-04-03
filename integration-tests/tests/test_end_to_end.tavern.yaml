@@ -65,7 +65,7 @@ stages:
           extra_kwargs:
             scheme: '{scheme}'
             evidence: '{evidence}'
-        - function: checkers:expected_result
+        - function: checkers:compare_to_expected_result
           extra_kwargs:
             expected: data/results/{scheme}.{expected}.json
             verifier_key: data/keys/verifier.jwk
@@ -105,7 +105,7 @@ stages:
     response:
       status_code: 200
       verify_response_with:
-        - function: checkers:expected_result
+        - function: checkers:compare_to_expected_result
           extra_kwargs:
             expected: __generated__/expected/{scheme}.{expected}.server-nonce.json
             verifier_key: data/keys/verifier.jwk

@@ -1,9 +1,8 @@
 import ast
 import os
 import shutil
-import subprocess
 
-from util import update_json
+from util import update_json, run_command
 
 
 GENDIR = '__generated__'
@@ -114,9 +113,7 @@ def generate_corim(corim_template, comid_templates, output_path):
         [f'cocli comid create --output-dir={output_dir}'] +
         [f'--template={t}' for t in comid_templates]
     )
-    proc = subprocess.run(comid_create_cmd, shell=True)
-    if proc.returncode:
-        raise RuntimeError(f"Could not generate CoMID(s); cocli returned ({proc.returncode})")
+    run_command(comid_create_cmd, 'generate CoMID(s)')
 
     comid_files = [os.path.join(output_dir, '.'.join([os.path.splitext(name)[0], 'cbor']))
                    for name in map(os.path.basename, comid_templates)]
@@ -125,30 +122,19 @@ def generate_corim(corim_template, comid_templates, output_path):
             [f'cocli corim create --output {output_path} --template={corim_template}'] +
             [f'--comid={cf}' for cf in comid_files]
     )
-    proc = subprocess.run(corim_create_cmd, shell=True)
-    if proc.returncode:
-        raise RuntimeError(f"Could not generate CoRIM; cocli returned ({proc.returncode})")
+    run_command(corim_create_cmd, 'generate CoRIM')
 
 
 def generate_psa_evidence_token(claims_file, key_file, token_file):
-    evcli_command = f"evcli psa create --claims={claims_file} --key={key_file} --token={token_file}"
-    print(evcli_command)
-    proc = subprocess.run(evcli_command, shell=True)
-    if proc.returncode:
-        raise RuntimeError(f"Could not generate PSA token; evcli returned ({proc.returncode})")
+    evcli_command = f"evcli psa create --allow-invalid --claims={claims_file} --key={key_file} --token={token_file}"
+    run_command(evcli_command, 'generate PSA token')
 
 
 def generate_cca_evidence_token(claims_file, pak_file, rak_file, token_file):
     evcli_command = f"evcli cca create --claims={claims_file} " + \
                     f"--pak={pak_file} --rak={rak_file} --token={token_file}"
-    print(evcli_command)
-    proc = subprocess.run(evcli_command, shell=True)
-    if proc.returncode:
-        raise RuntimeError(f"Could not generate PSA token; evcli returned ({proc.returncode})")
+    run_command(evcli_command, 'generate CCA token')
 
 def generate_eancttrust_evidence_token(claims_file, key_file, token_file):
     gentoken_command = f"gen-enacttrust-token -key {key_file} -out {token_file} {claims_file}"
-    print(gentoken_command)
-    proc = subprocess.run(gentoken_command, shell=True)
-    if proc.returncode:
-        raise RuntimeError(f"Could not generate EnactTrust token; gen-token returned ({proc.returncode})")
+    run_command(gentoken_command, 'generate EnactTrust token')

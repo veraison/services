@@ -1,5 +1,6 @@
 import json
 import re
+import subprocess
 
 
 def to_identifier(text):
@@ -19,6 +20,8 @@ def update_json(infile, new_data, outfile):
 def update_dict(base, other):
     for k, ov in other.items():
         bv = base.get(k)
+        if bv is None:
+            continue  # nothing to update
 
         if isinstance(bv, dict) and isinstance(ov, dict):
             update_dict(bv, ov)
@@ -27,4 +30,14 @@ def update_dict(base, other):
         else:
             base[k] = ov
 
+
+def run_command(command: str, action: str) -> int:
+    print(command)
+    proc = subprocess.run(command, capture_output=True, shell=True)
+    print(f'---STDOUT---\n{proc.stdout}')
+    print(f'---STDERR---\n{proc.stderr}')
+    print(f'------------')
+    if proc.returncode:
+        executable = command.split()[0]
+        raise RuntimeError(f'Could not {action}; {executable} returned {proc.returncode}')
 
