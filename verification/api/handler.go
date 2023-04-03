@@ -513,6 +513,15 @@ func getVerificationEndpoints() map[string]string {
 }
 
 func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
+	offered := c.NegotiateFormat(capability.WellKnownMediaType)
+	if offered != capability.WellKnownMediaType && offered != gin.MIMEJSON {
+		ReportProblem(c,
+			http.StatusNotAcceptable,
+			fmt.Sprintf("the only supported output format is %s", capability.WellKnownMediaType),
+		)
+		return
+	}
+
 	// Get public key
 	key, err := o.getKey()
 	if err != nil {
@@ -556,5 +565,6 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 		return
 	}
 
+	c.Header("Content-Type", capability.WellKnownMediaType)
 	c.JSON(http.StatusOK, obj)
 }

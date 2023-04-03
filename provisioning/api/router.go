@@ -10,7 +10,6 @@ var publicApiMap = make(map[string]string)
 
 const (
 	provisioningSubmitUrl           = "/endorsement-provisioning/v1/submit"
-	getServiceStateUrl              = "/status"
 	getWellKnownProvisioningInfoUrl = "/.well-known/veraison/provisioning"
 )
 
@@ -22,8 +21,6 @@ func NewRouter(handler IHandler) *gin.Engine {
 
 	router.POST(provisioningSubmitUrl, handler.Submit)
 	publicApiMap["provisioningSubmit"] = provisioningSubmitUrl
-
-	router.GET(getServiceStateUrl, handler.GetServiceState)
 
 	router.GET(getWellKnownProvisioningInfoUrl, handler.GetWellKnownProvisioningInfo)
 
