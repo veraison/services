@@ -1,0 +1,74 @@
+test_name: multi-nonce
+
+marks:
+  - parametrize:
+      key:
+        #  Attestation scheme -- this is used to indicate how test cases should
+        #  be constructed (e.g. how the evidence token will be compiled.
+        - scheme
+        # Some attestation schemes (currently, only PSA) may support multiple
+        # profiles. If a scheme does not support multiple profiles, specify it
+        # as '_'.
+        - profile
+        # Which evidence description will be used to construct the evidence token.
+        - evidence
+        # The name of the endorsements spec within common.yaml
+        - endorsements
+        # Signing keys that will be used to construct the evidence. How this is
+        # used is dependent on the scheme.
+        - signing
+        # Expected structure of the returned EAR (EAT (Entity Attestation
+        # Token) Attestation Result).
+        - expected
+      vals:
+        - [psa, p1, multinonce, full, ec.p256, noident]
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: '{endorsements-content-type}' # set via hook
+      file_body: __generated__/endorsements/endorsements.cbor
+    response:
+      status_code: 200
+
+  - name: verify - creation of session resource
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={good-nonce}
+    response:
+      status_code: 201
+      save:
+        headers:
+          relying-party-session: Location
+
+  - name: verify - submitting the evidence
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+      headers:
+        content-type: '{evidence-content-type}' # set via hook
+      file_body: __generated__/evidence/{scheme}.{evidence}.cbor
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:save_result
+          extra_kwargs:
+            scheme: '{scheme}'
+            evidence: '{evidence}'
+        - function: checkers:compare_to_expected_result
+          extra_kwargs:
+            expected: data/results/{scheme}.{expected}.json
+            verifier_key: data/keys/verifier.jwk
+
+  - name: verify as relying party - deleting the session object
+    request:
+      method: DELETE
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+    response:
+      status_code: 204
