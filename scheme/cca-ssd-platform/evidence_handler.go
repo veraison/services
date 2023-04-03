@@ -139,7 +139,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 
 	err := ccaToken.FromCBOR(token.Data)
 	if err != nil {
-		return "", err
+		return "", handler.BadEvidence(err)
 	}
 
 	return ccaTaLookupKey(
@@ -157,14 +157,14 @@ func (s EvidenceHandler) ExtractClaims(
 	var ccaToken ccatoken.Evidence
 
 	if err := ccaToken.FromCBOR(token.Data); err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 
 	var extracted handler.ExtractedClaims
 
 	claimsSet, err := claimsToMap(ccaToken.PlatformClaims)
 	if err != nil {
-		return nil, err
+		return nil, handler.BadEvidence(err)
 	}
 
 	extracted.ClaimsSet = claimsSet
@@ -214,11 +214,11 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	var ccaToken ccatoken.Evidence
 
 	if err = ccaToken.FromCBOR(token.Data); err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 
 	if err = ccaToken.Verify(pk); err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 	log.Debug("CCA platform token signature, realm token signature and cryptographic binding verified")
 	return nil
@@ -291,7 +291,7 @@ func populateAttestationResult(
 
 	rawLifeCycle, err := claims.GetSecurityLifeCycle()
 	if err != nil {
-		return err
+		return handler.BadEvidence(err)
 	}
 
 	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)

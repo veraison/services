@@ -4,7 +4,6 @@ package trustedservices
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,8 +16,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
+	handlermod "github.com/veraison/services/handler"
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
@@ -209,6 +210,7 @@ func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest)
 
 	return addRefValueSuccessResponse(), nil
 }
+
 func addRefValueSuccessResponse() *proto.AddRefValuesResponse {
 	return &proto.AddRefValuesResponse{
 		Status: &proto.Status{
@@ -300,27 +302,40 @@ func (o *GRPC) GetAttestation(
 
 	handler, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
-		return nil, err
+		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+		appraisal.AddPolicyClaim("problem", "could not resolve media type")
+		return o.finalize(appraisal, err)
 	}
 
 	appraisal, err := o.initEvidenceContext(handler, token)
 	if err != nil {
-		return nil, err
+		return o.finalize(appraisal, err)
 	}
 
 	ta, err := o.getTrustAnchor(appraisal.EvidenceContext.TrustAnchorId)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, kvstore.ErrKeyNotFound) {
+			err = handlermod.BadEvidence("no trust anchor for %s",
+				appraisal.EvidenceContext.TrustAnchorId)
+			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
+		}
+		return o.finalize(appraisal, err)
 	}
 
 	extracted, err := handler.ExtractClaims(token, ta)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, handlermod.BadEvidenceError{}) {
+			appraisal.AddPolicyClaim("problem", err.Error())
+		}
+		return o.finalize(appraisal, err)
 	}
 
 	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
 	if err != nil {
-		return nil, fmt.Errorf("bad claims in result: %w", err)
+		err = fmt.Errorf("unserializable claims in result: %w", err)
+		return o.finalize(appraisal, err)
 	}
 
 	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID
@@ -331,7 +346,7 @@ func (o *GRPC) GetAttestation(
 
 	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.ReferenceId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-		return nil, err
+		return o.finalize(appraisal, err)
 	}
 
 	if len(endorsements) > 0 {
@@ -339,48 +354,27 @@ func (o *GRPC) GetAttestation(
 	}
 
 	if err = handler.ValidateEvidenceIntegrity(token, ta, endorsements); err != nil {
-		// TODO(setrofim): we should distinguish between validation
-		// failing due to bad signature vs actual error here, and only
-		// return actual err. Bad sig should be reported as a failure
-		// in attestation result, rather than an error in the
-		// attestation call.
-		return nil, err
+		if errors.Is(err, handlermod.BadEvidenceError{}) {
+			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+			appraisal.AddPolicyClaim("problem", "signature validation failed")
+		}
+		return o.finalize(appraisal, err)
 	}
 
-	// TODO(tho) we need to clearly define what it means for a plugin to return
-	// an error and decide whether / how such condition gets mapped into the
-	// AR4SI trust vector (ISTM that a VerifierMalfunctionClaim (-1) may be the
-	// right signal.)
 	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
-		return nil, err
+		return o.finalize(appraisal, err)
 	}
 	appraisal.Result = appraisedResult
 
-	// TODO(setrofim) Should we be doing appraisal.SetError() on error here?
-	// This should be decided as part of a wider policy framework design.
 	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
 	if err != nil {
-		return nil, err
+		return o.finalize(appraisal, err)
 	}
-
-	appraisal.Result.UpdateStatusFromTrustVector()
-
-	ear, err := o.EarSigner.Sign(*appraisal.Result)
-	if err != nil {
-		return nil, err
-	}
-	appraisal.SignedEAR = ear
-
-	appraisal.Result.VerifierID.Build = &config.Version
-	appraisal.Result.VerifierID.Developer = &config.Developer
-
-	encodedNonce := base64.URLEncoding.EncodeToString(token.Nonce)
-	appraisal.Result.Nonce = &encodedNonce
 
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
-	return appraisal.GetContext(), err
+	return o.finalize(appraisal, nil)
 }
 
 func (c *GRPC) initEvidenceContext(
@@ -389,14 +383,15 @@ func (c *GRPC) initEvidenceContext(
 ) (*appraisal.Appraisal, error) {
 	var err error
 
-	appraisal := appraisal.New(token.TenantId, handler.GetAttestationScheme())
-
+	appraisal := appraisal.New(token.TenantId, token.Nonce, handler.GetAttestationScheme())
 	appraisal.EvidenceContext.TrustAnchorId, err = handler.GetTrustAnchorID(token)
-	if err != nil {
-		return nil, err
+
+	if errors.Is(err, handlermod.BadEvidenceError{}) {
+		appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+		appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
 	}
 
-	return appraisal, nil
+	return appraisal, err
 }
 
 func (c *GRPC) getTrustAnchor(id string) (string, error) {
@@ -438,4 +433,49 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 	return &proto.PublicKey{
 		Key: bstring,
 	}, nil
+}
+
+func (o *GRPC) finalize(
+	appraisal *appraisal.Appraisal,
+	err error,
+) (*proto.AppraisalContext, error) {
+	var signErr error
+
+	if err != nil {
+		if errors.Is(err, handler.BadEvidenceError{}) {
+			// NOTE(setrofim): I debated whether this should be
+			// logged as Info or Warn. Ultimately deciding to go
+			// with Warn, to make it easier to identifier the
+			// failed validations in a stream of successful ones.
+			// As we're effectively "swallowing" the error here,
+			// and the response the client receives with only
+			// contain "unexpected evidence", or whatever, and not
+			// have the details, this log line can be important in
+			// debugging problems.
+			o.logger.Warn(err)
+			// Clear the error as we've "handled" by setting the
+			// claim in the result.
+			err = nil
+		} else {
+			o.logger.Error(err)
+			appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
+		}
+
+	}
+
+	appraisal.Result.UpdateStatusFromTrustVector()
+
+	appraisal.SignedEAR, signErr = o.EarSigner.Sign(*appraisal.Result)
+	if signErr != nil {
+		// Signing error overrides whatever the problem that got us
+		// here was, as it indicates a serious issue with the service.
+		// TODO(setrofim): signing an EAR should be an error-free
+		// operation. It should either succeed or panic if there is a
+		// serious issue with the underlying platform (such as OOM).
+		// Any other problems (e.g. bad/missing key) should be
+		// identified and handled during service initialisation.
+		err = signErr
+	}
+
+	return appraisal.GetContext(), err
 }
