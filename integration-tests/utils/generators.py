@@ -106,6 +106,46 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
         raise ValueError(f'Unexpected scheme: {scheme}')
 
 
+def generate_evidence_from_test_no_nonce(test):
+    scheme = test.test_vars['scheme']
+    evidence = test.test_vars['evidence']
+    signing = test.common_vars['keys'][test.test_vars['signing']]
+    outname = f'{scheme}.{evidence}'
+
+    return generate_evidence_no_nonce(scheme, evidence, signing, outname)
+
+
+def generate_evidence_no_nonce(scheme, evidence, signing, outname):
+    os.makedirs(f'{GENDIR}/evidence', exist_ok=True)
+
+    claims_file = f'data/claims/{scheme}.{evidence}.json'
+
+    if scheme == 'psa':
+        iak = signing
+        generate_psa_evidence_token(
+                claims_file,
+                f'data/keys/{iak}.jwk',
+                f'{GENDIR}/evidence/{outname}.cbor',
+                )
+    elif scheme == 'cca':
+        pak, rak = signing
+        generate_cca_evidence_token(
+                claims_file,
+                f'data/keys/{pak}.jwk',
+                f'data/keys/{rak}.jwk',
+                f'{GENDIR}/evidence/{outname}.cbor',
+                )
+    elif scheme == 'enacttrust':
+        key = signing
+        generate_eancttrust_evidence_token(
+                claims_file,
+                f'data/keys/{key}.pem',
+                f'{GENDIR}/evidence/{outname}.cbor',
+                )
+    else:
+        raise ValueError(f'Unexpected scheme: {scheme}')
+
+
 def generate_corim(corim_template, comid_templates, output_path):
     output_dir = os.path.dirname(output_path)
 

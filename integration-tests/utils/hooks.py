@@ -16,6 +16,13 @@ def setup_bad_session(test, veriables):
 def setup_no_nonce(test, veriables):
     generate_evidence_from_test(test)
 
+
+def setup_multi_nonce(test, variables):
+    _set_content_types(test, variables)
+    generate_endorsements(test)
+    generate_evidence_from_test_no_nonce(test)
+
+
 def _set_content_types(test, variables):
     scheme = test.test_vars['scheme']
     profile = test.test_vars['profile']

@@ -45,7 +45,6 @@ def compare_to_expected_result(response, expected, verifier_key):
                 expected_claims["ear.veraison.policy-claims"]
 
 
-
 def _extract_appraisal(response, key_file):
     try:
         result = response.json()["result"]
