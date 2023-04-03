@@ -2,24 +2,29 @@ import os
 import json
 from jose import jwt
 
-
 GENDIR = '__generated__'
 
 
 def save_result(response, scheme, evidence):
     os.makedirs(f'{GENDIR}/results', exist_ok=True)
-    outfile = f'{GENDIR}/results/{scheme}.{evidence}.jwt'
+    jwt_outfile = f'{GENDIR}/results/{scheme}.{evidence}.jwt'
 
     try:
         result = response.json()["result"]
     except KeyError:
         raise ValueError("Did not receive an attestation result.")
 
-    with open(outfile, 'w') as wfh:
+    with open(jwt_outfile, 'w') as wfh:
         wfh.write(result)
 
+    decoded = jwt.decode(result, key="", options={'verify_signature': False})
 
-def expected_result(response, expected, verifier_key):
+    json_outfile = f'{GENDIR}/results/{scheme}.{evidence}.json'
+    with open(json_outfile, 'w') as wfh:
+        json.dump(decoded, wfh, indent=4)
+
+
+def compare_to_expected_result(response, expected, verifier_key):
     decoded = _extract_appraisal(response, verifier_key)
 
     with open(expected) as fh:
@@ -31,7 +36,14 @@ def expected_result(response, expected, verifier_key):
         expected_value = expected_claims["ear.trustworthiness-vector"][trust_claim]
         assert expected_value == tc_value, f'mismatch for claim "{trust_claim}"'
 
-    assert decoded["ear.veraison.annotated-evidence"] == expected_claims["ear.veraison.annotated-evidence"]
+    if "ear.veraison.annotated-evidence" in expected_claims:
+        assert decoded["ear.veraison.annotated-evidence"] == \
+                expected_claims["ear.veraison.annotated-evidence"]
+
+    if "ear.veraison.policy-claims" in expected_claims:
+        assert decoded["ear.veraison.policy-claims"] == \
+                expected_claims["ear.veraison.policy-claims"]
+
 
 
 def _extract_appraisal(response, key_file):
