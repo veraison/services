@@ -1064,8 +1064,8 @@ github.com/vektah/gqlparser/v2 v2.4.6/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rty
 github.com/veraison/apiclient v0.0.2/go.mod h1:H8YDx1ixM24GYP/aLbhq+HJsej0lVUqFCRIL5Uu4B0o=
 github.com/veraison/ccatoken v1.0.0 h1:8xMZdWKb9vzGy5VbxleVzhQ10ZvBRRWse1FN93mGzXo=
 github.com/veraison/ccatoken v1.0.0/go.mod h1:tHh48NBedUooX/DguS+cUC27yCgdv7bBtZ188jZ3fqo=
-github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a h1:/aZoeXMIhWDT7SnHi1mnuKuGtdSv5ym11SCcYrbPiOU=
-github.com/veraison/corim v0.0.0-20230123231101-0e8a4a38a25a/go.mod h1:AdIMc2lCYORuG8Pa4fXemyP1KzpgMg+cnPgks32xjAU=
+github.com/veraison/corim v1.0.0 h1:B2eCyqHXq/Efv349WJCMO27EEcriS5sHWSpR9Bt68t4=
+github.com/veraison/corim v1.0.0/go.mod h1:wbdOh5ixkxV1X+wRFh4lmxc6K8nd0PtKsmY4ze/E+VE=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=
 github.com/veraison/dice v0.0.1/go.mod h1:QPMLc5LVMj08VZ+HNMYk4XxWoVYGAUBVm8Rd5V1hzxs=
 github.com/veraison/ear v1.0.1 h1:Wf1dbJK29kBQM7xafKM1m0L5pUh3MqPqzEaDRLUu9FY=
@@ -1077,8 +1077,9 @@ github.com/veraison/go-cose v1.0.0-rc.1 h1:4qA7dbFJGvt7gcqv5MCIyCQvN+NpHFPkW7do3
 github.com/veraison/go-cose v1.0.0-rc.1/go.mod h1:7ziE85vSq4ScFTg6wyoMXjucIGOf4JkFEZi/an96Ct4=
 github.com/veraison/psatoken v1.1.0 h1:TG0+UWPCMrP0B69zteZyjHGhzYG1JYb5IX+66wuDlGw=
 github.com/veraison/psatoken v1.1.0/go.mod h1:2tHLoYMOIS4V4mO8MJT4VstRtpO50FLmhoOR35FyIr4=
-github.com/veraison/swid v0.0.1-beta.6 h1:ysDyCOPwGyjiBnhAM+/kgTEcc/PWieIbUQJOjnSTK48=
-github.com/veraison/swid v0.0.1-beta.6/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
+github.com/veraison/swid v1.0.0/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
+github.com/veraison/swid v1.1.0 h1:jEf/jobG6j7r9W9HSj2jDi1IGGs7aMKyDgfGEMxQ6is=
+github.com/veraison/swid v1.1.0/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=

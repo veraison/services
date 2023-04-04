@@ -29,7 +29,7 @@ type SwAttr struct {
 	ImplID           []byte `json:"CCA_SSD_PLATFORM.impl-id"`
 	Model            string `json:"CCA_SSD_PLATFORM.hw-model"`
 	Vendor           string `json:"CCA_SSD_PLATFORM.hw-vendor"`
-	MeasDesc         uint64 `json:"CCA_SSD_PLATFORM.measurement-desc"`
+	MeasDesc         string `json:"CCA_SSD_PLATFORM.measurement-desc"`
 	MeasurementType  string `json:"CCA_SSD_PLATFORM.measurement-type"`
 	MeasurementValue []byte `json:"CCA_SSD_PLATFORM.measurement-value"`
 	SignerID         []byte `json:"CCA_SSD_PLATFORM.signer-id"`

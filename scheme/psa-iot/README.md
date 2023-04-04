@@ -10,7 +10,7 @@
     "psa.hw-model": "RoadRunner",
     "psa.hw-vendor": "ACME",
     "psa.impl-id": "IllXTnRaUzFwYlhCc1pXMWxiblJoZEdsdmJpMXBaQzB3TURBd01EQXdNREU9Ig==",
-    "psa.measurement-desc": 1,
+    "psa.measurement-desc": "sha-256",
     "psa.measurement-type": "BL",
     "psa.measurement-value": "h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc=",
     "psa.signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs=",
