@@ -23,6 +23,7 @@ marks:
       vals:
         - [psa, p1, good, full, ec.p256, good]
         - [psa, p1, good, mini, ec.p256, good]
+        - [psa, p1, missingclaims, mini, ec.p256, noident]
         - [psa, p1, good, mini, bad, badcrypto]
         - [psa, p1, badinstance, full, ec.p256, badinstance]
         - [psa, p1, badswcomp, full, ec.p256, badswcomp]
