@@ -18,6 +18,7 @@ deployments/docker/.bin
 integration-tests/.built
 __generated__
 __pycache__
+__debug_bin
 
 # Test binary, built with `go test -c`
 *.test
