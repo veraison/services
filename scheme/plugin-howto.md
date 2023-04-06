@@ -36,6 +36,9 @@ payload.  The common structure is as follows:
 }
 ```
 
+These _key_ and _value_ effectively represent the _internal interface_ between
+Endorsement and Verification plugins of the same Attestation Scheme.
+
 ## A Fictitious TPM-based Attestation Scheme
 
 It may be easier to look at a concrete use case to see how these abstract
@@ -138,3 +141,42 @@ above) using the device class identifier as path:
 ```
 MY_TPM://<tenant-id>/<class-id>
 ```
+
+### Endorsement Handler Code
+
+Once the records and their lookup keys are defined one can start implementing
+the actual handler code.
+
+As described in [README.md](README.md#implementing-attestation-scheme-support),
+the handler code must implement all the methods defined by the
+`IEndorsementHandler` interface.
+
+In particular, we want:
+
+* `GetAttestationScheme()` to return the string `"MY_TPM"`
+* `GetSupportedMediaTypes` to return the media type(s) that the plugin
+  understands
+* `GetName()` to return `"unsigned-corim (my TPM profile)"` since we assume RIM
+  data to be conveyed in a CoRIM format suitably profiled to precisely describe
+  our attester
+* `Init()` and `Close()` to just return `nil` - we don't need any special
+  initialisation / termination code
+
+The core extraction and normalisation work is carried out by the `Decode()`
+method.  Since we assume CoRIM as input format, the
+`common.UnsignedCorimDecoder()` method can be used to take care of the base
+CoRIM decoding and validation.  Alongside the RIM data, this method takes input
+a `common.IExtractor` implementation that provides the profile-specific
+extraction and normalisation logics.
+
+We define a `MyTPMExtractor` object to implement the interface.  This amounts to
+providing an implementation of the `RefValExtractor()` and `TaExtractor()`
+signatures.
+
+#### Reference Value Extractor
+
+TODO
+
+#### Verification Key Extractor
+
+TODO

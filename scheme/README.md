@@ -8,6 +8,8 @@ schemes. Currently the following schemes are implemented:
   attestation (note: this does not implement any specific DICE architecture).
 - `tmp-enacttrust`: TPM-based attestation for
   [EnactTrust](https://www.enacttrust.com/) security cloud.
+- `parsec-tpm`: [Parsec](https://github.com/parallaxsecond) key (and platform)
+  attestation using a TPM backend
 
 
 ## Implementing Attestation Scheme Support
