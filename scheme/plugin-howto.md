@@ -1,8 +1,8 @@
 # Endorsement Plugin
 
-"Endorsement Plugin" is an umbrella term for the custom code that handles
+Endorsement Plugin is an umbrella term for the custom code that handles
 extraction and normalisation of reference values and trust anchors for a
-specific "Attestation Scheme."
+specific Attestation Scheme.
 
 The values are extracted from a reference integrity manifest (RIM), e.g., CoRIM,
 and normalised into a key-value representation ready to be stored in the
@@ -47,15 +47,15 @@ triples respectively.
 
 In `MY_TPM` trust anchors are per-device raw public keys, whilst reference
 values are digests associated with specific PCRs that must be the same for all
-devices in a "class" (e.g., the deployed fleet).
+devices in a _class_ (e.g., the deployed fleet).
 
 ### Trust Anchor Design
 
 Trust anchors are unique to a given device - note that this is an arbitrary
 choice we made for our `MY_TPM` example, it is not generally true.
 
-The natural way this is expressed in CoMID is by means of an "instance
-environment" made of an "instance" unique identifier and, optionally, a "class"
+The natural way this is expressed in CoMID is by means of an _instance
+environment_ made of an _instance_ unique identifier and, optionally, a _class_
 identifier.
 
 Each record will contain exactly one key.
@@ -95,8 +95,8 @@ MY_TPM://<tenant-id>/<instance-id>
 Reference Values are shared by all devices of the same class.  Again, while
 common this is not necessarily true for all Attestation Schemes.
 
-The natural way this is expressed in CoMID is by means of a "class environment",
-i.e., one with only a "class" identifier.
+The natural way this is expressed in CoMID is by means of a _class environment_,
+i.e., one with only a _class_ identifier.
 
 Each record will contain exactly one reference value.  Note that, for algorithm
 agility reasons, the same PCR may be associated with more than one reference
