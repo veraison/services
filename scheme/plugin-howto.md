@@ -175,8 +175,21 @@ signatures.
 
 #### Reference Value Extractor
 
-TODO
+* loop through the rv triples
+  * extract relevant data (TODO)
+  * assemble the REFERENCE_VALUE record
+  * append the record to the list
+* ship the records over to VTS
 
 #### Verification Key Extractor
 
-TODO
+* loop through the avk triples
+  * extract relevant data (TODO)
+  * assemble the VERIFICATION_KEY record
+  * append the record to the list
+* ship the records over to VTS
+
+### Lookup Keys Synthesis
+
+* TA key lookup synth
+* RV key lookus synth
