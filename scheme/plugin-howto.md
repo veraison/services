@@ -93,6 +93,13 @@ using the device instance identifier as path:
 MY_TPM://<tenant-id>/<instance-id>
 ```
 
+To allow `IEvidenceHandler`'s `SynthKeysFromTrustAnchor()` to correctly
+synthesize the KVStore URI for the trust anchor record, the instance identifier
+needs to be stashed alongside the endorsement data in the `attributes`.
+
+`SynthKeysFromTrustAnchor()` will use the value of `my-tpm.instance-id` (and
+`scheme`) to do that.
+
 ### Reference Values Design
 
 Reference Values are shared by all devices of the same class.  Again, while
@@ -142,6 +149,13 @@ above) using the device class identifier as path:
 MY_TPM://<tenant-id>/<class-id>
 ```
 
+To allow `IEvidenceHandler`'s `SynthKeysFromRefValue()` to correctly synthesize
+the KVStore URI for the reference value record, the class identifier needs to be
+stashed alongside the endorsement data in the `attributes`.
+
+`SynthKeysFromRefValue()` will use the value of `my-tpm.class-id` (and `scheme`)
+to do that.
+
 ### Endorsement Handler Code
 
 Once the records and their lookup keys are defined one can start implementing
@@ -175,21 +189,39 @@ signatures.
 
 #### Reference Value Extractor
 
-* loop through the rv triples
-  * extract relevant data (TODO)
-  * assemble the REFERENCE_VALUE record
-  * append the record to the list
-* ship the records over to VTS
+The reference value extractor is fed by the `UnsignedCorimDecoder()` with a
+Reference Value triple at a time.
+
+The extractor business logics consists of:
+
+* Extracting the class identifier from the target environment
+* Then, for each measurement:
+  * Extracting the PCR index (assuming it's found in the measurement `Key` of
+    type `uint`), and
+  * For each digest (there may be one or more):
+    * Extracting the algorithm identifier and the actual digest value
+    * Creating a `structpb.Struct` map corresponding to the reference value
+      "Normalised Record Layout" as described above using the current PCR index
+    * Assembling a `proto.Endorsement` record with `Type` set to
+      `proto.EndorsementType_REFERENCE_VALUE`, scheme set to `MY_TPM` and
+      attributes set to the `structpb.Struct` map just created
+    * Appending the record to the list
+* Returning the records list to the caller
 
 #### Verification Key Extractor
 
-* loop through the avk triples
-  * extract relevant data (TODO)
-  * assemble the VERIFICATION_KEY record
-  * append the record to the list
-* ship the records over to VTS
+The trust anchor extractor is fed by the `UnsignedCorimDecoder()` with a
+Verification Key triple at a time.
 
-### Lookup Keys Synthesis
+We expect to find exactly one Verification Key in the supplied triple.
 
-* TA key lookup synth
-* RV key lookus synth
+The extractor business logics consists of:
+
+* Extracting the instance identifier from the target environment
+* Extracting the raw public key from the first (and only) Verification Key
+* Creating a `structpb.Struct` map corresponding to the trust anchor "Normalised
+  Record Layout" as described above
+* Assembling a `proto.Endorsement` record with `Type` set to
+  `proto.EndorsementType_VERIFICATION_KEY`, scheme set to `MY_TPM` and
+  attributes set to the `structpb.Struct` map just created
+* Returning the record
