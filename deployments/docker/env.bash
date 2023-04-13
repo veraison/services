@@ -7,4 +7,4 @@ set +a
 alias veraison="$__VERAISON_DIR/veraison"
 alias cocli="$__VERAISON_DIR/veraison -- cocli"
 alias evcli="$__VERAISON_DIR/veraison -- evcli"
-alias polcli="$__VERAISON_DIR/veraiosn -- polcli"
+alias polcli="$__VERAISON_DIR/veraison -- polcli"
