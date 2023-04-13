@@ -13,7 +13,7 @@ type SwCompAttributes struct {
 	MeasurementType  string
 	Version          string
 	SignerID         []byte
-	AlgID            uint64
+	AlgID            string
 	MeasurementValue []byte
 }
 
@@ -54,7 +54,7 @@ func (o *SwCompAttributes) FromMeasurement(m comid.Measurement) error {
 		return fmt.Errorf("expecting exactly one digest")
 	}
 
-	o.AlgID = (*d)[0].HashAlgID
+	o.AlgID = (*d)[0].AlgIDToString()
 	o.MeasurementValue = (*d)[0].HashValue
 
 	return nil

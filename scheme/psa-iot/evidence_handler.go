@@ -28,7 +28,7 @@ type SwAttr struct {
 	ImplID    *[]byte `json:"PSA_IOT.impl-id"`
 	Model     *string `json:"PSA_IOT.hw-model"`
 	Vendor    *string `json:"PSA_IOT.hw-vendor"`
-	MeasDesc  *uint64 `json:"PSA_IOT.measurement-desc"`
+	MeasDesc  *string `json:"PSA_IOT.measurement-desc"`
 	MeasType  *string `json:"PSA_IOT.measurement-type"`
 	MeasValue *[]byte `json:"PSA_IOT.measurement-value"`
 	SignerID  *[]byte `json:"PSA_IOT.signer-id"`

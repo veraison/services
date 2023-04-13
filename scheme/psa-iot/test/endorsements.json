@@ -5,7 +5,7 @@
     "PSA_IOT.hw-model":"RoadRunner",
     "PSA_IOT.hw-vendor":"ACME",
     "PSA_IOT.impl-id":"76543210fedcba9817161514131211101f1e1d1c1b1a1918",
-    "PSA_IOT.measurement-desc":1,
+    "PSA_IOT.measurement-desc":"sha-256",
     "PSA_IOT.measurement-type":"BL",
     "PSA_IOT.measurement-value":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
     "PSA_IOT.signer-id":"BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
