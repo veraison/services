@@ -1,4 +1,4 @@
-__VERAISON_DIR=$( cd -- "$( dirname -- "${(%):-%N}" )" &> /dev/null && pwd )
+__VERAISON_DIR=$( cd -- "$( dirname -- $( realpath -- "${(%):-%N}" ) )" &> /dev/null && pwd )
 
 set -a
 source $__VERAISON_DIR/deployment.cfg
