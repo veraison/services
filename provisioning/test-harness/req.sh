@@ -5,7 +5,7 @@
 set -o pipefail
 set -eux
 
-T=${T?must be set in the environment to one of psa or tpm-enacttrust.}
+T=${T?must be set in the environment to one of psa, tpm-enacttrust, parsec-tpm.}
 B=${B?must be set in the environment to one of trustanchor or refvalue.}
 
 CORIM_FILE=corim-${T}-${B}.cbor
@@ -17,6 +17,9 @@ then
 elif [ "${T}" == "tpm-enacttrust" ];
 then
 	CONTENT_TYPE="Content-Type: application/corim-unsigned+cbor; profile=http://enacttrust.com/veraison/1.0.0"
+elif [ "${T}" == "parsec-tpm" ]
+then
+	CONTENT_TYPE='Content-Type: application/corim-unsigned+cbor; profile="tag:github.com/parallaxsecond,2023-03-03:tpm"'
 else
 	echo "unknown type ${T}"
 	exit 1

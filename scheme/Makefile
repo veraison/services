@@ -6,6 +6,7 @@ SUBDIR += cca-ssd-platform
 SUBDIR += tcg-dice
 SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust
+SUBDIR += parsec-tpm
 
 clean: ; $(RM) -rf ./bin
 

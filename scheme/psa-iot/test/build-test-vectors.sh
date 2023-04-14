@@ -50,7 +50,7 @@ COMID_CCA_TEMPLATES="${COMID_CCA_TEMPLATES} ComidCcaRefValFour"
 
 TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
 
-printf "package main\n\n" > ${TV_DOT_GO}
+printf "package psa_iot\n\n" > ${TV_DOT_GO}
 
 for t in ${COMID_TEMPLATES}
 do
