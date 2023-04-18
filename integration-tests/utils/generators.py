@@ -21,7 +21,7 @@ def generate_endorsements(test):
     corim_template = f'data/endorsements/{corim_template_name}'
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in spec[1:]]
-    output_path = f'{GENDIR}/endorsements/endorsements.cbor'
+    output_path = f'{GENDIR}/endorsements/corim-{scheme}-{spec[0]}.cbor'
 
     generate_corim(corim_template, comid_templates, output_path)
 
