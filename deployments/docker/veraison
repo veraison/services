@@ -47,7 +47,7 @@ function start() {
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         start_verification
     else
-        echo -e "$_error: unknown serivice: $what"
+        echo -e "$_error: unknown service: $what"
         exit 1
     fi
 }
@@ -66,7 +66,7 @@ function stop() {
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         stop_verification
     else
-        echo -e "$_error: unknown serivice: $what"
+        echo -e "$_error: unknown service: $what"
         exit 1
     fi
 }
@@ -81,7 +81,7 @@ function follow() {
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         follow_verification
     else
-        echo -e "$_error: unknown serivice: $what"
+        echo -e "$_error: unknown service: $what"
         exit 1
     fi
 }
