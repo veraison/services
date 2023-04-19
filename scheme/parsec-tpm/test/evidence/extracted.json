@@ -1,0 +1,20 @@
+{
+  "evidence": {
+    "kat": {
+      "certInfo": "/1RDR4AXAAQAAABkABNBQkFCQUJBQkFCQUJBQkFCQUJBAAAAAAAAAAMAAAAEAAAABQYAAAAAAAAABwAiAAuKkp8+pDU0WOvHsGOM49q0DpeJZJ9K3b0+pLiKVB4FzgAA",
+      "kid": "Ad6tvu/erb7v3q2+796tvu8=",
+      "pubArea": "ACMACwAEAGAAAAAQABgACwADABAAIL3bsMy8iWTf8NIyLuT5UKEz1sijkbmqxM9FT8uyw5IBACDyEtz91Wj4VPr6KnX9W1h8UoLltvdmNz8jEt+NLHYr4Q==",
+      "sig": "ABgADAAwPmycQJcUnUGB8wTdeKThb4R4p9cZCi1xEdULd6HkTiDjNizNbFeZraD9kHUmJmUaADAYXLWMXOtUv6RkivCDMfvsnJJh4ipA0CykzfXCS8+9I7ughfXwpZyDjuf2AjsEzwM=",
+      "tpmVer": "2.0"
+    },
+    "pat": {
+      "attestInfo": "/1RDR4AYAAQAAABkABNBQkFCQUJBQkFCQUJBQkFCQUJBAAAAAAAAAAMAAAAEAAAABQYAAAAAAAAABwAAAAEACwMOAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "kid": "Ad6tvu/erb7v3q2+796tvu8=",
+      "sig": "ABgACwAw7EQrGzA22otxCVQIkn+5UdJ+Yttnw2muhFvqa2D5LROVoi/nUasvhDU18yFgCEzPADAieV9wS6JXF0eRPPkOVgD7qAT33L4K/V99G2XkLyhW3v+Ur8fC01VntccdgbvzAcQ=",
+      "tpmVer": "2.0"
+    }
+  },
+  "reference-id": "PARSEC_TPM://1/YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE=",
+  "trust-anchor-id": "PARSEC_TPM://1/AagIEsUMYDNxd1p5UuAACkxJGfJf9rcUZ/oyRFHDcAxn",
+  "tenant-id": "1"
+}

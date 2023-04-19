@@ -30,7 +30,7 @@ require (
 	github.com/veraison/ccatoken v1.0.0
 	github.com/veraison/corim v1.0.0
 	github.com/veraison/dice v0.0.1
-	github.com/veraison/ear v1.0.1
+	github.com/veraison/ear v1.0.2-0.20230424145130-0dee678d30d3
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/psatoken v1.1.0
 	go.uber.org/zap v1.23.0
@@ -38,6 +38,8 @@ require (
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.0
 )
+
+require github.com/veraison/parsectpm v0.0.0-20230419103011-ab840ff78579
 
 require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -53,7 +55,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
@@ -84,7 +86,7 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.6 // indirect
 	github.com/veraison/go-cose v1.0.0-rc.1 // indirect
-	github.com/veraison/swid v1.1.0 // indirect
+	github.com/veraison/swid v1.1.0
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

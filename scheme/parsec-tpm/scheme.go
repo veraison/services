@@ -12,5 +12,5 @@ var EndorsementMediaTypes = []string{
 }
 
 var EvidenceMediaTypes = []string{
-	`TODO(tho)`,
+	"application/vnd.parallaxsecond.key-attestation.tpm",
 }
