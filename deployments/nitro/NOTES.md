@@ -18,7 +18,7 @@ ssh -i "~/.ssh/nitraison-dev.pem" ec2-user@ec2-3-248-250-248.eu-west-1.compute.a
 sudo yum install git -y
 ```
 
-* Build the Rust vsock example following the instructions at []()
+* Build the Rust vsock example following the [instructions](https://docs.aws.amazon.com/enclaves/latest/user/developing-applications-linux.html)
 
 * Create the enclave image file:
 ```shell
@@ -77,13 +77,35 @@ nitro-cli terminate-enclave --all
 
 ## Veraison
 
-* install go
+* install go 1.19
 ```shell
-sudo yum install golang -y
-```
-the installed version is 1.18
-```
-go version
-go version go1.18.9 linux/amd64
+wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
+tar -xzf go1.19.linux-amd64.tar.gz
+sudo mv go /usr/local
+export PATH=$PATH:/usr/local/go/bin
 ```
 
+* install go deps
+```shell
+go install golang.org/x/tools/gopls@latest
+go install golang.org/x/tools/cmd/guru@latest
+go install github.com/golang/mock/mockgen@v1.7.0-rc.1
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
+go install github.com/veraison/corim/cocli@latest
+go install github.com/veraison/evcli@latest
+go install github.com/go-delve/delve/cmd/dlv@latest
+export PATH=$PATH:${HOME}/go/bin
+```
+* also:
+```shell
+curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v22.3/protoc-22.3-linux-x86_64.zip
+sudo unzip protoc-22.3-linux-x86_64.zip -d /usr/local
+```
+
+
+* compile versaison services
+```shell
+make
+```
