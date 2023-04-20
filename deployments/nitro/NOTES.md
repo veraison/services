@@ -13,6 +13,13 @@ Things to remember:
 ssh -i "~/.ssh/nitraison-dev.pem" ec2-user@ec2-3-248-250-248.eu-west-1.compute.amazonaws.com
 ```
 
+* install git
+```shell
+sudo yum install git -y
+```
+
+* Build the Rust vsock example following the instructions at []()
+
 * Create the enclave image file:
 ```shell
 nitro-cli build-enclave --docker-dir ./ --docker-uri vsock-sample-server --output-file vsock_sample.eif
@@ -62,3 +69,21 @@ nitro-cli console --enclave-id i-099db943bfa3ad1d9-enc1879f5d1481d8f0
 ```shell
 ./aws-nitro-enclaves-samples/vsock_sample/rs/target/x86_64-unknown-linux-musl/release/vsock-sample client --cid 6 --port 5005
 ```
+
+* To terminate all the running enclaves:
+```shell
+nitro-cli terminate-enclave --all
+```
+
+## Veraison
+
+* install go
+```shell
+sudo yum install golang -y
+```
+the installed version is 1.18
+```
+go version
+go version go1.18.9 linux/amd64
+```
+
