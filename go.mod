@@ -17,6 +17,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/lestrrat-go/jwx/v2 v2.0.8
 	github.com/mattn/go-sqlite3 v1.14.14
+	github.com/mdlayher/vsock v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moogar0880/problems v0.1.1
 	github.com/olekukonko/tablewriter v0.0.5
@@ -48,6 +49,8 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 )
+
+require github.com/mdlayher/socket v0.4.0 // indirect
 
 require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -103,7 +106,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

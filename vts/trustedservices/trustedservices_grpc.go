@@ -10,6 +10,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -23,6 +25,7 @@ import (
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/utils/vsock"
 	"github.com/veraison/services/vts/appraisal"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
@@ -43,8 +46,8 @@ const DummyTenantID = "0"
 //
 // * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
 type GRPCConfig struct {
-	ServerAddress string `mapstructure:"server-addr" valid:"dialstring"`
-	ListenAddress string `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
+	ServerAddress string `mapstructure:"server-addr"`
+	ListenAddress string `mapstructure:"listen-addr" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -95,7 +98,10 @@ func (o *GRPC) Run() error {
 }
 
 func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error {
-	var err error
+	var (
+		lsd net.Listener
+		err error
+	)
 
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
 
@@ -106,14 +112,28 @@ func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]
 
 	o.PluginManager = pm
 
+	// if listen-addr is set, it overrides server-addr
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
 	} else {
-		// note: the indexing will succeed as ServerAddress has been validated as a dialstring.
-		o.ServerAddress = ":" + strings.Split(cfg.ServerAddress, ":")[1]
+		if vsock.SchemeMatches(cfg.ServerAddress) {
+			// vsock addresses are parsed/validated in vsock.Listen()
+			o.ServerAddress = cfg.ServerAddress
+		} else {
+			if !govalidator.IsDialString(cfg.ServerAddress) {
+				return fmt.Errorf("ServerAddress %q does not validate as dialstring", cfg.ServerAddress)
+			}
+			// note: the indexing will succeed as ServerAddress has been validated as a dialstring.
+			o.ServerAddress = ":" + strings.Split(cfg.ServerAddress, ":")[1]
+		}
 	}
 
-	lsd, err := net.Listen("tcp", o.ServerAddress)
+	if vsock.SchemeMatches(o.ServerAddress) {
+		lsd, err = vsock.Listen(o.ServerAddress)
+	} else {
+		lsd, err = net.Listen("tcp", o.ServerAddress)
+	}
+
 	if err != nil {
 		return fmt.Errorf("listening socket initialisation failed: %w", err)
 	}

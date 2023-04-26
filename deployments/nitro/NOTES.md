@@ -10,7 +10,7 @@ Things to remember:
 
 * SSH into the EC2 instance:
 ```shell
-ssh -i "~/.ssh/nitraison-dev.pem" ec2-user@ec2-3-248-250-248.eu-west-1.compute.amazonaws.com
+ssh -i "~/.ssh/nitraison-dev.pem" ec2-user@<EC2_INSTANCE_NAME>
 ```
 
 * install git

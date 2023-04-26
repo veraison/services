@@ -8,3 +8,9 @@
   form `<host>:<port>`. Only specify this if you want to restrict the server to
   listen on a particular interface; otherwise, the server will listen on all
   interfaces on the port specified in `server-addr`.
+
+The special address format `vsock://<cid>:<port>` can be used for VM sockets,
+e.g., when VTS runs in a separate VM and exchanges gRPC messages with the
+frontend services through the
+[virtio-vsock](https://vmsplice.net/~stefan/stefanha-kvm-forum-2015.pdf) device.
+The `<cid>` value is ignored on the server side.

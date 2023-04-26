@@ -6,11 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/utils/vsock"
 	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -160,6 +163,15 @@ func (o *GRPC) EnsureConnection() error {
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
+	}
+
+	// if VTS is listening on virtio-vsock, set up the vsock dialer
+	if strings.HasPrefix(o.ServerAddress, "vsock://") {
+		opts = append(opts, grpc.WithContextDialer(
+			func(ctx context.Context, addr string) (net.Conn, error) {
+				return vsock.Dial(ctx, addr)
+			}),
+		)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
