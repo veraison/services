@@ -336,7 +336,7 @@ func matchPCRs(pcrs []int, algID uint64, endorsements []Endorsements) ([]Endorse
 		matched := false
 		for _, end := range endorsements {
 			if (end.Attr.PCR == nil) || (end.Attr.AlgID == nil) {
-				return nil, errors.New("no valid endorsements to match")
+				return nil, fmt.Errorf("malformed endorsements: %v", end)
 			}
 
 			if (pcr == int(*end.Attr.PCR)) && (algID == *end.Attr.AlgID) {

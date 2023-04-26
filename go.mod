@@ -30,16 +30,15 @@ require (
 	github.com/veraison/ccatoken v1.0.0
 	github.com/veraison/corim v1.0.0
 	github.com/veraison/dice v0.0.1
-	github.com/veraison/ear v1.0.2-0.20230424145130-0dee678d30d3
+	github.com/veraison/ear v1.0.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
+	github.com/veraison/parsectpm v0.0.1
 	github.com/veraison/psatoken v1.1.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.7.0
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.0
 )
-
-require github.com/veraison/parsectpm v0.0.0-20230419103011-ab840ff78579
 
 require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
