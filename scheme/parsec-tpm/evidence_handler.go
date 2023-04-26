@@ -3,6 +3,7 @@
 package parsec_tpm
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
@@ -11,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -124,7 +124,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 	var endorsement TaEndorsements
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Error("Could not decode Endorsement in ValidateEvidenceIntegrity")
+		log.Error("Could not decode Endorsement in ValidateEvidenceIntegrity: %w", err)
 		return fmt.Errorf("could not decode endorsement: %w", err)
 	}
 	ta := *endorsement.Attr.VerifKey
@@ -157,7 +157,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 		return handler.BadEvidence(err)
 	}
 
-	log.Debug("\n Token Signature Verified")
+	log.Debug("Token Signature Verified")
 	return nil
 }
 
@@ -274,21 +274,21 @@ func populateAttestationResult(
 	eds, err := matchPCRs(pcrs, hashAlgID, endorsements)
 	if err != nil {
 		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Error("\n match PCR failed")
+		log.Error("match PCR failed: %w", err)
 		return fmt.Errorf("match PCR failed: %w", err)
 	}
 
 	if err := matchPCRDigest(pcrDigest, hashAlgID, eds); err != nil {
 		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Error("\n match PCR Digest failed")
+		log.Error("match PCR Digest failed: %w", err)
 		return fmt.Errorf("match failed for PCR Digest: %w", err)
 	}
 
 	appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 	appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
-	log.Debug("\n matchPCRs and matchPCRDigest Success")
+	log.Debug("matchPCRs and matchPCRDigest Success")
 
-	// Populate Veraison Key Attesation Extension
+	// Populate Veraison Key Attestation Extension
 	if ev.Kat == nil {
 		return errors.New("no key attestation information")
 	}
@@ -363,7 +363,7 @@ func matchPCRDigest(pDigest []byte, algID uint64, eds []Endorsements) error {
 	if err != nil {
 		return fmt.Errorf("unable to compute digest: %w", err)
 	}
-	if !reflect.DeepEqual(pDigest, endHash) {
+	if !bytes.Equal(pDigest, endHash) {
 		return errors.New("PCR Digest and Endorsement Digest match failed")
 	}
 	return nil
