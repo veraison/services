@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"strings"
 	"time"
 
@@ -167,11 +166,7 @@ func (o *GRPC) EnsureConnection() error {
 
 	// if VTS is listening on virtio-vsock, set up the vsock dialer
 	if strings.HasPrefix(o.ServerAddress, "vsock://") {
-		opts = append(opts, grpc.WithContextDialer(
-			func(ctx context.Context, addr string) (net.Conn, error) {
-				return vsock.Dial(ctx, addr)
-			}),
-		)
+		opts = append(opts, grpc.WithContextDialer(vsock.Dial))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
