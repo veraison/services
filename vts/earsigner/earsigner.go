@@ -9,8 +9,9 @@ import (
 )
 
 type Cfg struct {
-	Key string `mapstructure:"key"`
 	Alg string `mapstructure:"alg"`
+	Key string `mapstructure:"key" config:"zerodefault"`
+	Att string `mapstructure:"attester" config:"zerodefault"`
 }
 
 func New(v *viper.Viper, fs afero.Fs) (IEarSigner, error) {

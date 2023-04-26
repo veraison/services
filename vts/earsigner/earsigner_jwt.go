@@ -3,6 +3,9 @@
 package earsigner
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"strings"
 
@@ -15,6 +18,7 @@ import (
 type JWT struct {
 	Key interface{}
 	Alg jwa.KeyAlgorithm
+	Tee *TEE
 }
 
 func (o *JWT) Init(cfg Cfg, fs afero.Fs) error {
@@ -22,8 +26,41 @@ func (o *JWT) Init(cfg Cfg, fs afero.Fs) error {
 		return err
 	}
 
-	if err := o.loadKey(fs, cfg.Key); err != nil {
+	if cfg.Key == "" {
+		// generate a new key pair if no ear-signer.key was supplied
+		switch o.Alg {
+		// TODO(tho) add other curves/algorithms
+		case jwa.ES256:
+			key, err := generateECDSAKey(jwa.P256)
+			if err != nil {
+				return fmt.Errorf("generating %v key: %w", o.Alg, err)
+			}
+			o.Key = key
+		default:
+			return fmt.Errorf("unsupported algorithm: %v", o.Alg)
+		}
+
+	} else if err := o.loadKey(fs, cfg.Key); err != nil {
 		return err
+	}
+
+	// if requested, try and get an attestation for the signing key
+	if att := cfg.Att; att != "" {
+		k, err := getPK(o.Key)
+		if err != nil {
+			return err
+		}
+
+		switch att {
+		case "nitro":
+			b, err := nitroAttest(k)
+			if err != nil {
+				return fmt.Errorf("attesting EAR signing key failed: %w", err)
+			}
+			o.Tee = &TEE{Name: att, Evidence: b}
+		default:
+			return fmt.Errorf("unsupported attester type: %q", att)
+		}
 	}
 
 	// TODO(tho) optimisation: check that key and alg are compatible rather than
@@ -40,17 +77,30 @@ func (o JWT) Sign(earClaims ear.AttestationResult) ([]byte, error) {
 	return earClaims.Sign(o.Alg, o.Key)
 }
 
-func (o JWT) GetEARSigningPublicKey() (jwa.KeyAlgorithm, jwk.Key, error) {
-	v, ok := o.Key.(jwk.Key)
-
-	if ok != true {
-		err := fmt.Errorf("error: failed conversion")
-		return nil, nil, err
+func getPK(k interface{}) (jwk.Key, error) {
+	v, ok := k.(jwk.Key)
+	if !ok {
+		return nil, fmt.Errorf("failed conversion to JWK key")
 	}
 
-	key, err := v.PublicKey()
+	return v.PublicKey()
+}
 
-	return o.Alg, key, err
+func (o JWT) GetPublicKeyInfo() (PublicKeyInfo, error) {
+	var (
+		key jwk.Key
+		err error
+	)
+
+	if key, err = getPK(o.Key); err != nil {
+		return PublicKeyInfo{}, err
+	}
+
+	return PublicKeyInfo{
+		Alg: o.Alg,
+		Key: key,
+		Tee: o.Tee,
+	}, nil
 }
 
 func (o *JWT) setAlg(alg string) error {
@@ -95,4 +145,25 @@ func (o *JWT) loadKey(fs afero.Fs, keyFile string) error {
 	o.Key = k
 
 	return nil
+}
+
+func generateECDSAKey(alg jwa.EllipticCurveAlgorithm) (jwk.Key, error) {
+	var crv elliptic.Curve
+
+	if tmp, ok := CurveForAlgorithm(alg); ok {
+		crv = tmp
+	} else {
+		return nil, fmt.Errorf("invalid curve algorithm %s", alg)
+	}
+
+	key, err := ecdsa.GenerateKey(crv, rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generating %v key: %w", o.Alg, err)
+	}
+
+	return jwk.FromRaw(key)
+}
+
+func init() {
+	RegisterCurve(elliptic.P256(), jwa.P256)
 }

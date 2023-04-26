@@ -12,6 +12,17 @@ import (
 type IEarSigner interface {
 	Init(cfg Cfg, fs afero.Fs) error
 	Sign(earClaims ear.AttestationResult) ([]byte, error)
-	GetEARSigningPublicKey() (jwa.KeyAlgorithm, jwk.Key, error)
+	GetPublicKeyInfo() (PublicKeyInfo, error)
 	Close() error
+}
+
+type PublicKeyInfo struct {
+	Alg jwa.KeyAlgorithm
+	Key jwk.Key
+	Tee *TEE
+}
+
+type TEE struct {
+	Name     string
+	Evidence []byte
 }

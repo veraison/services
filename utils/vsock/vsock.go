@@ -55,10 +55,7 @@ func Dial(ctx context.Context, addr string) (net.Conn, error) {
 	}
 
 	// TODO(tho) handle ctx
+	// TODO(tho) vsock configuration
 
 	return vsock.Dial(cid, port, nil)
-}
-
-func Dialer(ctx context.Context, addr string) func(context.Context, string) (net.Conn, error) {
-	return func(context.Context, string) (net.Conn, error) { return Dial(ctx, addr) }
 }

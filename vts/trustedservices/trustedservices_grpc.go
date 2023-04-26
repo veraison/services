@@ -433,17 +433,17 @@ func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empt
 }
 
 func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
-	alg, key, err := o.EarSigner.GetEARSigningPublicKey()
+	pkInfo, err := o.EarSigner.GetPublicKeyInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	err = key.Set("alg", alg.String())
+	err = pkInfo.Key.Set("alg", pkInfo.Alg.String())
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := json.Marshal(key)
+	b, err := json.Marshal(pkInfo.Key)
 	if err != nil {
 		return nil, err
 	}

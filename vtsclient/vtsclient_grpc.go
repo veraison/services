@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -165,7 +164,7 @@ func (o *GRPC) EnsureConnection() error {
 	}
 
 	// if VTS is listening on virtio-vsock, set up the vsock dialer
-	if strings.HasPrefix(o.ServerAddress, "vsock://") {
+	if vsock.SchemeMatches(o.ServerAddress) {
 		opts = append(opts, grpc.WithContextDialer(vsock.Dial))
 	}
 
