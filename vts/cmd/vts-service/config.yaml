@@ -3,20 +3,23 @@ plugin:
   go-plugin:
     dir: ../../../scheme/bin/
 ta-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /veraison/stores/vts/ta-store.sql
+  backend: memory
+#  backend: sql
+#  sql:
+#    driver: sqlite3
+#    datasource: /veraison/stores/vts/ta-store.sql
 en-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /veraison/stores/vts/en-store.sql
+  backend: memory
+#  backend: sql
+#  sql:
+#    driver: sqlite3
+#    datasource: /veraison/stores/vts/en-store.sql
 po-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /veraison/stores/vts/po-store.sql
+  backend: memory
+#  backend: sql
+#  sql:
+#    driver: sqlite3
+#    datasource: /veraison/stores/vts/po-store.sql
 po-agent:
   backend: opa
 vts:
