@@ -52,10 +52,9 @@ type TaAttr struct {
 }
 
 type TaEndorsements struct {
-	Scheme  string `json:"scheme"`
-	Type    string `json:"type"`
-	SubType string `json:"sub_type"`
-	Attr    TaAttr `json:"attributes"`
+	Scheme string `json:"scheme"`
+	Type   string `json:"type"`
+	Attr   TaAttr `json:"attributes"`
 }
 
 func (s EvidenceHandler) GetName() string {
@@ -96,22 +95,24 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 }
 
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
-	var evidence parsectpm.Evidence
-	var endorsement TaEndorsements
-	var extracted handler.ExtractedClaims
+	var (
+		evidence    parsectpm.Evidence
+		endorsement TaEndorsements
+		extracted   handler.ExtractedClaims
+	)
 
 	err := evidence.FromCBOR(token.Data)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	claimsSet, err := evidenceToMap(evidence)
+	claimsSet, err := evidenceAsMap(evidence)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 	extracted.ClaimsSet = claimsSet
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Error("Could not decode Endorsement in ValidateEvidenceIntegrity: %w", err)
+		log.Error("Could not decode Endorsements in ExtractClaims: %w", err)
 		return nil, fmt.Errorf("could not decode endorsement: %w", err)
 	}
 
@@ -213,8 +214,6 @@ func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
 		absPath = []string{instance}
 	case ScopeRefValues:
 		absPath = []string{class}
-	default:
-		return ""
 	}
 
 	u := url.URL{
@@ -226,7 +225,7 @@ func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
 	return u.String()
 }
 
-func evidenceToMap(e parsectpm.Evidence) (map[string]interface{}, error) {
+func evidenceAsMap(e parsectpm.Evidence) (map[string]interface{}, error) {
 	data, err := e.ToJSON()
 	if err != nil {
 		return nil, err
@@ -249,14 +248,16 @@ func populateAttestationResult(
 	// authentic
 	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
 
-	ev, err := mapToEvidence(evidence)
+	ev, err := mapAsEvidence(evidence)
 	if err != nil {
-		return fmt.Errorf("failed attestation results: %w", err)
+		return fmt.Errorf("failed to map as evidence: %w", err)
 	}
 	if ev.Pat == nil {
 		return errors.New("no platform token to evaluate")
 	}
-
+	if ev.Kat == nil {
+		return errors.New("no key attestation information")
+	}
 	attInfo, err := ev.Pat.GetAttestationInfo()
 	if err != nil {
 		return fmt.Errorf("unable to get attestation information: %w", err)
@@ -289,9 +290,6 @@ func populateAttestationResult(
 	log.Debug("matchPCRs and matchPCRDigest Success")
 
 	// Populate Veraison Key Attestation Extension
-	if ev.Kat == nil {
-		return errors.New("no key attestation information")
-	}
 	key, err := ev.Kat.DecodePubArea()
 	if err != nil {
 		return fmt.Errorf("decoding failed for Public Key: %w", err)
@@ -309,7 +307,7 @@ func populateAttestationResult(
 	return nil
 }
 
-func mapToEvidence(in map[string]interface{}) (*parsectpm.Evidence, error) {
+func mapAsEvidence(in map[string]interface{}) (*parsectpm.Evidence, error) {
 	evidence := &parsectpm.Evidence{}
 	data, err := json.Marshal(in)
 	if err != nil {
