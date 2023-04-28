@@ -4,13 +4,13 @@ package parsec_tpm
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 )
 
@@ -66,13 +66,10 @@ func Test_ExtractClaims_nok_bad_evidence(t *testing.T) {
 		Data:     tokenBytes,
 	}
 
-	_, myerr := h.ExtractClaims(&token, string(taEndValBytes))
-	out := handler.BadEvidenceError{}
-	err = out.UnmarshalJSON([]byte(string(myerr.Error())))
-	require.NoError(t, err)
-
-	str := out.Unwrap()
-	assert.EqualError(t, str, expectedErr)
+	_, err = h.ExtractClaims(&token, string(taEndValBytes))
+	err1 := errors.Unwrap(err)
+	require.NotNil(t, err1)
+	assert.EqualError(t, err1, expectedErr)
 }
 
 func Test_ExtractClaims_nok_bad_endorsement(t *testing.T) {
@@ -123,11 +120,9 @@ func Test_ValidateEvidenceIntegrity_nok(t *testing.T) {
 	}
 
 	err = h.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
-	out := handler.BadEvidenceError{}
-	err = out.UnmarshalJSON([]byte(string(err.Error())))
-	require.NoError(t, err)
-	str := out.Unwrap()
-	assert.EqualError(t, str, expectedErr)
+	err1 := errors.Unwrap(err)
+	require.NotNil(t, err1)
+	assert.EqualError(t, err1, expectedErr)
 }
 
 func Test_ValidateEvidenceIntegrity_BadKey(t *testing.T) {

@@ -250,20 +250,12 @@ func populateAttestationResult(
 
 	ev, err := mapAsEvidence(evidence)
 	if err != nil {
-		return fmt.Errorf("failed to map as evidence: %w", err)
+		return handler.BadEvidence(err)
 	}
-	if ev.Pat == nil {
-		return errors.New("no platform token to evaluate")
-	}
-	if ev.Kat == nil {
-		return errors.New("no key attestation information")
-	}
+
 	attInfo, err := ev.Pat.GetAttestationInfo()
 	if err != nil {
-		return fmt.Errorf("unable to get attestation information: %w", err)
-	}
-	if attInfo == nil {
-		return errors.New("attestation information in platform token is nil")
+		return handler.BadEvidence(err)
 	}
 
 	pcrs := attInfo.PCR.PCRinfo.PCRs
@@ -292,7 +284,7 @@ func populateAttestationResult(
 	// Populate Veraison Key Attestation Extension
 	key, err := ev.Kat.DecodePubArea()
 	if err != nil {
-		return fmt.Errorf("decoding failed for Public Key: %w", err)
+		return handler.BadEvidence(err)
 	}
 	kd, err := x509.MarshalPKIXPublicKey(key)
 	if err != nil {
@@ -334,7 +326,8 @@ func matchPCRs(pcrs []int, algID uint64, endorsements []Endorsements) ([]Endorse
 		matched := false
 		for _, end := range endorsements {
 			if (end.Attr.PCR == nil) || (end.Attr.AlgID == nil) {
-				return nil, fmt.Errorf("malformed endorsements: %v", end)
+				log.Error("malformed endorsements: %v", end)
+				continue
 			}
 
 			if (pcr == int(*end.Attr.PCR)) && (algID == *end.Attr.AlgID) {
