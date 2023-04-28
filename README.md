@@ -41,7 +41,10 @@ deployment's `env.bash`):
     source deployments/docker/env.bash
     veraison status
 
-See the output of `veraison -h` for the full list of available commands
+
+The `veraison` command allows starting and stopping `veraison` services and
+viewing and manipulating Veraison logs and stores. See the output of `veraison
+-h` for the full list of available commands.
 
 ### End-to-end example
 
