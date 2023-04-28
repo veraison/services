@@ -158,7 +158,7 @@ func generateECDSAKey(alg jwa.EllipticCurveAlgorithm) (jwk.Key, error) {
 
 	key, err := ecdsa.GenerateKey(crv, rand.Reader)
 	if err != nil {
-		return nil, fmt.Errorf("generating %v key: %w", o.Alg, err)
+		return nil, fmt.Errorf("generating %v key: %w", alg, err)
 	}
 
 	return jwk.FromRaw(key)
