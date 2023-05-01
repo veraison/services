@@ -173,14 +173,14 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	var endorsement TaEndorsements
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Println("Could not decode Endorsements in ExtractVerifiedClaims")
+		log.Println("Could not decode Endorsements in ValidateEvidenceIntegrity")
 		return fmt.Errorf("could not decode endorsement: %w", err)
 	}
 	ta := *endorsement.Attr.VerifKey
 	block, rest := pem.Decode([]byte(ta))
 
 	if block == nil {
-		log.Println("Could not get TA PEM Block ExtractVerifiedClaims")
+		log.Println("Could not get TA PEM Block ValidateEvidenceIntegrity")
 		return errors.New("could not extract trust anchor PEM block")
 	}
 
