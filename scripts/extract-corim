@@ -1,0 +1,5 @@
+#!/bin/bash
+# This script is used to extract the claims structure (serialized CBOR) from COSE tokens.
+# On Arch, you need in stall yq and ruby-cbor-diag (AUR) packages.
+# On Ubuntu, install cbor-diag gem; yq seems to only be available via *shudder* snap...
+cbor2yaml.rb $1 | yq .[\"1\"][0] | tr -d \" | base64 -d | cbor2yaml.rb
