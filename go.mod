@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.4
+	github.com/hf/nsm v0.0.0-20220930140112-cd181bd646b9
 	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/lestrrat-go/jwx/v2 v2.0.8
 	github.com/mattn/go-sqlite3 v1.14.14
