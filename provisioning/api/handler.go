@@ -321,7 +321,9 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 	endpoints := getProvisioningEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, version, state, endpoints)
+	// Note that the provisioning well-known does not provide EAR key-related
+	// information (including attestation)
+	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, version, state, endpoints, nil)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
