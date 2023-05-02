@@ -514,21 +514,26 @@ func sendChallengeResponseSessionCreated(c *gin.Context, id string, jsonSession 
 	sendChallengeResponseSessionWithStatus(c, http.StatusCreated, jsonSession)
 }
 
-func (o *Handler) getKey() (jwk.Key, error) {
+func (o *Handler) getKeyInfo() (jwk.Key, *capability.TEE, error) {
 	var key jwk.Key
 
 	protoKey, err := o.Verifier.GetPublicKey()
 	if err != nil {
-		return key, err
+		return key, nil, err
 	}
 
 	key, err = jwk.ParseKey([]byte(protoKey.Key))
 	if err != nil {
-		return key, err
+		return key, nil, err
 	}
 
-	return key, nil
+	var tee *capability.TEE
 
+	if t := protoKey.Attestation; t != nil {
+		tee, _ = capability.NewTEE(t.TeeName, t.Id, t.Evidence)
+	}
+
+	return key, tee, nil
 }
 
 func (o *Handler) getVerificationMediaTypes() ([]string, error) {
@@ -561,7 +566,7 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 	}
 
 	// Get public key
-	key, err := o.getKey()
+	key, tee, err := o.getKeyInfo()
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
@@ -594,7 +599,7 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 	endpoints := getVerificationEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, version, state, endpoints)
+	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, version, state, endpoints, tee)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,

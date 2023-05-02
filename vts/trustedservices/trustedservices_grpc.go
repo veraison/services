@@ -448,11 +448,19 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 		return nil, err
 	}
 
-	bstring := string(b)
+	pk := &proto.PublicKey{
+		Key: string(b),
+	}
 
-	return &proto.PublicKey{
-		Key: bstring,
-	}, nil
+	if pkInfo.Att != nil {
+		pk.Attestation = &proto.Attestation{
+			Id:       pkInfo.Att.UID,
+			TeeName:  pkInfo.Att.TEE,
+			Evidence: pkInfo.Att.Evidence,
+		}
+	}
+
+	return pk, nil
 }
 
 func (o *GRPC) finalize(

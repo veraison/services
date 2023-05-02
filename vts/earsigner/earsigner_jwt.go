@@ -18,7 +18,7 @@ import (
 type JWT struct {
 	Key interface{}
 	Alg jwa.KeyAlgorithm
-	Tee *TEE
+	Att *Attestation
 }
 
 func (o *JWT) Init(cfg Cfg, fs afero.Fs) error {
@@ -57,7 +57,7 @@ func (o *JWT) Init(cfg Cfg, fs afero.Fs) error {
 			if err != nil {
 				return fmt.Errorf("attesting EAR signing key failed: %w", err)
 			}
-			o.Tee = &TEE{Name: att, Evidence: b}
+			o.Att = NewAttestation(att, b)
 		default:
 			return fmt.Errorf("unsupported attester type: %q", att)
 		}
@@ -99,7 +99,7 @@ func (o JWT) GetPublicKeyInfo() (PublicKeyInfo, error) {
 	return PublicKeyInfo{
 		Alg: o.Alg,
 		Key: key,
-		Tee: o.Tee,
+		Att: o.Att,
 	}, nil
 }
 

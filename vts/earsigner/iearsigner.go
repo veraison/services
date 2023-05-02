@@ -3,6 +3,9 @@
 package earsigner
 
 import (
+	"crypto/sha256"
+	"fmt"
+
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/afero"
@@ -19,10 +22,24 @@ type IEarSigner interface {
 type PublicKeyInfo struct {
 	Alg jwa.KeyAlgorithm
 	Key jwk.Key
-	Tee *TEE
+	Att *Attestation
 }
 
-type TEE struct {
-	Name     string
+type Attestation struct {
+	TEE      string
+	UID      string
 	Evidence []byte
+}
+
+func NewAttestation(tee string, evidence []byte) *Attestation {
+	// automatically generate a cache id for the key+platform attestation
+	uid := sha256.New()
+	uid.Write(evidence)
+	uid.Sum(nil)
+
+	return &Attestation{
+		TEE:      tee,
+		UID:      fmt.Sprintf("%x", uid),
+		Evidence: evidence,
+	}
 }
