@@ -7,6 +7,7 @@ set -eux
 
 T=${T?must be set in the environment to one of psa, tpm-enacttrust, parsec-tpm.}
 B=${B?must be set in the environment to one of trustanchor or refvalue.}
+H=${H:-localhost}
 
 CORIM_FILE=corim-${T}-${B}.cbor
 CORIM_FILE=corim-${T}-${B}.cbor
@@ -30,4 +31,4 @@ curl --include \
 	--header "${CONTENT_TYPE}" \
 	--header "Accept: application/vnd.veraison.provisioning-session+json" \
 	--request POST \
-	http://localhost:8888/endorsement-provisioning/v1/submit 
+	http://${H}:8888/endorsement-provisioning/v1/submit
