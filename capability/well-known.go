@@ -24,7 +24,7 @@ func NewTEE(name string, evidenceID string, evidence []byte) (*TEE, error) {
 
 type WellKnownInfo struct {
 	PublicKey    jwk.Key           `json:"ear-verification-key,omitempty"`
-	Tee          *TEE              `json:"ear-tee,omitempty"`
+	Tee          *TEE              `json:"tee,omitempty"`
 	MediaTypes   []string          `json:"media-types"`
 	Version      string            `json:"version"`
 	ServiceState string            `json:"service-state"`
