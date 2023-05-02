@@ -46,6 +46,11 @@ The `veraison` command allows starting and stopping `veraison` services and
 viewing and manipulating Veraison logs and stores. See the output of `veraison
 -h` for the full list of available commands.
 
+> **Warning**: The docker deployment is not suitable for production. It is only
+> intended to be used in development environments. It is not hardened and
+> cannot handle high traffic volumes.
+
+
 ### End-to-end example
 
 An example of an end-to-end provisioning and verification flow exists

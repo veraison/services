@@ -67,6 +67,11 @@ The deployment may be configured by changing the settings inside
 [deployment.cfg](./deployment.cfg). See the comments inside that file for the
 explanation of the individual configuration values.
 
+> **Note**: The individual services rely on configuration inside
+> `config.yaml.template`. This currently uses the `sqlite3` driver for the
+> store backend, which limits request throughput and makes the deployment
+> unsuitable for production or performance testing (for the latter, one can
+> modify the template to use `memory` backend for the stores).
 
 ### `make` Options
 

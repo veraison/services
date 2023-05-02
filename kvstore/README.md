@@ -46,6 +46,9 @@ Currently, `memory` backend does not support any configuration.
 
 ### `sql` backend configuration
 
+> **Note**: `sqlite3`, the default driver for the backend, is unsuitable for
+> production or performance testing.
+
 `driver`: The name of the golang SQL driver to use ([see here](https://github.com/golang/go/wiki/SQLDrivers))
 - `datasource`: Data source name to use. The format of the name depends on the
   driver (e.g. a file path for SQLite or server dial string for PostgreSQL).
