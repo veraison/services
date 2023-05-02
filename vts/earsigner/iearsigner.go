@@ -33,9 +33,9 @@ type Attestation struct {
 
 func NewAttestation(tee string, evidence []byte) *Attestation {
 	// automatically generate a cache id for the key+platform attestation
-	uid := sha256.New()
-	uid.Write(evidence)
-	uid.Sum(nil)
+	h := sha256.New()
+	h.Write(evidence)
+	uid := h.Sum(nil)
 
 	return &Attestation{
 		TEE:      tee,
