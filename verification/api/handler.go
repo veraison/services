@@ -123,6 +123,20 @@ func b64ToBytes(v string) ([]byte, error) {
 	return b, nil
 }
 
+func parseTeeReportRequest(param string) (bool, error) {
+	switch param {
+	case "brief", "": // default is brief
+		return false, nil
+	case "full":
+		return true, nil
+	default:
+		return false, fmt.Errorf(
+			`unknown value %q for "tee-report".  acceptable values: "brief" (default) or "full"`,
+			param,
+		)
+	}
+}
+
 // parseNonceRequest tries to devise the nonce value to be used for the session
 // given the user-supplied query parameters
 func parseNonceRequest(nonceParam, nonceSizeParam string) ([]byte, error) {
@@ -155,18 +169,21 @@ func parseNonceRequest(nonceParam, nonceSizeParam string) ([]byte, error) {
 	return nonce, nil
 }
 
-func newSession(nonce []byte, supportedMediaTypes []string, ttl time.Duration) (uuid.UUID, []byte, error) {
+func newSession(
+	nonce []byte, supportedMediaTypes []string, ttl time.Duration, teeReport bool,
+) (uuid.UUID, []byte, error) {
 	id, err := mintSessionID()
 	if err != nil {
 		return uuid.UUID{}, nil, err
 	}
 
 	session := &ChallengeResponseSession{
-		id:     id.String(),
-		Status: StatusWaiting, // start in waiting status
-		Nonce:  nonce,
-		Expiry: time.Now().Add(ttl), // RFC3339 format, with sub-second precision added if present
-		Accept: supportedMediaTypes,
+		id:        id.String(),
+		teeReport: teeReport,
+		Status:    StatusWaiting, // start in waiting status
+		Nonce:     nonce,
+		Expiry:    time.Now().Add(ttl), // RFC3339 format, with sub-second precision added if present
+		Accept:    supportedMediaTypes,
 	}
 
 	jsonSession, err := json.Marshal(session)
@@ -417,7 +434,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// Any problems with the evidence are expected to be reported via the
 	// attestation result.
 	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
-		evidence, mediaType)
+		evidence, mediaType, session.teeReport)
 	if err != nil {
 		o.logger.Error(err)
 		session.SetStatus(StatusFailed)
@@ -475,6 +492,25 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 		return
 	}
 
+	// parse query to find out whether the attestation result should contain TEE
+	// evidence in "full".  The default is "brief", i.e., just the evidence
+	// digest (id) and a Link header pointing to the well-known resource where
+	// the user can find the whole attestation document.
+	teeReport, err := parseTeeReportRequest(c.Query("tee-report"))
+	if err != nil {
+		status := http.StatusBadRequest
+
+		if errors.Is(err, ErrInternal) {
+			status = http.StatusInternalServerError
+		}
+
+		ReportProblem(c,
+			status,
+			fmt.Sprintf("failed handling TEE report request: %s", err),
+		)
+		return
+	}
+
 	supportedMediaTypes, err := o.Verifier.SupportedMediaTypes()
 	if err != nil {
 		ReportProblem(c,
@@ -484,7 +520,7 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 		return
 	}
 
-	id, session, err := newSession(nonce, supportedMediaTypes, ConfigSessionTTL)
+	id, session, err := newSession(nonce, supportedMediaTypes, ConfigSessionTTL, teeReport)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
@@ -515,25 +551,26 @@ func sendChallengeResponseSessionCreated(c *gin.Context, id string, jsonSession 
 }
 
 func (o *Handler) getKeyInfo() (jwk.Key, *capability.PublicKeyAttestation, error) {
-	var key jwk.Key
+	var (
+		key jwk.Key
+		kat *capability.PublicKeyAttestation
+	)
 
 	protoKey, err := o.Verifier.GetPublicKey()
 	if err != nil {
-		return key, nil, err
+		return key, kat, err
 	}
 
-	key, err = jwk.ParseKey([]byte(protoKey.Key))
+	key, err = jwk.ParseKey([]byte(protoKey.GetKey()))
 	if err != nil {
-		return key, nil, err
+		return key, kat, err
 	}
 
-	var tee *capability.PublicKeyAttestation
-
-	if t := protoKey.Attestation; t != nil {
-		tee, _ = capability.NewPublicKeyAttestation(t.TeeName, t.Id, t.Evidence)
+	if a := protoKey.GetAttestation(); a != nil {
+		kat, _ = capability.NewPublicKeyAttestation(a.TeeName, a.Id, a.Evidence)
 	}
 
-	return key, tee, nil
+	return key, kat, nil
 }
 
 func (o *Handler) getVerificationMediaTypes() ([]string, error) {
@@ -545,10 +582,11 @@ func (o *Handler) getVerificationServerVersionAndState() (string, string, error)
 	if err != nil {
 		return "", "", err
 	}
-	version := vtsState.ServerVersion
-	state := vtsState.Status.String()
-	return version, state, nil
 
+	version := vtsState.GetServerVersion()
+	state := vtsState.GetStatus().String()
+
+	return version, state, nil
 }
 
 func getVerificationEndpoints() map[string]string {

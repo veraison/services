@@ -318,11 +318,11 @@ func (o *GRPC) GetAttestation(
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
 	o.logger.Infow("get attestation", "media-type", token.MediaType,
-		"tenant-id", token.TenantId)
+		"tenant-id", token.TenantId, "tee-report", token.TeeReport)
 
 	handler, err := o.PluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
-		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR", token.TeeReport)
 		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
 		appraisal.AddPolicyClaim("problem", "could not resolve media type")
 		return o.finalize(appraisal, err)
@@ -403,7 +403,9 @@ func (c *GRPC) initEvidenceContext(
 ) (*appraisal.Appraisal, error) {
 	var err error
 
-	appraisal := appraisal.New(token.TenantId, token.Nonce, handler.GetAttestationScheme())
+	appraisal := appraisal.New(
+		token.TenantId, token.Nonce, handler.GetAttestationScheme(), token.TeeReport,
+	)
 	appraisal.EvidenceContext.TrustAnchorId, err = handler.GetTrustAnchorID(token)
 
 	if errors.Is(err, handlermod.BadEvidenceError{}) {
@@ -467,7 +469,10 @@ func (o *GRPC) finalize(
 	appraisal *appraisal.Appraisal,
 	err error,
 ) (*proto.AppraisalContext, error) {
-	var signErr error
+	var (
+		signErr error
+		pkInfo  earsigner.PublicKeyInfo
+	)
 
 	if err != nil {
 		if errors.Is(err, handler.BadEvidenceError{}) {
@@ -488,10 +493,33 @@ func (o *GRPC) finalize(
 			o.logger.Error(err)
 			appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
 		}
-
 	}
 
 	appraisal.Result.UpdateStatusFromTrustVector()
+
+	// XXX(tho) this really needs some further thinking.  Having separate
+	// GetPublicKeyInfo and Sign enables a potential race in case the EAR
+	// signing key-pair is refreshed in between.  OTOH, I am not sure the EAR
+	// signer should be given the responsibility to add claims to the EAR.  Note
+	// also that the sequence of events cannot be inverted because all the
+	// claims need to be signed.
+
+	pkInfo, signErr = o.EarSigner.GetPublicKeyInfo()
+	if signErr != nil {
+		// log the error and continue
+		o.logger.Error(signErr)
+	} else {
+		if pkInfo.Att != nil {
+			teeInfo := ear.VeraisonTeeInfo{
+				TeeName:    &pkInfo.Att.TEE,
+				EvidenceID: &pkInfo.Att.UID,
+			}
+			if appraisal.TeeReport {
+				teeInfo.Evidence = &pkInfo.Att.Evidence
+			}
+			appraisal.Result.AttestationResultExtensions.VeraisonTeeInfo = &teeInfo
+		}
+	}
 
 	appraisal.SignedEAR, signErr = o.EarSigner.Sign(*appraisal.Result)
 	if signErr != nil {

@@ -70,13 +70,14 @@ type EvidenceBlob struct {
 }
 
 type ChallengeResponseSession struct {
-	id       string
-	Status   Status        `json:"status"`
-	Nonce    []byte        `json:"nonce"`
-	Expiry   time.Time     `json:"expiry"`
-	Accept   []string      `json:"accept"`
-	Evidence *EvidenceBlob `json:"evidence,omitempty"`
-	Result   *string       `json:"result,omitempty"`
+	id        string
+	teeReport bool
+	Status    Status        `json:"status"`
+	Nonce     []byte        `json:"nonce"`
+	Expiry    time.Time     `json:"expiry"`
+	Accept    []string      `json:"accept"`
+	Evidence  *EvidenceBlob `json:"evidence,omitempty"`
+	Result    *string       `json:"result,omitempty"`
 }
 
 func (o *ChallengeResponseSession) SetEvidence(mt string, evidence []byte) {

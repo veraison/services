@@ -8,4 +8,5 @@ message AttestationToken {
 	bytes data = 3;
 	string media_type = 4;
 	bytes nonce = 5;
+	bool tee_report = 6;
 }

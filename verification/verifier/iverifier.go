@@ -11,5 +11,7 @@ type IVerifier interface {
 	GetPublicKey() (*proto.PublicKey, error)
 	IsSupportedMediaType(mt string) (bool, error)
 	SupportedMediaTypes() ([]string, error)
-	ProcessEvidence(tenantID string, nonce []byte, data []byte, mt string) ([]byte, error)
+	ProcessEvidence(
+		tenantID string, nonce []byte, data []byte, mt string, teeReport bool,
+	) ([]byte, error)
 }

@@ -18,14 +18,16 @@ type Appraisal struct {
 	EvidenceContext *proto.EvidenceContext
 	Result          *ear.AttestationResult
 	SignedEAR       []byte
+	TeeReport       bool
 }
 
-func New(tenantID string, nonce []byte, submodName string) *Appraisal {
+func New(tenantID string, nonce []byte, submodName string, teeReport bool) *Appraisal {
 	appraisal := Appraisal{
 		EvidenceContext: &proto.EvidenceContext{
 			TenantId: tenantID,
 		},
-		Result: ear.NewAttestationResult(submodName, config.Version, config.Developer),
+		Result:    ear.NewAttestationResult(submodName, config.Version, config.Developer),
+		TeeReport: teeReport,
 	}
 
 	encodedNonce := base64.URLEncoding.EncodeToString(nonce)
