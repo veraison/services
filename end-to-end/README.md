@@ -8,13 +8,7 @@ installed.
 
 ## Basic flow
 
-> **Note**: by default, end-to-end flow uses PSA data. It can be switched to
-> use CCA data by setting the `SCHEME` environment variable:
->
->       export SCHEME=cca
-
-#### 1. Create and start the services deployment.
-
+#### Create and start the services deployment
 
 This can be done with a single make command:
 
@@ -38,8 +32,12 @@ veraison status
 This should report that `vts`, `provisioning`, and `verification` services are
 all running.
 
+#### Provision endorsements and trust anchors
 
-#### 4. Provision endorsements and trust anchors
+> **Note**: by default, end-to-end flow uses PSA data. It can be switched to
+> use CCA data by setting the `SCHEME` environment variable:
+>
+>       export SCHEME=cca
 
 This populates the stores with the endorsements and trust anchors needed for
 verification later.
@@ -51,10 +49,10 @@ verification later.
 Optionally, you can verify that the store have been populated:
 
 ```sh
-veriason check-stores
+veraison check-stores
 ```
 
-#### 5. Perform verification
+#### Perform verification
 
 As a relying party:
 
