@@ -78,7 +78,7 @@ func Test_ExtractClaims_nok_bad_endorsement(t *testing.T) {
 
 	taEndValBytes, err := os.ReadFile("test/evidence/bad_ta_endorsements.json")
 	require.NoError(t, err)
-	expectedErr := "could not decode endorsement: illegal base64 data at input byte 8"
+	expectedErr := "could not decode endorsement: json: cannot unmarshal number into Go struct field TaAttr.attributes.parsec-tpm.class-id of type string"
 	h := &EvidenceHandler{}
 
 	token := proto.AttestationToken{
@@ -132,13 +132,12 @@ func Test_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 		expectedErr string
 	}{
 		{
-			desc:        "bad key endorsements",
+			desc:        "invalid public key",
 			input:       "test/evidence/bad_key_endorsements.json",
-			expectedErr: `could not decode endorsement: illegal base64 data at input byte 8`,
+			expectedErr: `unable to parse public key: asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false private:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} AlgorithmIdentifier @2`,
 		},
-
 		{
-			desc:        "bad pem key",
+			desc:        "bad pem key header",
 			input:       "test/evidence/bad_key_header_endorsements.json",
 			expectedErr: `could not extract trust anchor PEM block`,
 		},

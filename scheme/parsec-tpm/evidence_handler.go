@@ -34,7 +34,7 @@ type EvidenceHandler struct{}
 
 type SwAttr struct {
 	AlgID   *uint64 `json:"parsec-tpm.alg-id"`
-	ClassID *[]byte `json:"parsec-tpm.class-id"`
+	ClassID *string `json:"parsec-tpm.class-id"`
 	Digest  *[]byte `json:"parsec-tpm.digest"`
 	PCR     *uint   `json:"parsec-tpm.pcr"`
 }
@@ -47,7 +47,7 @@ type Endorsements struct {
 
 type TaAttr struct {
 	VerifKey *string `json:"parsec-tpm.ak-pub"`
-	ClassID  *[]byte `json:"parsec-tpm.class-id"`
+	ClassID  *string `json:"parsec-tpm.class-id"`
 	InstID   *string `json:"parsec-tpm.instance-id"`
 }
 
@@ -116,7 +116,7 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 		return nil, fmt.Errorf("could not decode endorsement: %w", err)
 	}
 
-	class_id := base64.StdEncoding.EncodeToString(*endorsement.Attr.ClassID)
+	class_id := *endorsement.Attr.ClassID
 	extracted.ReferenceID = parsecTpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
 	return &extracted, nil
 }
