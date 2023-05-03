@@ -514,7 +514,7 @@ func sendChallengeResponseSessionCreated(c *gin.Context, id string, jsonSession 
 	sendChallengeResponseSessionWithStatus(c, http.StatusCreated, jsonSession)
 }
 
-func (o *Handler) getKeyInfo() (jwk.Key, *capability.TEE, error) {
+func (o *Handler) getKeyInfo() (jwk.Key, *capability.PublicKeyAttestation, error) {
 	var key jwk.Key
 
 	protoKey, err := o.Verifier.GetPublicKey()
@@ -527,10 +527,10 @@ func (o *Handler) getKeyInfo() (jwk.Key, *capability.TEE, error) {
 		return key, nil, err
 	}
 
-	var tee *capability.TEE
+	var tee *capability.PublicKeyAttestation
 
 	if t := protoKey.Attestation; t != nil {
-		tee, _ = capability.NewTEE(t.TeeName, t.Id, t.Evidence)
+		tee, _ = capability.NewPublicKeyAttestation(t.TeeName, t.Id, t.Evidence)
 	}
 
 	return key, tee, nil

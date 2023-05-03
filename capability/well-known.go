@@ -8,32 +8,34 @@ const (
 	WellKnownMediaType = "application/vnd.veraison.discovery+json"
 )
 
-type TEE struct {
-	Name       string `json:"tee-name"`
+type PublicKeyAttestation struct {
+	TeeName    string `json:"tee-name"`
 	EvidenceId string `json:"evidence-id"`
 	Evidence   []byte `json:"evidence"`
 }
 
-func NewTEE(name string, evidenceID string, evidence []byte) (*TEE, error) {
-	return &TEE{
-		Name:       name,
+func NewPublicKeyAttestation(
+	teeName string, evidenceID string, evidence []byte,
+) (*PublicKeyAttestation, error) {
+	return &PublicKeyAttestation{
+		TeeName:    teeName,
 		EvidenceId: evidenceID,
 		Evidence:   evidence,
 	}, nil
 }
 
 type WellKnownInfo struct {
-	PublicKey    jwk.Key           `json:"ear-verification-key,omitempty"`
-	Tee          *TEE              `json:"tee,omitempty"`
-	MediaTypes   []string          `json:"media-types"`
-	Version      string            `json:"version"`
-	ServiceState string            `json:"service-state"`
-	ApiEndpoints map[string]string `json:"api-endpoints"`
+	PublicKey            jwk.Key               `json:"ear-verification-key,omitempty"`
+	PublicKeyAttestation *PublicKeyAttestation `json:"ear-verification-key-attestation,omitempty"`
+	MediaTypes           []string              `json:"media-types"`
+	Version              string                `json:"version"`
+	ServiceState         string                `json:"service-state"`
+	ApiEndpoints         map[string]string     `json:"api-endpoints"`
 }
 
 func NewWellKnownInfoObj(
 	key jwk.Key, mediaTypes []string, version string, serviceState string,
-	endpoints map[string]string, tee *TEE,
+	endpoints map[string]string, tee *PublicKeyAttestation,
 ) (*WellKnownInfo, error) {
 	obj := &WellKnownInfo{
 		PublicKey:    key,
@@ -44,7 +46,7 @@ func NewWellKnownInfoObj(
 	}
 
 	if tee != nil {
-		obj.Tee = tee
+		obj.PublicKeyAttestation = tee
 	}
 
 	return obj, nil
