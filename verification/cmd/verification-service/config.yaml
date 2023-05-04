@@ -5,5 +5,8 @@ logging:
 verification:
   listen-addr: 0.0.0.0:8080
 vts:
-  server-addr: vts-service:50051
+  server-addr: vsock://5:50051
+plugin:
+  backend: builtin
+
 # vim: set ft=yaml:

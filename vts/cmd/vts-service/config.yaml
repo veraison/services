@@ -1,7 +1,8 @@
 plugin:
-  backend: go-plugin
-  go-plugin:
-    dir: ../../../scheme/bin/
+  backend: builtin
+#  backend: go-plugin
+#  go-plugin:
+#    dir: ../../../scheme/bin/
 ta-store:
   backend: memory
 #  backend: sql
