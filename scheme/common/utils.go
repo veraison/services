@@ -39,7 +39,7 @@ func GetMandatoryPathSegment(key string, fields map[string]*structpb.Value) (str
 	return segment, nil
 }
 
-func GetPublicKeyFromTa(ta []byte) (crypto.PublicKey, error) {
+func GetPubKeyFromPEMEncodedPubKey(ta []byte) (crypto.PublicKey, error) {
 	block, rest := pem.Decode(ta)
 	if block == nil {
 		return nil, errors.New("could not extract trust anchor PEM block")

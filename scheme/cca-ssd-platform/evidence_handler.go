@@ -197,7 +197,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	}
 
 	ta := endorsement.Attr.VerifKey
-	pk, err := common.GetPublicKeyFromTa([]byte(ta))
+	pk, err := common.GetPubKeyFromPEMEncodedPubKey([]byte(ta))
 	if err != nil {
 		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
