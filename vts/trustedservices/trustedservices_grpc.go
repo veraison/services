@@ -508,8 +508,7 @@ func (o *GRPC) finalize(
 	if signErr != nil {
 		// log the error and continue
 		o.logger.Error(signErr)
-	} else {
-		if pkInfo.Att != nil {
+	} else if pkInfo.Att != nil {
 			teeInfo := ear.VeraisonTeeInfo{
 				TeeName:    &pkInfo.Att.TEE,
 				EvidenceID: &pkInfo.Att.UID,
