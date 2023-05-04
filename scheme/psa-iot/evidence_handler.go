@@ -177,8 +177,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	}
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Println("Could not decode Endorsements in ValidateEvidenceIntegrity")
-		return fmt.Errorf("could not decode endorsement: %w", err)
+		log.Println("Could not decode trust anchor in ValidateEvidenceIntegrity")
+		return fmt.Errorf("could not decode trust anchor: %w", err)
 	}
 
 	ta := *endorsement.Attr.VerifKey

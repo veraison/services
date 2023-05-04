@@ -42,9 +42,8 @@ func GetMandatoryPathSegment(key string, fields map[string]*structpb.Value) (str
 
 func GetPublicKeyFromTa(ta []byte) (crypto.PublicKey, error) {
 	block, rest := pem.Decode(ta)
-
 	if block == nil {
-		log.Error("Could not get TA PEM Block ValidateEvidenceIntegrity")
+		log.Error("Could not get TA PEM Block in GetPublicKeyFromTa")
 		return nil, errors.New("could not extract trust anchor PEM block")
 	}
 
