@@ -509,15 +509,14 @@ func (o *GRPC) finalize(
 		// log the error and continue
 		o.logger.Error(signErr)
 	} else if pkInfo.Att != nil {
-			teeInfo := ear.VeraisonTeeInfo{
-				TeeName:    &pkInfo.Att.TEE,
-				EvidenceID: &pkInfo.Att.UID,
-			}
-			if appraisal.TeeReport {
-				teeInfo.Evidence = &pkInfo.Att.Evidence
-			}
-			appraisal.Result.AttestationResultExtensions.VeraisonTeeInfo = &teeInfo
+		teeInfo := ear.VeraisonTeeInfo{
+			TeeName:    &pkInfo.Att.TEE,
+			EvidenceID: &pkInfo.Att.UID,
 		}
+		if appraisal.TeeReport {
+			teeInfo.Evidence = &pkInfo.Att.Evidence
+		}
+		appraisal.Result.AttestationResultExtensions.VeraisonTeeInfo = &teeInfo
 	}
 
 	appraisal.SignedEAR, signErr = o.EarSigner.Sign(*appraisal.Result)
