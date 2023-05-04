@@ -455,6 +455,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	if attestationResult == nil {
 		session.SetStatus(StatusProcessing)
 		s := mustStoreSession(o.SessionManager, session, id, tenantID)
+		c.Header("Link", verificationKeyLinkHeader())
 		sendChallengeResponseSessionWithStatus(c, http.StatusAccepted, s)
 		return
 	}
@@ -463,6 +464,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	session.SetStatus(StatusComplete)
 	session.SetResult(attestationResult)
 	s := mustStoreSession(o.SessionManager, session, id, tenantID)
+	c.Header("Link", verificationKeyLinkHeader())
 	sendChallengeResponseSessionWithStatus(c, http.StatusOK, s)
 }
 
@@ -545,8 +547,26 @@ func sendChallengeResponseSessionWithStatus(c *gin.Context, status int, jsonSess
 	c.Data(status, ChallengeResponseSessionMediaType, jsonSession)
 }
 
+func verificationKeyLinkHeader() string {
+	// we use an extension relation (an absolute URI) as per
+	// https://www.rfc-editor.org/rfc/rfc8288.html#section-2.1.2
+	earVerificationKeyExtRel := "tag:github.com,2023:veraison/rel/ear-verification-key"
+
+	// In WebLink parlance the following means:
+	// "link context (i.e., the "result" field in the challenge-response session
+	// resource) has a link relation type (i.e., an EAR verification key)
+	// resource at link target (i.e., the "ear-verification-key" attribute in
+	// the well-known resource)"
+	return fmt.Sprintf(
+		`<%s#/ear-verification-key>; rel="%s"; anchor="#/result"`,
+		getWellKnownVerificationInfoUrl,
+		earVerificationKeyExtRel,
+	)
+}
+
 func sendChallengeResponseSessionCreated(c *gin.Context, id string, jsonSession []byte) {
 	c.Header("Location", path.Join("session", id))
+	c.Header("Link", verificationKeyLinkHeader())
 	sendChallengeResponseSessionWithStatus(c, http.StatusCreated, jsonSession)
 }
 
