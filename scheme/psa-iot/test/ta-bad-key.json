@@ -1,0 +1,12 @@
+
+{
+    "scheme":"PSA_IOT",
+    "type":"VERIFICATION_KEY",
+    "attributes":{
+        "PSA_IOT.hw-model":"RoadRunner",
+        "PSA_IOT.hw-vendor":"ACME",
+        "PSA_IOT.impl-id":"76543210fedcba9817161514131211101f1e1d1c1b1a1918",
+        "PSA_IOT.iak-pub":"-----BEGIN PUBLIC KEY-----\nMIGkAgEBBDCKwJDJlYafYawTWPArAhomq26zhiA6xzXXzphVU4uR90xEsNWAJD77eZopPcuqCJmgBwYFK4EEACKhZANiAAQhKGfFLiuVCLCkIKkFYPOU0t+qIb3XUU/xqQGv5+H3i7EdTmb4qKOK+navajHE3oyEzi2vyZZCWLU/rXGHdPRWINERsXboMY4Rh9sCNaMY03ull/7oDg5MdioSvLPqbtQ=\n-----END PUBLIC KEY-----",
+        "PSA_IOT.inst-id":"Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+    }
+}

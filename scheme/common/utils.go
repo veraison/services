@@ -3,9 +3,13 @@
 package common
 
 import (
+	"crypto"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 
+	"github.com/veraison/services/log"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -34,4 +38,27 @@ func GetMandatoryPathSegment(key string, fields map[string]*structpb.Value) (str
 	}
 
 	return segment, nil
+}
+
+func GetPublicKeyFromTa(ta []byte) (crypto.PublicKey, error) {
+	block, rest := pem.Decode(ta)
+
+	if block == nil {
+		log.Error("Could not get TA PEM Block ValidateEvidenceIntegrity")
+		return nil, errors.New("could not extract trust anchor PEM block")
+	}
+
+	if len(rest) != 0 {
+		return nil, errors.New("trailing data found after PEM block")
+	}
+
+	if block.Type != "PUBLIC KEY" {
+		return nil, fmt.Errorf("unsupported key type: %q", block.Type)
+	}
+
+	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse public key: %w", err)
+	}
+	return pk, nil
 }

@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/url"
@@ -122,36 +121,24 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
-	var endorsement TaEndorsements
+	var (
+		endorsement TaEndorsements
+		ev          parsectpm.Evidence
+	)
+
+	if err := ev.FromCBOR(token.Data); err != nil {
+		return handler.BadEvidence(err)
+	}
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
 		log.Error("Could not decode Endorsement in ValidateEvidenceIntegrity: %w", err)
 		return fmt.Errorf("could not decode endorsement: %w", err)
 	}
+
 	ta := *endorsement.Attr.VerifKey
-	block, rest := pem.Decode([]byte(ta))
-
-	if block == nil {
-		log.Error("Could not get TA PEM Block ValidateEvidenceIntegrity")
-		return errors.New("could not extract trust anchor PEM block")
-	}
-
-	if len(rest) != 0 {
-		return errors.New("trailing data found after PEM block")
-	}
-
-	if block.Type != "PUBLIC KEY" {
-		return fmt.Errorf("unsupported key type: %q", block.Type)
-	}
-
-	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
+	pk, err := common.GetPublicKeyFromTa([]byte(ta))
 	if err != nil {
-		return fmt.Errorf("unable to parse public key: %w", err)
-	}
-
-	var ev parsectpm.Evidence
-	if err = ev.FromCBOR(token.Data); err != nil {
-		return handler.BadEvidence(err)
+		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
 
 	if err := ev.Verify(pk); err != nil {

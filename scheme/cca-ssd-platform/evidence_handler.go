@@ -5,11 +5,8 @@ package cca_ssd_platform
 
 import (
 	"bytes"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"fmt"
 
 	"net/url"
@@ -186,35 +183,23 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	trustAnchor string,
 	endorsementsStrings []string,
 ) error {
-	var endorsement TaEndorsements
+	var (
+		endorsement TaEndorsements
+		ccaToken    ccatoken.Evidence
+	)
+
+	if err := ccaToken.FromCBOR(token.Data); err != nil {
+		return handler.BadEvidence(err)
+	}
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
 		return fmt.Errorf("could not decode endorsement: %w", err)
 	}
+
 	ta := endorsement.Attr.VerifKey
-	block, rest := pem.Decode([]byte(ta))
-
-	if block == nil {
-		return errors.New("could not extract trust anchor PEM block")
-	}
-
-	if len(rest) != 0 {
-		return errors.New("trailing data found after PEM block")
-	}
-
-	if block.Type != "PUBLIC KEY" {
-		return fmt.Errorf("unsupported key type %q", block.Type)
-	}
-
-	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
+	pk, err := common.GetPublicKeyFromTa([]byte(ta))
 	if err != nil {
-		return err
-	}
-
-	var ccaToken ccatoken.Evidence
-
-	if err = ccaToken.FromCBOR(token.Data); err != nil {
-		return handler.BadEvidence(err)
+		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
 
 	if err = ccaToken.Verify(pk); err != nil {
