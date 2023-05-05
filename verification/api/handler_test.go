@@ -3,6 +3,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/veraison/cmw"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/verification/api/mocks"
@@ -563,15 +566,7 @@ func TestHandler_SubmitEvidence_no_body(t *testing.T) {
 	}
 
 	sm := mock_deps.NewMockISessionManager(ctrl)
-	sm.EXPECT().
-		GetSession(testUUID, tenantID).
-		Return([]byte(testSession), nil)
-
 	v := mock_deps.NewMockIVerifier(ctrl)
-	v.EXPECT().
-		IsSupportedMediaType(testSupportedMediaTypeA).
-		Return(true, nil)
-
 	h := NewHandler(sm, v)
 
 	w := httptest.NewRecorder()
@@ -1105,6 +1100,99 @@ func TestHandler_GetWellKnownVerificationInfo_UnsupportedAccept(t *testing.T) {
 	g.Request.Header.Add("Accept", "application/unsupported+ber")
 
 	NewRouter(h).ServeHTTP(w, g.Request)
+
+	var body problems.DefaultProblem
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func goodCMW(t *testing.T) []byte {
+	var w cmw.CMW
+	w.SetMediaType(testSupportedMediaTypeA)
+	w.SetValue([]byte(testJSONBody))
+	b, err := w.Serialize(cmw.JSONArray)
+	require.NoError(t, err)
+	return b
+}
+
+func TestHandler_SubmitEvidence_good_CMW(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	pathOK := path.Join(testSessionBaseURL, testUUIDString)
+
+	expectedCode := http.StatusOK
+	expectedType := ChallengeResponseSessionMediaType
+
+	testCMW := goodCMW(t)
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	sm.EXPECT().
+		GetSession(testUUID, tenantID).
+		Return([]byte(testSession), nil)
+	sm.EXPECT().
+		SetSession(testUUID, tenantID, gomock.Any(), ConfigSessionTTL).
+		Return(nil)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		IsSupportedMediaType(testSupportedMediaTypeA).
+		Return(true, nil)
+	v.EXPECT().
+		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
+		Return([]byte(testResult), nil)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodPost, pathOK, bytes.NewReader(testCMW))
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", "application/vnd.veraison.cmw")
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	_ = w.Body.Bytes()
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+}
+
+func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	badCMW := []byte(`["missing value"]`)
+
+	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW array"
+
+	url := path.Join(testSessionBaseURL, testUUIDString)
+
+	expectedCode := http.StatusBadRequest
+	expectedType := "application/problem+json"
+	expectedBody := problems.DefaultProblem{
+		Type:   "about:blank",
+		Title:  "Bad Request",
+		Status: http.StatusBadRequest,
+		Detail: verifierError,
+	}
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(badCMW))
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", "application/vnd.veraison.cmw")
+
+	NewRouter(h).ServeHTTP(w, req)
 
 	var body problems.DefaultProblem
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
