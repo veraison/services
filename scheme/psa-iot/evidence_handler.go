@@ -4,11 +4,8 @@ package psa_iot
 
 import (
 	"bytes"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -170,37 +167,24 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	trustAnchor string,
 	endorsementsStrings []string,
 ) error {
-	var endorsement TaEndorsements
+	var (
+		endorsement TaEndorsements
+		psaToken    psatoken.Evidence
+	)
+
+	if err := psaToken.FromCOSE(token.Data); err != nil {
+		return handler.BadEvidence(err)
+	}
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Println("Could not decode Endorsements in ValidateEvidenceIntegrity")
-		return fmt.Errorf("could not decode endorsement: %w", err)
+		log.Println("Could not decode trust anchor in ValidateEvidenceIntegrity")
+		return fmt.Errorf("could not decode trust anchor: %w", err)
 	}
+
 	ta := *endorsement.Attr.VerifKey
-	block, rest := pem.Decode([]byte(ta))
-
-	if block == nil {
-		log.Println("Could not get TA PEM Block ValidateEvidenceIntegrity")
-		return errors.New("could not extract trust anchor PEM block")
-	}
-
-	if len(rest) != 0 {
-		return errors.New("trailing data found after PEM block")
-	}
-
-	if block.Type != "PUBLIC KEY" {
-		return fmt.Errorf("unsupported key type %q", block.Type)
-	}
-
-	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
+	pk, err := common.DecodePemSubjectPubKeyInfo([]byte(ta))
 	if err != nil {
-		return err
-	}
-
-	var psaToken psatoken.Evidence
-
-	if err = psaToken.FromCOSE(token.Data); err != nil {
-		return handler.BadEvidence(err)
+		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
 
 	if err = psaToken.Verify(pk); err != nil {

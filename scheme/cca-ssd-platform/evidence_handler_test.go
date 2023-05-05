@@ -200,9 +200,10 @@ func Test_ValidateEvidenceIntegrity_invalid_key(t *testing.T) {
 		TenantId: "1",
 		Data:     tokenBytes,
 	}
+	expectedErr := `could not get public key from trust anchor: unsupported key type: "PRIVATE KEY"`
 
 	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
-	assert.EqualError(t, err, "unsupported key type \"PRIVATE KEY\"")
+	assert.EqualError(t, err, expectedErr)
 }
 
 func Test_GetSupportedMediaType_ok(t *testing.T) {
