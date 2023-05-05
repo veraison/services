@@ -39,6 +39,7 @@ func GetMandatoryPathSegment(key string, fields map[string]*structpb.Value) (str
 	return segment, nil
 }
 
+// DecodePemSubjectPubKeyInfo decodes a PEM encoded SubjectPublicKeyInfo
 func DecodePemSubjectPubKeyInfo(key []byte) (crypto.PublicKey, error) {
 	block, rest := pem.Decode(key)
 	if block == nil {
