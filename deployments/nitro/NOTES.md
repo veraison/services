@@ -77,6 +77,8 @@ nitro-cli terminate-enclave --all
 
 ## Veraison
 
+### Dependencies
+
 * install go 1.19
 ```shell
 wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
@@ -104,8 +106,122 @@ curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v22.3/p
 sudo unzip protoc-22.3-linux-x86_64.zip -d /usr/local
 ```
 
+### Veraison Proper
+
+* checkout code
+```shell
+git checkout https://github.com/veraison/services
+cd services
+```
 
 * compile versaison services
 ```shell
-make
+make SCHEME_LOADER=builtin
 ```
+
+#### Nitro management scripts
+
+* nitro-build.sh
+```shell
+#!/bin/bash
+
+set -eux
+set -o pipefail
+
+. nitro.env
+
+docker build -t "${ENCLAVE}" .
+
+nitro-cli build-enclave \
+	--docker-dir ./ \
+	--docker-uri "${ENCLAVE}" \
+	--output-file "${ENCLAVE_IMG}"
+```
+
+* nitro-kill.sh
+```shell
+#!/bin/bash
+
+set -eux
+set -o pipefail
+
+ENCLAVE_ID=$(nitro-cli describe-enclaves | jq -r ".[0].EnclaveID")
+[ "$ENCLAVE_ID" != "null" ] && nitro-cli terminate-enclave --enclave-id ${ENCLAVE_ID}
+```
+
+* nitro-run.sh
+```shell
+#!/bin/bash
+
+set -eux
+set -o pipefail
+
+. nitro.env
+
+nitro-cli run-enclave \
+	--eif-path "${ENCLAVE_IMG}" \
+	--cpu-count ${ENCLAVE_CPUS} \
+	--enclave-cid ${ENCLAVE_CID} \
+	--memory ${ENCLAVE_MEM} \
+	--debug-mode
+
+ENCLAVE_ID=$(nitro-cli describe-enclaves | jq -r ".[0].EnclaveID")
+
+[ "$ENCLAVE_ID" != "null" ] && nitro-cli console --enclave-id ${ENCLAVE_ID}
+```
+
+* nitro.env
+```shell
+ENCLAVE_CID=5
+ENCLAVE="vts-nitro"
+ENCLAVE_IMG="${ENCLAVE}.eif"
+ENCLAVE_CPUS=2
+ENCLAVE_MEM=512
+```
+
+# Demo commands
+
+## Setup
+
+```shell
+cd integration-tests/__generated__
+```
+
+```shell
+export AWS_HOST="ec2-54-228-160-194.eu-west-1.compute.amazonaws.com"
+```
+
+## Provisioning
+
+```shell
+cocli corim submit \
+	-f endorsements/endorsements.cbor \
+	-s "http://${AWS_HOST}:8888/endorsement-provisioning/v1/submit" \
+	-m 'application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1'
+```
+
+## Verification
+
+```shell
+evcli psa verify-as attester \
+	-s "http://${AWS_HOST}:8080/challenge-response/v1/newSession" \
+	-c claims/psa.good.json \
+	-k ../data/keys/ec.p256.jwk \
+    | tr -d \" \
+    | step crypto jwt inspect --insecure
+```
+
+* new Link header
+
+```shell
+curl -v -X POST "http://${AWS_HOST}:8080/challenge-response/v1/newSession"
+```
+
+## Discovery
+
+```shell
+curl "http://${AWS_HOST}:8080/.well-known/veraison/verification" \
+    | jq .
+```
+
+
