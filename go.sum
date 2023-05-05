@@ -1037,8 +1037,9 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
-github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
+github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
@@ -1064,6 +1065,8 @@ github.com/vektah/gqlparser/v2 v2.4.6/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rty
 github.com/veraison/apiclient v0.0.2/go.mod h1:H8YDx1ixM24GYP/aLbhq+HJsej0lVUqFCRIL5Uu4B0o=
 github.com/veraison/ccatoken v1.0.0 h1:8xMZdWKb9vzGy5VbxleVzhQ10ZvBRRWse1FN93mGzXo=
 github.com/veraison/ccatoken v1.0.0/go.mod h1:tHh48NBedUooX/DguS+cUC27yCgdv7bBtZ188jZ3fqo=
+github.com/veraison/cmw v0.1.0 h1:vD6tBlGPROCW/HlDcG1jh+XUJi5ihrjXatKZBjrv8mU=
+github.com/veraison/cmw v0.1.0/go.mod h1:WoBrlgByc6C1FeHhdze1/bQx1kv5d1sWKO5ezEf4Hs4=
 github.com/veraison/corim v1.0.0 h1:B2eCyqHXq/Efv349WJCMO27EEcriS5sHWSpR9Bt68t4=
 github.com/veraison/corim v1.0.0/go.mod h1:wbdOh5ixkxV1X+wRFh4lmxc6K8nd0PtKsmY4ze/E+VE=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=

@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/veraison/cmw"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
@@ -309,6 +310,20 @@ func (o *Handler) DelSession(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+var cmwMap = map[string]bool{
+	"application/cmw":                   true,
+	"application/cmw+json":              true,
+	"application/cmw+cbor":              true,
+	"application/vnd.veraison.cmw":      true,
+	"application/vnd.veraison.cmw+cbor": true,
+	"application/vnd.veraison.cmw+json": true,
+}
+
+func isCMW(mt string) bool {
+	_, ok := cmwMap[mt]
+	return ok
+}
+
 func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// do content negotiation (accept application/vnd.veraison.challenge-response-session+json)
 	offered := c.NegotiateFormat(ChallengeResponseSessionMediaType)
@@ -320,8 +335,34 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 		return
 	}
 
+	// read body (i.e., evidence)
+	evidence, err := io.ReadAll(c.Request.Body)
+	if err != nil || len(evidence) == 0 {
+		o.logger.Error("unable to read evidence from the request body: %v", err)
+		ReportProblem(c,
+			http.StatusBadRequest,
+			"unable to read evidence from the request body",
+		)
+		return
+	}
+
 	// read content-type and check against supported attestation formats
 	mediaType := c.Request.Header.Get("Content-Type")
+
+	if isCMW(mediaType) {
+		var w cmw.CMW
+
+		if err := w.Deserialize(evidence); err != nil {
+			ReportProblem(c,
+				http.StatusBadRequest,
+				fmt.Sprintf("could not unwrap the CMW: %v", err),
+			)
+			return
+		}
+
+		mediaType = w.GetType()
+		evidence = w.GetValue()
+	}
 
 	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
 	if err != nil {
@@ -366,17 +407,6 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 		ReportProblem(c,
 			http.StatusNotFound,
 			err.Error(),
-		)
-		return
-	}
-
-	// read body (i.e., evidence)
-	evidence, err := io.ReadAll(c.Request.Body)
-	if err != nil || len(evidence) == 0 {
-		o.logger.Error("unable to read evidence from the request body: %v", err)
-		ReportProblem(c,
-			http.StatusBadRequest,
-			"unable to read evidence from the request body",
 		)
 		return
 	}

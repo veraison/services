@@ -26,8 +26,9 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/veraison/ccatoken v1.0.0
+	github.com/veraison/cmw v0.1.0
 	github.com/veraison/corim v1.0.0
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.0.2
