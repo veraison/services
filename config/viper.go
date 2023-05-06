@@ -13,11 +13,11 @@ import (
 
 // ReadRawConfig instantiates a Viper and uses it to read in configuration. If
 // path is specified as something other than an empty string, Viper will
-// attempt to read it, infrering the format from the file extension. Otherwise,
+// attempt to read it, inferring the format from the file extension. Otherwise,
 // it will for a file called "config.yaml" inside current working directory. An
 // error will be returned if there are problems reading configuration. Unless
 // allowNotFount is set to true, this includes the config file (either the
-// explicitly specfied one or the implicit config.yaml) not being present.
+// explicitly specified one or the implicit config.yaml) not being present.
 func ReadRawConfig(path string, allowNotFound bool) (*viper.Viper, error) {
 	v := viper.New()
 
