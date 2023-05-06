@@ -1,34 +1,28 @@
 plugin:
-  backend: builtin
-#  backend: go-plugin
-#  go-plugin:
-#    dir: ../../../scheme/bin/
+  backend: go-plugin
+  go-plugin:
+    dir: ../../../scheme/bin/
 ta-store:
-  backend: memory
-#  backend: sql
-#  sql:
-#    driver: sqlite3
-#    datasource: /veraison/stores/vts/ta-store.sql
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/ta-store.sql
 en-store:
-  backend: memory
-#  backend: sql
-#  sql:
-#    driver: sqlite3
-#    datasource: /veraison/stores/vts/en-store.sql
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/en-store.sql
 po-store:
-  backend: memory
-#  backend: sql
-#  sql:
-#    driver: sqlite3
-#    datasource: /veraison/stores/vts/po-store.sql
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/po-store.sql
 po-agent:
   backend: opa
 vts:
-#  server-addr: 127.0.0.1:50051
-  server-addr: vsock://0:50051
+  server-addr: 127.0.0.1:50051
 ear-signer:
   alg: ES256
-#  key: ./skey.jwk
-  attester: nitro
+  key: ./skey.jwk
 logging:
   level: debug

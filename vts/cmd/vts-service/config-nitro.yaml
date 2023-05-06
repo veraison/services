@@ -1,0 +1,17 @@
+plugin:
+  backend: builtin
+ta-store:
+  backend: memory
+en-store:
+  backend: memory
+po-store:
+  backend: memory
+po-agent:
+  backend: opa
+vts:
+  server-addr: vsock://0:50051
+ear-signer:
+  alg: ES256
+  attester: nitro
+logging:
+  level: debug

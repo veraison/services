@@ -1,0 +1,9 @@
+logging:
+  level: debug  # valid levels: error, warning, info, debug
+provisioning:
+  listen-addr: 0.0.0.0:8888
+vts:
+  server-addr: vsock://5:50051
+plugin:
+  backend: builtin
+
