@@ -23,7 +23,9 @@ import (
 )
 
 func main() {
-	v, err := config.ReadRawConfig("", false)
+	config.CmdLine()
+
+	v, err := config.ReadRawConfig(*config.File, false)
 	if err != nil {
 		log.Fatalf("could not read config: %v", err)
 	}
