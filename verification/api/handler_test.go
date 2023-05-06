@@ -1144,7 +1144,7 @@ func TestHandler_SubmitEvidence_good_CMW(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
-		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
+		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA, false).
 		Return([]byte(testResult), nil)
 
 	h := NewHandler(sm, v)
