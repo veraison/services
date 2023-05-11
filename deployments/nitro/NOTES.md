@@ -121,6 +121,15 @@ make SCHEME_LOADER=builtin
 
 #### Nitro management scripts
 
+* minimal Docker wrapper
+```shell
+FROM ubuntu:latest
+WORKDIR /
+COPY ./vts-service .
+COPY ./config-nitro.yaml ./config.yaml
+CMD ["./vts-service"]
+```
+
 * nitro-build.sh
 ```shell
 #!/bin/bash
@@ -208,8 +217,15 @@ evcli psa verify-as attester \
 	-c claims/psa.good.json \
 	-k ../data/keys/ec.p256.jwk \
     | tr -d \" \
-    | step crypto jwt inspect --insecure
+    > nitro-ear.jwt
 ```
+
+* inspect EAR claims-set w/out verifying:
+```shell
+cat nitro-ear.jwt | \
+    step crypto jwt inspect --insecure
+```
+
 
 * new Link header
 
