@@ -23,7 +23,9 @@ type cfg struct {
 }
 
 func main() {
-	v, err := config.ReadRawConfig("", true)
+	config.CmdLine()
+
+	v, err := config.ReadRawConfig(*config.File, false)
 	if err != nil {
 		log.Fatalf("Could not read config: %v", err)
 	}
