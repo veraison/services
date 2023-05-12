@@ -84,22 +84,22 @@ services:
 	$(MAKE) .built/vts-container .built/provisioning-container .built/verification-container
 
 .PHONY: vts
-vts: .built/vts-container
+vts: deploy .built/vts-container
 
 .PHONY: vts-image
-vts-image: .built/vts-image
+vts-image: deploy .built/vts-image
 
 .PHONY: provisioning
-provisioning: .built/provisioning-container
+provisioning: deploy .built/provisioning-container
 
 .PHONY: provisioning-image
-provisioning-image: .built/provisioning-image
+provisioning-image: deploy .built/provisioning-image
 
 .PHONY: verification
-verification: .built/verification-container
+verification: deploy .built/verification-container
 
 .PHONY: verification-image
-verification-image: .built/verification-image
+verification-image: deploy .built/verification-image
 
 .PHONY: network
 network: .built/network
