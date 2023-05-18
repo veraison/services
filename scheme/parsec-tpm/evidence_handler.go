@@ -110,7 +110,7 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 	}
 	extracted.ClaimsSet = claimsSet
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Errorf("Could not decode Endorsements in ExtractClaims: %w", err)
+		log.Errorf("Could not decode Endorsements in ExtractClaims: %v", err)
 		return nil, fmt.Errorf("could not decode endorsement: %w", err)
 	}
 
@@ -130,7 +130,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 	}
 
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		log.Errorf("Could not decode trust anchor in ValidateEvidenceIntegrity: %w", err)
+		log.Errorf("Could not decode trust anchor in ValidateEvidenceIntegrity: %v", err)
 		return fmt.Errorf("could not decode trust anchor: %w", err)
 	}
 
@@ -253,13 +253,13 @@ func populateAttestationResult(
 	eds, err := matchPCRs(pcrs, hashAlgID, endorsements)
 	if err != nil {
 		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Errorf("match PCR failed: %w", err)
+		log.Errorf("match PCR failed: %v", err)
 		return fmt.Errorf("match PCR failed: %w", err)
 	}
 
 	if err := matchPCRDigest(pcrDigest, hashAlgID, eds); err != nil {
 		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Errorf("match PCR Digest failed: %w", err)
+		log.Errorf("match PCR Digest failed: %v", err)
 		return fmt.Errorf("match failed for PCR Digest: %w", err)
 	}
 
