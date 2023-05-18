@@ -5,7 +5,6 @@ package parsec_tpm
 import (
 	"bytes"
 	"crypto"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -273,13 +272,8 @@ func populateAttestationResult(
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
-	kd, err := x509.MarshalPKIXPublicKey(key)
-	if err != nil {
-		return fmt.Errorf("unable to marshal public key: %w", err)
-	}
-	pubkey := base64.RawURLEncoding.EncodeToString(kd)
-	appraisal.AppraisalExtensions.VeraisonKeyAttestation = &map[string]interface{}{
-		"akpub": pubkey,
+	if err := appraisal.SetKeyAttestation(key); err != nil {
+		return fmt.Errorf("setting extracted public key: %w", err)
 	}
 	appraisal.UpdateStatusFromTrustVector()
 	appraisal.VeraisonAnnotatedEvidence = &evidence
