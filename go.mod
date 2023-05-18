@@ -31,7 +31,7 @@ require (
 	github.com/veraison/cmw v0.1.0
 	github.com/veraison/corim v1.0.0
 	github.com/veraison/dice v0.0.1
-	github.com/veraison/ear v1.0.2
+	github.com/veraison/ear v1.1.0
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/parsectpm v0.0.1
 	github.com/veraison/psatoken v1.1.0
@@ -89,7 +89,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.6 // indirect
