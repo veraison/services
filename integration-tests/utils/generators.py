@@ -88,10 +88,10 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
                 f'{GENDIR}/evidence/{outname}.cbor',
                 )
     elif scheme == 'cca':
-        pak, rak = signing
+        iak, rak = signing
         generate_cca_evidence_token(
                 claims_file,
-                f'data/keys/{pak}.jwk',
+                f'data/keys/{iak}.jwk',
                 f'data/keys/{rak}.jwk',
                 f'{GENDIR}/evidence/{outname}.cbor',
                 )
@@ -128,10 +128,10 @@ def generate_evidence_no_nonce(scheme, evidence, signing, outname):
                 f'{GENDIR}/evidence/{outname}.cbor',
                 )
     elif scheme == 'cca':
-        pak, rak = signing
+        iak, rak = signing
         generate_cca_evidence_token(
                 claims_file,
-                f'data/keys/{pak}.jwk',
+                f'data/keys/{iak}.jwk',
                 f'data/keys/{rak}.jwk',
                 f'{GENDIR}/evidence/{outname}.cbor',
                 )
@@ -170,9 +170,9 @@ def generate_psa_evidence_token(claims_file, key_file, token_file):
     run_command(evcli_command, 'generate PSA token')
 
 
-def generate_cca_evidence_token(claims_file, pak_file, rak_file, token_file):
+def generate_cca_evidence_token(claims_file, iak_file, rak_file, token_file):
     evcli_command = f"evcli cca create --claims={claims_file} " + \
-                    f"--pak={pak_file} --rak={rak_file} --token={token_file}"
+                    f"--iak={iak_file} --rak={rak_file} --token={token_file}"
     run_command(evcli_command, 'generate CCA token')
 
 def generate_eancttrust_evidence_token(claims_file, key_file, token_file):
