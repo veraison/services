@@ -43,7 +43,7 @@ function verify_as_attester() {
             ;;
         cca)
             local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
-            local key_args="--pak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
+            local key_args="--iak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
             local nonce_args=""
             ;;
         *)
