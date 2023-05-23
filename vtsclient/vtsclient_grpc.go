@@ -39,13 +39,16 @@ func (o NoConnectionError) Unwrap() error {
 }
 
 type GRPC struct {
-	ServerAddress string
-	Connection    *grpc.ClientConn
+	ServerAddress     string
+	Connection        *grpc.ClientConn
+	ConnectionTimeout time.Duration
 }
 
-// NewGRPC instantiate a new gRPC store client with the supplied configuration
+// NewGRPC instantiate a new gRPC VTS client with default settings
 func NewGRPC() *GRPC {
-	return &GRPC{}
+	return &GRPC{
+		ConnectionTimeout: time.Second,
+	}
 }
 
 func (o *GRPC) Init(v *viper.Viper) error {
@@ -162,7 +165,7 @@ func (o *GRPC) EnsureConnection() error {
 		grpc.WithBlock(),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), o.ConnectionTimeout)
 	defer cancel()
 
 	conn, err := grpc.DialContext(ctx, o.ServerAddress, opts...)
@@ -176,6 +179,10 @@ func (o *GRPC) EnsureConnection() error {
 }
 
 func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetEARSigningPublicKey", err)
+	}
+
 	c := o.GetProvisionerClient()
 	if c == nil {
 		return nil, ErrNoClient
