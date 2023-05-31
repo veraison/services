@@ -1,13 +1,13 @@
 syntax = "proto3";
 package proto;
 
-option go_package = "github.com/veraison/services/proto";
 import "google/protobuf/struct.proto";
 
+option go_package = "github.com/veraison/services/proto";
 
 message EvidenceContext {
-	string tenant_id = 1 [json_name = "tenant-id"];
-	string trust_anchor_id = 2 [json_name = "trust-anchor-id"];
-	string reference_id = 3 [json_name = "reference-id"];
-	google.protobuf.Struct evidence = 5;
+  string tenant_id = 1 [json_name = "tenant-id"];
+  string trust_anchor_id = 2 [json_name = "trust-anchor-id"];
+  string reference_id = 3 [json_name = "reference-id"];
+  google.protobuf.Struct evidence = 5;
 }
