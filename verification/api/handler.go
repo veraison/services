@@ -21,13 +21,10 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/veraison/cmw"
 	"github.com/veraison/services/capability"
-	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -43,7 +40,6 @@ var (
 )
 
 type IHandler interface {
-	GetServiceState(c *gin.Context)
 	NewChallengeResponse(c *gin.Context)
 	SubmitEvidence(c *gin.Context)
 	GetSession(c *gin.Context)
@@ -225,34 +221,6 @@ func readSessionIDFromRequestURI(c *gin.Context) (uuid.UUID, error) {
 	}
 
 	return id, nil
-}
-
-func (o *Handler) GetServiceState(c *gin.Context) {
-	state := proto.ServiceState{
-		ServerVersion: config.Version,
-	}
-
-	vtsState, err := o.Verifier.GetVTSState()
-	if err != nil {
-		ReportProblem(c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("could not retrieve service state: %v", err),
-		)
-		return
-	}
-
-	state.SupportedMediaTypes = map[string]*structpb.ListValue{
-		"challenge-response/v1": vtsState.GetSupportedMediaTypes()["challenge-response/v1"],
-	}
-
-	if vtsState.Status == proto.ServiceStatus_DOWN {
-		state.Status = proto.ServiceStatus_INITIALIZING
-	} else {
-		state.Status = proto.ServiceStatus_READY
-	}
-
-	c.Header("Content-Type", proto.ServiceStateMediaType)
-	c.JSON(http.StatusOK, &state)
 }
 
 func (o *Handler) GetSession(c *gin.Context) {

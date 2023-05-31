@@ -71,7 +71,7 @@ func (o *GRPC) GetServiceState(
 ) (*proto.ServiceState, error) {
 	if err := o.EnsureConnection(); err != nil {
 		return &proto.ServiceState{
-			Status: proto.ServiceStatus_DOWN,
+			Status: proto.ServiceStatus_SERVICE_STATUS_DOWN,
 		}, nil
 	}
 

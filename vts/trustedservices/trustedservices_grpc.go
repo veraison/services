@@ -163,7 +163,7 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 	}
 
 	return &proto.ServiceState{
-		Status:        proto.ServiceStatus_READY,
+		Status:        proto.ServiceStatus_SERVICE_STATUS_READY,
 		ServerVersion: config.Version,
 		SupportedMediaTypes: map[string]*structpb.ListValue{
 			"challenge-response/v1": mediaTypesList.AsListValue(),

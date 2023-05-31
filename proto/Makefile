@@ -3,7 +3,6 @@
 
 .DEFAULT_GOAL := all
 
-PROTOSRCS += param.proto
 PROTOSRCS += token.proto
 PROTOSRCS += evidence.proto
 PROTOSRCS += appraisal_context.proto
@@ -11,8 +10,9 @@ PROTOSRCS += state.proto
 PROTOSRCS += vts.proto
 
 lint-hook-pre: protogen
+	protolint lint $(PROTOSRCS)
 
-lint test:
+test:
 
 clean: ; $(RM) protogen
 

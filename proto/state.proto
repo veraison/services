@@ -1,20 +1,21 @@
 syntax = "proto3";
 package proto;
 
-option go_package = "github.com/veraison/services/proto";
-
 import "google/protobuf/struct.proto";
 
+option go_package = "github.com/veraison/services/proto";
+
 enum ServiceStatus {
-    DOWN = 0;
-    INITIALIZING = 1;
-    READY = 2;
-    TERMINATING = 3;
+  SERVICE_STATUS_UNSPECIFIED = 0;
+  SERVICE_STATUS_DOWN = 1;
+  SERVICE_STATUS_INITIALIZING = 2;
+  SERVICE_STATUS_READY = 3;
+  SERVICE_STATUS_TERMINATING = 4;
 }
 
-
+// protolint:disable MAX_LINE_LENGTH
 message ServiceState {
-	ServiceStatus status = 1 [json_name = "status"];
-	string server_version = 2 [json_name = "server-version"];
-	map<string, google.protobuf.ListValue> supported_media_types = 3 [json_name = "supported-media-types"];
+  ServiceStatus status = 1 [json_name = "status"];
+  string server_version = 2 [json_name = "server-version"];
+  map<string, google.protobuf.ListValue> supported_media_types = 3 [json_name = "supported-media-types"];
 }

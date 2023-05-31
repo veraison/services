@@ -1,84 +1,84 @@
 syntax = "proto3";
 package proto;
 
+import "appraisal_context.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "state.proto";
+import "token.proto";
+
 option go_package = "github.com/veraison/services/proto";
 
-
-import "google/protobuf/struct.proto";
-import "google/protobuf/empty.proto";
-import "appraisal_context.proto";
-import "token.proto";
-import "state.proto";
-
-
 message Status {
-    bool result = 1;
-    string error_detail = 2;
+  bool result = 1;
+  string error_detail = 2;
 }
 
 message Evidence {
-    google.protobuf.Struct value = 1;
+  google.protobuf.Struct value = 1;
 }
 
 message AddRefValuesRequest {
-    repeated Endorsement reference_values = 1;
+  repeated Endorsement reference_values = 1;
 }
 
 message AddRefValuesResponse {
-    Status status = 1;
+  Status status = 1;
 }
 
+// protolint:disable ENUM_FIELD_NAMES_PREFIX
 enum EndorsementType {
-    UNSET = 0;
-    REFERENCE_VALUE = 1;
-    VERIFICATION_KEY = 2;
+  UNSPECIFIED = 0;
+  REFERENCE_VALUE = 1;
+  VERIFICATION_KEY = 2;
 }
 
 message Endorsement {
-    string scheme = 1;
-    EndorsementType type = 2;
-    /* sub_type is opaque to Veraison and is used by schemes to classify range of 
-    Endorsement sub types for a given Endorsement type. It is assumed that 
-    there is going to be only one single sub type required */
-    string sub_type = 3;  
-    google.protobuf.Struct attributes = 4;
+  string scheme = 1;
+  EndorsementType type = 2;
+  /* sub_type is opaque to Veraison and is used by schemes to classify range of
+     Endorsement sub types for a given Endorsement type. It is assumed that
+     there is going to be only one single sub type required */
+  string sub_type = 3;
+  google.protobuf.Struct attributes = 4;
 }
 
 message AddTrustAnchorRequest {
-    Endorsement trust_anchor = 1;
+  Endorsement trust_anchor = 1;
 }
 
 message AddTrustAnchorResponse {
-    Status status = 1;
+  Status status = 1;
 }
 
 message MediaTypeList {
-    repeated string media_types = 1;
+  repeated string media_types = 1;
 }
 
 message PublicKey {
-    string key = 1;
+  string key = 1;
 }
 
 // Client interface for the Veraison Trusted Services component.
+// protolint:disable MAX_LINE_LENGTH
 service VTS {
-    // Return the summary state of the service.
-    rpc GetServiceState(google.protobuf.Empty) returns (ServiceState);
+  // Return the summary state of the service.
+  rpc GetServiceState(google.protobuf.Empty) returns (ServiceState);
 
-    // Returns attestation information -- evidences, endorsed claims, trust
-    // vector, etc -- for the provided attestation token data.
-    rpc GetAttestation(AttestationToken) returns (AppraisalContext);
-    rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  // Returns attestation information -- evidences, endorsed claims, trust
+  // vector, etc -- for the provided attestation token data.
+  rpc GetAttestation(AttestationToken) returns (AppraisalContext);
+  rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 
-    // Service endpoints that are used to store Reference Values
-    // and Trust Anchors to the endorsement store
-    rpc AddRefValues(AddRefValuesRequest) returns (AddRefValuesResponse);
-    rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
-    // TODO When we move the provisiong plugins under VTS we need to enable this
-    // TODO interface too.
-    // rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  // Service endpoints that are used to store Reference Values
+  // and Trust Anchors to the endorsement store
+  rpc AddRefValues(AddRefValuesRequest) returns (AddRefValuesResponse);
+  rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
+  // TODO When we move the provisiong plugins under VTS we need to enable this
+  // TODO interface too.
+  // rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 
-    // Returns the public key used to sign evidence.
-    rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
+  // Returns the public key used to sign evidence.
+  rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
 }
 
