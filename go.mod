@@ -33,7 +33,7 @@ require (
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.0
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/parsectpm v0.0.1
+	github.com/veraison/parsectpm v0.0.3
 	github.com/veraison/psatoken v1.1.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.7.0
