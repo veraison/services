@@ -23,7 +23,7 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 		Data:     tokenBytes,
 	}
 
-	expectedTaID := "PARSEC_TPM://1/Ad6tvu/erb7v3q2+796tvu8="
+	expectedTaID := "PARSEC_TPM://1/AYiFVFnuuemzSkbrSMs58vaqadoEUioybRI9XFAfziEM"
 
 	handler := &EvidenceHandler{}
 
@@ -149,7 +149,7 @@ func Test_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 	}
 
 	for _, tv := range tvs {
-		tokenBytes, err := os.ReadFile("test/evidence/evidence1.cbor")
+		tokenBytes, err := os.ReadFile("test/evidence/evidence.cbor")
 		require.NoError(t, err)
 
 		taEndValBytes, err := os.ReadFile(tv.input)
