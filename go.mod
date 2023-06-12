@@ -33,7 +33,7 @@ require (
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.0
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/parsectpm v0.0.3
+	github.com/veraison/parsectpm v0.0.4
 	github.com/veraison/psatoken v1.1.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.7.0
@@ -63,7 +63,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
