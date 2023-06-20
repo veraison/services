@@ -7,6 +7,7 @@ SUBDIR += tcg-dice
 SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust
 SUBDIR += parsec-tpm
+SUBDIR += parsec-cca
 
 clean: ; $(RM) -rf ./bin
 

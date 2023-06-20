@@ -1,0 +1,108 @@
+{
+    "lang": "en-GB",
+    "tag-identity": {
+      "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+      "version": 0
+    },
+    "entities": [
+      {
+        "name": "ACME Ltd.",
+        "regid": "https://acme.example",
+        "roles": [
+          "tagCreator",
+          "creator",
+          "maintainer"
+        ]
+      }
+    ],
+    "triples": {
+      "reference-values": [
+        {
+          "environment": {
+            "class": {
+              "id": {
+                "type": "psa.impl-id",
+                "value": "f0VMRgIBAQAAAAAAAAAAAAMAPgABAAAAUFgAAAAAAAA="
+              },
+              "vendor": "ACME",
+              "model": "RoadRunner"
+            }
+          },
+          "measurements": [
+            {
+              "key": {
+                "type": "psa.refval-id",
+                "value": {
+                  "label": "BL",
+                  "version": "3.4.2",
+                  "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                }
+              },
+              "value": {
+                "digests": [
+                  "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                ]
+              }
+            },
+            {
+              "key": {
+                "type": "psa.refval-id",
+                "value": {
+                  "label": "M1",
+                  "version": "1.2",
+                  "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                }
+              },
+              "value": {
+                "digests": [
+                  "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                ]
+              }
+            },
+            {
+              "key": {
+                "type": "psa.refval-id",
+                "value": {
+                  "label": "M2",
+                  "version": "1.2.3",
+                  "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                }
+              },
+              "value": {
+                "digests": [
+                  "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                ]
+              }
+            },
+            {
+              "key": {
+                "type": "psa.refval-id",
+                "value": {
+                  "label": "M3",
+                  "version": "1",
+                  "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                }
+              },
+              "value": {
+                "digests": [
+                  "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                ]
+              }
+            },
+            {
+              "key": {
+                "type": "cca.platform-config-id",
+                "value": "cfg v1.0.0"
+              },
+              "value": {
+                "raw-value": {
+                  "type": "bytes",
+                  "value": "AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }

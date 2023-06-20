@@ -16,12 +16,29 @@ type WellKnownInfo struct {
 	ApiEndpoints map[string]string `json:"api-endpoints"`
 }
 
+var ssTrans = map[string]string{
+	"SERVICE_STATUS_UNSPECIFIED":  "UNSPECIFIED",
+	"SERVICE_STATUS_DOWN":         "DOWN",
+	"SERVICE_STATUS_INITIALIZING": "INITIALIZING",
+	"SERVICE_STATUS_READY":        "READY",
+	"SERVICE_STATUS_TERMINATING":  "TERMINATING",
+}
+
+func ServiceStateToAPI(ss string) string {
+	t, ok := ssTrans[ss]
+	if !ok {
+		return "UNKNOWN"
+	}
+	return t
+}
+
 func NewWellKnownInfoObj(key jwk.Key, mediaTypes []string, version string, serviceState string, endpoints map[string]string) (*WellKnownInfo, error) {
+	// MUST be kept in sync with proto/state.proto
 	obj := &WellKnownInfo{
 		PublicKey:    key,
 		MediaTypes:   mediaTypes,
 		Version:      version,
-		ServiceState: serviceState,
+		ServiceState: ServiceStateToAPI(serviceState),
 		ApiEndpoints: endpoints,
 	}
 

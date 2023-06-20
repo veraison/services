@@ -957,7 +957,7 @@ func TestHandler_GetWellKnownVerificationInfo_ok(t *testing.T) {
 	expectedBody := capability.WellKnownInfo{
 		MediaTypes:   supportedMediaTypes,
 		Version:      testGoodServiceState.ServerVersion,
-		ServiceState: testGoodServiceState.Status.String(),
+		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
 	}
 
