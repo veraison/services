@@ -126,7 +126,8 @@ func (o *Agent) Evaluate(
 		if err != nil {
 			return nil, fmt.Errorf("bad appraisal data from policy: %w", err)
 		}
-		evaluatedAppraisal.AppraisalPolicyID = &policy.ID
+		evaluatedAppraisal.AppraisalPolicyID = appraisal.AppraisalPolicyID
+
 		return evaluatedAppraisal, nil
 	} else {
 		// policy did not update anything, so return the original appraisal

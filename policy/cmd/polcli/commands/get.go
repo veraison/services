@@ -35,7 +35,7 @@ func init() {
 func validateGetArgs(cmd *cobra.Command, args []string) error {
 	// note: assumes ExactArgs(1) matched.
 
-	if err := policy.ValidateID(args[0]); err != nil {
+	if _, err := policy.PolicyIDFromStoreKey(args[0]); err != nil {
 		return fmt.Errorf("invalid policy ID: %w", err)
 	}
 
@@ -44,13 +44,16 @@ func validateGetArgs(cmd *cobra.Command, args []string) error {
 
 func doGetCommand(cmd *cobra.Command, args []string) error {
 	var policies []policy.Policy
-	var policy policy.Policy
+	var pol policy.Policy
 	var err error
 
-	policyID := args[0]
+	policyID, err := policy.PolicyIDFromStoreKey(args[0])
+	if err != nil {
+		return err
+	}
 
 	if getVersion == 0 {
-		policy, err = store.GetLatest(policyID)
+		pol, err = store.GetLatest(policyID)
 		if err != nil {
 			return err
 		}
@@ -62,12 +65,12 @@ func doGetCommand(cmd *cobra.Command, args []string) error {
 
 		for _, candidate := range policies {
 			if candidate.Version == getVersion {
-				policy = candidate
+				pol = candidate
 				break
 			}
 		}
 
-		if policy.Version == 0 {
+		if pol.Version == 0 {
 			return fmt.Errorf("version %d for policy %q not found",
 				getVersion, policyID)
 		}
@@ -85,7 +88,7 @@ func doGetCommand(cmd *cobra.Command, args []string) error {
 		writer = os.Stdout
 	}
 
-	if _, err := writer.Write([]byte(policy.Rules)); err != nil {
+	if _, err := writer.Write([]byte(pol.Rules)); err != nil {
 		return err
 	}
 

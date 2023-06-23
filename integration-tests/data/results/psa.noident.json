@@ -10,6 +10,7 @@
         "sourced-data": 99,
         "storage-opaque": 99
     },
+    "ear.appraisal-policy-id": "policy:PSA_IOT",
     "ear.veraison.policy-claims": {
         "problem": "could not establish identity from evidence"
     }

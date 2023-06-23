@@ -5,11 +5,9 @@ package policymanager
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/policy"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
@@ -40,8 +38,7 @@ func (o *PolicyManager) Evaluate(
 	appraisal *appraisal.Appraisal,
 	endorsements []string,
 ) error {
-	evidence := appraisal.EvidenceContext
-	policyID := o.getPolicyID(evidence)
+	policyID := o.getPolicyID(appraisal)
 
 	pol, err := o.getPolicy(policyID)
 	if err != nil {
@@ -55,25 +52,29 @@ func (o *PolicyManager) Evaluate(
 
 	for submod, submodAppraisal := range appraisal.Result.Submods {
 		evaluated, err := o.Agent.Evaluate(
-			ctx, scheme, pol, submod, submodAppraisal, evidence, endorsements)
+			ctx, scheme, pol, submod, submodAppraisal, appraisal.EvidenceContext, endorsements)
 		if err != nil {
 			return err
 		}
 		appraisal.Result.Submods[submod] = evaluated
+
+		if err := appraisal.UpdatePolicyID(pol); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (o *PolicyManager) getPolicyID(ec *proto.EvidenceContext) string {
-	return fmt.Sprintf("%s://%s",
-		o.Agent.GetBackendName(),
-		ec.TenantId,
-	)
-
+func (o *PolicyManager) getPolicyID(a *appraisal.Appraisal) policy.PolicyID {
+	return policy.PolicyID{
+		TenantId: a.EvidenceContext.TenantId,
+		Scheme:   a.Scheme,
+		Name:     o.Agent.GetBackendName(),
+	}
 }
 
-func (o *PolicyManager) getPolicy(policyID string) (*policy.Policy, error) {
+func (o *PolicyManager) getPolicy(policyID policy.PolicyID) (*policy.Policy, error) {
 	p, err := o.Store.GetLatest(policyID)
 	if err != nil {
 		return nil, err

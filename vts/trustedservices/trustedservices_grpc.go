@@ -366,6 +366,7 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 	appraisal.Result = appraisedResult
+	appraisal.InitPolicyID()
 
 	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, endorsements)
 	if err != nil {

@@ -38,7 +38,7 @@ func (o *Store) Setup() error {
 
 // Add a policy with the specified ID and rules. If a policy with that ID
 // already exists, an error is returned.
-func (o *Store) Add(id, rules string) error {
+func (o *Store) Add(id PolicyID, rules string) error {
 	if _, err := o.Get(id); err == nil {
 		return fmt.Errorf("policy with id %q already exists", id)
 	}
@@ -48,7 +48,7 @@ func (o *Store) Add(id, rules string) error {
 
 // Update sets the provided rules as the latest version of the policy with the
 // specified ID. If a policy with that ID does not exist, it is created.
-func (o *Store) Update(id, rules string) error {
+func (o *Store) Update(id PolicyID, rules string) error {
 	var oldVersion int32
 
 	oldPolicy, err := o.GetLatest(id)
@@ -68,13 +68,13 @@ func (o *Store) Update(id, rules string) error {
 		return err
 	}
 
-	return o.KVStore.Add(id, string(newPolicyBytes))
+	return o.KVStore.Add(id.StoreKey(), string(newPolicyBytes))
 }
 
-// Get returns the slice of all Policies associated with he specified ID. Each
+// Get returns the slice of all Policies associated with the specified ID. Each
 // Policy represents a different version of the same logical policy.
-func (o *Store) Get(id string) ([]Policy, error) {
-	vals, err := o.KVStore.Get(id)
+func (o *Store) Get(id PolicyID) ([]Policy, error) {
+	vals, err := o.KVStore.Get(id.StoreKey())
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
 			return nil, fmt.Errorf("%w: %q", ErrNoPolicy, id)
@@ -90,6 +90,7 @@ func (o *Store) Get(id string) ([]Policy, error) {
 			return nil, err
 		}
 
+		p.ID = id
 		policies = append(policies, p)
 	}
 
@@ -100,7 +101,7 @@ func (o *Store) Get(id string) ([]Policy, error) {
 // policies returned will have distinct IDs. In cases where multiple policies
 // exist for one ID in the store, the latest version will be returned.
 func (o *Store) List() ([]Policy, error) {
-	keys, err := o.KVStore.GetKeys()
+	keys, err := o.GetPolicyIDs()
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +123,7 @@ func (o *Store) List() ([]Policy, error) {
 // underlying store, including multiple versions associated with a single
 // policy ID.
 func (o *Store) ListAllVersions() ([]Policy, error) {
-	keys, err := o.KVStore.GetKeys()
+	keys, err := o.GetPolicyIDs()
 	if err != nil {
 		return nil, err
 	}
@@ -140,9 +141,29 @@ func (o *Store) ListAllVersions() ([]Policy, error) {
 	return policies, nil
 }
 
+// GetPolicyIDs returns a []PolicyID of the policies currently in the store.
+func (o *Store) GetPolicyIDs() ([]PolicyID, error) {
+	keys, err := o.KVStore.GetKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]PolicyID, len(keys))
+	for i, k := range keys {
+		pid, err := PolicyIDFromStoreKey(k)
+		if err != nil {
+			return nil, fmt.Errorf("bad key in store: %w", err)
+		}
+
+		ids[i] = pid
+	}
+
+	return ids, nil
+}
+
 // GetLatest returns the latest version of the policy with the specified ID. If
 // no such policy exists, a wrapped ErrNoPolicy is returned.
-func (o *Store) GetLatest(id string) (Policy, error) {
+func (o *Store) GetLatest(id PolicyID) (Policy, error) {
 	policies, err := o.Get(id)
 	if err != nil {
 		return Policy{}, err
@@ -151,9 +172,9 @@ func (o *Store) GetLatest(id string) (Policy, error) {
 	return policies[len(policies)-1], nil
 }
 
-// Del removes all policy versisions associated with the specfied id.
-func (o *Store) Del(id string) error {
-	return o.KVStore.Del(id)
+// Del removes all policy versions associated with the specified id.
+func (o *Store) Del(id PolicyID) error {
+	return o.KVStore.Del(id.StoreKey())
 }
 
 // Close the connection to the underlying kvstore.

@@ -47,7 +47,7 @@ func doListCommand(cmd *cobra.Command, args []string) error {
 	for _, p := range policies {
 		version := fmt.Sprint(p.Version)
 		md5sum := fmt.Sprintf("%x", md5.Sum([]byte(p.Rules)))
-		table.Append([]string{p.ID, version, md5sum})
+		table.Append([]string{p.ID.StoreKey(), version, md5sum})
 	}
 
 	table.Render()

@@ -26,7 +26,7 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0")).
+		Get(gomock.Eq("0:TPM_ENACTTRUST:opa")).
 		Return(nil, kvstore.ErrKeyNotFound)
 
 	// Get the Mock Agent here
@@ -35,18 +35,21 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 	evStruct, err := structpb.NewStruct(nil)
 	require.NoError(t, err)
 
-	ec := &proto.EvidenceContext{
-		TenantId:      "0",
-		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		Evidence:      evStruct,
+	appraisal := &appraisal.Appraisal{
+		Scheme: "TPM_ENACTTRUST",
+		EvidenceContext: &proto.EvidenceContext{
+			TenantId:      "0",
+			TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+			ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+			Evidence:      evStruct,
+		},
 	}
 
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store, Logger: log.Named("test")},
 		Agent: agent}
 
-	polID := pm.getPolicyID(ec)
-	assert.Equal(t, "opa://0", polID)
+	polID := pm.getPolicyID(appraisal)
+	assert.Equal(t, "0:TPM_ENACTTRUST:opa", polID.StoreKey())
 
 	pol, err := pm.getPolicy(polID)
 	assert.Nil(t, pol)
@@ -58,25 +61,29 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0")).
+		Get(gomock.Eq("0:TPM_ENACTTRUST:opa")).
 		Return([]string{"{}"}, nil)
 
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
+
 	evStruct, err := structpb.NewStruct(nil)
 	require.NoError(t, err)
 
-	ec := &proto.EvidenceContext{
-		TenantId:      "0",
-		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		Evidence:      evStruct,
+	appraisal := &appraisal.Appraisal{
+		Scheme: "TPM_ENACTTRUST",
+		EvidenceContext: &proto.EvidenceContext{
+			TenantId:      "0",
+			TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+			ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
+			Evidence:      evStruct,
+		},
 	}
 
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 
-	polID := pm.getPolicyID(ec)
-	assert.Equal(t, "opa://0", polID)
+	polID := pm.getPolicyID(appraisal)
+	assert.Equal(t, "0:TPM_ENACTTRUST:opa", polID.StoreKey())
 
 	_, err = pm.getPolicy(polID)
 	require.NoError(t, err)
@@ -110,8 +117,8 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0")).
-		Return([]string{"{}"}, nil)
+		Get(gomock.Eq("0:TPM_ENACTTRUST:opa")).
+		Return([]string{`{"version": 1}`}, nil)
 
 	ec := &proto.EvidenceContext{
 		TenantId:      "0",
@@ -121,11 +128,25 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
 	ar := ear.NewAttestationResult("test", "test", "test")
-	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar}
+	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar, Scheme: "TPM_ENACTTRUST"}
+
+	polID := "policy:TPM_ENACTTRUST"
+	tier := ear.TrustTierAffirming
+	earAp := ear.Appraisal{Status: &tier, AppraisalPolicyID: &polID}
 
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), gomock.Any(), "test", ar.Submods["test"], ec, endorsements)
+	agent.EXPECT().
+		Evaluate(
+			context.TODO(),
+			gomock.Any(),
+			gomock.Any(),
+			"test",
+			ar.Submods["test"],
+			ec,
+			endorsements,
+		).
+		Return(&earAp, nil)
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 	err := pm.Evaluate(context.TODO(), "test", ap, endorsements)
 	require.NoError(t, err)
@@ -137,7 +158,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 
 	store := mock_deps.NewMockIKVStore(ctrl)
 	store.EXPECT().
-		Get(gomock.Eq("opa://0")).
+		Get(gomock.Eq("0:TPM_ENACTTRUST:opa")).
 		Return([]string{"{}"}, nil)
 
 	ec := &proto.EvidenceContext{
@@ -148,7 +169,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
 	ar := ear.NewAttestationResult("test", "test", "test")
-	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar}
+	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar, Scheme: "TPM_ENACTTRUST"}
 	expectedErr := errors.New("could not evaluate policy: policy returned bad update")
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")

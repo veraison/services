@@ -19,27 +19,29 @@ func Test_Store_CRUD(t *testing.T) {
 	require.NoError(t, err)
 	defer store.Close()
 
-	err = store.Add("p1", "1. the chief's always right; 2. if the chief's wrong, see 1.")
+	pid := PolicyID{"1", "scheme", "policy"}
+
+	err = store.Add(pid, "1. the chief's always right; 2. if the chief's wrong, see 1.")
 	require.NoError(t, err)
 
-	policy, err := store.GetLatest("p1")
+	policy, err := store.GetLatest(pid)
 	require.NoError(t, err)
 
-	assert.Equal(t, "p1", policy.ID)
+	assert.Equal(t, pid, policy.ID)
 	assert.Equal(t, int32(1), policy.Version)
 
-	err = store.Add("p1", "On second thought, chief's not always right.")
+	err = store.Add(pid, "On second thought, chief's not always right.")
 	assert.ErrorContains(t, err, "already exists")
 
-	err = store.Update("p1", "On second thought, chief's not always right.")
+	err = store.Update(pid, "On second thought, chief's not always right.")
 	require.NoError(t, err)
 
-	policy, err = store.GetLatest("p1")
+	policy, err = store.GetLatest(pid)
 	require.NoError(t, err)
 	assert.Equal(t, int32(2), policy.Version)
 	assert.Equal(t, "On second thought, chief's not always right.", policy.Rules)
 
-	versions, err := store.Get("p1")
+	versions, err := store.Get(pid)
 	require.NoError(t, err)
 	assert.Len(t, versions, 2)
 	assert.Equal(t, int32(2), versions[1].Version)
@@ -47,18 +49,18 @@ func Test_Store_CRUD(t *testing.T) {
 	policies, err := store.List()
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(policies))
-	assert.Equal(t, "p1", policies[0].ID)
+	assert.Equal(t, pid, policies[0].ID)
 
 	policies, err = store.ListAllVersions()
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(policies))
-	assert.Equal(t, "p1", policies[0].ID)
+	assert.Equal(t, pid, policies[0].ID)
 	assert.Equal(t, int32(1), policies[0].Version)
 	assert.Equal(t, int32(2), policies[1].Version)
 
-	err = store.Del("p1")
+	err = store.Del(pid)
 	require.NoError(t, err)
 
-	_, err = store.GetLatest("p1")
+	_, err = store.GetLatest(pid)
 	assert.ErrorIs(t, err, ErrNoPolicy)
 }

@@ -142,15 +142,17 @@ func Test_Agent_Evaluate(t *testing.T) {
 
 	ctx := context.Background()
 	policy := &Policy{
-		ID:    "test-policy",
+		ID:    PolicyID{"test-tenant", "test-scheme", "test-policy"},
 		Rules: "",
 	}
 
 	var endorsements []string
 	contraStatus := ear.TrustTierContraindicated
+	polID := "policy:test-scheme"
 	appraisal := &ear.Appraisal{
-		Status:      &contraStatus,
-		TrustVector: &ear.TrustVector{},
+		Status:            &contraStatus,
+		TrustVector:       &ear.TrustVector{},
+		AppraisalPolicyID: &polID,
 	}
 	evidence := &proto.EvidenceContext{}
 
@@ -184,7 +186,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 		if v.ExpectedAppraisal == nil {
 			assert.Nil(t, res)
 		} else {
-			assert.Equal(t, policy.ID, *res.AppraisalPolicyID)
+			assert.Equal(t, *appraisal.AppraisalPolicyID, *res.AppraisalPolicyID)
 			assert.Equal(t, *v.ExpectedAppraisal.Status, *res.Status)
 			assert.Equal(t, v.ExpectedAppraisal.TrustVector.InstanceIdentity,
 				res.TrustVector.InstanceIdentity)
