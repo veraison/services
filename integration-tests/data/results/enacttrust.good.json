@@ -10,6 +10,7 @@
         "sourced-data": 0,
         "storage-opaque": 0
     },
+    "ear.appraisal-policy-id": "policy:TPM_ENACTTRUST",
     "ear.veraison.annotated-evidence": {
             "node-id": "7df7714e-aa04-4638-bcbf-434b1dd720f1",
             "firmware-version": 7,

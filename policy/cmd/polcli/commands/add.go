@@ -34,7 +34,7 @@ func init() {
 func validateAddArgs(cmd *cobra.Command, args []string) error {
 	// note: assumes ExactArgs(2) matched.
 
-	if err := policy.ValidateID(args[0]); err != nil {
+	if _, err := policy.PolicyKeyFromString(args[0]); err != nil {
 		return fmt.Errorf("invalid policy ID: %w", err)
 	}
 
@@ -46,7 +46,11 @@ func validateAddArgs(cmd *cobra.Command, args []string) error {
 }
 
 func doAddCommand(cmd *cobra.Command, args []string) error {
-	policyID := args[0]
+	policyID, err := policy.PolicyKeyFromString(args[0])
+	if err != nil {
+		return err
+	}
+
 	policyFile := args[1]
 
 	rulesBytes, err := os.ReadFile(policyFile)
@@ -59,11 +63,13 @@ func doAddCommand(cmd *cobra.Command, args []string) error {
 		addFunc = store.Update
 	}
 
-	if err := addFunc(policyID, string(rulesBytes)); err != nil {
+	policy, err := addFunc(policyID, "default", "opa", string(rulesBytes))
+	if err != nil {
 		return fmt.Errorf("could not add policy: %w", err)
 	}
 
-	log.Printf("Policy %q stored under ID %q.\n", policyFile, policyID)
+	log.Printf("Policy %q stored under key %q with UUID %q .\n",
+		policyFile, policyID, policy.UUID)
 
 	return nil
 }
