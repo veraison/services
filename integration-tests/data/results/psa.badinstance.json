@@ -10,6 +10,7 @@
         "storage-opaque": 99,
         "sourced-data": 99
     },
+    "ear.appraisal-policy-id": "policy:PSA_IOT",
     "ear.veraison.policy-claims": {
             "problem": "no trust anchor for evidence"
     }

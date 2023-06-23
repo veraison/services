@@ -21,12 +21,12 @@ var (
 		PostRunE: finiPolicyStore,
 	}
 
-	getVersion        int32
+	getUUID           string
 	getOutputFilePath string
 )
 
 func init() {
-	getCmd.PersistentFlags().Int32VarP(&getVersion, "version", "v", 0,
+	getCmd.PersistentFlags().StringVarP(&getUUID, "version", "v", "",
 		"get the specified, rather than latest, version")
 	getCmd.PersistentFlags().StringVarP(&getOutputFilePath, "output", "o", "",
 		"write the policy to the specified file, rather than STDOUT")
@@ -35,7 +35,7 @@ func init() {
 func validateGetArgs(cmd *cobra.Command, args []string) error {
 	// note: assumes ExactArgs(1) matched.
 
-	if err := policy.ValidateID(args[0]); err != nil {
+	if _, err := policy.PolicyKeyFromString(args[0]); err != nil {
 		return fmt.Errorf("invalid policy ID: %w", err)
 	}
 
@@ -43,33 +43,38 @@ func validateGetArgs(cmd *cobra.Command, args []string) error {
 }
 
 func doGetCommand(cmd *cobra.Command, args []string) error {
-	var policies []policy.Policy
-	var policy policy.Policy
+	var policies []*policy.Policy
+	var pol *policy.Policy
 	var err error
 
-	policyID := args[0]
+	policyKey, err := policy.PolicyKeyFromString(args[0])
+	if err != nil {
+		return err
+	}
 
-	if getVersion == 0 {
-		policy, err = store.GetLatest(policyID)
+	if getUUID == "" {
+		pol, err = store.GetActive(policyKey)
 		if err != nil {
 			return err
 		}
 	} else {
-		policies, err = store.Get(policyID)
+		policies, err = store.Get(policyKey)
 		if err != nil {
 			return err
 		}
 
+		found := false
 		for _, candidate := range policies {
-			if candidate.Version == getVersion {
-				policy = candidate
+			if candidate.UUID.String() == getUUID {
+				pol = candidate
+				found = true
 				break
 			}
 		}
 
-		if policy.Version == 0 {
-			return fmt.Errorf("version %d for policy %q not found",
-				getVersion, policyID)
+		if !found {
+			return fmt.Errorf("UUID %q for policy %q not found",
+				getUUID, policyKey)
 		}
 	}
 
@@ -85,7 +90,7 @@ func doGetCommand(cmd *cobra.Command, args []string) error {
 		writer = os.Stdout
 	}
 
-	if _, err := writer.Write([]byte(policy.Rules)); err != nil {
+	if _, err := writer.Write([]byte(pol.Rules)); err != nil {
 		return err
 	}
 
