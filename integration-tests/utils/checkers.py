@@ -32,6 +32,10 @@ def compare_to_expected_result(response, expected, verifier_key):
 
     assert decoded["ear.status"] == expected_claims["ear.status"]
 
+    if "ear.appraisal-policy-id" in expected_claims:
+        assert decoded["ear.appraisal-policy-id"] ==\
+                expected_claims["ear.appraisal-policy-id"]
+
     for trust_claim, tc_value in decoded["ear.trustworthiness-vector"].items():
         expected_value = expected_claims["ear.trustworthiness-vector"][trust_claim]
         assert expected_value == tc_value, f'mismatch for claim "{trust_claim}"'

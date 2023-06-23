@@ -19,46 +19,71 @@ func Test_Store_CRUD(t *testing.T) {
 	require.NoError(t, err)
 	defer store.Close()
 
-	err = store.Add("p1", "1. the chief's always right; 2. if the chief's wrong, see 1.")
+	key := PolicyKey{"1", "scheme", "policy"}
+
+	policy, err := store.Add(key, "test", "test",
+		"1. the chief's always right; 2. if the chief's wrong, see 1.")
 	require.NoError(t, err)
 
-	policy, err := store.GetLatest("p1")
+	_, err = store.GetActive(key)
+	assert.EqualError(t, err, "no active policy for key \"1:scheme:policy\"")
+
+	err = store.Activate(key, policy.UUID)
 	require.NoError(t, err)
 
-	assert.Equal(t, "p1", policy.ID)
-	assert.Equal(t, int32(1), policy.Version)
+	policy, err = store.GetActive(key)
+	require.NoError(t, err)
+	assert.Equal(t, key, policy.StoreKey)
 
-	err = store.Add("p1", "On second thought, chief's not always right.")
+	_, err = store.Add(key, "test", "test", "On second thought, chief's not always right.")
 	assert.ErrorContains(t, err, "already exists")
 
-	err = store.Update("p1", "On second thought, chief's not always right.")
+	secondPolicy, err := store.Update(key, "test", "test",
+		"On second thought, chief's not always right.")
 	require.NoError(t, err)
 
-	policy, err = store.GetLatest("p1")
+	policy, err = store.GetActive(key)
 	require.NoError(t, err)
-	assert.Equal(t, int32(2), policy.Version)
+	assert.Equal(t, "1. the chief's always right; 2. if the chief's wrong, see 1.", policy.Rules)
+
+	err = store.Activate(key, secondPolicy.UUID)
+	require.NoError(t, err)
+
+	policy, err = store.GetActive(key)
+	require.NoError(t, err)
 	assert.Equal(t, "On second thought, chief's not always right.", policy.Rules)
 
-	versions, err := store.Get("p1")
+	err = store.DeactivateAll(key)
+	require.NoError(t, err)
+
+	_, err = store.GetActive(key)
+	assert.EqualError(t, err, "no active policy for key \"1:scheme:policy\"")
+
+	versions, err := store.Get(key)
 	require.NoError(t, err)
 	assert.Len(t, versions, 2)
-	assert.Equal(t, int32(2), versions[1].Version)
 
 	policies, err := store.List()
 	require.NoError(t, err)
+	assert.Equal(t, 0, len(policies))
+
+	err = store.Activate(key, secondPolicy.UUID)
+	require.NoError(t, err)
+
+	policies, err = store.List()
+	require.NoError(t, err)
 	assert.Equal(t, 1, len(policies))
-	assert.Equal(t, "p1", policies[0].ID)
+	assert.Equal(t, key, policies[0].StoreKey)
 
 	policies, err = store.ListAllVersions()
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(policies))
-	assert.Equal(t, "p1", policies[0].ID)
-	assert.Equal(t, int32(1), policies[0].Version)
-	assert.Equal(t, int32(2), policies[1].Version)
+	assert.Equal(t, key, policies[0].StoreKey)
+	assert.NotEqual(t, policies[0].UUID, policies[1].UUID)
 
-	err = store.Del("p1")
+	err = store.Del(key)
 	require.NoError(t, err)
 
-	_, err = store.GetLatest("p1")
+	_, err = store.GetActive(key)
 	assert.ErrorIs(t, err, ErrNoPolicy)
 }

@@ -26,7 +26,7 @@ var (
 func validateDelArgs(cmd *cobra.Command, args []string) error {
 	// note: assumes ExactArgs(1) matched.
 
-	if err := policy.ValidateID(args[0]); err != nil {
+	if _, err := policy.PolicyKeyFromString(args[0]); err != nil {
 		return fmt.Errorf("invalid policy ID: %w", err)
 	}
 
@@ -34,7 +34,10 @@ func validateDelArgs(cmd *cobra.Command, args []string) error {
 }
 
 func doDelCommand(cmd *cobra.Command, args []string) error {
-	policyID := args[0]
+	policyID, err := policy.PolicyKeyFromString(args[0])
+	if err != nil {
+		return err
+	}
 
 	if err := store.Del(policyID); err != nil {
 		return fmt.Errorf("could not delete policy: %w", err)
