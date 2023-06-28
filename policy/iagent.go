@@ -14,10 +14,12 @@ type IAgent interface {
 	Init(v *viper.Viper) error
 	GetBackendName() string
 	Evaluate(ctx context.Context,
+		scheme string,
 		policy *Policy,
 		submod string,
 		appraisal *ear.Appraisal,
 		evidence *proto.EvidenceContext,
-		endorsements []string) (*ear.Appraisal, error)
+		endorsements []string,
+	) (*ear.Appraisal, error)
 	Close()
 }

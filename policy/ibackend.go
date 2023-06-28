@@ -13,6 +13,7 @@ type IBackend interface {
 	GetName() string
 	Evaluate(
 		ctx context.Context,
+		scheme string,
 		policy string,
 		result map[string]interface{},
 		evidence map[string]interface{},
