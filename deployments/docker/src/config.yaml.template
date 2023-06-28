@@ -30,7 +30,7 @@ po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: stores/vts/en-store.sql
+    datasource: stores/vts/po-store.sql
 po-agent:
     backend: opa
 # vim: set ft=yaml:
