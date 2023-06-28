@@ -29,7 +29,7 @@ po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: en-store.sql
+    datasource: po-store.sql
 po-agent:
     backend: opa
 plugin:
