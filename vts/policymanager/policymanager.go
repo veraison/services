@@ -36,6 +36,7 @@ func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*Polic
 
 func (o *PolicyManager) Evaluate(
 	ctx context.Context,
+	scheme string,
 	appraisal *appraisal.Appraisal,
 	endorsements []string,
 ) error {
@@ -54,7 +55,7 @@ func (o *PolicyManager) Evaluate(
 
 	for submod, submodAppraisal := range appraisal.Result.Submods {
 		evaluated, err := o.Agent.Evaluate(
-			ctx, pol, submod, submodAppraisal, evidence, endorsements)
+			ctx, scheme, pol, submod, submodAppraisal, evidence, endorsements)
 		if err != nil {
 			return err
 		}

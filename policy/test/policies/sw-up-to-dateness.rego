@@ -1,10 +1,10 @@
 package policy
 
-# Use the psa_executables rules iff the attestaion format is PSA_IOT, and
+# Use the psa_executables rules iff the attestaion scheme is PSA_IOT, and
 # to enacttrust_executables iff the format is TPM_ENACTTRUST, otherwise,
 # executables will remain undefined.
-executables = psa_executables { format == "PSA_IOT" }
-             else = enacttrust_executables { format == "TPM_ENACTTRUST" }
+executables = psa_executables { scheme == "PSA_IOT" }
+             else = enacttrust_executables { scheme == "TPM_ENACTTRUST" }
 
 # This sets executables trust verctor value to APPROVED_RT iff BL version is
 # 3.5 or greater, and to failure otherwise.

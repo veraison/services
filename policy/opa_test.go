@@ -22,6 +22,7 @@ type TestResult struct {
 
 type TestVector struct {
 	Title            string     `json:"title"`
+	Scheme           string     `json:"scheme"`
 	ResultPath       string     `json:"result"`
 	EvidencePath     string     `json:"evidence"`
 	EndorsementsPath string     `json:"endorsements"`
@@ -42,7 +43,7 @@ func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	policy, err := os.ReadFile(o.PolicyPath)
 	require.NoError(t, err)
 
-	res, err := pa.Evaluate(ctx, string(policy), resultMap, evidenceMap, endorsements)
+	res, err := pa.Evaluate(ctx, o.Scheme, string(policy), resultMap, evidenceMap, endorsements)
 	if o.Expected.Error == "" {
 		require.NoError(t, err)
 	} else {

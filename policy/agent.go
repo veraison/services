@@ -68,6 +68,7 @@ func (o *Agent) GetBackendName() string {
 // overwrite the result status or any of the values in the result trust vector.
 func (o *Agent) Evaluate(
 	ctx context.Context,
+	scheme string,
 	policy *Policy,
 	submod string,
 	appraisal *ear.Appraisal,
@@ -80,6 +81,7 @@ func (o *Agent) Evaluate(
 
 	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
+		scheme,
 		policy.Rules,
 		resultMap,
 		evidence.Evidence.AsMap(),

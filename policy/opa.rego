@@ -50,14 +50,7 @@ result := input.result
 evidence := input.evidence["evidence"]
 endorsements := input.endorsements
 
-format_names := [
-  "UNKNOWN_FORMAT",
-  "PSA_IOT",
-  "TCG_DICE",
-  "TPM_ENACTTRUST",
-]
-
-format := format_names[input.evidence["attestation-format"]]
+scheme := input.scheme
 
 default status = 0
 default instance_identity = 0

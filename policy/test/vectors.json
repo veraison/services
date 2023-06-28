@@ -1,6 +1,7 @@
 [
 	{
 		"title": "malformed policy",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
@@ -12,6 +13,7 @@
 	},
 	{
 		"title": "bad policy",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
@@ -23,6 +25,7 @@
 	},
 	{
 		"title": "incorrect rule value policy",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
@@ -34,6 +37,7 @@
 	},
 	{
 		"title": "empty policy",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
@@ -68,6 +72,7 @@
 	},
 	{
 		"title": "TPM_ENACTTRUST sw-up-todateness FAILURE",
+		"scheme": "TPM_ENACTTRUST",
 		"result": "test/inputs/enacttrust-result.json",
 		"evidence": "test/inputs/enacttrust-evidence.json",
 		"endorsements": "test/inputs/enacttrust-endorsements.json",
@@ -102,6 +107,7 @@
 	},
 	{
 		"title": "TPM_ENACTTRUST sw-up-todateness SUCCESS",
+		"scheme": "TPM_ENACTTRUST",
 		"result": "test/inputs/enacttrust-result.json",
 		"evidence": "test/inputs/enacttrust-evidence-updatedFirmware.json",
 		"endorsements": "test/inputs/enacttrust-endorsements.json",
@@ -135,7 +141,8 @@
 		}
 	},
 	{
-		"title": "PSA_OIT sw-up-todateness FAILURE",
+		"title": "PSA_IOT sw-up-todateness FAILURE",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
@@ -169,7 +176,8 @@
 		}
 	},
 	{
-		"title": "PSA_OIT sw-up-todateness SUCCESS",
+		"title": "PSA_IOT sw-up-todateness SUCCESS",
+		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence-updatedBL.json",
 		"endorsements": "test/inputs/psa-endorsements.json",
