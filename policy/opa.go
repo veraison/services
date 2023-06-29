@@ -56,7 +56,7 @@ func (o *OPA) Evaluate(
 	rego := rego.New(
 		rego.Package("policy"),
 		rego.Module("opa.rego", preambleText),
-		rego.Module("policy.rego", string(policy)),
+		rego.Module("policy.rego", policy),
 		rego.Input(input),
 		rego.Query("outcome"),
 		rego.Dump(log.Writer()),
@@ -76,6 +76,19 @@ func (o *OPA) Evaluate(
 	}
 
 	return resultUpdate, nil
+}
+
+func (o *OPA) Validate(ctx context.Context, policy string) error {
+	rego := rego.New(
+		rego.Package("policy"),
+		rego.Module("opa.rego", preambleText),
+		rego.Module("policy.rego", policy),
+		rego.Query("outcome"),
+		rego.Dump(log.NamedWriter("opa", log.DebugLevel)),
+	)
+
+	_, err := rego.Compile(ctx)
+	return err
 }
 
 func (o *OPA) Close() {

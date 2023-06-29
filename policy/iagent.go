@@ -21,5 +21,6 @@ type IAgent interface {
 		evidence *proto.EvidenceContext,
 		endorsements []string,
 	) (*ear.Appraisal, error)
+	Validate(ctx context.Context, policyRules string) error
 	Close()
 }
