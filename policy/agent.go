@@ -135,6 +135,15 @@ func (o *Agent) Evaluate(
 	}
 }
 
+// Validate performs basic validation of the provided policy rules, returning
+// an error if it fails. the nature of the validation performed is
+// backend-specific, however it would typically amount to a syntax check.
+// Successful validation does not guarantee that the policy will execute
+// correctly againt actual inputs.
+func (o *Agent) Validate(ctx context.Context, policyRules string) error {
+	return o.Backend.Validate(ctx, policyRules)
+}
+
 func (o *Agent) GetBackend() IBackend {
 	return o.Backend
 }
