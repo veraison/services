@@ -1,0 +1,37 @@
+[
+	{
+		"title": "malformed policy",
+		"policy": "test/policies/malformed.rego",
+		"error": "1 error occurred: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^"
+	},
+	{
+		"title": "bad policy",
+		"policy": "test/policies/bad.rego",
+		"error": "1 error occurred: policy.rego:6: rego_unsafe_var_error: var y is unsafe"
+	},
+	{
+		"title": "empty policy",
+		"policy": "test/policies/empty.rego",
+		"error": null
+	},
+	{
+		"title": "empty string",
+		"policy": "test/policies/null.rego",
+		"error": "1 error occurred: policy.rego:0: rego_parse_error: empty module"
+	},
+	{
+		"title": "undefined variable",
+		"policy": "test/policies/undefined.rego",
+		"error": "1 error occurred: policy.rego:3: rego_unsafe_var_error: var ok is unsafe"
+	},
+	{
+		"title": "valid simple",
+		"policy": "test/policies/simple.rego",
+		"error": null
+	},
+	{
+		"title": "valid complex",
+		"policy": "test/policies/sw-up-to-dateness.rego",
+		"error": null
+	}
+]
