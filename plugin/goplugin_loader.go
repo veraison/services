@@ -212,6 +212,22 @@ func GetGoPluginHandleByNameUsing[I IPluggable](ldr *GoPluginLoader, name string
 	return plugged.Handle, nil
 }
 
+func GetGoPluginLoadedAttestationSchemes[I IPluggable](ldr *GoPluginLoader) []string {
+	schemes := make([]string, len(ldr.loadedByName))
+
+	i := 0
+	for _, ictx := range ldr.loadedByName {
+		if _, ok := ictx.(*PluginContext[I]); !ok {
+			continue
+		}
+
+		schemes[i] = ictx.GetAttestationScheme()
+		i += 1
+	}
+
+	return schemes
+}
+
 func GetGoPluginHandleByAttestationSchemeUsing[I IPluggable](
 	ldr *GoPluginLoader,
 	scheme string,

@@ -15,17 +15,22 @@ type IManager[I IPluggable] interface {
 	Close() error
 
 	// IsRegisteredMediaType returns true iff the provided mediaType has
-	// been regesitred with thet manager as hanedled by one of the
+	// been registered with the manager as handled by one of the
 	// discovered plugins.
 	IsRegisteredMediaType(mediaType string) bool
 
 	// GetRegisteredMediaTypes returns a []string of media types that have
-	// been registered with the manger by discovered plugins.
+	// been registered with the manager by discovered plugins.
 	GetRegisteredMediaTypes() []string
+
+	// GetRegisteredAttestationSchemes returns a []string of names for
+	// schemes that have been registered with the manager by discovered
+	// plugins.
+	GetRegisteredAttestationSchemes() []string
 
 	// LookupByMediaType returns a handle (implementation of the managed
 	// interface) to the plugin that handles the specified mediaType. If
-	// the mediaType is not handled by any of the registred plugins, an
+	// the mediaType is not handled by any of the registered plugins, an
 	// error is returned.
 	LookupByMediaType(mediaType string) (I, error)
 
