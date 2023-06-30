@@ -94,6 +94,10 @@ func (o *GoPluginManager[I]) GetRegisteredMediaTypes() []string {
 	return registeredMediatTypes
 }
 
+func (o *GoPluginManager[I]) GetRegisteredAttestationSchemes() []string {
+	return GetGoPluginLoadedAttestationSchemes[I](o.loader)
+}
+
 func (o *GoPluginManager[I]) LookupByName(name string) (I, error) {
 	return GetGoPluginHandleByNameUsing[I](o.loader, name)
 }

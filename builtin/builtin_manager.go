@@ -82,6 +82,10 @@ func (o *BuiltinManager[I]) GetRegisteredMediaTypes() []string {
 	return registeredMediatTypes
 }
 
+func (o *BuiltinManager[I]) GetRegisteredAttestationSchemes() []string {
+	return GetBuiltinLoadedAttestationSchemes[I](o.loader)
+}
+
 func (o *BuiltinManager[I]) LookupByName(name string) (I, error) {
 	return GetBuiltinHandleByNameUsing[I](o.loader, name)
 }
