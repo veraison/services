@@ -5,6 +5,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"text/template"
@@ -281,6 +282,50 @@ func Sync() error {
 // Create a new logger (derived from the global root) with the specified name.
 func Named(name string) *zap.SugaredLogger {
 	return logger.Named(name)
+}
+
+// NamedWriter creates an io.Writer that utilizes a zap logger with the
+// specified name at the specifed level.
+func NamedWriter(name string, level zapcore.Level) io.Writer {
+	return WriterFromZap(Named(name), level)
+}
+
+type logWriter struct {
+	write func(args ...interface{})
+}
+
+func (o logWriter) Write(p []byte) (int, error) {
+	o.write(strings.TrimSuffix(string(p), "\n"))
+	return len(p), nil
+}
+
+const (
+	DebugLevel = zap.DebugLevel
+	TraceLevel = zap.DebugLevel
+	InfoLevel  = zap.InfoLevel
+	WarnLevel  = zap.WarnLevel
+	ErrorLevel = zap.ErrorLevel
+)
+
+// WriterFromZap returns an io.Writer utilzing the provided zap logger at the
+// specified level.
+func WriterFromZap(logger *zap.SugaredLogger, level zapcore.Level) io.Writer {
+	var writeFunc func(args ...interface{})
+
+	switch level {
+	case zapcore.DebugLevel:
+		writeFunc = logger.Debug
+	case zapcore.InfoLevel:
+		writeFunc = logger.Info
+	case zapcore.WarnLevel:
+		writeFunc = logger.Warn
+	case zapcore.ErrorLevel:
+		writeFunc = logger.Error
+	default:
+		panic(fmt.Sprintf("unexpected level name: %q", level))
+	}
+
+	return logWriter{writeFunc}
 }
 
 // Debug uses fmt.Sprint to construct and log a message.
