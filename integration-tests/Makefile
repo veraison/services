@@ -23,7 +23,8 @@ $(DEPLOYMENT_SRC_DIR).built/%:
 
 
 CONTAINER_FLAGS := --env-file  $(DEPLOYMENT_SRC_DIR)deployment.cfg --network veraison-net \
-		   -v $(THIS_DIR):/integration-tests
+		   -v $(THIS_DIR):/integration-tests \
+		   -v $(STORES_VOLUME):/opt/veraison/stores
 
 DEPLOYMENT_DEPS := $(DEPLOYMENT_SRC_DIR).built/network \
 		   $(DEPLOYMENT_SRC_DIR).built/vts-container \
