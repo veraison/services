@@ -1,9 +1,9 @@
 import os
 import json
+from datetime import datetime, timedelta
 from jose import jwt
 
 GENDIR = '__generated__'
-
 
 def save_result(response, scheme, evidence):
     os.makedirs(f'{GENDIR}/results', exist_ok=True)
@@ -49,6 +49,43 @@ def compare_to_expected_result(response, expected, verifier_key):
                 expected_claims["ear.veraison.policy-claims"]
 
 
+def check_policy(response, active, name, rules_file):
+    policy = _extract_policy(response.json())
+
+    _check_within_period(policy['ctime'], timedelta(seconds=60))
+
+    if active is not None:
+        assert policy['active'] == active
+
+    if  name:
+        assert policy['name'] == name
+
+    assert policy['type'] == 'opa'
+
+    if rules_file:
+        with open(rules_file) as fh:
+            rules = fh.read()
+
+        assert policy['rules'] == rules
+
+
+def check_policy_list(response, have_active):
+    active_count = 0
+    for entry in response.json():
+        policy = _extract_policy(entry)
+        _check_within_period(policy['ctime'], timedelta(seconds=60))
+        if policy['active']:
+            active_count += 1
+
+    assert (have_active and active_count == 1) or \
+            (not have_active and active_count == 0)
+
+
+def _check_within_period(dt, period):
+    now = datetime.now().replace(tzinfo=dt.tzinfo)
+    assert now > dt > (now - period)
+
+
 def _extract_appraisal(response, key_file):
     try:
         result = response.json()["result"]
@@ -67,3 +104,7 @@ def _extract_appraisal(response, key_file):
     return decoded["submods"].popitem()[1]
 
 
+def _extract_policy(data):
+    policy = data
+    policy['ctime'] = datetime.fromisoformat(policy['ctime'])
+    return policy

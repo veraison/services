@@ -24,6 +24,7 @@ SRC_DIR := $(THIS_DIR)src/
 BUILDER_CONTEXT := $(CONTEXT_DIR)/builder
 
 vts_FLAGS := -v $(STORES_VOLUME):/opt/veraison/stores
+management_FLAGS := -v $(STORES_VOLUME):/opt/veraison/stores -p $(MANAGEMENT_PORT):$(MANAGEMENT_PORT)
 provisioning_FLAGS := -p $(PROVISIONING_PORT):$(PROVISIONING_PORT)
 verification_FLAGS := -p $(VERIFICATION_PORT):$(VERIFICATION_PORT)
 
@@ -85,7 +86,8 @@ services:
 	@# image targets (possibly because of the need to recursively resolve %,
 	@# but I haven't looked too much into it). Recursively calling $(MAKE) here
 	@# resolves the issue.
-	$(MAKE) .built/vts-container .built/provisioning-container .built/verification-container
+	$(MAKE) .built/vts-container .built/provisioning-container .built/verification-container \
+		.built/management-container
 
 .PHONY: vts
 vts: deploy .built/vts-container
@@ -104,6 +106,12 @@ verification: deploy .built/verification-container
 
 .PHONY: verification-image
 verification-image: deploy .built/verification-image
+
+.PHONY: management
+management: deploy .built/management-container
+
+.PHONY: management-image
+management-image: deploy .built/management-image
 
 .PHONY: network
 network: .built/network
@@ -165,7 +173,7 @@ docker-clean:
 		docker volume rm -f $(DEPLOY_DEST); \
 	fi
 	@# -f ensures exit code 0, even if image doesn't exist
-	docker container rm -f vts-service provisioning-service verification-service
+	docker container rm -f vts-service provisioning-service verification-service management-service
 	docker volume rm -f veraison-logs veraison-stores
 	@# ubuntu uses an older version of docker without -f option for network; hence the || : cludge
 	docker network rm $(VERAISON_NETWORK) || :

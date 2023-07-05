@@ -26,11 +26,6 @@ CONTAINER_FLAGS := --env-file  $(DEPLOYMENT_SRC_DIR)deployment.cfg --network ver
 		   -v $(THIS_DIR):/integration-tests \
 		   -v $(STORES_VOLUME):/opt/veraison/stores
 
-DEPLOYMENT_DEPS := $(DEPLOYMENT_SRC_DIR).built/network \
-		   $(DEPLOYMENT_SRC_DIR).built/vts-container \
-		   $(DEPLOYMENT_SRC_DIR).built/provisioning-container \
-		   $(DEPLOYMENT_SRC_DIR).built/verification-container
-
 CLEANFILES := .pytest_cache utils/__pycache__ __generated__
 
 .PHONY: image
