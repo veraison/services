@@ -31,7 +31,7 @@ function deploy() {
     cp $BUILD_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
     cp $BUILD_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
     cp $BUILD_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
-    cp $BUILD_DIR/vts/cmd/vts-service/vts-service $DEPLOY_DIR/
+    cp $BUILD_DIR/management/cmd/management-service/management-service $DEPLOY_DIR/
     cp $BUILD_DIR/scheme/bin/* $DEPLOY_DIR/plugins/
     cp $BUILD_DIR/deployments/docker/src/skey.jwk $DEPLOY_DIR/
     cp $BUILD_DIR/deployments/docker/src/service-entrypoint $DEPLOY_DIR/
