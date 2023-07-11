@@ -1,13 +1,7 @@
-# Copyright 2022 Contributors to the Veraison project.
+# Copyright 2023 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 .DEFAULT_GOAL := test
-
-INTERFACES := ../provisioner/iprovisioner.go
-
-MOCKPKG := mocks
-
-lint-hook-pre: _mocks
 
 include ../../mk/common.mk
 include ../../mk/pkg.mk

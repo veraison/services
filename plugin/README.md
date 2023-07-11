@@ -78,7 +78,7 @@ here](https://pkg.go.dev/github.com/hashicorp/go-plugin) for further details.
 ## Creating plugins
 
 > :information_source: For the specifics of how to create implementations of the already
-> defined `IEndorsmentHandler` and `IEvidinceHandler` Veraison plugins, [see
+> defined `IEndorsmentHandler` and `IEvidenceHandler` Veraison plugins, [see
 > here](../handler/README.md).
 
 Plugins are created by implementing the corresponding interface, registering

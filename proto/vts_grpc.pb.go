@@ -25,10 +25,8 @@ type VTSClient interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
-	// Service endpoints that are used to store Reference Values
-	// and Trust Anchors to the endorsement store
-	AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error)
-	AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error)
+	GetSupportedProvisioningMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	SubmitEndorsements(ctx context.Context, in *SubmitEndorsementsRequest, opts ...grpc.CallOption) (*SubmitEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 }
@@ -68,18 +66,18 @@ func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *vTSClient) AddRefValues(ctx context.Context, in *AddRefValuesRequest, opts ...grpc.CallOption) (*AddRefValuesResponse, error) {
-	out := new(AddRefValuesResponse)
-	err := c.cc.Invoke(ctx, "/proto.VTS/AddRefValues", in, out, opts...)
+func (c *vTSClient) GetSupportedProvisioningMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+	out := new(MediaTypeList)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedProvisioningMediaTypes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *vTSClient) AddTrustAnchor(ctx context.Context, in *AddTrustAnchorRequest, opts ...grpc.CallOption) (*AddTrustAnchorResponse, error) {
-	out := new(AddTrustAnchorResponse)
-	err := c.cc.Invoke(ctx, "/proto.VTS/AddTrustAnchor", in, out, opts...)
+func (c *vTSClient) SubmitEndorsements(ctx context.Context, in *SubmitEndorsementsRequest, opts ...grpc.CallOption) (*SubmitEndorsementsResponse, error) {
+	out := new(SubmitEndorsementsResponse)
+	err := c.cc.Invoke(ctx, "/proto.VTS/SubmitEndorsements", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,10 +103,8 @@ type VTSServer interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
-	// Service endpoints that are used to store Reference Values
-	// and Trust Anchors to the endorsement store
-	AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error)
-	AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error)
+	GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	mustEmbedUnimplementedVTSServer()
@@ -127,11 +123,11 @@ func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken)
 func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedVerificationMediaTypes not implemented")
 }
-func (UnimplementedVTSServer) AddRefValues(context.Context, *AddRefValuesRequest) (*AddRefValuesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddRefValues not implemented")
+func (UnimplementedVTSServer) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedProvisioningMediaTypes not implemented")
 }
-func (UnimplementedVTSServer) AddTrustAnchor(context.Context, *AddTrustAnchorRequest) (*AddTrustAnchorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddTrustAnchor not implemented")
+func (UnimplementedVTSServer) SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitEndorsements not implemented")
 }
 func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEARSigningPublicKey not implemented")
@@ -203,38 +199,38 @@ func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_AddRefValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddRefValuesRequest)
+func _VTS_GetSupportedProvisioningMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).AddRefValues(ctx, in)
+		return srv.(VTSServer).GetSupportedProvisioningMediaTypes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/AddRefValues",
+		FullMethod: "/proto.VTS/GetSupportedProvisioningMediaTypes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).AddRefValues(ctx, req.(*AddRefValuesRequest))
+		return srv.(VTSServer).GetSupportedProvisioningMediaTypes(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_AddTrustAnchor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddTrustAnchorRequest)
+func _VTS_SubmitEndorsements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitEndorsementsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).AddTrustAnchor(ctx, in)
+		return srv.(VTSServer).SubmitEndorsements(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/AddTrustAnchor",
+		FullMethod: "/proto.VTS/SubmitEndorsements",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).AddTrustAnchor(ctx, req.(*AddTrustAnchorRequest))
+		return srv.(VTSServer).SubmitEndorsements(ctx, req.(*SubmitEndorsementsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -277,12 +273,12 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VTS_GetSupportedVerificationMediaTypes_Handler,
 		},
 		{
-			MethodName: "AddRefValues",
-			Handler:    _VTS_AddRefValues_Handler,
+			MethodName: "GetSupportedProvisioningMediaTypes",
+			Handler:    _VTS_GetSupportedProvisioningMediaTypes_Handler,
 		},
 		{
-			MethodName: "AddTrustAnchor",
-			Handler:    _VTS_AddTrustAnchor_Handler,
+			MethodName: "SubmitEndorsements",
+			Handler:    _VTS_SubmitEndorsements_Handler,
 		},
 		{
 			MethodName: "GetEARSigningPublicKey",

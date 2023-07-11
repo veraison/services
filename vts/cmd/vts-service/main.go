@@ -65,26 +65,66 @@ func main() {
 
 	log.Info("loading attestation schemes")
 	var pluginManager plugin.IManager[handler.IEvidenceHandler]
+	var epluginManager plugin.IManager[handler.IEndorsementHandler]
 
+	psubs, err := config.GetSubs(subs["plugin"], "go-plugin")
+	if err != nil {
+		log.Fatalf("could not get subs: %v", err)
+	}
 	if config.SchemeLoader == "plugins" { // nolint:gocritic
-		pluginManager, err = plugin.CreateGoPluginManager(
-			subs["plugin"], log.Named("plugin"),
-			"evidence-handler", handler.EvidenceHandlerRPC)
+		loader, err := plugin.CreateGoPluginLoader(
+			psubs["go-plugin"].AllSettings(),
+			log.Named("plugin"))
 		if err != nil {
-			log.Fatalf("plugin manager initialization failed: %v", err)
+			log.Fatalf("could not create plugin loader: %v", err)
+		}
+
+		pluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"evidence-handler",
+			log.Named("plugin"),
+			handler.EvidenceHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create evidence PluginManagerWithLoader: %v", err)
+		}
+		epluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"endorsement-handler",
+			log.Named("plugin"),
+			handler.EndorsementHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create endorsement PluginManagerWithLoader: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
-		pluginManager, err = builtin.CreateBuiltinManager[handler.IEvidenceHandler](
-			subs["plugin"], log.Named("builtin"), "evidence-handler")
+		loader, err := builtin.CreateBultinLoader(
+			psubs["builtin"].AllSettings(),
+			log.Named("builtin"))
 		if err != nil {
-			log.Fatalf("scheme manager initialization failed: %v", err)
+			log.Fatalf("could not create builtin loader: %v", err)
+		}
+		pluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEvidenceHandler](
+			loader, log.Named("builtin"),
+			"evidence-handler")
+		if err != nil {
+			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
+		}
+		epluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
+			loader, log.Named("builtin"),
+			"endorsement-handler")
+		if err != nil {
+			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
 		}
 	} else {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
 
-	log.Info("Registered media types:")
+	log.Info("Evidence handler registered media types:")
 	for _, mt := range pluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
+	}
+
+	log.Info("Endorsement handler registered media types:")
+	for _, mt := range epluginManager.GetRegisteredMediaTypes() {
 		log.Info("\t", mt)
 	}
 
@@ -98,9 +138,9 @@ func main() {
 	// from this point onwards taStore, enStore, pluginManager, policyManager
 	// and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		pluginManager, policyManager, earSigner, log.Named("vts"))
+		pluginManager, epluginManager, policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], pluginManager); err != nil {
+	if err = vts.Init(subs["vts"], pluginManager, epluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

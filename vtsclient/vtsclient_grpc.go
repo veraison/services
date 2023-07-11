@@ -83,40 +83,6 @@ func (o *GRPC) GetServiceState(
 	return c.GetServiceState(ctx, in, opts...)
 }
 
-func (o *GRPC) AddRefValues(
-	ctx context.Context,
-	in *proto.AddRefValuesRequest,
-	opts ...grpc.CallOption,
-) (*proto.AddRefValuesResponse, error) {
-	if err := o.EnsureConnection(); err != nil {
-		return nil, NewNoConnectionError("AddSwComponents", err)
-	}
-
-	c := o.GetProvisionerClient()
-	if c == nil {
-		return nil, ErrNoClient
-	}
-
-	return c.AddRefValues(ctx, in, opts...)
-}
-
-func (o *GRPC) AddTrustAnchor(
-	ctx context.Context,
-	in *proto.AddTrustAnchorRequest,
-	opts ...grpc.CallOption,
-) (*proto.AddTrustAnchorResponse, error) {
-	if err := o.EnsureConnection(); err != nil {
-		return nil, NewNoConnectionError("AddTrustAnchor", err)
-	}
-
-	c := o.GetProvisionerClient()
-	if c == nil {
-		return nil, ErrNoClient
-	}
-
-	return c.AddTrustAnchor(ctx, in, opts...)
-}
-
 func (o *GRPC) GetAttestation(
 	ctx context.Context, in *proto.AttestationToken, opts ...grpc.CallOption,
 ) (*proto.AppraisalContext, error) {
@@ -145,6 +111,34 @@ func (o *GRPC) GetSupportedVerificationMediaTypes(
 	}
 
 	return c.GetSupportedVerificationMediaTypes(ctx, in, opts...)
+}
+
+func (o *GRPC) GetSupportedProvisioningMediaTypes(
+	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
+) (*proto.MediaTypeList, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetSupportedProvisioningMediaTypes", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetSupportedProvisioningMediaTypes(ctx, in, opts...)
+}
+
+func (o *GRPC) SubmitEndorsements(
+	ctx context.Context, in *proto.SubmitEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.SubmitEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetSupportedVerificationMediaTypes", err)
+	}
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+	return c.SubmitEndorsements(ctx, in, opts...)
 }
 
 func (o *GRPC) GetProvisionerClient() proto.VTSClient {
