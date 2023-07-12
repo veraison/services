@@ -599,7 +599,7 @@ func TestHandler_GetWellKnownProvisioningInfo_ok(t *testing.T) {
 	expectedBody := capability.WellKnownInfo{
 		MediaTypes:   supportedMediaTypes,
 		Version:      testGoodServiceState.ServerVersion,
-		ServiceState: testGoodServiceState.Status.String(),
+		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
 	}
 
@@ -643,7 +643,7 @@ func TestHandler_GetWellKnownProvisioningInfo_GetRegisteredMediaTypes_empty(t *t
 	expectedBody := capability.WellKnownInfo{
 		MediaTypes:   []string{},
 		Version:      testGoodServiceState.ServerVersion,
-		ServiceState: testGoodServiceState.Status.String(),
+		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
 	}
 

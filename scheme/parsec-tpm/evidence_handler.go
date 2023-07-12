@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/veraison/ear"
-	"github.com/veraison/parsectpm"
+	"github.com/veraison/parsec/tpm"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
@@ -76,7 +76,7 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.End
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var ev parsectpm.Evidence
+	var ev tpm.Evidence
 	err := ev.FromCBOR(token.Data)
 	if err != nil {
 		return "", handler.BadEvidence(err)
@@ -88,13 +88,13 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	}
 	kid := *kat.KID
 	instance_id := base64.StdEncoding.EncodeToString(kid)
-	return parsecTpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id), nil
+	return tpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id), nil
 
 }
 
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
 	var (
-		evidence    parsectpm.Evidence
+		evidence    tpm.Evidence
 		endorsement TaEndorsements
 		extracted   handler.ExtractedClaims
 	)
@@ -115,14 +115,14 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 	}
 
 	class_id := *endorsement.Attr.ClassID
-	extracted.ReferenceID = parsecTpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
+	extracted.ReferenceID = tpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
 	return &extracted, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
 	var (
 		endorsement TaEndorsements
-		ev          parsectpm.Evidence
+		ev          tpm.Evidence
 	)
 
 	if err := ev.FromCBOR(token.Data); err != nil {
@@ -189,10 +189,10 @@ func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]strin
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
 	}
-	return []string{parsecTpmLookupKey(scope, tenantID, class, instance)}, nil
+	return []string{tpmLookupKey(scope, tenantID, class, instance)}, nil
 }
 
-func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
+func tpmLookupKey(scope, tenantID, class, instance string) string {
 	var absPath []string
 
 	switch scope {
@@ -211,7 +211,7 @@ func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
 	return u.String()
 }
 
-func evidenceAsMap(e parsectpm.Evidence) (map[string]interface{}, error) {
+func evidenceAsMap(e tpm.Evidence) (map[string]interface{}, error) {
 	data, err := e.ToJSON()
 	if err != nil {
 		return nil, err
@@ -280,8 +280,8 @@ func populateAttestationResult(
 	return nil
 }
 
-func mapAsEvidence(in map[string]interface{}) (*parsectpm.Evidence, error) {
-	evidence := &parsectpm.Evidence{}
+func mapAsEvidence(in map[string]interface{}) (*tpm.Evidence, error) {
+	evidence := &tpm.Evidence{}
 	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
@@ -354,7 +354,7 @@ func concatHash(endorsements []Endorsements) ([]byte, error) {
 }
 
 // hashFunc returns the hash associated with the algorithms supported
-// within parsectpm library
+// within tpm library
 func hashFunc(alg uint64) crypto.Hash {
 	switch alg {
 	case swid.Sha256:

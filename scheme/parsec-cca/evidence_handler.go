@@ -1,42 +1,48 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-
-package cca_ssd_platform
+package parsec_cca
 
 import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 
-	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
+	"github.com/veraison/go-cose"
+	parsec_cca "github.com/veraison/parsec/cca"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
-	structpb "google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/structpb"
+)
+
+const (
+	ScopeTrustAnchor = "trust anchor"
+	ScopeRefValues   = "ref values"
 )
 
 type SwAttr struct {
-	ImplID           []byte `json:"CCA_SSD_PLATFORM.impl-id"`
-	Model            string `json:"CCA_SSD_PLATFORM.hw-model"`
-	Vendor           string `json:"CCA_SSD_PLATFORM.hw-vendor"`
-	MeasDesc         string `json:"CCA_SSD_PLATFORM.measurement-desc"`
-	MeasurementType  string `json:"CCA_SSD_PLATFORM.measurement-type"`
-	MeasurementValue []byte `json:"CCA_SSD_PLATFORM.measurement-value"`
-	SignerID         []byte `json:"CCA_SSD_PLATFORM.signer-id"`
-	Version          string `json:"CCA_SSD_PLATFORM.version"`
+	ImplID           []byte `json:"PARSEC_CCA.impl-id"`
+	Model            string `json:"PARSEC_CCA.hw-model"`
+	Vendor           string `json:"PARSEC_CCA.hw-vendor"`
+	MeasDesc         string `json:"PARSEC_CCA.measurement-desc"`
+	MeasurementType  string `json:"PARSEC_CCA.measurement-type"`
+	MeasurementValue []byte `json:"PARSEC_CCA.measurement-value"`
+	SignerID         []byte `json:"PARSEC_CCA.signer-id"`
+	Version          string `json:"PARSEC_CCA.version"`
 }
 
 type CcaPlatformCfg struct {
-	ImplID []byte `json:"CCA_SSD_PLATFORM.impl-id"`
-	Model  string `json:"CCA_SSD_PLATFORM.hw-model"`
-	Vendor string `json:"CCA_SSD_PLATFORM.hw-vendor"`
-	Label  string `json:"CCA_SSD_PLATFORM.platform-config-label"`
-	Value  []byte `json:"CCA_SSD_PLATFORM.platform-config-id"`
+	ImplID []byte `json:"PARSEC_CCA.impl-id"`
+	Model  string `json:"PARSEC_CCA.hw-model"`
+	Vendor string `json:"PARSEC_CCA.hw-vendor"`
+	Label  string `json:"PARSEC_CCA.platform-config-label"`
+	Value  []byte `json:"PARSEC_CCA.platform-config-id"`
 }
 
 type Endorsements struct {
@@ -47,11 +53,11 @@ type Endorsements struct {
 }
 
 type TaAttr struct {
-	Model    string `json:"CCA_SSD_PLATFORM.hw-model"`
-	Vendor   string `json:"CCA_SSD_PLATFORM.hw-vendor"`
-	VerifKey string `json:"CCA_SSD_PLATFORM.iak-pub"`
-	ImplID   []byte `json:"CCA_SSD_PLATFORM.impl-id"`
-	InstID   string `json:"CCA_SSD_PLATFORM.inst-id"`
+	Model    string `json:"PARSEC_CCA.hw-model"`
+	Vendor   string `json:"PARSEC_CCA.hw-vendor"`
+	VerifKey string `json:"PARSEC_CCA.iak-pub"`
+	ImplID   []byte `json:"PARSEC_CCA.impl-id"`
+	InstID   string `json:"PARSEC_CCA.inst-id"`
 }
 
 type TaEndorsements struct {
@@ -64,7 +70,7 @@ type TaEndorsements struct {
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
-	return "cca-evidence-handler"
+	return "parsec-cca-evidence-handler"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {
@@ -90,13 +96,13 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
+	implID, err = common.GetMandatoryPathSegment("PARSEC_CCA.impl-id", fields)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
 	}
 
 	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
-	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", lookupKey)
+	log.Debugf("PARSEC CCA Plugin Reference Value Look Up Key= %s\n", lookupKey)
 
 	return []string{lookupKey}, nil
 }
@@ -114,25 +120,25 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.End
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
+	implID, err = common.GetMandatoryPathSegment("PARSEC_CCA.impl-id", fields)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	instID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.inst-id", fields)
+	instID, err = common.GetMandatoryPathSegment("PARSEC_CCA.inst-id", fields)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
 	lookupKey := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
-	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", lookupKey)
+	log.Debugf("PARSEC CCA Plugin TA Look Up Key= %s\n", lookupKey)
 	return []string{lookupKey}, nil
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var ccaToken ccatoken.Evidence
+	var evidence parsec_cca.Evidence
 
-	err := ccaToken.FromCBOR(token.Data)
+	err := evidence.FromCBOR(token.Data)
 	if err != nil {
 		return "", handler.BadEvidence(err)
 	}
@@ -140,55 +146,61 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	return arm.TaLookupKey(
 		SchemeName,
 		token.TenantId,
-		arm.MustImplIDString(ccaToken.PlatformClaims),
-		arm.MustInstIDString(ccaToken.PlatformClaims),
+		arm.MustImplIDString(evidence.Pat.PlatformClaims),
+		arm.MustInstIDString(evidence.Pat.PlatformClaims),
 	), nil
 }
 
-func (s EvidenceHandler) ExtractClaims(
-	token *proto.AttestationToken,
-	trustAnchor string,
-) (*handler.ExtractedClaims, error) {
+func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
+	var (
+		extracted handler.ExtractedClaims
+		evidence  parsec_cca.Evidence
+		claimsSet = make(map[string]interface{})
+		kat       = make(map[string]interface{})
+	)
 
-	var ccaToken ccatoken.Evidence
-
-	if err := ccaToken.FromCBOR(token.Data); err != nil {
+	if err := evidence.FromCBOR(token.Data); err != nil {
 		return nil, handler.BadEvidence(err)
 	}
-
-	var extracted handler.ExtractedClaims
-
-	claimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
+	kat["nonce"] = *evidence.Kat.Nonce
+	key := evidence.Kat.Cnf.COSEKey
+	ck, err := key.MarshalCBOR()
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
+
+	kat["akpub"] = base64.StdEncoding.EncodeToString(ck)
+
+	claimsSet["kat"] = kat
+	pmap, err := common.ClaimsToMap(evidence.Pat.PlatformClaims)
+	if err != nil {
+		return nil, handler.BadEvidence(err)
+	}
+	claimsSet["cca.platform"] = pmap
+	rmap, err := common.ClaimsToMap(evidence.Pat.RealmClaims)
+	if err != nil {
+		return nil, handler.BadEvidence(err)
+	}
+	claimsSet["cca.realm"] = rmap
 
 	extracted.ClaimsSet = claimsSet
 
 	extracted.ReferenceID = arm.RefValLookupKey(
 		SchemeName,
 		token.TenantId,
-		arm.MustImplIDString(ccaToken.PlatformClaims),
+		arm.MustImplIDString(evidence.Pat.PlatformClaims),
 	)
-	log.Debug("extracted Reference ID Key = %s", extracted.ReferenceID)
+	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
 
-// ValidateEvidenceIntegrity, decodes CCA collection and then invokes Verify API of ccatoken library
-// which verifies the signature on the platform part of CCA collection, using supplied trust anchor
-// and internally verifies the realm part of CCA token using realm public key extracted from
-// realm token.
-func (s EvidenceHandler) ValidateEvidenceIntegrity(
-	token *proto.AttestationToken,
-	trustAnchor string,
-	endorsementsStrings []string,
-) error {
+func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
 	var (
 		endorsement TaEndorsements
-		ccaToken    ccatoken.Evidence
+		evidence    parsec_cca.Evidence
 	)
 
-	if err := ccaToken.FromCBOR(token.Data); err != nil {
+	if err := evidence.FromCBOR(token.Data); err != nil {
 		return handler.BadEvidence(err)
 	}
 
@@ -202,10 +214,10 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
 
-	if err = ccaToken.Verify(pk); err != nil {
-		return handler.BadEvidence(err)
+	if err = evidence.Verify(pk); err != nil {
+		return fmt.Errorf("failed to verify signature: %w", err)
 	}
-	log.Debug("CCA platform token signature, realm token signature and cryptographic binding verified")
+	log.Debug("Parsec CCA token signature, verified")
 	return nil
 }
 
@@ -227,19 +239,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 	}
 
 	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
-
-	// TO DO: Handle Unprocessed evidence when new Attestation Result interface
-	// is ready. Please see issue #105
 	return result, err
-}
-
-func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
-	data, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return psatoken.DecodeJSONClaims(data)
 }
 
 func populateAttestationResult(
@@ -247,16 +247,50 @@ func populateAttestationResult(
 	evidence map[string]interface{},
 	endorsements []Endorsements,
 ) error {
-	claims, err := mapToClaims(evidence)
-	if err != nil {
-		return err
-	}
-
 	appraisal := result.Submods[SchemeName]
 
 	// once the signature on the token is verified, we can claim the HW is
 	// authentic
 	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
+	kmap, ok := evidence["kat"]
+	if !ok {
+		return handler.BadEvidence(errors.New("no key attestation map in the evidence"))
+	}
+	kat := kmap.(map[string]interface{})
+
+	key, ok := kat["akpub"]
+	if !ok {
+		return handler.BadEvidence(errors.New("no key in the evidence"))
+	}
+	var COSEKey cose.Key
+
+	kb, err := base64.StdEncoding.DecodeString(key.(string))
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+	err = COSEKey.UnmarshalCBOR(kb)
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+	// Extract Public Key and set the Veraison Extension
+	pk, err := COSEKey.PublicKey()
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+
+	if err := appraisal.SetKeyAttestation(pk); err != nil {
+		return fmt.Errorf("setting extracted public key: %w", err)
+	}
+
+	cp, ok := evidence["cca.platform"]
+	if !ok {
+		return handler.BadEvidence(errors.New("no cca platform in the evidence"))
+	}
+	pmap := cp.(map[string]interface{})
+	claims, err := mapToClaims(pmap)
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
 
 	rawLifeCycle, err := claims.GetSecurityLifeCycle()
 	if err != nil {
@@ -275,7 +309,7 @@ func populateAttestationResult(
 		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
 	}
 
-	swComps := filterRefVal(endorsements, "CCA_SSD_PLATFORM.sw-component")
+	swComps := filterRefVal(endorsements, "PARSEC_CCA.sw-component")
 	match := matchSoftware(claims, swComps)
 	if match {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
@@ -286,7 +320,7 @@ func populateAttestationResult(
 		log.Debug("matchSoftware Failed")
 	}
 
-	platformConfig := filterRefVal(endorsements, "CCA_SSD_PLATFORM.platform-config")
+	platformConfig := filterRefVal(endorsements, "PARSEC_CCA.platform-config")
 	match = matchPlatformConfig(claims, platformConfig)
 
 	if match {
@@ -300,8 +334,16 @@ func populateAttestationResult(
 	appraisal.UpdateStatusFromTrustVector()
 
 	appraisal.VeraisonAnnotatedEvidence = &evidence
-
 	return nil
+}
+
+func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	return psatoken.DecodeJSONClaims(data)
 }
 
 func filterRefVal(endorsements []Endorsements, key string) []Endorsements {
@@ -323,7 +365,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 	}
 
 	for _, c := range swComps {
-		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
 		evidenceComponents[key] = c
 	}
 	matched := false
@@ -336,14 +378,14 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 			return false
 		}
 
-		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue) + attr.MeasurementType
 		evComp, ok := evidenceComponents[key]
 		if !ok {
 			matched = false
 			break
 		}
 
-		log.Debug("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
+		log.Debugf("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
 		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
 		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
 		versionMatched := attr.Version == "" || attr.Version == *evComp.Version

@@ -8,6 +8,10 @@ schemes. Currently the following schemes are implemented:
   attestation (note: this does not implement any specific DICE architecture).
 - `tmp-enacttrust`: TPM-based attestation for
   [EnactTrust](https://www.enacttrust.com/) security cloud.
+- `parsec-tpm` : Parsec TPM based hardware-backed attestation, details
+  [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-tpm.md)
+- `parsec-cca` : Parsec CCA based harware-backed attestation, details
+   [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 
 
 ## Implementing Attestation Scheme Support

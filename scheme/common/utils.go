@@ -5,12 +5,29 @@ package common
 import (
 	"crypto"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+type ClaimMapper interface {
+	ToJSON() ([]byte, error)
+}
+
+func ClaimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
+	data, err := mapper.ToJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	var out map[string]interface{}
+	err = json.Unmarshal(data, &out)
+
+	return out, err
+}
 
 func GetFieldsFromParts(parts *structpb.Struct) (map[string]*structpb.Value, error) {
 	if parts == nil {

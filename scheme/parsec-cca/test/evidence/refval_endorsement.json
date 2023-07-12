@@ -1,0 +1,12 @@
+{
+    "scheme": "PARSEC_CCA",
+    "type":"REFERENCE_VALUE",
+    "subType": "PARSEC_CCA.platform-config",
+    "attributes":{
+        "PARSEC_CCA.hw-model":"RoadRunner",
+        "PARSEC_CCA.hw-vendor":"ACME", 
+        "PARSEC_CCA.impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "PARSEC_CCA.platform-config-label": "abcd",
+        "PARSEC_CCA.platform-config-id": "AQID"
+    }
+}

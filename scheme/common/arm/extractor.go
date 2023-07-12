@@ -60,7 +60,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		} else if m.Key.IsCCAPlatformConfigID() {
-			if o.Scheme != "CCA_SSD_PLATFORM" {
+			if (o.Scheme != "CCA_SSD_PLATFORM") && (o.Scheme != "PARSEC_CCA") {
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Scheme)
 			}
 			var ccaPlatformConfigID CCAPlatformConfigID
