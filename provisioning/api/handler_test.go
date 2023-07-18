@@ -294,7 +294,6 @@ func TestHandler_GetWellKnownProvisioningInfo_GetRegisteredMediaTypes_empty(t *t
 	expectedCode := http.StatusOK
 	expectedType := capability.WellKnownMediaType
 	expectedBody := capability.WellKnownInfo{
-		MediaTypes:   []string{},
 		Version:      testGoodServiceState.ServerVersion,
 		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
