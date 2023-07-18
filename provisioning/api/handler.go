@@ -275,7 +275,7 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 	endpoints := getProvisioningEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, version, state, endpoints)
+	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, nil, version, state, endpoints)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
