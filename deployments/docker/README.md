@@ -82,6 +82,10 @@ make targets:
 want to substitute the debug container in place of one of the service
 containers.
 
+`DEBUG_PORT`: if set with a port number, that port on the debug container will
+be forwarded to the host (debug container is run with `-p
+$(DEBUG_PORT):$(DEBUG_PORT)`).
+
 `DOCKER_BUILD_FLAGS`: additional flags to be passed to Docker when building
 various images. This is passed to all image build invocations, so should only
 be used for globally-applicable flags such as `--no-cache`.

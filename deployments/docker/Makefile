@@ -27,6 +27,10 @@ vts_FLAGS := -v $(STORES_VOLUME):/opt/veraison/stores
 provisioning_FLAGS := -p $(PROVISIONING_PORT):$(PROVISIONING_PORT)
 verification_FLAGS := -p $(VERIFICATION_PORT):$(VERIFICATION_PORT)
 
+ifneq ($(DEBUG_PORT),)
+DEBUG_PORT_FLAG := -p $(DEBUG_PORT):$(DEBUG_PORT)
+endif
+
 .PHONY: all
 all: builder build deploy deployment prune
 
@@ -71,7 +75,7 @@ debug: .built/builder .built/network
 		--network $(VERAISON_NETWORK) \
 		-v $(STORES_VOLUME):/veraison/stores -v $(LOGS_VOLUME):/veraison/logs \
 		-v $(THIS_DIR)../..:/veraison/build -v $(DEPLOY_DEST):/veraison/deploy \
-		$(DEBUG_FLAGS) --hostname $(DEBUG_HOST)\
+		$(DEBUG_FLAGS) $(DEBUG_PORT_FLAG) --hostname $(DEBUG_HOST)\
 		-i -t --user $(DEBUG_USER) --entrypoint /bin/bash \
 		veraison/builder
 
