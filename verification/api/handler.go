@@ -562,7 +562,7 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 	endpoints := getVerificationEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, version, state, endpoints)
+	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, nil, version, state, endpoints)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
