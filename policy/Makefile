@@ -1,11 +1,9 @@
-# Copyright 2022 Contributors to the Veraison project.
+# Copyright 2022-2023 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 .DEFAULT_GOAL := test
 
 GOPKG := github.com/veraison/services/policy
-
-SUBDIR := cmd/polcli
 
 INTERFACES := ibackend.go
 
@@ -18,4 +16,3 @@ include ../mk/common.mk
 include ../mk/pkg.mk
 include ../mk/lint.mk
 include ../mk/test.mk
-include ../mk/subdir.mk

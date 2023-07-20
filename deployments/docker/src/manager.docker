@@ -4,7 +4,7 @@
 FROM debian as veraison-verification
 
 # User identity that will be used to build the project. This should be
-# overriden at build time to match the host user running the builder, who owns
+# overriden at build time to match the host user running the manager, who owns
 # the git checkout of the source.
 ARG MANAGER_UID=1000
 ARG MANAGER_GID=1000
@@ -32,7 +32,7 @@ USER manager
 
 WORKDIR /opt/veraison
 
-ADD --chown=manager:nogroup utils/evcli utils/cocli utils/polcli ./utils/
+ADD --chown=manager:nogroup utils/evcli utils/cocli utils/pocli ./utils/
 ADD --chown=manager:nogroup manager-dispatcher ./
 
 ENTRYPOINT ["/opt/veraison/manager-dispatcher"]
