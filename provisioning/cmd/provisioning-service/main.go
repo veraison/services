@@ -9,12 +9,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
-	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/provisioning/api"
+	"github.com/veraison/services/provisioning/provisioner"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -39,7 +37,7 @@ func main() {
 		ListenAddr: DefaultListenAddr,
 	}
 
-	subs, err := config.GetSubs(v, "provisioning", "plugin", "*vts", "*logging")
+	subs, err := config.GetSubs(v, "provisioning", "vts", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,31 +55,6 @@ func main() {
 		log.Fatalf("Could not load config: %v", err)
 	}
 
-	log.Info("loading attestation schemes")
-	var pluginManager plugin.IManager[handler.IEndorsementHandler]
-
-	if config.SchemeLoader == "plugins" { // nolint:gocritic
-		pluginManager, err = plugin.CreateGoPluginManager(
-			subs["plugin"], log.Named("plugin"),
-			"endorsement-handler", handler.EndorsementHandlerRPC)
-		if err != nil {
-			log.Fatalf("plugin manager initialization failed: %v", err)
-		}
-	} else if config.SchemeLoader == "builtin" {
-		pluginManager, err = builtin.CreateBuiltinManager[handler.IEndorsementHandler](
-			subs["plugin"], log.Named("builtin"), "endorsement-handler")
-		if err != nil {
-			log.Fatalf("scheme manager initialization failed: %v", err)
-		}
-	} else {
-		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
-	}
-
-	log.Info("Registered media types:")
-	for _, mt := range pluginManager.GetRegisteredMediaTypes() {
-		log.Info("\t", mt)
-	}
-
 	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()
 	if err := vtsClient.Init(subs["vts"]); err != nil {
@@ -96,14 +69,17 @@ func main() {
 			"error", err)
 	}
 
+	log.Info("initializing provisioner")
+	provisioner := provisioner.New(vtsClient)
+
 	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
-	apiHandler := api.NewHandler(pluginManager, vtsClient, log.Named("api"))
+	apiHandler := api.NewHandler(provisioner, log.Named("api"))
 	go apiServer(apiHandler, cfg.ListenAddr)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	done := make(chan bool, 1)
-	go terminator(sigs, done, pluginManager)
+	go terminator(sigs, done)
 	<-done
 	log.Info("bye!")
 }
@@ -111,16 +87,10 @@ func main() {
 func terminator(
 	sigs chan os.Signal,
 	done chan bool,
-	pluginManager plugin.IManager[handler.IEndorsementHandler],
 ) {
 	sig := <-sigs
 
 	log.Info(sig, "received, exiting")
-
-	log.Info("stopping the plugin manager")
-	if err := pluginManager.Close(); err != nil {
-		log.Error("plugin manager termination failed:", err)
-	}
 
 	done <- true
 }

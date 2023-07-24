@@ -18,19 +18,33 @@ message Evidence {
   google.protobuf.Struct value = 1;
 }
 
+message SubmitEndorsementsRequest {
+  string media_type =1;
+  bytes data  = 2;
+}
+
+message SubmitEndorsementsResponse {
+  Status status = 1;
+}
+/* 
+The TrustAnchor and Reference Value messages, below 
+and associated structures do not belong here
+They will be removed in subsequent refactor
+Please see issue #176
+*/
+// protolint:disable ENUM_FIELD_NAMES_PREFIX
+enum EndorsementType {
+  UNSPECIFIED = 0;
+  REFERENCE_VALUE = 1;
+  VERIFICATION_KEY = 2;
+}
+
 message AddRefValuesRequest {
   repeated Endorsement reference_values = 1;
 }
 
 message AddRefValuesResponse {
   Status status = 1;
-}
-
-// protolint:disable ENUM_FIELD_NAMES_PREFIX
-enum EndorsementType {
-  UNSPECIFIED = 0;
-  REFERENCE_VALUE = 1;
-  VERIFICATION_KEY = 2;
 }
 
 message Endorsement {
@@ -70,13 +84,8 @@ service VTS {
   rpc GetAttestation(AttestationToken) returns (AppraisalContext);
   rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 
-  // Service endpoints that are used to store Reference Values
-  // and Trust Anchors to the endorsement store
-  rpc AddRefValues(AddRefValuesRequest) returns (AddRefValuesResponse);
-  rpc AddTrustAnchor(AddTrustAnchorRequest) returns (AddTrustAnchorResponse);
-  // TODO When we move the provisiong plugins under VTS we need to enable this
-  // TODO interface too.
-  // rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  rpc SubmitEndorsements(SubmitEndorsementsRequest) returns (SubmitEndorsementsResponse);
 
   // Returns the public key used to sign evidence.
   rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);

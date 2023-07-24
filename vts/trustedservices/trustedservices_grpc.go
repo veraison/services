@@ -54,11 +54,12 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore       kvstore.IKVStore
-	EnStore       kvstore.IKVStore
-	PluginManager plugin.IManager[handler.IEvidenceHandler]
-	PolicyManager *policymanager.PolicyManager
-	EarSigner     earsigner.IEarSigner
+	TaStore          kvstore.IKVStore
+	EnStore          kvstore.IKVStore
+	EvPluginManager  plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager plugin.IManager[handler.IEndorsementHandler]
+	PolicyManager    *policymanager.PolicyManager
+	EarSigner        earsigner.IEarSigner
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -70,18 +71,20 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	pluginManager plugin.IManager[handler.IEvidenceHandler],
+	evpluginManager plugin.IManager[handler.IEvidenceHandler],
+	endpluginManager plugin.IManager[handler.IEndorsementHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:       taStore,
-		EnStore:       enStore,
-		PluginManager: pluginManager,
-		PolicyManager: policyManager,
-		EarSigner:     earSigner,
-		logger:        logger,
+		TaStore:          taStore,
+		EnStore:          enStore,
+		EvPluginManager:  evpluginManager,
+		EndPluginManager: endpluginManager,
+		PolicyManager:    policyManager,
+		EarSigner:        earSigner,
+		logger:           logger,
 	}
 }
 
@@ -94,7 +97,7 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error {
+func (o *GRPC) Init(v *viper.Viper, evm plugin.IManager[handler.IEvidenceHandler], endm plugin.IManager[handler.IEndorsementHandler]) error {
 	var err error
 
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
@@ -104,7 +107,8 @@ func (o *GRPC) Init(v *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]
 		return err
 	}
 
-	o.PluginManager = pm
+	o.EvPluginManager = evm
+	o.EndPluginManager = endm
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -135,7 +139,11 @@ func (o *GRPC) Close() error {
 		o.Server.GracefulStop()
 	}
 
-	if err := o.PluginManager.Close(); err != nil {
+	if err := o.EvPluginManager.Close(); err != nil {
+		o.logger.Errorf("plugin manager shutdown failed: %v", err)
+	}
+
+	if err := o.EndPluginManager.Close(); err != nil {
 		o.logger.Errorf("plugin manager shutdown failed: %v", err)
 	}
 
@@ -155,7 +163,7 @@ func (o *GRPC) Close() error {
 }
 
 func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceState, error) {
-	mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
+	mediaTypes := o.EvPluginManager.GetRegisteredMediaTypes()
 
 	mediaTypesList, err := proto.NewStringList(mediaTypes)
 	if err != nil {
@@ -171,7 +179,82 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 	}, nil
 }
 
-func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest) (*proto.AddRefValuesResponse, error) {
+func (o *GRPC) SubmitEndorsements(ctx context.Context, req *proto.SubmitEndorsementsRequest) (*proto.SubmitEndorsementsResponse, error) {
+	o.logger.Debugw("SubmitEndorsements", "media-type", req.MediaType)
+
+	handlerPlugin, err := o.EndPluginManager.LookupByMediaType(req.MediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := handlerPlugin.Decode(req.Data)
+	if err != nil {
+		return submitEndorsementErrorResponse(err), nil
+	}
+	if err := o.storeEndorsements(ctx, rsp); err != nil {
+		return submitEndorsementErrorResponse(err), nil
+	}
+	return submitEndorsementSuccessResponse(), nil
+}
+
+func (o *GRPC) storeEndorsements(ctx context.Context, rsp *handler.EndorsementHandlerResponse) error {
+	for _, ta := range rsp.TrustAnchors {
+		taReq := &proto.AddTrustAnchorRequest{TrustAnchor: ta}
+
+		taRes, err := o.addTrustAnchor(ctx, taReq)
+		if err != nil {
+			return fmt.Errorf("store operation failed for trust anchor: %w", err)
+		}
+
+		if !taRes.GetStatus().Result {
+			return fmt.Errorf(
+				"store operation failed for trust anchor: %s",
+				taRes.Status.GetErrorDetail(),
+			)
+		}
+	}
+
+	for _, refVal := range rsp.ReferenceValues {
+		refValReq := &proto.AddRefValuesRequest{
+			ReferenceValues: []*proto.Endorsement{
+				refVal,
+			},
+		}
+
+		refValRes, err := o.addRefValues(ctx, refValReq)
+		if err != nil {
+			return fmt.Errorf("store operation failed for reference values: %w", err)
+		}
+
+		if !refValRes.GetStatus().Result {
+			return fmt.Errorf(
+				"store operation failed for reference values: %s",
+				refValRes.Status.GetErrorDetail(),
+			)
+		}
+	}
+
+	return nil
+}
+
+func submitEndorsementSuccessResponse() *proto.SubmitEndorsementsResponse {
+	return &proto.SubmitEndorsementsResponse{
+		Status: &proto.Status{
+			Result: true,
+		},
+	}
+}
+
+func submitEndorsementErrorResponse(err error) *proto.SubmitEndorsementsResponse {
+	return &proto.SubmitEndorsementsResponse{
+		Status: &proto.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
+}
+
+func (o *GRPC) addRefValues(ctx context.Context, req *proto.AddRefValuesRequest) (*proto.AddRefValuesResponse, error) {
 	var (
 		err     error
 		keys    []string
@@ -182,7 +265,7 @@ func (o *GRPC) AddRefValues(ctx context.Context, req *proto.AddRefValuesRequest)
 	o.logger.Debugw("AddRefValue", "ref-value", req.ReferenceValues)
 
 	for _, refVal := range req.GetReferenceValues() {
-		handler, err = o.PluginManager.LookupByAttestationScheme(refVal.GetScheme())
+		handler, err = o.EvPluginManager.LookupByAttestationScheme(refVal.GetScheme())
 		if err != nil {
 			return addRefValueErrorResponse(err), nil
 		}
@@ -228,7 +311,7 @@ func addRefValueErrorResponse(err error) *proto.AddRefValuesResponse {
 	}
 }
 
-func (o *GRPC) AddTrustAnchor(
+func (o *GRPC) addTrustAnchor(
 	ctx context.Context,
 	req *proto.AddTrustAnchorRequest,
 ) (*proto.AddTrustAnchorResponse, error) {
@@ -248,7 +331,7 @@ func (o *GRPC) AddTrustAnchor(
 
 	ta = req.TrustAnchor
 
-	handler, err = o.PluginManager.LookupByAttestationScheme(ta.GetScheme())
+	handler, err = o.EvPluginManager.LookupByAttestationScheme(ta.GetScheme())
 	if err != nil {
 		return addTrustAnchorErrorResponse(err), nil
 	}
@@ -300,7 +383,7 @@ func (o *GRPC) GetAttestation(
 	o.logger.Infow("get attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	handler, err := o.PluginManager.LookupByMediaType(token.MediaType)
+	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
 		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
 		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
@@ -408,7 +491,12 @@ func (c *GRPC) getTrustAnchor(id string) (string, error) {
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	mts := c.PluginManager.GetRegisteredMediaTypes()
+	mts := c.EvPluginManager.GetRegisteredMediaTypes()
+	return &proto.MediaTypeList{MediaTypes: mts}, nil
+}
+
+func (c *GRPC) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
+	mts := c.EndPluginManager.GetRegisteredMediaTypes()
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
 
