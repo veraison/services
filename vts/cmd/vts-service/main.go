@@ -64,8 +64,8 @@ func main() {
 	}
 
 	log.Info("loading attestation schemes")
-	var pluginManager plugin.IManager[handler.IEvidenceHandler]
-	var epluginManager plugin.IManager[handler.IEndorsementHandler]
+	var evPluginManager plugin.IManager[handler.IEvidenceHandler]
+	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "go-plugin")
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 			log.Fatalf("could not create plugin loader: %v", err)
 		}
 
-		pluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+		evPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
 			loader,
 			"evidence-handler",
 			log.Named("plugin"),
@@ -87,7 +87,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create evidence PluginManagerWithLoader: %v", err)
 		}
-		epluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+		endPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
 			loader,
 			"endorsement-handler",
 			log.Named("plugin"),
@@ -102,13 +102,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create builtin loader: %v", err)
 		}
-		pluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEvidenceHandler](
+		evPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEvidenceHandler](
 			loader, log.Named("builtin"),
 			"evidence-handler")
 		if err != nil {
 			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
 		}
-		epluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
+		endPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
 			loader, log.Named("builtin"),
 			"endorsement-handler")
 		if err != nil {
@@ -118,13 +118,13 @@ func main() {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
 
-	log.Info("Evidence handler registered media types:")
-	for _, mt := range pluginManager.GetRegisteredMediaTypes() {
+	log.Info("Evidence media types:")
+	for _, mt := range evPluginManager.GetRegisteredMediaTypes() {
 		log.Info("\t", mt)
 	}
 
-	log.Info("Endorsement handler registered media types:")
-	for _, mt := range epluginManager.GetRegisteredMediaTypes() {
+	log.Info("Endorsement media types:")
+	for _, mt := range endPluginManager.GetRegisteredMediaTypes() {
 		log.Info("\t", mt)
 	}
 
@@ -135,12 +135,12 @@ func main() {
 	}
 
 	log.Info("initializing service")
-	// from this point onwards taStore, enStore, pluginManager, policyManager
-	// and earSigner are owned by vts
+	// from this point onwards taStore, enStore, evPluginManager, endPluginManager,
+	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		pluginManager, epluginManager, policyManager, earSigner, log.Named("vts"))
+		evPluginManager, endPluginManager, policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], pluginManager, epluginManager); err != nil {
+	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 
