@@ -70,7 +70,7 @@ func main() {
 	}
 
 	log.Info("initializing provisioner")
-	provisioner := provisioner.New(subs["provisioner"], vtsClient)
+	provisioner := provisioner.New(vtsClient)
 
 	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
 	apiHandler := api.NewHandler(provisioner, log.Named("api"))

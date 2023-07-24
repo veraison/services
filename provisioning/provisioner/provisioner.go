@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/viper"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -18,7 +17,7 @@ type Provisioner struct {
 	VTSClient vtsclient.IVTSClient
 }
 
-func New(v *viper.Viper, vtsClient vtsclient.IVTSClient) IProvisioner {
+func New(vtsClient vtsclient.IVTSClient) IProvisioner {
 	return &Provisioner{
 		VTSClient: vtsClient,
 	}
