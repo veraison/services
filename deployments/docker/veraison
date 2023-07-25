@@ -245,9 +245,9 @@ function evcli() {
     manager evcli $translated_args
 }
 
-function polcli() {
+function pocli() {
     local translated_args=$(_translate_host_paths "$@")
-    manager evcli $translated_args
+    manager pocli $translated_args
 }
 
 function help() {
@@ -460,7 +460,7 @@ case $command in
     stop-tmux | kill-tmux) kill_tmux_session $2;;
     cocli) shift; cocli $@;;
     evcli) shift; evcli $@;;
-    polcli) shift; polcli $@;;
+    pocli) shift; pocli $@;;
     debug) manager_debug $@;;
     *) echo -e "$_error: unexpected command: \"$command\" (use -h for help)";;
 esac
