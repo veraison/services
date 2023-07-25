@@ -3,28 +3,28 @@
 package parsec_tpm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/swid"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type CorimExtractor struct{}
 
 func (o CorimExtractor) RefValExtractor(
 	rv comid.ReferenceValue,
-) ([]*proto.Endorsement, error) {
+) ([]*handler.Endorsement, error) {
 	var id ID
 
 	if err := id.FromEnvironment(rv.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract id from ref-val environment: %w", err)
 	}
 
-	rvs := make([]*proto.Endorsement, 0, len(rv.Measurements))
+	rvs := make([]*handler.Endorsement, 0, len(rv.Measurements))
 
 	for i, m := range rv.Measurements {
 		pcr, err := extractPCR(m)
@@ -43,9 +43,9 @@ func (o CorimExtractor) RefValExtractor(
 				return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
 			}
 
-			rv := &proto.Endorsement{
+			rv := &handler.Endorsement{
 				Scheme:     SchemeName,
-				Type:       proto.EndorsementType_REFERENCE_VALUE,
+				Type:       handler.EndorsementType_REFERENCE_VALUE,
 				Attributes: attrs,
 			}
 
@@ -62,7 +62,7 @@ func (o CorimExtractor) RefValExtractor(
 
 func (o CorimExtractor) TaExtractor(
 	avk comid.AttestVerifKey,
-) (*proto.Endorsement, error) {
+) (*handler.Endorsement, error) {
 	var id ID
 
 	if err := id.FromEnvironment(avk.Environment); err != nil {
@@ -81,27 +81,31 @@ func (o CorimExtractor) TaExtractor(
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
 
-	ta := &proto.Endorsement{
+	ta := &handler.Endorsement{
 		Scheme:     SchemeName,
-		Type:       proto.EndorsementType_VERIFICATION_KEY,
+		Type:       handler.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}
 
 	return ta, nil
 }
 
-func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (*structpb.Struct, error) {
-	return structpb.NewStruct(
-		map[string]interface{}{
-			"parsec-tpm.class-id": class,
-			"parsec-tpm.pcr":      pcr,
-			"parsec-tpm.digest":   digest.HashValue,
-			"parsec-tpm.alg-id":   digest.HashAlgID,
-		},
-	)
+func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawMessage, error) {
+
+	var attrs = map[string]interface{}{
+		"parsec-tpm.class-id": class,
+		"parsec-tpm.pcr":      pcr,
+		"parsec-tpm.digest":   digest.HashValue,
+		"parsec-tpm.alg-id":   digest.HashAlgID,
+	}
+	data, err := json.Marshal(attrs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal reference value attributes: %w", err)
+	}
+	return data, nil
 }
 
-func makeTaAttrs(id ID, key string) (*structpb.Struct, error) {
+func makeTaAttrs(id ID, key string) (json.RawMessage, error) {
 	if id.instance == nil {
 		return nil, errors.New("instance not found in ID")
 	}
@@ -112,7 +116,11 @@ func makeTaAttrs(id ID, key string) (*structpb.Struct, error) {
 		"parsec-tpm.ak-pub":      key,
 	}
 
-	return structpb.NewStruct(attrs)
+	data, err := json.Marshal(attrs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal trust anchor attributes: %w", err)
+	}
+	return data, nil
 }
 
 func extractPCR(m comid.Measurement) (uint64, error) {

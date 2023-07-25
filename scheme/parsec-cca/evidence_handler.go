@@ -18,7 +18,6 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -61,10 +60,10 @@ type TaAttr struct {
 }
 
 type TaEndorsements struct {
-	Scheme  string `json:"scheme"`
-	Type    string `json:"type"`
-	SubType string `json:"sub_type"`
-	Attr    TaAttr `json:"attributes"`
+	Scheme  string          `json:"scheme"`
+	Type    string          `json:"type"`
+	SubType string          `json:"sub_type"`
+	Attr    json.RawMessage `json:"attributes"`
 }
 
 type EvidenceHandler struct{}
@@ -83,22 +82,12 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	refVal *proto.Endorsement,
+	refVal *handler.Endorsement,
 ) ([]string, error) {
-	var (
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
 
-	fields, err = common.GetFieldsFromParts(refVal.GetAttributes())
+	implID, err := common.GetImplID("PARSEC_CCA", refVal.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
-	}
-
-	implID, err = common.GetMandatoryPathSegment("PARSEC_CCA.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
 	}
 
 	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
@@ -107,25 +96,14 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	return []string{lookupKey}, nil
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	var (
-		instID string
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	fields, err = common.GetFieldsFromParts(ta.GetAttributes())
+	implID, err := common.GetImplID("PARSEC_CCA", ta.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("PARSEC_CCA.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	instID, err = common.GetMandatoryPathSegment("PARSEC_CCA.inst-id", fields)
+	instID, err := common.GetInstID("PARSEC_CCA", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
@@ -207,9 +185,12 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
 		return fmt.Errorf("could not decode trust anchor: %w", err)
 	}
-
-	ta := endorsement.Attr.VerifKey
-	pk, err := common.DecodePemSubjectPubKeyInfo([]byte(ta))
+	var ta TaAttr
+	if err := json.Unmarshal(endorsement.Attr, &ta); err != nil {
+		return fmt.Errorf("could not unmarshal cca trust anchor: %w", err)
+	}
+	pem := ta.VerifKey
+	pk, err := common.DecodePemSubjectPubKeyInfo([]byte(pem))
 	if err != nil {
 		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}

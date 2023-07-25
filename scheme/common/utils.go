@@ -9,8 +9,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type ClaimMapper interface {
@@ -29,31 +27,32 @@ func ClaimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
 	return out, err
 }
 
-func GetFieldsFromParts(parts *structpb.Struct) (map[string]*structpb.Value, error) {
-	if parts == nil {
-		return nil, errors.New("no parts found")
+func GetImplID(scheme string, attr json.RawMessage) (string, error) {
+	var at map[string]interface{}
+	err := json.Unmarshal(attr, &at)
+	if err != nil {
+		return "", fmt.Errorf("unable to get Implementation ID: %w", err)
 	}
-
-	fields := parts.GetFields()
-	if fields == nil {
-		return nil, errors.New("no fields found")
+	key := scheme + ".impl-id"
+	implID, ok := at[key].(string)
+	if !ok {
+		return "", errors.New("unable to get Implementation ID")
 	}
-
-	return fields, nil
+	return implID, nil
 }
 
-func GetMandatoryPathSegment(key string, fields map[string]*structpb.Value) (string, error) {
-	v, ok := fields[key]
+func GetInstID(scheme string, attr json.RawMessage) (string, error) {
+	var at map[string]interface{}
+	err := json.Unmarshal(attr, &at)
+	if err != nil {
+		return "", fmt.Errorf("unable to get Implementation ID: %w", err)
+	}
+	key := scheme + ".inst-id"
+	instID, ok := at[key].(string)
 	if !ok {
-		return "", fmt.Errorf("mandatory %s is missing", key)
+		return "", errors.New("unable to get Implementation ID")
 	}
-
-	segment := v.GetStringValue()
-	if segment == "" {
-		return "", fmt.Errorf("mandatory %s is empty", key)
-	}
-
-	return segment, nil
+	return instID, nil
 }
 
 // DecodePemSubjectPubKeyInfo decodes a PEM encoded SubjectPublicKeyInfo

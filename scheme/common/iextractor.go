@@ -4,7 +4,7 @@ package common
 
 import (
 	"github.com/veraison/corim/comid"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/services/handler"
 )
 
 // IExtractor is the interface that CoRIM plugins need to implement to hook into
@@ -18,6 +18,6 @@ import (
 // well as extraction from the "global" CoRIM context.
 // See also https://github.com/veraison/services/issues/70
 type IExtractor interface {
-	RefValExtractor(comid.ReferenceValue) ([]*proto.Endorsement, error)
-	TaExtractor(comid.AttestVerifKey) (*proto.Endorsement, error)
+	RefValExtractor(comid.ReferenceValue) ([]*handler.Endorsement, error)
+	TaExtractor(comid.AttestVerifKey) (*handler.Endorsement, error)
 }

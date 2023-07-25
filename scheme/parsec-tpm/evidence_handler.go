@@ -20,7 +20,6 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/swid"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -67,12 +66,12 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, refVals *proto.Endorsement) ([]string, error) {
-	return synthKeysFromParts(ScopeRefValues, tenantID, refVals.GetAttributes())
+func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, refVals *handler.Endorsement) ([]string, error) {
+	return synthKeysFromAttr(ScopeRefValues, tenantID, refVals.Attributes)
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	return synthKeysFromParts(ScopeTrustAnchor, tenantID, ta.GetAttributes())
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
+	return synthKeysFromAttr(ScopeTrustAnchor, tenantID, ta.Attributes)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
@@ -165,30 +164,37 @@ func (s EvidenceHandler) AppraiseEvidence(ec *proto.EvidenceContext, endorsement
 	return result, err
 }
 
-func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]string, error) {
+func synthKeysFromAttr(scope, tenantID string, attr json.RawMessage) ([]string, error) {
 	var (
 		instance string
 		class    string
-		fields   map[string]*structpb.Value
 		err      error
 	)
 
-	fields, err = common.GetFieldsFromParts(parts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
-	}
-
-	if scope == ScopeTrustAnchor {
-		instance, err = common.GetMandatoryPathSegment("parsec-tpm.instance-id", fields)
-		if err != nil {
-			return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
+	switch scope {
+	case ScopeTrustAnchor:
+		var ta TaAttr
+		if err := json.Unmarshal(attr, &ta); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from TA: %w", err)
 		}
+		if ta.ClassID == nil || ta.InstID == nil {
+			return nil, fmt.Errorf("missing InstID or ClassID from TA: %w", err)
+		}
+		class = *ta.ClassID
+		instance = *ta.InstID
+	case ScopeRefValues:
+		var sw SwAttr
+		if err := json.Unmarshal(attr, &sw); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from RefVal: %w", err)
+		}
+		if sw.ClassID == nil {
+			return nil, fmt.Errorf("missing ClassID in reference value: %w", err)
+		}
+		class = *sw.ClassID
+	default:
+		return nil, fmt.Errorf("invalid scope argument: %s", scope)
 	}
 
-	class, err = common.GetMandatoryPathSegment("parsec-tpm.class-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
-	}
 	return []string{tpmLookupKey(scope, tenantID, class, instance)}, nil
 }
 

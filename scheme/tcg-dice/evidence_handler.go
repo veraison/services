@@ -37,11 +37,11 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	return "dice://", nil
 }
 
-func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, swComp *handler.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
 

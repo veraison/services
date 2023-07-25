@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 )
 
@@ -226,7 +227,7 @@ func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/evidence/ta_endorsements.json")
 	require.NoError(t, err)
 
-	var endors proto.Endorsement
+	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
 	expectedKey := "PARSEC_TPM://1/AagIEsUMYDNxd1p5UuAACkxJGfJf9rcUZ/oyRFHDcAxn"
@@ -242,7 +243,7 @@ func Test_SynthKeysFromRefValue_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/evidence/refval-endorsements.json")
 	require.NoError(t, err)
 
-	var endors proto.Endorsement
+	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
 	expectedKey := "PARSEC_TPM://1/cd1f0e55-26f9-460d-b9d8-f7fde171787c"
