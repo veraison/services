@@ -323,7 +323,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 	}
 
 	for _, c := range swComps {
-		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
 		evidenceComponents[key] = c
 	}
 	matched := false
@@ -336,7 +336,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 			return false
 		}
 
-		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue) + attr.MeasurementType
 		evComp, ok := evidenceComponents[key]
 		if !ok {
 			matched = false
