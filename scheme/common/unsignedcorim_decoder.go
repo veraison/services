@@ -78,12 +78,14 @@ func UnsignedCorimDecoder(
 
 		if c.Triples.ReferenceValues != nil {
 			for _, rv := range *c.Triples.ReferenceValues {
-				refVal, err := xtr.RefValExtractor(rv)
+				refVals, err := xtr.RefValExtractor(rv)
 				if err != nil {
 					return nil, fmt.Errorf("bad software component in CoMID at index %d: %w", i, err)
 				}
 
-				rsp.ReferenceValues = append(rsp.ReferenceValues, refVal...)
+				for _, refVal := range refVals {
+					rsp.ReferenceValues = append(rsp.ReferenceValues, *refVal)
+				}
 			}
 		}
 
@@ -94,7 +96,7 @@ func UnsignedCorimDecoder(
 					return nil, fmt.Errorf("bad key in CoMID at index %d: %w", i, err)
 				}
 
-				rsp.TrustAnchors = append(rsp.TrustAnchors, k)
+				rsp.TrustAnchors = append(rsp.TrustAnchors, *k)
 			}
 		}
 

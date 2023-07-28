@@ -3,10 +3,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/rpc"
-
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/veraison/services/plugin"
 )
@@ -62,7 +61,7 @@ func (s EndorsementRPCServer) Decode(data []byte, resp *[]byte) error {
 		return fmt.Errorf("plugin %q returned error: %w", s.Impl.GetName(), err)
 	}
 
-	*resp, err = protojson.Marshal(j)
+	*resp, err = json.Marshal(j)
 	if err != nil {
 		return fmt.Errorf("failed to marshal plugin response: %w", err)
 	}
@@ -151,7 +150,7 @@ func (c EndorsementRPCClient) Decode(data []byte) (*EndorsementHandlerResponse, 
 		return nil, fmt.Errorf("RPC server returned error: %w", err)
 	}
 
-	err = protojson.Unmarshal(j, &resp)
+	err = json.Unmarshal(j, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed unmarshaling response from RPC server: %w", err)
 	}

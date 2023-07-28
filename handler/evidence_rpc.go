@@ -53,7 +53,7 @@ type SynthKeysArgs struct {
 func (s *RPCServer) SynthKeysFromRefValue(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err    error
-		swComp proto.Endorsement
+		swComp Endorsement
 	)
 
 	err = json.Unmarshal(args.EndorsementJSON, &swComp)
@@ -69,7 +69,7 @@ func (s *RPCServer) SynthKeysFromRefValue(args SynthKeysArgs, resp *[]string) er
 func (s *RPCServer) SynthKeysFromTrustAnchor(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err error
-		ta  proto.Endorsement
+		ta  Endorsement
 	)
 
 	err = json.Unmarshal(args.EndorsementJSON, &ta)
@@ -216,7 +216,7 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorsement) ([]string, error) {
+func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -239,7 +239,7 @@ func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *proto.Endorse
 	return resp, nil
 }
 
-func (s *RPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
+func (s *RPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string

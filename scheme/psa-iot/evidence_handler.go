@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"log"
 
-	structpb "google.golang.org/protobuf/types/known/structpb"
-
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
@@ -68,22 +66,12 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	refValue *proto.Endorsement,
+	refValue *handler.Endorsement,
 ) ([]string, error) {
-	var (
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
-	log.Printf("SynthKeysFromRefValue called\n")
-	fields, err = common.GetFieldsFromParts(refValue.GetAttributes())
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
-	}
 
-	implID, err = common.GetMandatoryPathSegment("PSA_IOT.impl-id", fields)
+	implID, err := common.GetImplID("PSA_IOT", refValue.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
 	finalstr := arm.RefValLookupKey(SchemeName, tenantID, implID)
@@ -91,25 +79,14 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	return []string{arm.RefValLookupKey(SchemeName, tenantID, implID)}, nil
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	var (
-		instID string
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	fields, err = common.GetFieldsFromParts(ta.GetAttributes())
+	implID, err := common.GetImplID("PSA_IOT", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("PSA_IOT.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	instID, err = common.GetMandatoryPathSegment("PSA_IOT.inst-id", fields)
+	instID, err := common.GetInstID("PSA_IOT", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}

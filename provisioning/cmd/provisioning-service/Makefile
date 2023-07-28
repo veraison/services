@@ -12,7 +12,6 @@ CMD_DEPS += $(wildcard ../../.../handler/*.go)
 
 cmd-hook-pre test-hook-pre lint-hook-pre:
 	$(MAKE) -C ../../../proto protogen
-	$(MAKE) -C ../../../handler protogen
 
 include ../../../mk/common.mk
 include ../../../mk/cmd.mk

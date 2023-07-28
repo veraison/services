@@ -3,12 +3,12 @@
 package tpm_enacttrust
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
-	"github.com/veraison/services/proto"
-	structpb "google.golang.org/protobuf/types/known/structpb"
+	"github.com/veraison/services/handler"
 )
 
 type Extractor struct {
@@ -19,7 +19,7 @@ func (o *Extractor) SetProfile(p string) {
 	o.Profile = p
 }
 
-func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
+func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -31,7 +31,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	}
 
 	var (
-		swComponents []*proto.Endorsement
+		swComponents []*handler.Endorsement
 		swCompAttrs  SwCompAttributes
 		measurement  comid.Measurement = rv.Measurements[0]
 	)
@@ -45,9 +45,9 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 		return nil, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
 
-	swComponent := proto.Endorsement{
+	swComponent := handler.Endorsement{
 		Scheme:     SchemeName,
-		Type:       proto.EndorsementType_REFERENCE_VALUE,
+		Type:       handler.EndorsementType_REFERENCE_VALUE,
 		SubType:    "enacttrust-tpm.sw-component",
 		Attributes: swAttrs,
 	}
@@ -61,17 +61,20 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	return swComponents, nil
 }
 
-func makeSwAttrs(i InstanceAttributes, s SwCompAttributes) (*structpb.Struct, error) {
-	return structpb.NewStruct(
-		map[string]interface{}{
-			"enacttrust-tpm.node-id": i.NodeID,
-			"enacttrust-tpm.digest":  s.Digest,
-			"enacttrust-tpm.alg-id":  s.AlgID,
-		},
-	)
+func makeSwAttrs(i InstanceAttributes, s SwCompAttributes) (json.RawMessage, error) {
+	sw := map[string]interface{}{
+		"enacttrust-tpm.node-id": i.NodeID,
+		"enacttrust-tpm.digest":  s.Digest,
+		"enacttrust-tpm.alg-id":  s.AlgID,
+	}
+	msg, err := json.Marshal(sw)
+	if err != nil {
+		return nil, err
+	}
+	return msg, nil
 }
 
-func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {
@@ -90,20 +93,24 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
 
-	ta := &proto.Endorsement{
+	ta := &handler.Endorsement{
 		Scheme:     SchemeName,
-		Type:       proto.EndorsementType_VERIFICATION_KEY,
+		Type:       handler.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}
 
 	return ta, nil
 }
 
-func makeTaAttrs(i InstanceAttributes, key string) (*structpb.Struct, error) {
+func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
 	attrs := map[string]interface{}{
 		"enacttrust-tpm.node-id": i.NodeID,
 		"enacttrust.ak-pub":      key,
 	}
 
-	return structpb.NewStruct(attrs)
+	msg, err := json.Marshal(attrs)
+	if err != nil {
+		return nil, err
+	}
+	return msg, nil
 }

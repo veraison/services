@@ -17,7 +17,6 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type SwAttr struct {
@@ -77,22 +76,12 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	refVal *proto.Endorsement,
+	refVal *handler.Endorsement,
 ) ([]string, error) {
-	var (
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
 
-	fields, err = common.GetFieldsFromParts(refVal.GetAttributes())
+	implID, err := common.GetImplID("CCA_SSD_PLATFORM", refVal.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
-	}
-
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
 	}
 
 	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
@@ -101,25 +90,14 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	return []string{lookupKey}, nil
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	var (
-		instID string
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	fields, err = common.GetFieldsFromParts(ta.GetAttributes())
+	implID, err := common.GetImplID("CCA_SSD_PLATFORM", ta.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	instID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.inst-id", fields)
+	instID, err := common.GetInstID("CCA_SSD_PLATFORM", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}

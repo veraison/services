@@ -3,10 +3,10 @@
 package arm
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type SwCompAttributes struct {
@@ -64,7 +64,8 @@ func (o SwCompAttributes) GetRefValType() string {
 	return "sw-component"
 }
 
-func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, scheme string) (*structpb.Struct, error) {
+func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, scheme string) (json.RawMessage, error) {
+
 	swAttrs := map[string]interface{}{
 		scheme + ".impl-id":           c.ImplID,
 		scheme + ".signer-id":         o.SignerID,
@@ -87,6 +88,9 @@ func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, scheme string) (*stru
 	if o.Version != "" {
 		swAttrs[scheme+".version"] = o.Version
 	}
-
-	return structpb.NewStruct(swAttrs)
+	msg, err := json.Marshal(swAttrs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal reference attributes: %w", err)
+	}
+	return msg, nil
 }

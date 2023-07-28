@@ -26,44 +26,6 @@ message SubmitEndorsementsRequest {
 message SubmitEndorsementsResponse {
   Status status = 1;
 }
-/* 
-The TrustAnchor and Reference Value messages, below 
-and associated structures do not belong here
-They will be removed in subsequent refactor
-Please see issue #176
-*/
-// protolint:disable ENUM_FIELD_NAMES_PREFIX
-enum EndorsementType {
-  UNSPECIFIED = 0;
-  REFERENCE_VALUE = 1;
-  VERIFICATION_KEY = 2;
-}
-
-message AddRefValuesRequest {
-  repeated Endorsement reference_values = 1;
-}
-
-message AddRefValuesResponse {
-  Status status = 1;
-}
-
-message Endorsement {
-  string scheme = 1;
-  EndorsementType type = 2;
-  /* sub_type is opaque to Veraison and is used by schemes to classify range of
-     Endorsement sub types for a given Endorsement type. It is assumed that
-     there is going to be only one single sub type required */
-  string sub_type = 3;
-  google.protobuf.Struct attributes = 4;
-}
-
-message AddTrustAnchorRequest {
-  Endorsement trust_anchor = 1;
-}
-
-message AddTrustAnchorResponse {
-  Status status = 1;
-}
 
 message MediaTypeList {
   repeated string media_types = 1;

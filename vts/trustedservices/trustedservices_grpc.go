@@ -199,38 +199,18 @@ func (o *GRPC) SubmitEndorsements(ctx context.Context, req *proto.SubmitEndorsem
 
 func (o *GRPC) storeEndorsements(ctx context.Context, rsp *handler.EndorsementHandlerResponse) error {
 	for _, ta := range rsp.TrustAnchors {
-		taReq := &proto.AddTrustAnchorRequest{TrustAnchor: ta}
 
-		taRes, err := o.addTrustAnchor(ctx, taReq)
+		err := o.addTrustAnchor(ctx, &ta)
 		if err != nil {
 			return fmt.Errorf("store operation failed for trust anchor: %w", err)
-		}
-
-		if !taRes.GetStatus().Result {
-			return fmt.Errorf(
-				"store operation failed for trust anchor: %s",
-				taRes.Status.GetErrorDetail(),
-			)
 		}
 	}
 
 	for _, refVal := range rsp.ReferenceValues {
-		refValReq := &proto.AddRefValuesRequest{
-			ReferenceValues: []*proto.Endorsement{
-				refVal,
-			},
-		}
 
-		refValRes, err := o.addRefValues(ctx, refValReq)
+		err := o.addRefValues(ctx, &refVal)
 		if err != nil {
 			return fmt.Errorf("store operation failed for reference values: %w", err)
-		}
-
-		if !refValRes.GetStatus().Result {
-			return fmt.Errorf(
-				"store operation failed for reference values: %s",
-				refValRes.Status.GetErrorDetail(),
-			)
 		}
 	}
 
@@ -254,7 +234,7 @@ func submitEndorsementErrorResponse(err error) *proto.SubmitEndorsementsResponse
 	}
 }
 
-func (o *GRPC) addRefValues(ctx context.Context, req *proto.AddRefValuesRequest) (*proto.AddRefValuesResponse, error) {
+func (o *GRPC) addRefValues(ctx context.Context, refVal *handler.Endorsement) error {
 	var (
 		err     error
 		keys    []string
@@ -262,118 +242,77 @@ func (o *GRPC) addRefValues(ctx context.Context, req *proto.AddRefValuesRequest)
 		val     []byte
 	)
 
-	o.logger.Debugw("AddRefValue", "ref-value", req.ReferenceValues)
+	handler, err = o.EvPluginManager.LookupByAttestationScheme(refVal.Scheme)
+	if err != nil {
+		return err
+	}
 
-	for _, refVal := range req.GetReferenceValues() {
-		handler, err = o.EvPluginManager.LookupByAttestationScheme(refVal.GetScheme())
-		if err != nil {
-			return addRefValueErrorResponse(err), nil
-		}
+	keys, err = handler.SynthKeysFromRefValue(DummyTenantID, refVal)
+	if err != nil {
+		return err
+	}
 
-		keys, err = handler.SynthKeysFromRefValue(DummyTenantID, refVal)
-		if err != nil {
-			return addRefValueErrorResponse(err), nil
-		}
-
-		val, err = json.Marshal(refVal)
-		if err != nil {
-			return addRefValueErrorResponse(err), nil
-		}
+	val, err = json.Marshal(refVal)
+	if err != nil {
+		return err
 	}
 
 	for _, key := range keys {
 		if err := o.EnStore.Add(key, string(val)); err != nil {
 			if err != nil {
-				return addRefValueErrorResponse(err), nil
+				return err
 			}
 		}
 	}
 
 	o.logger.Infow("added reference values", "keys", keys)
 
-	return addRefValueSuccessResponse(), nil
-}
-
-func addRefValueSuccessResponse() *proto.AddRefValuesResponse {
-	return &proto.AddRefValuesResponse{
-		Status: &proto.Status{
-			Result: true,
-		},
-	}
-}
-
-func addRefValueErrorResponse(err error) *proto.AddRefValuesResponse {
-	return &proto.AddRefValuesResponse{
-		Status: &proto.Status{
-			Result:      false,
-			ErrorDetail: fmt.Sprintf("%v", err),
-		},
-	}
+	return nil
 }
 
 func (o *GRPC) addTrustAnchor(
 	ctx context.Context,
-	req *proto.AddTrustAnchorRequest,
-) (*proto.AddTrustAnchorResponse, error) {
+	req *handler.Endorsement,
+) error {
 	var (
 		err     error
 		keys    []string
 		handler handler.IEvidenceHandler
-		ta      *proto.Endorsement
 		val     []byte
 	)
 
-	o.logger.Debugw("AddTrustAnchor", "trust-anchor", req.TrustAnchor)
+	o.logger.Debugw("AddTrustAnchor", "trust-anchor", req)
 
-	if req.TrustAnchor == nil {
-		return addTrustAnchorErrorResponse(errors.New("nil trust anchor in request")), nil
+	if req == nil {
+		return errors.New("nil trust anchor in request")
 	}
 
-	ta = req.TrustAnchor
-
-	handler, err = o.EvPluginManager.LookupByAttestationScheme(ta.GetScheme())
+	handler, err = o.EvPluginManager.LookupByAttestationScheme(req.Scheme)
 	if err != nil {
-		return addTrustAnchorErrorResponse(err), nil
+		return err
 	}
 
-	keys, err = handler.SynthKeysFromTrustAnchor(DummyTenantID, ta)
+	keys, err = handler.SynthKeysFromTrustAnchor(DummyTenantID, req)
 	if err != nil {
-		return addTrustAnchorErrorResponse(err), nil
+		return err
 	}
 
-	val, err = json.Marshal(ta)
+	val, err = json.Marshal(req)
 	if err != nil {
-		return addTrustAnchorErrorResponse(err), nil
+		return err
 	}
 
 	for _, key := range keys {
 		if err := o.TaStore.Add(key, string(val)); err != nil {
 			if err != nil {
-				return addTrustAnchorErrorResponse(err), nil
+				return err
 			}
 		}
 	}
 
 	o.logger.Infow("added trust anchor", "keys", keys)
 
-	return addTrustAnchorSuccessResponse(), nil
-}
-
-func addTrustAnchorSuccessResponse() *proto.AddTrustAnchorResponse {
-	return &proto.AddTrustAnchorResponse{
-		Status: &proto.Status{
-			Result: true,
-		},
-	}
-}
-
-func addTrustAnchorErrorResponse(err error) *proto.AddTrustAnchorResponse {
-	return &proto.AddTrustAnchorResponse{
-		Status: &proto.Status{
-			Result:      false,
-			ErrorDetail: fmt.Sprintf("%v", err),
-		},
-	}
+	return nil
 }
 
 func (o *GRPC) GetAttestation(
