@@ -19,11 +19,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moogar0880/problems v0.1.1
-	github.com/olekukonko/tablewriter v0.0.5
 	github.com/open-policy-agent/opa v0.43.1
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20211021192214-5ab2d9280aa9
 	github.com/spf13/afero v1.9.2
-	github.com/spf13/cobra v1.6.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.4
@@ -65,11 +63,10 @@ require (
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
@@ -80,7 +77,6 @@ require (
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

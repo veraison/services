@@ -45,12 +45,12 @@ func GetInstID(scheme string, attr json.RawMessage) (string, error) {
 	var at map[string]interface{}
 	err := json.Unmarshal(attr, &at)
 	if err != nil {
-		return "", fmt.Errorf("unable to get Implementation ID: %w", err)
+		return "", fmt.Errorf("unable to get Instance ID: %w", err)
 	}
 	key := scheme + ".inst-id"
 	instID, ok := at[key].(string)
 	if !ok {
-		return "", errors.New("unable to get Implementation ID")
+		return "", errors.New("unable to get Instance ID")
 	}
 	return instID, nil
 }

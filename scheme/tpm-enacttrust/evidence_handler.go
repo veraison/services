@@ -197,7 +197,7 @@ func synthKeysFromAttrs(scope string, tenantID string, attr json.RawMessage) ([]
 	case "trust anchor":
 		var att TaAttr
 		if err = json.Unmarshal(attr, &att); err != nil {
-			return nil, fmt.Errorf("unable to trust anchor: %w", err)
+			return nil, fmt.Errorf("unable to extract trust anchor: %w", err)
 		}
 		nodeID = att.NodeID
 	default:

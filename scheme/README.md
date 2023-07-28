@@ -10,7 +10,7 @@ schemes. Currently the following schemes are implemented:
   [EnactTrust](https://www.enacttrust.com/) security cloud.
 - `parsec-tpm` : Parsec TPM based hardware-backed attestation, details
   [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-tpm.md)
-- `parsec-cca` : Parsec CCA based harware-backed attestation, details
+- `parsec-cca` : Parsec CCA based hardware-backed attestation, details
    [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 
 
@@ -62,7 +62,7 @@ Handler code is a lot easier to debug when it runs as part of the service
 processes, rather than as a plugin. This can be achieved by using the "builtin"
 plugin loader.
 
-Attestation scheme loading method is a build-time configuration. Since `devle`
+Attestation scheme loading method is a build-time configuration. Since `delve`
 does its own building, it will ignore the normal build configuration. Instead,
 you will have to configure this when invoking `delve`:
 
