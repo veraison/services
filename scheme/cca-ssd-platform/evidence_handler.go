@@ -78,49 +78,17 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
 	refVal *handler.Endorsement,
 ) ([]string, error) {
+	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
 
-	implID, err := common.GetImplID("CCA_SSD_PLATFORM", refVal.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
-	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", lookupKey)
-
-	return []string{lookupKey}, nil
 }
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	implID, err := common.GetImplID("CCA_SSD_PLATFORM", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	instID, err := common.GetInstID("CCA_SSD_PLATFORM", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	lookupKey := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
-	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", lookupKey)
-	return []string{lookupKey}, nil
+	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var ccaToken ccatoken.Evidence
-
-	err := ccaToken.FromCBOR(token.Data)
-	if err != nil {
-		return "", handler.BadEvidence(err)
-	}
-
-	return arm.TaLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(ccaToken.PlatformClaims),
-		arm.MustInstIDString(ccaToken.PlatformClaims),
-	), nil
+	return arm.GetTrustAnchorID(SchemeName, token)
 }
 
 func (s EvidenceHandler) ExtractClaims(
@@ -148,7 +116,7 @@ func (s EvidenceHandler) ExtractClaims(
 		token.TenantId,
 		arm.MustImplIDString(ccaToken.PlatformClaims),
 	)
-	log.Debug("extracted Reference ID Key = %s", extracted.ReferenceID)
+	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
 
@@ -211,21 +179,12 @@ func (s EvidenceHandler) AppraiseEvidence(
 	return result, err
 }
 
-func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
-	data, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return psatoken.DecodeJSONClaims(data)
-}
-
 func populateAttestationResult(
 	result *ear.AttestationResult,
 	evidence map[string]interface{},
 	endorsements []Endorsements,
 ) error {
-	claims, err := mapToClaims(evidence)
+	claims, err := common.MapToClaims(evidence)
 	if err != nil {
 		return err
 	}
@@ -321,7 +280,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 			break
 		}
 
-		log.Debug("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
+		log.Debugf("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
 		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
 		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
 		versionMatched := attr.Version == "" || attr.Version == *evComp.Version

@@ -85,48 +85,16 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	refVal *handler.Endorsement,
 ) ([]string, error) {
 
-	implID, err := common.GetImplID("PARSEC_CCA", refVal.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
-	log.Debugf("PARSEC CCA Plugin Reference Value Look Up Key= %s\n", lookupKey)
-
-	return []string{lookupKey}, nil
+	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
 }
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	implID, err := common.GetImplID("PARSEC_CCA", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	instID, err := common.GetInstID("PARSEC_CCA", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	lookupKey := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
-	log.Debugf("PARSEC CCA Plugin TA Look Up Key= %s\n", lookupKey)
-	return []string{lookupKey}, nil
+	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var evidence parsec_cca.Evidence
-
-	err := evidence.FromCBOR(token.Data)
-	if err != nil {
-		return "", handler.BadEvidence(err)
-	}
-
-	return arm.TaLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(evidence.Pat.PlatformClaims),
-		arm.MustInstIDString(evidence.Pat.PlatformClaims),
-	), nil
+	return arm.GetTrustAnchorID(SchemeName, token)
 }
 
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
@@ -268,7 +236,7 @@ func populateAttestationResult(
 		return handler.BadEvidence(errors.New("no cca platform in the evidence"))
 	}
 	pmap := cp.(map[string]interface{})
-	claims, err := mapToClaims(pmap)
+	claims, err := common.MapToClaims(pmap)
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
@@ -316,15 +284,6 @@ func populateAttestationResult(
 
 	appraisal.VeraisonAnnotatedEvidence = &evidence
 	return nil
-}
-
-func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
-	data, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return psatoken.DecodeJSONClaims(data)
 }
 
 func filterRefVal(endorsements []Endorsements, key string) []Endorsements {

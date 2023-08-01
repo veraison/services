@@ -69,47 +69,16 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	refValue *handler.Endorsement,
 ) ([]string, error) {
 
-	implID, err := common.GetImplID("PSA_IOT", refValue.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	finalstr := arm.RefValLookupKey(SchemeName, tenantID, implID)
-	log.Printf("PSA Plugin PSA Look Up Key= %s\n", finalstr)
-	return []string{arm.RefValLookupKey(SchemeName, tenantID, implID)}, nil
+	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refValue)
 }
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	implID, err := common.GetImplID("PSA_IOT", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	instID, err := common.GetInstID("PSA_IOT", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	finalstr := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
-	log.Printf("PSA Plugin TA PSA Look Up Key= %s\n", finalstr)
-	return []string{arm.TaLookupKey(SchemeName, tenantID, implID, instID)}, nil
+	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var psaToken psatoken.Evidence
-
-	err := psaToken.FromCOSE(token.Data)
-	if err != nil {
-		return "", handler.BadEvidence(err)
-	}
-
-	return arm.TaLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(psaToken.Claims),
-		arm.MustInstIDString(psaToken.Claims),
-	), nil
+	return arm.GetTrustAnchorID(SchemeName, token)
 }
 
 func (s EvidenceHandler) ExtractClaims(
@@ -193,21 +162,12 @@ func (s EvidenceHandler) AppraiseEvidence(
 	return result, err
 }
 
-func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
-	data, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return psatoken.DecodeJSONClaims(data)
-}
-
 func populateAttestationResult(
 	result *ear.AttestationResult,
 	evidence map[string]interface{},
 	endorsements []Endorsements,
 ) error {
-	claims, err := mapToClaims(evidence)
+	claims, err := common.MapToClaims(evidence)
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
