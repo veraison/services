@@ -4,7 +4,6 @@
 package cca_ssd_platform
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -17,14 +16,6 @@ import (
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
 )
-
-type CcaPlatformCfg struct {
-	ImplID []byte `json:"CCA_SSD_PLATFORM.impl-id"`
-	Model  string `json:"CCA_SSD_PLATFORM.hw-model"`
-	Vendor string `json:"CCA_SSD_PLATFORM.hw-vendor"`
-	Label  string `json:"CCA_SSD_PLATFORM.platform-config-label"`
-	Value  []byte `json:"CCA_SSD_PLATFORM.platform-config-id"`
-}
 
 type EvidenceHandler struct{}
 
@@ -199,23 +190,4 @@ func populateAttestationResult(
 	appraisal.VeraisonAnnotatedEvidence = &evidence
 
 	return nil
-}
-
-func matchPlatformConfig(evidence psatoken.IClaims, endorsements []handler.Endorsement) bool {
-
-	pfConfig, err := evidence.GetConfig()
-	if err != nil {
-		return false
-	}
-	if len(endorsements) > 1 {
-		log.Error("got %d CCA configuration endorsements, want 1", len(endorsements))
-		return false
-	}
-	var attr CcaPlatformCfg
-	if err := json.Unmarshal(endorsements[0].Attributes, &attr); err != nil {
-		log.Error("could not decode cca platform config in matchPlatformConfig")
-		return false
-	}
-
-	return bytes.Equal(pfConfig, attr.Value)
 }
