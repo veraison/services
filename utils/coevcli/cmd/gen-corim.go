@@ -34,6 +34,14 @@ func NewCogenGenCmd() *cobra.Command {
 		},
 	}
 
+	cogenAttestationScheme = cmd.Flags().StringP("attest-scheme", "a", "", "attestation scheme used")
+
+	cogenCorimFile = cmd.Flags().StringP("corim-files", "c", "", "name of the generated CoRIM  file")
+
+	cogenEvidenceFile = cmd.Flags().StringP("evidence-file", "e", "", "a CBOR-encoded evidence file")
+
+	cogenKeyFile = cmd.Flags().StringP("key-file", "k", "", "a JSON-encoded key file")
+
 	return cmd
 }
 
@@ -61,7 +69,7 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 	// 	return err
 	// }
 
-	comid_cmd := exec.Command("cocli", "comid create", "--template=comid-claims.json")
+	comid_cmd := exec.Command("cocli", "comid", "create", "--template=/home/samdavis/services/utils/coevcli/data/comid-claims.json")
 
 	if err := comid_cmd.Run(); err != nil {
 		return err
@@ -69,15 +77,15 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 
 	//code in here
 
-	corim_cmd := exec.Command("cocli", "corim create", "--template=comid-template.json", "--comid output-claims.cbor")
+	// corim_cmd := exec.Command("cocli", "corim create", "--template=comid-template.json", "--comid output-claims.cbor")
 
-	if *corim_file != "" {
-		corim_cmd = exec.Command("cocli", "corim create", "--template=comid-template.json", "--comid output-claims.cbor", "--output", *corim_file)
-	}
+	// if *corim_file != "" {
+	// 	corim_cmd = exec.Command("cocli", "corim create", "--template=comid-template.json", "--comid output-claims.cbor", "--output", *corim_file)
+	// }
 
-	if err := corim_cmd.Run(); err != nil {
-		return err
-	}
+	// if err := corim_cmd.Run(); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
