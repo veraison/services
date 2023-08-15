@@ -4,7 +4,7 @@
 package main
 
 import (
-	"/home/samdavis/services/utils/coevcli/cmd"
+	"github.com/veraison/services/utils/coevcli/cmd"
 )
 
 func main() {
