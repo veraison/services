@@ -9,6 +9,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+
+	"github.com/veraison/psatoken"
 )
 
 type ClaimMapper interface {
@@ -25,6 +27,15 @@ func ClaimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
 	err = json.Unmarshal(data, &out)
 
 	return out, err
+}
+
+func MapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	return psatoken.DecodeJSONClaims(data)
 }
 
 func GetImplID(scheme string, attr json.RawMessage) (string, error) {

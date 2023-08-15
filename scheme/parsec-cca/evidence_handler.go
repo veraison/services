@@ -3,7 +3,6 @@
 package parsec_cca
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -25,47 +24,6 @@ const (
 	ScopeRefValues   = "ref values"
 )
 
-type SwAttr struct {
-	ImplID           []byte `json:"PARSEC_CCA.impl-id"`
-	Model            string `json:"PARSEC_CCA.hw-model"`
-	Vendor           string `json:"PARSEC_CCA.hw-vendor"`
-	MeasDesc         string `json:"PARSEC_CCA.measurement-desc"`
-	MeasurementType  string `json:"PARSEC_CCA.measurement-type"`
-	MeasurementValue []byte `json:"PARSEC_CCA.measurement-value"`
-	SignerID         []byte `json:"PARSEC_CCA.signer-id"`
-	Version          string `json:"PARSEC_CCA.version"`
-}
-
-type CcaPlatformCfg struct {
-	ImplID []byte `json:"PARSEC_CCA.impl-id"`
-	Model  string `json:"PARSEC_CCA.hw-model"`
-	Vendor string `json:"PARSEC_CCA.hw-vendor"`
-	Label  string `json:"PARSEC_CCA.platform-config-label"`
-	Value  []byte `json:"PARSEC_CCA.platform-config-id"`
-}
-
-type Endorsements struct {
-	Scheme  string          `json:"scheme"`
-	Type    string          `json:"type"`
-	SubType string          `json:"subType"`
-	Attr    json.RawMessage `json:"attributes"`
-}
-
-type TaAttr struct {
-	Model    string `json:"PARSEC_CCA.hw-model"`
-	Vendor   string `json:"PARSEC_CCA.hw-vendor"`
-	VerifKey string `json:"PARSEC_CCA.iak-pub"`
-	ImplID   []byte `json:"PARSEC_CCA.impl-id"`
-	InstID   string `json:"PARSEC_CCA.inst-id"`
-}
-
-type TaEndorsements struct {
-	Scheme  string          `json:"scheme"`
-	Type    string          `json:"type"`
-	SubType string          `json:"sub_type"`
-	Attr    json.RawMessage `json:"attributes"`
-}
-
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
@@ -85,48 +43,16 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	refVal *handler.Endorsement,
 ) ([]string, error) {
 
-	implID, err := common.GetImplID("PARSEC_CCA", refVal.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
-	log.Debugf("PARSEC CCA Plugin Reference Value Look Up Key= %s\n", lookupKey)
-
-	return []string{lookupKey}, nil
+	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
 }
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	implID, err := common.GetImplID("PARSEC_CCA", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
-	}
-
-	instID, err := common.GetInstID("PARSEC_CCA", ta.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	lookupKey := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
-	log.Debugf("PARSEC CCA Plugin TA Look Up Key= %s\n", lookupKey)
-	return []string{lookupKey}, nil
+	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var evidence parsec_cca.Evidence
-
-	err := evidence.FromCBOR(token.Data)
-	if err != nil {
-		return "", handler.BadEvidence(err)
-	}
-
-	return arm.TaLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(evidence.Pat.PlatformClaims),
-		arm.MustInstIDString(evidence.Pat.PlatformClaims),
-	), nil
+	return arm.GetTrustAnchorID(SchemeName, token)
 }
 
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
@@ -174,23 +100,14 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
 	var (
-		endorsement TaEndorsements
-		evidence    parsec_cca.Evidence
+		evidence parsec_cca.Evidence
 	)
 
 	if err := evidence.FromCBOR(token.Data); err != nil {
 		return handler.BadEvidence(err)
 	}
 
-	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		return fmt.Errorf("could not decode trust anchor: %w", err)
-	}
-	var ta TaAttr
-	if err := json.Unmarshal(endorsement.Attr, &ta); err != nil {
-		return fmt.Errorf("could not unmarshal cca trust anchor: %w", err)
-	}
-	pem := ta.VerifKey
-	pk, err := common.DecodePemSubjectPubKeyInfo([]byte(pem))
+	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchor)
 	if err != nil {
 		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}
@@ -205,12 +122,12 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 func (s EvidenceHandler) AppraiseEvidence(
 	ec *proto.EvidenceContext, endorsementsStrings []string,
 ) (*ear.AttestationResult, error) {
-	var endorsements []Endorsements // nolint:prealloc
+	var endorsements []handler.Endorsement // nolint:prealloc
 
 	result := handler.CreateAttestationResult(SchemeName)
 
 	for i, e := range endorsementsStrings {
-		var endorsement Endorsements
+		var endorsement handler.Endorsement
 
 		if err := json.Unmarshal([]byte(e), &endorsement); err != nil {
 			return nil, fmt.Errorf("could not decode endorsement at index %d: %w", i, err)
@@ -226,7 +143,7 @@ func (s EvidenceHandler) AppraiseEvidence(
 func populateAttestationResult(
 	result *ear.AttestationResult,
 	evidence map[string]interface{},
-	endorsements []Endorsements,
+	endorsements []handler.Endorsement,
 ) error {
 	appraisal := result.Submods[SchemeName]
 
@@ -268,7 +185,7 @@ func populateAttestationResult(
 		return handler.BadEvidence(errors.New("no cca platform in the evidence"))
 	}
 	pmap := cp.(map[string]interface{})
-	claims, err := mapToClaims(pmap)
+	claims, err := common.MapToClaims(pmap)
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
@@ -290,8 +207,8 @@ func populateAttestationResult(
 		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
 	}
 
-	swComps := filterRefVal(endorsements, "PARSEC_CCA.sw-component")
-	match := matchSoftware(claims, swComps)
+	swComps := arm.FilterRefVal(endorsements, "PARSEC_CCA.sw-component")
+	match := arm.MatchSoftware(SchemeName, claims, swComps)
 	if match {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		log.Debug("matchSoftware Success")
@@ -301,8 +218,8 @@ func populateAttestationResult(
 		log.Debug("matchSoftware Failed")
 	}
 
-	platformConfig := filterRefVal(endorsements, "PARSEC_CCA.platform-config")
-	match = matchPlatformConfig(claims, platformConfig)
+	platformConfig := arm.FilterRefVal(endorsements, "PARSEC_CCA.platform-config")
+	match = arm.MatchPlatformConfig(SchemeName, claims, platformConfig)
 
 	if match {
 		appraisal.TrustVector.Configuration = ear.ApprovedConfigClaim
@@ -316,84 +233,4 @@ func populateAttestationResult(
 
 	appraisal.VeraisonAnnotatedEvidence = &evidence
 	return nil
-}
-
-func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
-	data, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return psatoken.DecodeJSONClaims(data)
-}
-
-func filterRefVal(endorsements []Endorsements, key string) []Endorsements {
-	var refVal []Endorsements
-	for _, end := range endorsements {
-		if end.SubType == key {
-			refVal = append(refVal, end)
-		}
-	}
-	return refVal
-}
-
-func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool {
-	evidenceComponents := make(map[string]psatoken.SwComponent)
-
-	swComps, err := evidence.GetSoftwareComponents()
-	if err != nil {
-		return false
-	}
-
-	for _, c := range swComps {
-		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
-		evidenceComponents[key] = c
-	}
-	matched := false
-	for _, endorsement := range endorsements {
-		// If we have Endorsements we assume they match to begin with
-		matched = true
-		var attr SwAttr
-		if err := json.Unmarshal(endorsement.Attr, &attr); err != nil {
-			log.Error("could not decode sw attributes from endorsements")
-			return false
-		}
-
-		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue) + attr.MeasurementType
-		evComp, ok := evidenceComponents[key]
-		if !ok {
-			matched = false
-			break
-		}
-
-		log.Debugf("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
-		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
-		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
-		versionMatched := attr.Version == "" || attr.Version == *evComp.Version
-
-		if !(typeMatched && sigMatched && versionMatched) {
-			matched = false
-			break
-		}
-	}
-	return matched
-}
-
-func matchPlatformConfig(evidence psatoken.IClaims, endorsements []Endorsements) bool {
-
-	pfConfig, err := evidence.GetConfig()
-	if err != nil {
-		return false
-	}
-	if len(endorsements) > 1 {
-		log.Error("got %d CCA configuration endorsements, want 1", len(endorsements))
-		return false
-	}
-	var attr CcaPlatformCfg
-	if err := json.Unmarshal(endorsements[0].Attr, &attr); err != nil {
-		log.Error("could not decode cca platform config in matchPlatformConfig")
-		return false
-	}
-
-	return bytes.Equal(pfConfig, attr.Value)
 }
