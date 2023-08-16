@@ -56,14 +56,15 @@ func Test_CogenGenCmd_no_attestation_scheme(t *testing.T) {
 }
 
 func Test_CogenGenCmd_cocli_runs(t *testing.T) {
+
 	cmd := NewCogenGenCmd()
 
-	args := []string{"--key-file=key.cbor",
-		"--evidence-file=evidence.cbor",
-		"--attest-scheme=PSA",
+	args := []string{"--key-file=/home/samdavis/services/utils/coevcli/data/es256.json",
+		"--evidence-file=/home/samdavis/services/utils/coevcli/data/psa-evidence.cbor",
+		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 }

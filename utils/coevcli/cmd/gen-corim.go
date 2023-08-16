@@ -63,11 +63,11 @@ func checkCogenGenArgs() error {
 
 func generate(key_file *string, attestation_scheme *string, corim_file *string, evidence_file *string) error {
 
-	// evcli_cmd := exec.Command("evcli", *attestation_scheme, "check", "--token=", *evidence_file, "--key=", *key_file, "--claims=output-evidence-claims.json")
+	evcli_cmd := exec.Command("evcli", *attestation_scheme, "check", "--token="+*evidence_file, "--key="+*key_file, "--claims=output-evidence-claims.json")
 
-	// if err := evcli_cmd.Run(); err != nil {
-	// 	return err
-	// }
+	if err := evcli_cmd.Run(); err != nil {
+		return err
+	}
 
 	comid_cmd := exec.Command("cocli", "comid", "create", "--template=/home/samdavis/services/utils/coevcli/data/comid-claims.json")
 
