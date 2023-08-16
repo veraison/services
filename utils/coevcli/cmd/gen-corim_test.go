@@ -59,8 +59,8 @@ func Test_CogenGenCmd_cocli_runs(t *testing.T) {
 
 	cmd := NewCogenGenCmd()
 
-	args := []string{"--key-file=/home/samdavis/services/utils/coevcli/data/es256.json",
-		"--evidence-file=/home/samdavis/services/utils/coevcli/data/psa-evidence.cbor",
+	args := []string{"--key-file=../data/es256.json",
+		"--evidence-file=../data/psa-evidence.cbor",
 		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
