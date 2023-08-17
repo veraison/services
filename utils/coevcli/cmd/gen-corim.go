@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/eat"
 	"github.com/veraison/psatoken"
 )
 
@@ -95,6 +96,12 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 	var implID comid.ImplID
 	copy(implID[:], implIDByte)
 
+	instID, err := evidence.Claims.GetInstID()
+	if err != nil {
+		return err
+	}
+	var ueid eat.UEID = instID
+
 	measurements := comid.NewMeasurements()
 
 	for _, component := range swComponents {
@@ -106,8 +113,10 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 		measurements.AddMeasurement(measurement)
 	}
 
+	class := comid.NewClassImplID(implID)
+
 	refVal := comid.ReferenceValue{
-		Environment:  comid.Environment{Class: comid.NewClassImplID(implID)},
+		Environment:  comid.Environment{Class: class},
 		Measurements: *measurements,
 	}
 
@@ -124,6 +133,26 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 
 	referenceValues := append(*new([]comid.ReferenceValue), refVal)
 	comidClaims.Triples.ReferenceValues = &referenceValues
+
+	key_data := "PLACEHOLDER"
+	key := comid.NewVerifKey()
+	key.SetKey(key_data)
+	keys := comid.NewVerifKeys()
+	keys.AddVerifKey(key)
+
+	instance := comid.NewInstance()
+	instance.SetUEID(ueid)
+
+	verifKey := comid.AttestVerifKey{
+		Environment: comid.Environment{
+			Class:    class,
+			Instance: instance,
+		},
+		VerifKeys: *keys,
+	}
+
+	attestVerifKey := append(*new([]comid.AttestVerifKey), verifKey)
+	comidClaims.Triples.AttestVerifKeys = &attestVerifKey
 
 	content, err = comidClaims.ToJSON()
 	if err != nil {
