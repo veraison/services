@@ -4,7 +4,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,53 +17,17 @@ import (
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
 	"github.com/veraison/services/capability"
-	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	mock_deps "github.com/veraison/services/provisioning/api/mocks"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
-	testGoodHandlerResponse = handler.EndorsementHandlerResponse{
-		TrustAnchors: []*proto.Endorsement{
-			{},
-		},
-		ReferenceValues: []*proto.Endorsement{
-			{},
-		},
-	}
-	testFailedTaRes = proto.AddTrustAnchorResponse{
-		Status: &proto.Status{Result: false},
-	}
-	testGoodTaRes = proto.AddTrustAnchorResponse{
-		Status: &proto.Status{Result: true},
-	}
-	testFailedRefValRes = proto.AddRefValuesResponse{
-		Status: &proto.Status{Result: false},
-	}
-	testGoodRefValRes = proto.AddRefValuesResponse{
-		Status: &proto.Status{Result: true},
-	}
 	testGoodServiceState = proto.ServiceState{
 		Status:        2,
 		ServerVersion: "3.2",
 	}
 )
-
-type MockHandler struct {
-	Response *handler.EndorsementHandlerResponse
-}
-
-func (o MockHandler) Init(handler.EndorsementHandlerParams) error { return nil }
-func (o MockHandler) Close() error                                { return nil }
-func (o MockHandler) GetName() string                             { return "mock" }
-func (o MockHandler) GetAttestationScheme() string                { return "mock" }
-func (o MockHandler) GetSupportedMediaTypes() []string            { return nil }
-
-func (o MockHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return o.Response, nil
-}
 
 func TestHandler_Submit_UnsupportedAccept(t *testing.T) {
 	h := &Handler{}
@@ -101,19 +64,17 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 	mediaType := "application/unsupported+json"
 	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
 
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 	dm.EXPECT().
-		IsRegisteredMediaType(
+		IsSupportedMediaType(
 			gomock.Eq(mediaType),
 		).
-		Return(false)
+		Return(false, nil)
 	dm.EXPECT().
-		GetRegisteredMediaTypes().
-		Return(supportedMediaTypes)
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusUnsupportedMediaType
 	expectedType := "application/problem+json"
@@ -149,16 +110,14 @@ func TestHandler_Submit_NoBody(t *testing.T) {
 
 	mediaType := "application/good+json"
 
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 	dm.EXPECT().
-		IsRegisteredMediaType(
+		IsSupportedMediaType(
 			gomock.Eq(mediaType),
 		).
-		Return(true)
+		Return(true, nil)
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusBadRequest
 	expectedType := "application/problem+json"
@@ -194,297 +153,25 @@ func TestHandler_Submit_DecodeFailure(t *testing.T) {
 
 	mediaType := "application/good+json"
 	endo := []byte("some data")
-	handlerError := "handler manager says: doh!"
+	handlerError := "decoding failure: doh!"
 
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 	dm.EXPECT().
-		IsRegisteredMediaType(
+		IsSupportedMediaType(
 			gomock.Eq(mediaType),
 		).
-		Return(true)
+		Return(true, nil)
 	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
+		SubmitEndorsements(
+			tenantID, endo, gomock.Eq(mediaType),
 		).
-		Return(nil, errors.New(handlerError))
+		Return(errors.New(handlerError))
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf("handler manager returned error: %s", handlerError)
-	expectedStatus := "failed"
-
-	w := httptest.NewRecorder()
-	g, _ := gin.CreateTestContext(w)
-
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(endo))
-	g.Request.Header.Add("Content-Type", mediaType)
-	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
-
-	h.Submit(g)
-
-	var body ProvisioningSession
-	_ = json.Unmarshal(w.Body.Bytes(), &body)
-
-	assert.Equal(t, expectedCode, w.Code)
-	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
-	assert.NotNil(t, body.FailureReason)
-	assert.Equal(t, expectedFailureReason, *body.FailureReason)
-	assert.Equal(t, expectedStatus, body.Status)
-}
-
-func TestHandler_Submit_store_AddTrustAnchor_failure1(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mediaType := "application/good+json"
-	endo := []byte("some data")
-	storeError := "store says doh!"
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		IsRegisteredMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(true)
-	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(MockHandler{&testGoodHandlerResponse}, nil)
-
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		AddTrustAnchor(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
-				},
-			),
-		).
-		Return(nil, errors.New(storeError))
-
-	h := NewHandler(dm, sc, log.Named("test"))
-
-	expectedCode := http.StatusOK
-	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for trust anchor: %s",
-		storeError,
-	)
-	expectedStatus := "failed"
-
-	w := httptest.NewRecorder()
-	g, _ := gin.CreateTestContext(w)
-
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(endo))
-	g.Request.Header.Add("Content-Type", mediaType)
-	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
-
-	h.Submit(g)
-
-	var body ProvisioningSession
-	_ = json.Unmarshal(w.Body.Bytes(), &body)
-
-	assert.Equal(t, expectedCode, w.Code)
-	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
-	assert.NotNil(t, body.FailureReason)
-	assert.Equal(t, expectedFailureReason, *body.FailureReason)
-	assert.Equal(t, expectedStatus, body.Status)
-}
-
-func TestHandler_Submit_store_AddTrustAnchor_failure2(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mediaType := "application/good+json"
-	endo := []byte("some data")
-	storeError := "store says doh!"
-	testFailedTaRes.Status.ErrorDetail = storeError
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		IsRegisteredMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(true)
-	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(MockHandler{&testGoodHandlerResponse}, nil)
-
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		AddTrustAnchor(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
-				},
-			),
-		).
-		Return(&testFailedTaRes, nil)
-
-	h := NewHandler(dm, sc, log.Named("test"))
-
-	expectedCode := http.StatusOK
-	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for trust anchor: %s",
-		storeError,
-	)
-	expectedStatus := "failed"
-
-	w := httptest.NewRecorder()
-	g, _ := gin.CreateTestContext(w)
-
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(endo))
-	g.Request.Header.Add("Content-Type", mediaType)
-	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
-
-	h.Submit(g)
-
-	var body ProvisioningSession
-	_ = json.Unmarshal(w.Body.Bytes(), &body)
-
-	assert.Equal(t, expectedCode, w.Code)
-	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
-	assert.NotNil(t, body.FailureReason)
-	assert.Equal(t, expectedFailureReason, *body.FailureReason)
-	assert.Equal(t, expectedStatus, body.Status)
-}
-
-func TestHandler_Submit_store_AddRefValues_failure1(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mediaType := "application/good+json"
-	endo := []byte("some data")
-	storeError := "store says doh!"
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		IsRegisteredMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(true)
-	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(MockHandler{&testGoodHandlerResponse}, nil)
-
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		AddTrustAnchor(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
-				},
-			),
-		).
-		Return(&testGoodTaRes, nil)
-	sc.EXPECT().
-		AddRefValues(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddRefValuesRequest{
-					ReferenceValues: []*proto.Endorsement{
-						{},
-					},
-				},
-			),
-		).
-		Return(nil, errors.New(storeError))
-
-	h := NewHandler(dm, sc, log.Named("test"))
-
-	expectedCode := http.StatusOK
-	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for reference values: %s",
-		storeError,
-	)
-	expectedStatus := "failed"
-
-	w := httptest.NewRecorder()
-	g, _ := gin.CreateTestContext(w)
-
-	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(endo))
-	g.Request.Header.Add("Content-Type", mediaType)
-	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
-
-	h.Submit(g)
-
-	var body ProvisioningSession
-	_ = json.Unmarshal(w.Body.Bytes(), &body)
-
-	assert.Equal(t, expectedCode, w.Code)
-	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
-	assert.NotNil(t, body.FailureReason)
-	assert.Equal(t, expectedFailureReason, *body.FailureReason)
-	assert.Equal(t, expectedStatus, body.Status)
-}
-
-func TestHandler_Submit_store_AddRefValues_failure2(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mediaType := "application/good+json"
-	endo := []byte("some data")
-	storeError := "store says doh!"
-	testFailedRefValRes.Status.ErrorDetail = storeError
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		IsRegisteredMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(true)
-	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(MockHandler{&testGoodHandlerResponse}, nil)
-
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		AddTrustAnchor(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
-				},
-			),
-		).
-		Return(&testGoodTaRes, nil)
-	sc.EXPECT().
-		AddRefValues(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddRefValuesRequest{
-					ReferenceValues: []*proto.Endorsement{
-						{},
-					},
-				},
-			),
-		).
-		Return(&testFailedRefValRes, nil)
-
-	h := NewHandler(dm, sc, log.Named("test"))
-
-	expectedCode := http.StatusOK
-	expectedType := ProvisioningSessionMediaType
-	expectedFailureReason := fmt.Sprintf(
-		"endorsement store returned error: store operation failed for reference values: %s",
-		storeError,
-	)
+	expectedFailureReason := fmt.Sprintf("submit endorsement returned error: %s", handlerError)
 	expectedStatus := "failed"
 
 	w := httptest.NewRecorder()
@@ -512,52 +199,25 @@ func TestHandler_Submit_ok(t *testing.T) {
 
 	mediaType := "application/good+json"
 	endo := []byte("some data")
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		IsRegisteredMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(true)
-	dm.EXPECT().
-		LookupByMediaType(
-			gomock.Eq(mediaType),
-		).
-		Return(MockHandler{&testGoodHandlerResponse}, nil)
-
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		AddTrustAnchor(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddTrustAnchorRequest{
-					TrustAnchor: testGoodHandlerResponse.TrustAnchors[0],
-				},
-			),
-		).
-		Return(&testGoodTaRes, nil)
-	sc.EXPECT().
-		AddRefValues(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(
-				&proto.AddRefValuesRequest{
-					ReferenceValues: []*proto.Endorsement{
-						{},
-					},
-				},
-			),
-		).
-		Return(&testGoodRefValRes, nil)
-
-	h := NewHandler(dm, sc, log.Named("test"))
-
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
 	expectedStatus := "success"
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	h := NewHandler(dm, log.Named("api"))
 
 	w := httptest.NewRecorder()
 	g, _ := gin.CreateTestContext(w)
 
+	dm.EXPECT().
+		IsSupportedMediaType(
+			gomock.Eq(mediaType),
+		).
+		Return(true, nil)
+	dm.EXPECT().
+		SubmitEndorsements(
+			tenantID, endo, gomock.Eq(mediaType),
+		).
+		Return(nil)
 	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(endo))
 	g.Request.Header.Add("Content-Type", mediaType)
 	g.Request.Header.Add("Accept", ProvisioningSessionMediaType)
@@ -579,27 +239,23 @@ func TestHandler_GetWellKnownProvisioningInfo_ok(t *testing.T) {
 
 	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
 
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 	dm.EXPECT().
-		GetRegisteredMediaTypes().
-		Return(supportedMediaTypes)
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		GetServiceState(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(&emptypb.Empty{}),
-		).
+	dm.EXPECT().
+		GetVTSState().
 		Return(&testGoodServiceState, nil)
 
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := capability.WellKnownMediaType
 	expectedBody := capability.WellKnownInfo{
 		MediaTypes:   supportedMediaTypes,
 		Version:      testGoodServiceState.ServerVersion,
-		ServiceState: testGoodServiceState.Status.String(),
+		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
 	}
 
@@ -623,27 +279,23 @@ func TestHandler_GetWellKnownProvisioningInfo_GetRegisteredMediaTypes_empty(t *t
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
-	dm.EXPECT().
-		GetRegisteredMediaTypes().
-		Return([]string{})
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		GetServiceState(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(&emptypb.Empty{}),
-		).
+	dm.EXPECT().
+		SupportedMediaTypes().
+		Return([]string{}, nil)
+
+	dm.EXPECT().
+		GetVTSState().
 		Return(&testGoodServiceState, nil)
 
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusOK
 	expectedType := capability.WellKnownMediaType
 	expectedBody := capability.WellKnownInfo{
-		MediaTypes:   []string{},
 		Version:      testGoodServiceState.ServerVersion,
-		ServiceState: testGoodServiceState.Status.String(),
+		ServiceState: capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
 		ApiEndpoints: publicApiMap,
 	}
 
@@ -668,21 +320,16 @@ func TestHandler_GetWellKnownProvisioningInfo_GetServiceState_fail(t *testing.T)
 	defer ctrl.Finish()
 
 	supportedMediaTypes := []string{"application/type-1", "application/type-2"}
-
-	dm := mock_deps.NewMockIManager[handler.IEndorsementHandler](ctrl)
+	dm := mock_deps.NewMockIProvisioner(ctrl)
 	dm.EXPECT().
-		GetRegisteredMediaTypes().
-		Return(supportedMediaTypes)
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
 
-	sc := mock_deps.NewMockIVTSClient(ctrl)
-	sc.EXPECT().
-		GetServiceState(
-			gomock.Eq(context.TODO()),
-			gomock.Eq(&emptypb.Empty{}),
-		).
+	dm.EXPECT().
+		GetVTSState().
 		Return(nil, errors.New("blah"))
 
-	h := NewHandler(dm, sc, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"))
 
 	expectedCode := http.StatusInternalServerError
 	expectedType := "application/problem+json"

@@ -10,7 +10,7 @@
         "storage-opaque": 2,
         "sourced-data": 0
     },
-    "ear.appraisal-policy-id": "policy://PSA_OIT",
+    "ear.appraisal-policy-id": "policy:PSA_IOT",
     "ear.veraison.annotated-evidence": {
           "eat-profile": "http://arm.com/psa/2.0.0",
           "psa-client-id": 1,

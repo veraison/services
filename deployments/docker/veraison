@@ -8,19 +8,21 @@ function status() {
     local vts=$(_get_container_state vts-service)
     local prov=$(_get_container_state provisioning-service)
     local verif=$(_get_container_state verification-service)
+    local manage=$(_get_container_state management-service)
 
     if [[ $_quiet == true ]]; then
         local vts=$(_strip_color $vts)
         local prov=$(_strip_color $prov)
         local verif=$(_strip_color $verif)
+        local manage=$(_strip_color $manage)
 
         local status="${_yell}stopped${_reset}"
 
-        if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" ]]; then
+        if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" || "$manage" == "running" ]]; then
             status="${_yell}partial${_yell}"
         fi
 
-        if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running" ]]; then
+        if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running"  && "$manage" == "running" ]]; then
             status="${_green}running${_reset}"
         fi
 
@@ -29,6 +31,7 @@ function status() {
         echo -e "         vts: $vts"
         echo -e "provisioning: $prov"
         echo -e "verification: $verif"
+        echo -e "  management: $manage"
     fi
 }
 
@@ -40,12 +43,15 @@ function start() {
         sleep 0.5 # wait for vts to start before starting the services that depend on it.
         start_provisioning
         start_verification
+        start_management
     elif [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
         start_vts
     elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
         start_provisioning
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         start_verification
+    elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
+        start_management
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -56,6 +62,7 @@ function stop() {
     local what=$1
 
     if [[ "x$what" == "x" ]]; then
+        stop_management
         stop_verification
         stop_provisioning
         stop_vts
@@ -65,6 +72,8 @@ function stop() {
         stop_provisioning
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         stop_verification
+    elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
+        stop_management
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -80,6 +89,8 @@ function follow() {
         follow_provisioning
     elif [[ "$what" == "verification" || "$what" == "verification-service" ]]; then
         follow_verification
+    elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
+        follow_management
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -120,6 +131,18 @@ function stop_verification() {
 
 function follow_verification() {
     docker container logs --follow --timestamps verification-service
+}
+
+function start_management() {
+    docker container start management-service
+}
+
+function stop_management() {
+    docker container stop management-service
+}
+
+function follow_management() {
+    docker container logs --follow --timestamps management-service
 }
 
 function manager() {
@@ -222,9 +245,9 @@ function evcli() {
     manager evcli $translated_args
 }
 
-function polcli() {
+function pocli() {
     local translated_args=$(_translate_host_paths "$@")
-    manager evcli $translated_args
+    manager pocli $translated_args
 }
 
 function help() {
@@ -437,7 +460,7 @@ case $command in
     stop-tmux | kill-tmux) kill_tmux_session $2;;
     cocli) shift; cocli $@;;
     evcli) shift; evcli $@;;
-    polcli) shift; polcli $@;;
+    pocli) shift; pocli $@;;
     debug) manager_debug $@;;
     *) echo -e "$_error: unexpected command: \"$command\" (use -h for help)";;
 esac

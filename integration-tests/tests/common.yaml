@@ -4,6 +4,7 @@ description: Common test information
 variables:
   provisioning-service: '{tavern.env_vars.PROVISIONING_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.PROVISIONING_PORT}'
   verification-service: '{tavern.env_vars.VERIFICATION_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.VERIFICATION_PORT}'
+  management-service: '{tavern.env_vars.MANAGEMENT_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.MANAGEMENT_PORT}'
   good-nonce: QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk=
   bad-nonce: Ppfdfe2JzZLOk=
   endorsements-content-types:

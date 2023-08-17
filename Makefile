@@ -8,6 +8,7 @@ SUBDIR += config
 SUBDIR += handler
 SUBDIR += kvstore
 SUBDIR += log
+SUBDIR += management
 SUBDIR += plugin
 SUBDIR += policy
 SUBDIR += proto

@@ -112,6 +112,22 @@ func GetBuiltinHandleByNameUsing[I plugin.IPluggable](ldr *BuiltinLoader, name s
 	return handle, nil
 }
 
+func GetBuiltinLoadedAttestationSchemes[I plugin.IPluggable](ldr *BuiltinLoader) []string {
+	schemes := make([]string, len(ldr.loadedByName))
+
+	i := 0
+	for _, ihandle := range ldr.loadedByName {
+		if _, ok := ihandle.(I); !ok {
+			continue
+		}
+
+		schemes[i] = ihandle.GetAttestationScheme()
+		i += 1
+	}
+
+	return schemes
+}
+
 func GetBuiltinHandleByAttestationSchemeUsing[I plugin.IPluggable](
 	ldr *BuiltinLoader,
 	scheme string,

@@ -18,6 +18,7 @@
         "storage-opaque": 0,
         "sourced-data": 0
       },
+      "ear.appraisal-policy-id": "policy:PSA_OIT",
       "ear.veraison.annotated-evidence": {
         "psa-boot-seed": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
         "psa-client-id": 2,

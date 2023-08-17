@@ -19,5 +19,6 @@ type IBackend interface {
 		evidence map[string]interface{},
 		endorsements []string,
 	) (map[string]interface{}, error)
+	Validate(ctx context.Context, policy string) error
 	Close()
 }

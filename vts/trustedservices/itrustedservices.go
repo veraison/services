@@ -10,7 +10,7 @@ import (
 )
 
 type ITrustedServices interface {
-	Init(cfg *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler]) error
+	Init(cfg *viper.Viper, pm plugin.IManager[handler.IEvidenceHandler], em plugin.IManager[handler.IEndorsementHandler]) error
 	Close() error
 	Run() error
 

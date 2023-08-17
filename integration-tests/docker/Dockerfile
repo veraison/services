@@ -16,6 +16,7 @@ RUN apt-get update \
         ruby \
         jq \
         vim \
+        sqlite3 \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
     && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
@@ -32,7 +33,8 @@ RUN wget https://dl.step.sm/gh-release/cli/docs-cli-install/v0.23.1/step-cli_0.2
 RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${TESTER_UID}" | cut -d: -f1); \
     groupdel -f $(cat /etc/group | awk -F: "\$3 == ${TESTER_GID}" | cut -d: -f1); \
     groupadd -g ${TESTER_GID} tavern && \
-    useradd -m -u ${TESTER_UID} -g tavern \
+    groupadd -g 616 veraison && \
+    useradd -m -u ${TESTER_UID} -g tavern -G veraison \
     -s /bin/bash tavern
 
 WORKDIR /integration-tests

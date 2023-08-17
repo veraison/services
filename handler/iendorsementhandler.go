@@ -6,7 +6,7 @@ import (
 	"github.com/veraison/services/plugin"
 )
 
-// EndorsementHandlerParams are passed to IEvidenceHandler.Init() They are
+// EndorsementHandlerParams are passed to IEndorsementHandler.Init() They are
 // implementation-specific.
 type EndorsementHandlerParams map[string]interface{}
 

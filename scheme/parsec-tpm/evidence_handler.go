@@ -14,13 +14,12 @@ import (
 	"strings"
 
 	"github.com/veraison/ear"
-	"github.com/veraison/parsectpm"
+	"github.com/veraison/parsec/tpm"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/swid"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -67,16 +66,16 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, refVals *proto.Endorsement) ([]string, error) {
-	return synthKeysFromParts(ScopeRefValues, tenantID, refVals.GetAttributes())
+func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, refVals *handler.Endorsement) ([]string, error) {
+	return synthKeysFromAttr(ScopeRefValues, tenantID, refVals.Attributes)
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	return synthKeysFromParts(ScopeTrustAnchor, tenantID, ta.GetAttributes())
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
+	return synthKeysFromAttr(ScopeTrustAnchor, tenantID, ta.Attributes)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	var ev parsectpm.Evidence
+	var ev tpm.Evidence
 	err := ev.FromCBOR(token.Data)
 	if err != nil {
 		return "", handler.BadEvidence(err)
@@ -88,13 +87,13 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	}
 	kid := *kat.KID
 	instance_id := base64.StdEncoding.EncodeToString(kid)
-	return parsecTpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id), nil
+	return tpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id), nil
 
 }
 
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
 	var (
-		evidence    parsectpm.Evidence
+		evidence    tpm.Evidence
 		endorsement TaEndorsements
 		extracted   handler.ExtractedClaims
 	)
@@ -115,14 +114,14 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 	}
 
 	class_id := *endorsement.Attr.ClassID
-	extracted.ReferenceID = parsecTpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
+	extracted.ReferenceID = tpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
 	return &extracted, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
 	var (
 		endorsement TaEndorsements
-		ev          parsectpm.Evidence
+		ev          tpm.Evidence
 	)
 
 	if err := ev.FromCBOR(token.Data); err != nil {
@@ -165,34 +164,41 @@ func (s EvidenceHandler) AppraiseEvidence(ec *proto.EvidenceContext, endorsement
 	return result, err
 }
 
-func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]string, error) {
+func synthKeysFromAttr(scope, tenantID string, attr json.RawMessage) ([]string, error) {
 	var (
 		instance string
 		class    string
-		fields   map[string]*structpb.Value
 		err      error
 	)
 
-	fields, err = common.GetFieldsFromParts(parts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
-	}
-
-	if scope == ScopeTrustAnchor {
-		instance, err = common.GetMandatoryPathSegment("parsec-tpm.instance-id", fields)
-		if err != nil {
-			return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
+	switch scope {
+	case ScopeTrustAnchor:
+		var ta TaAttr
+		if err := json.Unmarshal(attr, &ta); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from TA: %w", err)
 		}
+		if ta.ClassID == nil || ta.InstID == nil {
+			return nil, fmt.Errorf("missing InstID or ClassID from TA: %w", err)
+		}
+		class = *ta.ClassID
+		instance = *ta.InstID
+	case ScopeRefValues:
+		var sw SwAttr
+		if err := json.Unmarshal(attr, &sw); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from RefVal: %w", err)
+		}
+		if sw.ClassID == nil {
+			return nil, fmt.Errorf("missing ClassID in reference value: %w", err)
+		}
+		class = *sw.ClassID
+	default:
+		return nil, fmt.Errorf("invalid scope argument: %s", scope)
 	}
 
-	class, err = common.GetMandatoryPathSegment("parsec-tpm.class-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
-	}
-	return []string{parsecTpmLookupKey(scope, tenantID, class, instance)}, nil
+	return []string{tpmLookupKey(scope, tenantID, class, instance)}, nil
 }
 
-func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
+func tpmLookupKey(scope, tenantID, class, instance string) string {
 	var absPath []string
 
 	switch scope {
@@ -211,7 +217,7 @@ func parsecTpmLookupKey(scope, tenantID, class, instance string) string {
 	return u.String()
 }
 
-func evidenceAsMap(e parsectpm.Evidence) (map[string]interface{}, error) {
+func evidenceAsMap(e tpm.Evidence) (map[string]interface{}, error) {
 	data, err := e.ToJSON()
 	if err != nil {
 		return nil, err
@@ -280,8 +286,8 @@ func populateAttestationResult(
 	return nil
 }
 
-func mapAsEvidence(in map[string]interface{}) (*parsectpm.Evidence, error) {
-	evidence := &parsectpm.Evidence{}
+func mapAsEvidence(in map[string]interface{}) (*tpm.Evidence, error) {
+	evidence := &tpm.Evidence{}
 	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
@@ -354,7 +360,7 @@ func concatHash(endorsements []Endorsements) ([]byte, error) {
 }
 
 // hashFunc returns the hash associated with the algorithms supported
-// within parsectpm library
+// within tpm library
 func hashFunc(alg uint64) crypto.Hash {
 	switch alg {
 	case swid.Sha256:

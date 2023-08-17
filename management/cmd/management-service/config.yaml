@@ -1,0 +1,15 @@
+plugin:
+  backend: go-plugin
+  go-plugin:
+    dir: ../../../scheme/bin/
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/po-store.sql
+management:
+  listen-addr: 0.0.0.0:8088
+po-agent:
+  backend: opa
+logging:
+  level: debug

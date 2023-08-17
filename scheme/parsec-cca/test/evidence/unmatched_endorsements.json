@@ -1,0 +1,12 @@
+{
+  "scheme":"PARSEC_CCA",
+  "type":"VERIFICATION_KEY",
+  "attributes":{
+      "PARSEC_CCA.hw-model":"RoadRunner",
+      "PARSEC_CCA.hw-vendor":"ACME",
+      "PARSEC_CCA.impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "PARSEC_CCA.iak-pub":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2lB1xtcIWePIt/Wwt+s8Ybp+5ji8\nt2pzGDKSOG7xTGK5gOYkcLCHz4i4L/yGzyEmBO1mZFZNuJz14X0J24+XQQ==\n-----END PUBLIC KEY-----",
+      "PARSEC_CCA.inst-id":"Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+  }
+}
+
