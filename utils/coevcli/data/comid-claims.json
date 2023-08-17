@@ -73,6 +73,27 @@
                     }
                 ]
             }
+        ],
+        "attester-verification-keys": [
+            {
+                "environment": {
+                    "class": {
+                        "id": {
+                            "type": "psa.impl-id",
+                            "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
+                        }
+                    },
+                    "instance": {
+                        "type": "ueid",
+                        "value": "Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+                    }
+                },
+                "verification-keys": [
+                    {
+                        "key": "PLACEHOLDER"
+                    }
+                ]
+            }
         ]
     }
 }
