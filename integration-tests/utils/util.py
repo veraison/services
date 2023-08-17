@@ -41,3 +41,10 @@ def run_command(command: str, action: str) -> int:
         executable = command.split()[0]
         raise RuntimeError(f'Could not {action}; {executable} returned {proc.returncode}')
 
+
+def clear_stores():
+    for prefix in ['en', 'po', 'ta']:
+        command = f"sqlite3 /opt/veraison/stores/vts/{prefix}-store.sql 'delete from kvstore'"
+        run_command(command, f'clear {prefix} store')
+
+

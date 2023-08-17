@@ -8,17 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
-	"strings"
-
-	structpb "google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
-
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
+	"github.com/veraison/services/scheme/common/arm"
 )
 
 type SwAttr struct {
@@ -70,55 +66,34 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	refValue *proto.Endorsement,
+	refValue *handler.Endorsement,
 ) ([]string, error) {
-	var (
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
-	log.Printf("SynthKeysFromRefValue called\n")
-	fields, err = common.GetFieldsFromParts(refValue.GetAttributes())
+
+	implID, err := common.GetImplID("PSA_IOT", refValue.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("PSA_IOT.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize software component abs-path: %w", err)
-	}
-
-	finalstr := psaSoftwareLookupKey(tenantID, implID)
+	finalstr := arm.RefValLookupKey(SchemeName, tenantID, implID)
 	log.Printf("PSA Plugin PSA Look Up Key= %s\n", finalstr)
-	return []string{psaSoftwareLookupKey(tenantID, implID)}, nil
+	return []string{arm.RefValLookupKey(SchemeName, tenantID, implID)}, nil
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	var (
-		instID string
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	fields, err = common.GetFieldsFromParts(ta.GetAttributes())
+	implID, err := common.GetImplID("PSA_IOT", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("PSA_IOT.impl-id", fields)
+	instID, err := common.GetInstID("PSA_IOT", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	instID, err = common.GetMandatoryPathSegment("PSA_IOT.inst-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	finalstr := psaTaLookupKey(tenantID, implID, instID)
+	finalstr := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
 	log.Printf("PSA Plugin TA PSA Look Up Key= %s\n", finalstr)
-	return []string{psaTaLookupKey(tenantID, implID, instID)}, nil
+	return []string{arm.TaLookupKey(SchemeName, tenantID, implID, instID)}, nil
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
@@ -129,10 +104,11 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 		return "", handler.BadEvidence(err)
 	}
 
-	return psaTaLookupKey(
+	return arm.TaLookupKey(
+		SchemeName,
 		token.TenantId,
-		MustImplIDString(psaToken.Claims),
-		MustInstIDString(psaToken.Claims),
+		arm.MustImplIDString(psaToken.Claims),
+		arm.MustInstIDString(psaToken.Claims),
 	), nil
 }
 
@@ -148,15 +124,16 @@ func (s EvidenceHandler) ExtractClaims(
 
 	var extracted handler.ExtractedClaims
 
-	claimsSet, err := claimsToMap(psaToken.Claims)
+	claimsSet, err := common.ClaimsToMap(psaToken.Claims)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 	extracted.ClaimsSet = claimsSet
 
-	extracted.ReferenceID = psaSoftwareLookupKey(
+	extracted.ReferenceID = arm.RefValLookupKey(
+		SchemeName,
 		token.TenantId,
-		MustImplIDString(psaToken.Claims),
+		arm.MustImplIDString(psaToken.Claims),
 	)
 	log.Printf("\n Extracted SW ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
@@ -214,18 +191,6 @@ func (s EvidenceHandler) AppraiseEvidence(
 	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
 
 	return result, err
-}
-
-func claimsToMap(claims psatoken.IClaims) (map[string]interface{}, error) {
-	data, err := claims.ToJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	var out map[string]interface{}
-	err = json.Unmarshal(data, &out)
-
-	return out, err
 }
 
 func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
@@ -320,46 +285,4 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 		}
 	}
 	return matched
-}
-
-func psaSoftwareLookupKey(tenantID, implID string) string {
-	absPath := []string{implID}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
-}
-
-func psaTaLookupKey(tenantID, implID, instID string) string {
-	absPath := []string{implID, instID}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
-}
-
-func MustImplIDString(c psatoken.IClaims) string {
-	v, err := c.GetImplID()
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.StdEncoding.EncodeToString(v)
-}
-
-func MustInstIDString(c psatoken.IClaims) string {
-	v, err := c.GetInstID()
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.StdEncoding.EncodeToString(v)
 }

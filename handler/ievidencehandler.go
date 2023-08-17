@@ -57,11 +57,11 @@ type IEvidenceHandler interface {
 
 	// SynthKeysFromRefValue synthesizes lookup key(s) for the
 	// provided reference value endorsement.
-	SynthKeysFromRefValue(tenantID string, refVal *proto.Endorsement) ([]string, error)
+	SynthKeysFromRefValue(tenantID string, refVal *Endorsement) ([]string, error)
 
 	// SynthKeysFromTrustAnchor synthesizes lookup key(s) for the provided
 	// trust anchor.
-	SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error)
+	SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error)
 }
 
 // ExtractedClaims contains a map of claims extracted from an attestation

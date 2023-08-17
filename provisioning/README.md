@@ -8,7 +8,6 @@ configuration:
 
 ### Provisioning service configuration
 
-- `plugin-dir`: directory that will be searched for plugin binaries.
 - `listen-addr`: the address, in the form `<host>:<port>` the provisioning
   server will be listening on.
 
@@ -16,7 +15,6 @@ configuration:
 
 ```yaml
 provisioning:
-  plugin-dir: ../../plugins/bin/
   listen-addr: localhost:8888
 vts:
   server-addr: 127.0.0.1:50051

@@ -32,7 +32,10 @@ USER manager
 
 WORKDIR /opt/veraison
 
-ADD --chown=manager:nogroup utils/evcli utils/cocli utils/polcli ./utils/
+RUN mkdir -p /home/manager/.config/pocli && \
+    echo "host: management-service" > /home/manager/.config/pocli/config.yaml
+
+ADD --chown=manager:nogroup utils/evcli utils/cocli utils/pocli ./utils/
 ADD --chown=manager:nogroup manager-dispatcher ./
 
 ENTRYPOINT ["/opt/veraison/manager-dispatcher"]

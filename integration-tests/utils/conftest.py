@@ -2,7 +2,7 @@ import os
 import sys
 
 import hooks
-from util import to_identifier
+from util import to_identifier, clear_stores
 
 class TavernTest:
 
@@ -23,6 +23,7 @@ def pytest_tavern_beta_before_every_test_run(test_dict, variables):
     setup(test, variables)
 
 def setup(test, variables):
+    clear_stores()
     test_id = to_identifier(test.name)
     handler = getattr(hooks, f'setup_{test_id}', None)
     if handler:

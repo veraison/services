@@ -91,7 +91,7 @@ func (o *Agent) Evaluate(
 		return nil, fmt.Errorf("could not evaluate policy: %w", err)
 	}
 
-	o.logger.Debugw("policy evaluated", "policy-id", policy.ID, "updated", updatedByPolicy)
+	o.logger.Debugw("policy evaluated", "policy-id", policy.StoreKey, "updated", updatedByPolicy)
 
 	updatedStatus, ok := updatedByPolicy["ear.status"]
 	if !ok {
@@ -126,12 +126,22 @@ func (o *Agent) Evaluate(
 		if err != nil {
 			return nil, fmt.Errorf("bad appraisal data from policy: %w", err)
 		}
-		evaluatedAppraisal.AppraisalPolicyID = &policy.ID
+		evaluatedAppraisal.AppraisalPolicyID = appraisal.AppraisalPolicyID
+
 		return evaluatedAppraisal, nil
 	} else {
 		// policy did not update anything, so return the original appraisal
 		return appraisal, nil
 	}
+}
+
+// Validate performs basic validation of the provided policy rules, returning
+// an error if it fails. the nature of the validation performed is
+// backend-specific, however it would typically amount to a syntax check.
+// Successful validation does not guarantee that the policy will execute
+// correctly againt actual inputs.
+func (o *Agent) Validate(ctx context.Context, policyRules string) error {
+	return o.Backend.Validate(ctx, policyRules)
 }
 
 func (o *Agent) GetBackend() IBackend {

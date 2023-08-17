@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/veraison/ear"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 )
 
@@ -37,7 +38,7 @@ func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/ta-endorsements.json")
 	require.NoError(t, err)
 
-	var endors proto.Endorsement
+	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
 	expectedKey := "CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
@@ -53,7 +54,7 @@ func Test_SynthKeysFromRefValue_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/refval-endorsements.json")
 	require.NoError(t, err)
 
-	var endors proto.Endorsement
+	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
 	expectedKey := "CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="

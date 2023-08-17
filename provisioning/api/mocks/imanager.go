@@ -48,6 +48,20 @@ func (mr *MockIManagerMockRecorder[I]) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIManager[I])(nil).Close))
 }
 
+// GetRegisteredAttestationSchemes mocks base method.
+func (m *MockIManager[I]) GetRegisteredAttestationSchemes() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegisteredAttestationSchemes")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetRegisteredAttestationSchemes indicates an expected call of GetRegisteredAttestationSchemes.
+func (mr *MockIManagerMockRecorder[I]) GetRegisteredAttestationSchemes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegisteredAttestationSchemes", reflect.TypeOf((*MockIManager[I])(nil).GetRegisteredAttestationSchemes))
+}
+
 // GetRegisteredMediaTypes mocks base method.
 func (m *MockIManager[I]) GetRegisteredMediaTypes() []string {
 	m.ctrl.T.Helper()

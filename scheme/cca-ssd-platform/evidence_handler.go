@@ -9,9 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"net/url"
-	"strings"
-
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
@@ -19,7 +16,7 @@ import (
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
-	structpb "google.golang.org/protobuf/types/known/structpb"
+	"github.com/veraison/services/scheme/common/arm"
 )
 
 type SwAttr struct {
@@ -79,54 +76,33 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	refVal *proto.Endorsement,
+	refVal *handler.Endorsement,
 ) ([]string, error) {
-	var (
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
 
-	fields, err = common.GetFieldsFromParts(refVal.GetAttributes())
+	implID, err := common.GetImplID("CCA_SSD_PLATFORM", refVal.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
-	}
-
-	lookupKey := ccaReferenceLookupKey(tenantID, implID)
+	lookupKey := arm.RefValLookupKey(SchemeName, tenantID, implID)
 	log.Debug("CCA Plugin CCA Reference Value Look Up Key= %s\n", lookupKey)
 
 	return []string{lookupKey}, nil
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	var (
-		instID string
-		implID string
-		fields map[string]*structpb.Value
-		err    error
-	)
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	fields, err = common.GetFieldsFromParts(ta.GetAttributes())
+	implID, err := common.GetImplID("CCA_SSD_PLATFORM", ta.Attributes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
+	}
+
+	instID, err := common.GetInstID("CCA_SSD_PLATFORM", ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	implID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.impl-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	instID, err = common.GetMandatoryPathSegment("CCA_SSD_PLATFORM.inst-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
-	}
-
-	lookupKey := ccaTaLookupKey(tenantID, implID, instID)
+	lookupKey := arm.TaLookupKey(SchemeName, tenantID, implID, instID)
 	log.Debug("CCA Plugin TA CCA Look Up Key= %s\n", lookupKey)
 	return []string{lookupKey}, nil
 }
@@ -139,10 +115,11 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 		return "", handler.BadEvidence(err)
 	}
 
-	return ccaTaLookupKey(
+	return arm.TaLookupKey(
+		SchemeName,
 		token.TenantId,
-		MustImplIDString(ccaToken.PlatformClaims),
-		MustInstIDString(ccaToken.PlatformClaims),
+		arm.MustImplIDString(ccaToken.PlatformClaims),
+		arm.MustInstIDString(ccaToken.PlatformClaims),
 	), nil
 }
 
@@ -159,16 +136,17 @@ func (s EvidenceHandler) ExtractClaims(
 
 	var extracted handler.ExtractedClaims
 
-	claimsSet, err := claimsToMap(ccaToken.PlatformClaims)
+	claimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
 	extracted.ClaimsSet = claimsSet
 
-	extracted.ReferenceID = ccaReferenceLookupKey(
+	extracted.ReferenceID = arm.RefValLookupKey(
+		SchemeName,
 		token.TenantId,
-		MustImplIDString(ccaToken.PlatformClaims),
+		arm.MustImplIDString(ccaToken.PlatformClaims),
 	)
 	log.Debug("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
@@ -231,22 +209,6 @@ func (s EvidenceHandler) AppraiseEvidence(
 	// TO DO: Handle Unprocessed evidence when new Attestation Result interface
 	// is ready. Please see issue #105
 	return result, err
-}
-
-type ClaimMapper interface {
-	ToJSON() ([]byte, error)
-}
-
-func claimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
-	data, err := mapper.ToJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	var out map[string]interface{}
-	err = json.Unmarshal(data, &out)
-
-	return out, err
 }
 
 func mapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
@@ -339,7 +301,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 	}
 
 	for _, c := range swComps {
-		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
 		evidenceComponents[key] = c
 	}
 	matched := false
@@ -352,7 +314,7 @@ func matchSoftware(evidence psatoken.IClaims, endorsements []Endorsements) bool 
 			return false
 		}
 
-		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue)
+		key := base64.StdEncoding.EncodeToString(attr.MeasurementValue) + attr.MeasurementType
 		evComp, ok := evidenceComponents[key]
 		if !ok {
 			matched = false
@@ -389,46 +351,4 @@ func matchPlatformConfig(evidence psatoken.IClaims, endorsements []Endorsements)
 	}
 
 	return bytes.Equal(pfConfig, attr.Value)
-}
-
-func ccaReferenceLookupKey(tenantID, implID string) string {
-	absPath := []string{implID}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
-}
-
-func ccaTaLookupKey(tenantID, implID, instID string) string {
-	absPath := []string{implID, instID}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
-}
-
-func MustImplIDString(c psatoken.IClaims) string {
-	v, err := c.GetImplID()
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.StdEncoding.EncodeToString(v)
-}
-
-func MustInstIDString(c psatoken.IClaims) string {
-	v, err := c.GetInstID()
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.StdEncoding.EncodeToString(v)
 }

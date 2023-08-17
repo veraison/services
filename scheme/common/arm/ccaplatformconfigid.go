@@ -3,10 +3,10 @@
 package arm
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 type CCAPlatformConfigID struct {
@@ -39,7 +39,7 @@ func (o CCAPlatformConfigID) GetRefValType() string {
 
 // For CCAPlatformConfigID object, scheme argument is not strictly required, but is required for other
 // usage of the same interface
-func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (*structpb.Struct, error) {
+func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (json.RawMessage, error) {
 	refAttrs := map[string]interface{}{
 		scheme + ".impl-id":               c.ImplID,
 		scheme + ".platform-config-label": o.Label,
@@ -54,5 +54,9 @@ func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (*st
 		refAttrs[scheme+".hw-model"] = c.Model
 	}
 
-	return structpb.NewStruct(refAttrs)
+	msg, err := json.Marshal(refAttrs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal CCA platform configuration attributes: %w", err)
+	}
+	return msg, nil
 }

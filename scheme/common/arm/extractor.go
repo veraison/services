@@ -3,14 +3,13 @@
 package arm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 
-	structpb "google.golang.org/protobuf/types/known/structpb"
-
 	"github.com/veraison/corim/comid"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/services/handler"
 )
 
 type Extractor struct {
@@ -23,10 +22,10 @@ type MeasurementExtractor interface {
 	FromMeasurement(comid.Measurement) error
 	GetRefValType() string
 	// MakeRefAttrs is an interface method to populate reference attributes.
-	MakeRefAttrs(ClassAttributes, string) (*structpb.Struct, error)
+	MakeRefAttrs(ClassAttributes, string) (json.RawMessage, error)
 }
 
-func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsement, error) {
+func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
 	var classAttrs ClassAttributes
 
 	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
@@ -39,8 +38,8 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 	// measurements as needed, provided they belong to the same PSA RoT
 	// identified in the subject of the "reference value" triple.  A single
 	// reference-triple-record SHALL completely describe the updatable PSA RoT.
-	refVals := make([]*proto.Endorsement, 0, len(rv.Measurements))
-	var refVal *proto.Endorsement
+	refVals := make([]*handler.Endorsement, 0, len(rv.Measurements))
+	var refVal *handler.Endorsement
 	var err error
 	for i, m := range rv.Measurements {
 		if m.Key == nil {
@@ -60,7 +59,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*proto.Endorsemen
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		} else if m.Key.IsCCAPlatformConfigID() {
-			if o.Scheme != "CCA_SSD_PLATFORM" {
+			if (o.Scheme != "CCA_SSD_PLATFORM") && (o.Scheme != "PARSEC_CCA") {
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Scheme)
 			}
 			var ccaPlatformConfigID CCAPlatformConfigID
@@ -86,25 +85,25 @@ func extractMeasurement(
 	m comid.Measurement,
 	class ClassAttributes,
 	scheme string,
-) (*proto.Endorsement, error) {
+) (*handler.Endorsement, error) {
 	if err := obj.FromMeasurement(m); err != nil {
 		return nil, err
 	}
 
 	refAttrs, err := obj.MakeRefAttrs(class, scheme)
 	if err != nil {
-		return &proto.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
+		return &handler.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
-	refVal := proto.Endorsement{
+	refVal := handler.Endorsement{
 		Scheme:     scheme,
-		Type:       proto.EndorsementType_REFERENCE_VALUE,
+		Type:       handler.EndorsementType_REFERENCE_VALUE,
 		SubType:    scheme + "." + obj.GetRefValType(),
 		Attributes: refAttrs,
 	}
 	return &refVal, nil
 }
 
-func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	// extract instance ID
 	var instanceAttrs InstanceAttributes
 
@@ -133,9 +132,9 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*proto.Endorsement, er
 	}
 
 	// note we do not need a subType for TA
-	ta := &proto.Endorsement{
+	ta := &handler.Endorsement{
 		Scheme:     o.Scheme,
-		Type:       proto.EndorsementType_VERIFICATION_KEY,
+		Type:       handler.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}
 
@@ -147,7 +146,7 @@ func makeTaAttrs(
 	c ClassAttributes,
 	key string,
 	scheme string,
-) (*structpb.Struct, error) {
+) (json.RawMessage, error) {
 	taID := map[string]interface{}{
 		scheme + ".impl-id": c.ImplID,
 		scheme + ".inst-id": []byte(i.InstID),
@@ -162,5 +161,9 @@ func makeTaAttrs(
 		taID[scheme+".hw-model"] = c.Model
 	}
 
-	return structpb.NewStruct(taID)
+	msg, err := json.Marshal(taID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal TA attributes: %w", err)
+	}
+	return msg, nil
 }

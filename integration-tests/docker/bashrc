@@ -2,12 +2,21 @@ export PATH=~/.local/bin:$PATH
 export PYTHONPATH=$PYTHONPATH:/integration-testing/utils
 export PROVISIONING_HOST=provisioning-service
 export VERIFICATION_HOST=verification-service
+export MANAGEMENT_HOST=management-service
 export PS1='\e[0;32m\u@debug-container \e[0;34m\w\n\e[0;32m$\e[0m '
 
 alias ll='ls -lh --color=auto'
 alias jwt='step crypto jwt'
 
+_stores_dir=/opt/veraison/stores/vts
+
 function inspect-result() {
     local file=$1
     step crypto jwt inspect --insecure < $file
+}
+
+function clear_stores() {
+    sqlite3 $_stores_dir/en-store.sql 'delete from kvstore'
+    sqlite3 $_stores_dir/po-store.sql 'delete from kvstore'
+    sqlite3 $_stores_dir/ta-store.sql 'delete from kvstore'
 }

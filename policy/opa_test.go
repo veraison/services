@@ -20,7 +20,7 @@ type TestResult struct {
 	Outcome *ear.AttestationResult `json:"outcome"`
 }
 
-type TestVector struct {
+type EvaluateTestVector struct {
 	Title            string     `json:"title"`
 	Scheme           string     `json:"scheme"`
 	ResultPath       string     `json:"result"`
@@ -30,7 +30,7 @@ type TestVector struct {
 	Expected         TestResult `json:"expected"`
 }
 
-func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
+func (o EvaluateTestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	resultMap, err := jsonFileToResultMap(o.ResultPath)
 	require.NoError(t, err)
 
@@ -54,6 +54,24 @@ func (o TestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	assert.Equal(t, expected, res)
 }
 
+type ValidateTestVector struct {
+	Title      string `json:"title"`
+	PolicyPath string `json:"policy"`
+	Error      string `json:"error"`
+}
+
+func (o ValidateTestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
+	policy, err := os.ReadFile(o.PolicyPath)
+	require.NoError(t, err)
+
+	err = pa.Validate(ctx, string(policy))
+	if o.Error == "" {
+		assert.NoError(t, err)
+	} else {
+		assert.EqualError(t, err, o.Error)
+	}
+}
+
 func Test_OPA_GetName(t *testing.T) {
 	pa, err := NewOPA(nil)
 	require.NoError(t, err)
@@ -63,7 +81,7 @@ func Test_OPA_GetName(t *testing.T) {
 }
 
 func Test_OPA_Evaluate(t *testing.T) {
-	bytes, err := os.ReadFile("test/vectors.json")
+	bytes, err := os.ReadFile("test/evaluate-vectors.json")
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -72,7 +90,7 @@ func Test_OPA_Evaluate(t *testing.T) {
 	require.NoError(t, err)
 	defer pa.Close()
 
-	var vectors []TestVector
+	var vectors []EvaluateTestVector
 
 	err = json.Unmarshal(bytes, &vectors)
 	require.NoError(t, err)
@@ -92,6 +110,27 @@ func Test_OPA_Evaluate(t *testing.T) {
 		v.Run(t, ctx, pa)
 	}
 
+}
+
+func Test_OPA_Validate(t *testing.T) {
+	bytes, err := os.ReadFile("test/validate-vectors.json")
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	pa, err := NewOPA(nil)
+	require.NoError(t, err)
+	defer pa.Close()
+
+	var vectors []ValidateTestVector
+
+	err = json.Unmarshal(bytes, &vectors)
+	require.NoError(t, err)
+
+	for _, v := range vectors {
+		fmt.Printf("running %q\n", v.Title)
+		v.Run(t, ctx, pa)
+	}
 }
 
 func jsonFileToMap(path string) (map[string]interface{}, error) {

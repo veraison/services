@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/spf13/viper"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/log"
 )
 
 var ErrBadOPAResult = errors.New("bad result update from policy")
@@ -56,10 +56,10 @@ func (o *OPA) Evaluate(
 	rego := rego.New(
 		rego.Package("policy"),
 		rego.Module("opa.rego", preambleText),
-		rego.Module("policy.rego", string(policy)),
+		rego.Module("policy.rego", policy),
 		rego.Input(input),
 		rego.Query("outcome"),
-		rego.Dump(log.Writer()),
+		rego.Dump(log.NamedWriter("opa", log.DebugLevel)),
 	)
 
 	resultSet, err := rego.Eval(ctx)
@@ -76,6 +76,19 @@ func (o *OPA) Evaluate(
 	}
 
 	return resultUpdate, nil
+}
+
+func (o *OPA) Validate(ctx context.Context, policy string) error {
+	rego := rego.New(
+		rego.Package("policy"),
+		rego.Module("opa.rego", preambleText),
+		rego.Module("policy.rego", policy),
+		rego.Query("outcome"),
+		rego.Dump(log.NamedWriter("opa", log.DebugLevel)),
+	)
+
+	_, err := rego.Compile(ctx)
+	return err
 }
 
 func (o *OPA) Close() {

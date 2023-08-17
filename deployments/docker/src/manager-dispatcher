@@ -57,8 +57,8 @@ function evcli() {
     /bin/bash -c "$cmd"
 }
 
-function polcli() {
-    local cmd="$_utils_dir/polcli $@"
+function pocli() {
+    local cmd="$_utils_dir/pocli $@"
     /bin/bash -c "$cmd"
 }
 
@@ -80,6 +80,6 @@ case $command in
     clear-logs) clear_logs "$@";;
     cocli)  cocli "$@";;
     evcli)  evcli "$@";;
-    polcli)  polcli "$@";;
+    pocli)  pocli "$@";;
     *) echo -e "$_error: unexpected command: \"$command\"";;
 esac

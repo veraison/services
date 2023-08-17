@@ -92,3 +92,17 @@ func (mr *MockIAgentMockRecorder) Init(v interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIAgent)(nil).Init), v)
 }
+
+// Validate mocks base method.
+func (m *MockIAgent) Validate(ctx context.Context, policyRules string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Validate", ctx, policyRules)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Validate indicates an expected call of Validate.
+func (mr *MockIAgentMockRecorder) Validate(ctx, policyRules interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockIAgent)(nil).Validate), ctx, policyRules)
+}

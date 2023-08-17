@@ -3,7 +3,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,12 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/capability"
-	"github.com/veraison/services/handler"
-	"github.com/veraison/services/plugin"
-	"github.com/veraison/services/proto"
-	"github.com/veraison/services/vtsclient"
+	"github.com/veraison/services/provisioning/provisioner"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+var (
+	tenantID = "0"
 )
 
 type IHandler interface {
@@ -27,21 +26,18 @@ type IHandler interface {
 }
 
 type Handler struct {
-	PluginManager plugin.IManager[handler.IEndorsementHandler]
-	VTSClient     vtsclient.IVTSClient
+	Provisioner provisioner.IProvisioner
 
 	logger *zap.SugaredLogger
 }
 
 func NewHandler(
-	pm plugin.IManager[handler.IEndorsementHandler],
-	sc vtsclient.IVTSClient,
+	p provisioner.IProvisioner,
 	logger *zap.SugaredLogger,
 ) IHandler {
 	return &Handler{
-		PluginManager: pm,
-		VTSClient:     sc,
-		logger:        logger,
+		Provisioner: p,
+		logger:      logger,
 	}
 }
 
@@ -70,9 +66,27 @@ func (o *Handler) Submit(c *gin.Context) {
 	// read media type
 	mediaType := c.Request.Header.Get("Content-Type")
 
-	if !o.PluginManager.IsRegisteredMediaType(mediaType) {
-		mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
-		c.Header("Accept", strings.Join(mediaTypes, ", "))
+	isSupported, err := o.Provisioner.IsSupportedMediaType(mediaType)
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not check media type with verifier: %v", err),
+		)
+		return
+	}
+
+	if !isSupported {
+		supportedMediaTypes, err := o.Provisioner.SupportedMediaTypes()
+		if err != nil {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("could not get supported media types from provisioner: %v",
+					err),
+			)
+			return
+		}
+
+		c.Header("Accept", strings.Join(supportedMediaTypes, ", "))
 		ReportProblem(c,
 			http.StatusUnsupportedMediaType,
 			fmt.Sprintf("no active plugin found for %s", mediaType),
@@ -98,18 +112,11 @@ func (o *Handler) Submit(c *gin.Context) {
 		return
 	}
 
-	// From here onwards we assume that a provisioning session exists and that
-	// every further communication (apart from panics) will be through that
-	// object instead of using RFC7807 Problem Details.  We can add support for
-	// stashing session state later on when we will implement the asynchronous
-	// API model.  For now, the object is created opportunistically.
-
-	// pass data to the identified plugin for normalisation
-	rsp, err := o.dispatch(mediaType, payload)
+	err = o.Provisioner.SubmitEndorsements(tenantID, payload, mediaType)
 	if err != nil {
-		o.logger.Errorw("session failed", "error", err)
+		o.logger.Errorw("submit endorsement failed", "error", err)
 
-		if errors.As(err, &vtsclient.NoConnectionError{}) {
+		if errors.Is(err, errors.New("no connection")) {
 			ReportProblem(c,
 				http.StatusInternalServerError,
 				err.Error(),
@@ -119,83 +126,12 @@ func (o *Handler) Submit(c *gin.Context) {
 
 		sendFailedProvisioningSession(
 			c,
-			fmt.Sprintf("handler manager returned error: %s", err),
-		)
-		return
-	}
-
-	// forward normalised data to the endorsement store
-	if err := o.store(rsp); err != nil {
-		o.logger.Errorw("session failed", "error", err)
-
-		if errors.As(err, &vtsclient.NoConnectionError{}) {
-			ReportProblem(c,
-				http.StatusInternalServerError,
-				err.Error(),
-			)
-			return
-		}
-
-		sendFailedProvisioningSession(
-			c,
-			fmt.Sprintf("endorsement store returned error: %s", err),
+			fmt.Sprintf("submit endorsement returned error: %s", err),
 		)
 		return
 	}
 
 	sendSuccessfulProvisioningSession(c)
-}
-
-func (o *Handler) dispatch(
-	mediaType string,
-	payload []byte,
-) (*handler.EndorsementHandlerResponse, error) {
-	handlerPlugin, err := o.PluginManager.LookupByMediaType(mediaType)
-	if err != nil {
-		return nil, err
-	}
-
-	return handlerPlugin.Decode(payload)
-}
-
-func (o *Handler) store(rsp *handler.EndorsementHandlerResponse) error {
-	for _, ta := range rsp.TrustAnchors {
-		taReq := &proto.AddTrustAnchorRequest{TrustAnchor: ta}
-
-		taRes, err := o.VTSClient.AddTrustAnchor(context.TODO(), taReq)
-		if err != nil {
-			return fmt.Errorf("store operation failed for trust anchor: %w", err)
-		}
-
-		if !taRes.GetStatus().Result {
-			return fmt.Errorf(
-				"store operation failed for trust anchor: %s",
-				taRes.Status.GetErrorDetail(),
-			)
-		}
-	}
-
-	for _, refVal := range rsp.ReferenceValues {
-		refValReq := &proto.AddRefValuesRequest{
-			ReferenceValues: []*proto.Endorsement{
-				refVal,
-			},
-		}
-
-		refValRes, err := o.VTSClient.AddRefValues(context.TODO(), refValReq)
-		if err != nil {
-			return fmt.Errorf("store operation failed for reference values: %w", err)
-		}
-
-		if !refValRes.GetStatus().Result {
-			return fmt.Errorf(
-				"store operation failed for reference values: %s",
-				refValRes.Status.GetErrorDetail(),
-			)
-		}
-	}
-
-	return nil
 }
 
 func sendFailedProvisioningSession(c *gin.Context, failureReason string) {
@@ -221,14 +157,8 @@ func sendSuccessfulProvisioningSession(c *gin.Context) {
 	)
 }
 
-func (o *Handler) getProvisioningMediaTypes() ([]string, error) {
-	mediaTypes := o.PluginManager.GetRegisteredMediaTypes()
-	return mediaTypes, nil
-
-}
-
 func (o *Handler) getProvisioningServerVersionAndState() (string, string, error) {
-	vtsState, err := o.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+	vtsState, err := o.Provisioner.GetVTSState()
 	if err != nil {
 		return "", "", err
 	}
@@ -252,7 +182,7 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 	}
 
 	// Get provisioning media types
-	mediaTypes, err := o.getProvisioningMediaTypes()
+	mediaTypes, err := o.Provisioner.SupportedMediaTypes()
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
@@ -275,7 +205,7 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 	endpoints := getProvisioningEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, version, state, endpoints)
+	obj, err := capability.NewWellKnownInfoObj(nil, mediaTypes, nil, version, state, endpoints)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,

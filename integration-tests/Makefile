@@ -23,12 +23,8 @@ $(DEPLOYMENT_SRC_DIR).built/%:
 
 
 CONTAINER_FLAGS := --env-file  $(DEPLOYMENT_SRC_DIR)deployment.cfg --network veraison-net \
-		   -v $(THIS_DIR):/integration-tests
-
-DEPLOYMENT_DEPS := $(DEPLOYMENT_SRC_DIR).built/network \
-		   $(DEPLOYMENT_SRC_DIR).built/vts-container \
-		   $(DEPLOYMENT_SRC_DIR).built/provisioning-container \
-		   $(DEPLOYMENT_SRC_DIR).built/verification-container
+		   -v $(THIS_DIR):/integration-tests \
+		   -v $(STORES_VOLUME):/opt/veraison/stores
 
 CLEANFILES := .pytest_cache utils/__pycache__ __generated__
 

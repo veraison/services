@@ -1,0 +1,160 @@
+test_name: policy-management
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: get active policy (non-existent)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 404
+
+  - name: submit initial policy
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        content-type: application/vnd.veraison.policy.opa
+        accept: application/vnd.veraison.policy+json
+      file_body: data/policies/psa-short.rego
+    response:
+      status_code: 201
+      save:
+        json:
+          policy-uuid: uuid
+      verify_response_with:
+        - function: checkers:check_policy
+          extra_kwargs:
+            active: false
+            name: default
+            rules_file: data/policies/psa-short.rego
+
+  - name: get active policy (none activated)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 404
+
+  - name: get policy by uuid
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:check_policy
+          extra_kwargs:
+            active: false
+            name: default
+            rules_file: data/policies/psa-short.rego
+
+  - name: activate policy
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}/activate
+    response:
+      status_code: 200
+
+  - name: get active policy (ok)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:check_policy
+          extra_kwargs:
+            active: true
+            name: default
+            rules_file: data/policies/psa-short.rego
+
+  - name: get active policy (bad scheme)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/BAD
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 400
+      json:
+        title: Bad Request
+        detail: unrecognised scheme "BAD"
+
+  - name: submit replacement policy
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policy/PSA_IOT?name=test
+      headers:
+        content-type: application/vnd.veraison.policy.opa
+        accept: application/vnd.veraison.policy+json
+      file_body: data/policies/psa.rego
+    response:
+      status_code: 201
+      save:
+        json:
+          second-policy-uuid: uuid
+      verify_response_with:
+        - function: checkers:check_policy
+          extra_kwargs:
+            active: false
+            name: test
+            rules_file: data/policies/psa.rego
+
+  - name: get active policy (ok)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:check_policy
+          extra_kwargs:
+            active: true
+            name: default
+            rules_file: data/policies/psa-short.rego
+
+  - name: get policies (one active)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policies/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policies+json
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:check_policy_list
+          extra_kwargs:
+            have_active: true
+
+  - name: deactivate all
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policies/PSA_IOT/deactivate
+    response:
+      status_code: 200
+
+  - name: get policies (no active)
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policies/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policies+json
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:check_policy_list
+          extra_kwargs:
+            have_active: false

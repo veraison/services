@@ -12,13 +12,11 @@ import (
 	"strings"
 
 	tpm2 "github.com/google/go-tpm/tpm2"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/veraison/ear"
 
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
 )
 
 type EvidenceHandler struct{}
@@ -37,13 +35,13 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 
 func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
-	swComp *proto.Endorsement,
+	swComp *handler.Endorsement,
 ) ([]string, error) {
-	return synthKeysFromParts("software component", tenantID, swComp.GetAttributes())
+	return synthKeysFromAttrs("software component", tenantID, swComp.Attributes)
 }
 
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *proto.Endorsement) ([]string, error) {
-	return synthKeysFromParts("trust anchor", tenantID, ta.GetAttributes())
+func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
+	return synthKeysFromAttrs("trust anchor", tenantID, ta.Attributes)
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
@@ -183,21 +181,27 @@ func (s EvidenceHandler) AppraiseEvidence(
 	return result, nil
 }
 
-func synthKeysFromParts(scope, tenantID string, parts *structpb.Struct) ([]string, error) {
+func synthKeysFromAttrs(scope string, tenantID string, attr json.RawMessage) ([]string, error) {
 	var (
 		nodeID string
-		fields map[string]*structpb.Value
 		err    error
 	)
 
-	fields, err = common.GetFieldsFromParts(parts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
-	}
-
-	nodeID, err = common.GetMandatoryPathSegment("enacttrust-tpm.node-id", fields)
-	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize %s abs-path: %w", scope, err)
+	switch scope {
+	case "software component":
+		var att RefValAttr
+		if err = json.Unmarshal(attr, &att); err != nil {
+			return nil, fmt.Errorf("unable to extract sw component: %w", err)
+		}
+		nodeID = att.NodeID
+	case "trust anchor":
+		var att TaAttr
+		if err = json.Unmarshal(attr, &att); err != nil {
+			return nil, fmt.Errorf("unable to extract trust anchor: %w", err)
+		}
+		nodeID = att.NodeID
+	default:
+		return nil, fmt.Errorf("invalid scope: %s", scope)
 	}
 
 	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil

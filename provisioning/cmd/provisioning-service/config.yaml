@@ -6,8 +6,4 @@ provisioning:
   listen-addr: 0.0.0.0:8888
 vts:
   server-addr: vts-service:50051
-plugin:
-  backend: go-plugin
-  go-plugin:
-    dir: ../../../scheme/bin/
 # vim: set ft=yaml:

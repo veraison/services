@@ -7,6 +7,8 @@ provisioning:
   listen-addr: 0.0.0.0:${PROVISIONING_PORT}
 verification:
   listen-addr: 0.0.0.0:${VERIFICATION_PORT}
+management:
+  listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
 vts:
   server-addr: vts-service:${VTS_PORT}
 ear-signer:
