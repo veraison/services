@@ -136,10 +136,10 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 		return err
 	}
 
-	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor")
+	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output=../data/output-corim.cbor")
 
 	if *corim_file != "" {
-		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output", *corim_file)
+		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output="+*corim_file)
 	}
 
 	if err := corim_cmd.Run(); err != nil {
