@@ -1,11 +1,16 @@
 package cmd
 
 import (
+	"bytes"
+	"crypto"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/cobra"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
@@ -134,7 +139,10 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 	referenceValues := append(*new([]comid.ReferenceValue), refVal)
 	comidClaims.Triples.ReferenceValues = &referenceValues
 
-	key_data := "PLACEHOLDER"
+	key_data, err := convertJwkToPEM(*key_file)
+	if err != nil {
+		return err
+	}
 	key := comid.NewVerifKey()
 	key.SetKey(key_data)
 	keys := comid.NewVerifKeys()
@@ -176,6 +184,42 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 	}
 
 	return nil
+}
+
+func convertJwkToPEM(fileName string) (pemKey string, err error) {
+	var buf bytes.Buffer
+	// fileName is the name of the file as string type where the JWK is stored
+	keyJWK, err := os.ReadFile(fileName)
+	if err != nil {
+		return "", fmt.Errorf("error loading verifying key from %s: %w", fileName, err)
+	}
+	pkey, err := PubKeyFromJWK(keyJWK)
+	if err != nil {
+		return "", fmt.Errorf("error loading verifying key from %s: %w", fileName, err)
+	}
+	pubBytes2, err := x509.MarshalPKIXPublicKey(pkey)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal public key: %w", err)
+	}
+	block := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubBytes2,
+	}
+	if err := pem.Encode(&buf, block); err != nil {
+		return "", fmt.Errorf("failed to pem encode: %w", err)
+	}
+	keyStr := buf.String()
+	return keyStr, nil
+}
+
+// PubKeyFromJWK extracts a crypto.PublicKey from the supplied JSON Web Key
+func PubKeyFromJWK(rawJWK []byte) (crypto.PublicKey, error) {
+	var pKey crypto.PublicKey
+	err := jwk.ParseRawKey(rawJWK, &pKey)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	return pKey, nil
 }
 
 func init() {
