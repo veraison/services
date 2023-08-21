@@ -88,8 +88,8 @@ can also specify "attest" to verify as an attester.
 Provisioning service provides a REST-based API for external trusted supply chain actors (for example, Endorsers) to provision Reference Values, Endorsed Values (known as Endorsements), and Trust Anchors into Veraison Trusted Services.
 
 This service acts as a frontend for accepting a [CoRIM](https://github.com/veraison/corim) payload containing Endorsements and Trust Anchors.
-On the back end it communicates with [VTS](#Veraison-Trusted-Services) which receives the payload and uses Attestation Format (e.g. PSA) specific decoders
-to extract information, store, retrieve, and manage the Endorsements and Trust Anchors. The API details are documented under [Endorsement Provisioning Interface](https://github.com/veraison/docs/tree/main/api/endorsement-provisioning). This service accept a variety of Endorsement Formats. For now, PSA (Profile 1 & Profile 2), CCA, TPM and 
+On the back end it communicates with [VTS](#Veraison-Trusted-Services) which receives the payload and uses Attestation Scheme (e.g. PSA) specific decoders
+to extract, store, retrieve, and manage the Endorsements and Trust Anchors. The API details are documented under [Endorsement Provisioning Interface](https://github.com/veraison/docs/tree/main/api/endorsement-provisioning). This service accept a variety of Endorsement Formats. For now, PSA (Profile 1 & Profile 2), CCA, TPM and 
 Parsec (CCA and TPM) based Endorsements are supported.
 
 Refer to [scope](https://github.com/veraison/docs/blob/main/project-overview.md#scope---provisioning) for full set of services that shall be provided by the provisioning service.
@@ -105,7 +105,7 @@ The API is based on the Challenge/Response Interaction Models as documented in [
 
 ## Veraison Trusted Services
 
-Veraison Trusted Services (VTS) backend provides core services to the Verification and Provisioning frontends. On the Provisioning path, it receives CoRIM payload, from the [Provisioning](#Provisioning) frontend, invokes Attestation Format (e.g. PSA) specific logic (a "scheme") to decode the payload and generate Endorsements and Trust Anchors, and saves them in the corresponding stores. On the Verification path, it invokes Attestation Format specific logic (a "scheme") to parse attestation token and extract evidence claims. From these claims, it constructs a logical index/key to fetch the trust anchors required to verify the token signature, and the associated Endorsements (`golden values`) used to appraise the evidence claims. Upon evaluation, it populates the Attestation Result and communicates it to the [Verification](#Verification) frontend.
+Veraison Trusted Services (VTS) backend provides core services to the Verification and Provisioning frontends. On the Provisioning path, it receives a CoRIM payload from the [Provisioning](#Provisioning) frontend, invokes Attestation Scheme (e.g. PSA) specific logic to decode the payload and generate Endorsements and Trust Anchors, and saves them in the corresponding stores. On the Verification path, it invokes Attestation Scheme specific logic to parse attestation token and extract evidence claims. From these claims, it constructs a logical index/key to fetch the trust anchors required to verify the token signature, and the associated Endorsements (`golden values`) used to appraise the evidence claims. Upon evaluation, it populates the Attestation Result and communicates it to the [Verification](#Verification) frontend.
 
 
 More details about the VTS can be found under [VTS](https://github.com/veraison/docs/tree/main/architecture/verifier#vts)
