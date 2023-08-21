@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 import argparse
 import multiprocessing
 import os
