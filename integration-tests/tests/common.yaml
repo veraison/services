@@ -5,6 +5,7 @@ variables:
   provisioning-service: '{tavern.env_vars.PROVISIONING_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.PROVISIONING_PORT}'
   verification-service: '{tavern.env_vars.VERIFICATION_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.VERIFICATION_PORT}'
   management-service: '{tavern.env_vars.MANAGEMENT_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.MANAGEMENT_PORT}'
+  keycloak-service: '{tavern.env_vars.KEYCLOAK_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.KEYCLOAK_PORT}'
   good-nonce: QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk=
   bad-nonce: Ppfdfe2JzZLOk=
   endorsements-content-types:
@@ -29,3 +30,13 @@ variables:
     full: [full, ta, refval]
     mini: [mini, ta, refval]
     mini-bad: [mini, badta]
+  oauth2:
+    client-id: veraison-client
+    client-secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z
+  credentials:
+    provisioner:
+      username: veraison-provisioner
+      password: veraison
+    manager:
+      username: veraison-manager
+      password: veraison

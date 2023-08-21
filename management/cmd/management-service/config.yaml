@@ -13,3 +13,8 @@ po-agent:
   backend: opa
 logging:
   level: debug
+auth:
+  backend: keycloak
+  host: keycloak-service
+  port: 11111
+  realm: veraison

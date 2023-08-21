@@ -25,6 +25,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.4
+	github.com/tbaehler/gin-keycloak v1.5.0
 	github.com/veraison/ccatoken v1.1.0
 	github.com/veraison/cmw v0.1.0
 	github.com/veraison/corim v1.0.0
@@ -34,19 +35,24 @@ require (
 	github.com/veraison/parsec v0.1.0
 	github.com/veraison/psatoken v1.2.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/text v0.9.0
+	golang.org/x/text v0.12.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.30.0
+	gopkg.in/square/go-jose.v2 v2.6.0
 )
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+	github.com/golang/glog v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.3.0 // indirect
+	golang.org/x/oauth2 v0.4.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 )
 
 require (
@@ -99,10 +105,10 @@ require (
 	github.com/yashtewari/glob-intersection v0.1.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

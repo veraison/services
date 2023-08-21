@@ -28,6 +28,7 @@ stages:
       url: http://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
         content-type: '{endorsements-content-type}' # set via hook
+        authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
     response:
       status_code: 200
