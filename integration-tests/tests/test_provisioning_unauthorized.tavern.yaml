@@ -1,0 +1,23 @@
+test_name: unauthorized
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service with no authorization
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+    response:
+      status_code: 401
+
+  - name: get active policy with no authorization
+    request:
+      method: GET
+      url: http://{management-service}/management/v1/policy/PSA_IOT
+      headers:
+        accept: application/vnd.veraison.policy+json
+    response:
+      status_code: 401

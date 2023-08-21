@@ -3,7 +3,10 @@
 
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/veraison/services/auth"
+)
 
 var publicApiMap = map[string]string{
 	"createPolicy":       "/management/v1/policy/:scheme",
@@ -14,11 +17,12 @@ var publicApiMap = map[string]string{
 	"getPolicies":        "/management/v1/policies/:scheme",
 }
 
-func NewRouter(handler Handler) *gin.Engine {
+func NewRouter(handler Handler, authorizer auth.IAuthorizer) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(authorizer.GetGinHandler(auth.ManagerRole))
 
 	router.POST(publicApiMap["createPolicy"], handler.CreatePolicy)
 	router.POST(publicApiMap["activatePolicy"], handler.Activate)

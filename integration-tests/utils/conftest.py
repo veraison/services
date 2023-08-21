@@ -24,6 +24,7 @@ def pytest_tavern_beta_before_every_test_run(test_dict, variables):
     test = TavernTest(test_dict)
     setup(test, variables)
 
+
 def setup(test, variables):
     clear_stores()
     test_id = to_identifier(test.name)

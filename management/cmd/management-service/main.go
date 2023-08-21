@@ -4,6 +4,7 @@ package main
 
 import (
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/veraison/services/auth"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/management"
@@ -26,7 +27,7 @@ func main() {
 		log.Fatalf("Could not read config: %v", err)
 	}
 
-	subs, err := config.GetSubs(v, "*management", "*logging")
+	subs, err := config.GetSubs(v, "*management", "*logging", "*auth")
 	if err != nil {
 		log.Fatalf("Could not parse config: %v", err)
 	}
@@ -53,8 +54,19 @@ func main() {
 	}
 
 	log.Infow("initializing management API service", "address", cfg.ListenAddr)
+	authorizer, err := auth.NewAuthorizer(subs["auth"], log.Named("auth"))
+	if err != nil {
+		log.Fatalf("could not init authorizer: %v", err)
+	}
+	defer func() {
+		err := authorizer.Close()
+		if err != nil {
+			log.Errorf("Could not close authorizer: %v", err)
+		}
+	}()
+
 	handler := api.NewHandler(pm, log.Named("api"))
-	if err := api.NewRouter(handler).Run(cfg.ListenAddr); err != nil {
-		log.Fatalf("Gin engine failed: %v", err)
+	if err := api.NewRouter(handler, authorizer).Run(cfg.ListenAddr); err != nil {
+		log.Errorf("Gin engine failed: %v", err)
 	}
 }
