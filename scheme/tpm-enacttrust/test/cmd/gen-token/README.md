@@ -11,12 +11,12 @@ An attestation token has the following format:
 
 where
 
-`NODE_ID` is the UUID of the attsting node, `TPMS_ATTEST_LEN` is a uint16
-values containing the length (in bytes) of the following `TPMS_ATTEST`
+`NODE_ID` is the 16 byte UUID of the attesting node, `TPMS_ATTEST_LEN` is a
+uint16 value containing the length (in bytes) of the following `TPMS_ATTEST`
 structure. `TPMS_ATTEST` is structured according to
 [TPM 2.0
 Specification](https://trustedcomputinggroup.org/wp-content/uploads/TCG_TPM2_r1p59_Part2_Structures_pub.pdf).
-`TPMS_ATTEST_SIGNATURE` is the ECDSA signature of the `TPMS_ATTEST` structure.
+`TPMS_ATTEST_SIGNATURE` is the ES256 signature of the `TPMS_ATTEST` structure.
 
 ## Token Payload Description Format
 
