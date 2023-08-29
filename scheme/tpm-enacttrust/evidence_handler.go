@@ -65,7 +65,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return "", err
+		return "", handler.BadEvidence(err)
 	}
 
 	return tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String()), nil
@@ -84,7 +84,7 @@ func (s EvidenceHandler) ExtractClaims(
 	}
 
 	if !supported {
-		return nil, fmt.Errorf("wrong media type: expect %q, but found %q",
+		return nil, handler.BadEvidence("wrong media type: expect %q, but found %q",
 			strings.Join(EvidenceMediaTypes, ", "),
 			token.MediaType,
 		)
@@ -93,11 +93,11 @@ func (s EvidenceHandler) ExtractClaims(
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return nil, fmt.Errorf("could not decode token: %w", err)
+		return nil, handler.BadEvidence("could not decode token: %w", err)
 	}
 
 	if decoded.AttestationData.Type != tpm2.TagAttestQuote {
-		return nil, fmt.Errorf("wrong TPMS_ATTEST type: want %d, got %d",
+		return nil, handler.BadEvidence("wrong TPMS_ATTEST type: want %d, got %d",
 			tpm2.TagAttestQuote, decoded.AttestationData.Type)
 	}
 
