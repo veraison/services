@@ -24,6 +24,12 @@ def setup_multi_nonce(test, variables):
     generate_evidence_from_test_no_nonce(test)
 
 
+def setup_enacttrust_badnode(test, variables):
+    _set_content_types(test, variables)
+    generate_endorsements(test)
+    generate_evidence_from_test(test)
+
+
 def _set_content_types(test, variables):
     scheme = test.test_vars['scheme']
     profile = test.test_vars['profile']

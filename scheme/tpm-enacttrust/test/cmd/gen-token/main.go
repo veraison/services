@@ -77,8 +77,12 @@ func readPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 
 func main() {
 	var keyPath, outPath string
+	var badNode bool
+	var marshaledNodeID []byte
 	flag.StringVar(&keyPath, "key", "key.pem", "Path of the ECDSA key used to sign the token data encoded in PEM.")
 	flag.StringVar(&outPath, "out", "quote.bin", "Output path of the generated token.")
+	flag.BoolVar(&badNode, "bad-node", false,
+		"Allow node-id to not be a valid UUID. If this is set, the bytes of the string will be written as-is, rather than attempting to parse UUID out of it. No length check or any other validation will be performed.")
 	flag.Parse()
 	descPath := flag.Arg(0)
 
@@ -94,16 +98,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	nodeID, err := uuid.Parse(desc.NodeID)
-	if err != nil {
-		fmt.Printf("ERROR: could not parse nodeID: %v\n", err)
-		os.Exit(1)
-	}
-
-	marshaledNodeID, err := nodeID.MarshalBinary()
-	if err != nil {
-		fmt.Printf("ERROR: could not mashal nodeID: %v\n", err)
-		os.Exit(1)
+	if badNode {
+		marshaledNodeID = []byte(desc.NodeID)
+	} else { // node-id must be a string encoding of a UUID
+		nodeID, err := uuid.Parse(desc.NodeID)
+		if err != nil {
+			fmt.Printf("ERROR: could not parse nodeID: %v\n", err)
+			os.Exit(1)
+		}
+		marshaledNodeID, err = nodeID.MarshalBinary()
+		if err != nil {
+			fmt.Printf("ERROR: could not mashal nodeID: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	d, err := makeAttestationData(desc)
