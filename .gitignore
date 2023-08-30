@@ -18,7 +18,7 @@ deployments/docker/.bin
 integration-tests/.built
 __generated__
 __pycache__
-__debug_bin
+__debug_bin*
 management/cmd/management-service/management-service
 
 # Test binary, built with `go test -c`
@@ -34,3 +34,4 @@ management/cmd/management-service/management-service
 tags
 
 .ipynb_checkpoints
+
