@@ -3,6 +3,8 @@
 package tpm_enacttrust
 
 import (
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,6 +90,10 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 
 	akPub := avk.VerifKeys[0].Key
 
+	if err := checkKey(akPub); err != nil {
+		return nil, err
+	}
+
 	taAttrs, err := makeTaAttrs(instanceAttrs, akPub)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
@@ -113,4 +119,18 @@ func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
 		return nil, err
 	}
 	return msg, nil
+}
+
+func checkKey(inKey string) error {
+	buf, err := base64.StdEncoding.DecodeString(inKey)
+	if err != nil {
+		return fmt.Errorf("could not base64-decode ak-pub: %v", err)
+	}
+
+	_, err = x509.ParsePKIXPublicKey(buf)
+	if err != nil {
+		return fmt.Errorf("could not parse PKIX public key: %v", err)
+	}
+
+	return nil
 }

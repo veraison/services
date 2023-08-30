@@ -28,3 +28,4 @@ variables:
     # ../data/endorsements/README.md). The CoRIM name is the first one in the list.
     full: [full, ta, refval]
     mini: [mini, ta, refval]
+    mini-bad: [mini, badta]
