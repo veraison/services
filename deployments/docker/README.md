@@ -129,6 +129,10 @@ hostname of the VTS service we just stopped, so that the provisioning and
 verification services that are still running will now talk to our debug container
 instead.
 
+(Note: if you were replacing a REST service, rather than VTS, you would also
+set the `DEBUG_PORT` variable to the value appropriate to the service (see
+[deployment.cfg](./deployment.cfg).)
+
 Next, navigate to the location of the VTS service executable (keeping in mind
 that the root of the repo is mapped to `/veraison/build` inside the container),
 and start the debugger:
