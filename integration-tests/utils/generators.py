@@ -15,13 +15,16 @@ def generate_endorsements(test):
     spec = test.test_vars['endorsements']
 
     if isinstance(spec, str):
+        tag = spec
         spec = test.common_vars['endorsements'][spec]
+    else:
+        tag = spec[0]
 
     corim_template_name = 'corim-{}-{}.json'.format(scheme, spec[0])
     corim_template = f'data/endorsements/{corim_template_name}'
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in spec[1:]]
-    output_path = f'{GENDIR}/endorsements/corim-{scheme}-{spec[0]}.cbor'
+    output_path = f'{GENDIR}/endorsements/corim-{scheme}-{tag}.cbor'
 
     generate_corim(corim_template, comid_templates, output_path)
 
