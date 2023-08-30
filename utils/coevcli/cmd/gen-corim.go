@@ -12,16 +12,17 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/cobra"
+	"github.com/veraison/ccatoken"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
 	"github.com/veraison/psatoken"
 )
 
 var (
-	cogenKeyFile           *string
 	cogenAttestationScheme *string
-	cogenCorimFile         *string
 	cogenEvidenceFile      *string
+	cogenKeyFile           *string
+	cogenCorimFile         *string
 )
 
 var cogenGenCmd = NewCogenGenCmd()
@@ -34,7 +35,7 @@ func NewCogenGenCmd() *cobra.Command {
 			if err := checkCogenGenArgs(); err != nil {
 				return err
 			}
-			err := generate(cogenKeyFile, cogenAttestationScheme, cogenCorimFile, cogenEvidenceFile)
+			err := generate(cogenAttestationScheme, cogenEvidenceFile, cogenKeyFile, cogenCorimFile)
 			if err != nil {
 				return err
 			}
@@ -67,10 +68,14 @@ func checkCogenGenArgs() error {
 		return errors.New("no evidence file supplied")
 	}
 
+	if *cogenAttestationScheme != "psa" && *cogenAttestationScheme != "cca" {
+		return errors.New("unsupported attestation scheme")
+	}
+
 	return nil
 }
 
-func generate(key_file *string, attestation_scheme *string, corim_file *string, evidence_file *string) error {
+func generate(attestation_scheme *string, evidence_file *string, key_file *string, corim_file *string) error {
 
 	evcli_cmd := exec.Command("evcli", *attestation_scheme, "check", "--token="+*evidence_file, "--key="+*key_file, "--claims=../data/output-evidence-claims.json")
 	if err := evcli_cmd.Run(); err != nil {
@@ -82,26 +87,41 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 		return err
 	}
 
-	var evidence psatoken.Evidence
+	var claims psatoken.IClaims
 
-	err = evidence.FromCOSE(content)
+	if *attestation_scheme == "psa" {
+		var evidence psatoken.Evidence
+
+		err = evidence.FromCOSE(content)
+		if err != nil {
+			return err
+		}
+
+		claims = evidence.Claims
+	} else {
+		var evidence ccatoken.Evidence
+
+		err = evidence.FromCBOR(content)
+		if err != nil {
+			return err
+		}
+
+		claims = evidence.PlatformClaims
+	}
+
+	swComponents, err := claims.GetSoftwareComponents()
 	if err != nil {
 		return err
 	}
 
-	swComponents, err := evidence.Claims.GetSoftwareComponents()
-	if err != nil {
-		return err
-	}
-
-	implIDByte, err := evidence.Claims.GetImplID()
+	implIDByte, err := claims.GetImplID()
 	if err != nil {
 		return err
 	}
 	var implID comid.ImplID
 	copy(implID[:], implIDByte)
 
-	instID, err := evidence.Claims.GetInstID()
+	instID, err := claims.GetInstID()
 	if err != nil {
 		return err
 	}
@@ -173,7 +193,7 @@ func generate(key_file *string, attestation_scheme *string, corim_file *string, 
 		return err
 	}
 
-	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output=../data/output-corim.cbor")
+	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output=../data/"+*attestation_scheme+"-endorsements.cbor")
 
 	if *corim_file != "" {
 		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output="+*corim_file)
