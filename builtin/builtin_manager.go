@@ -31,7 +31,7 @@ func CreateBuiltinManager[I plugin.IPluggable](
 		return nil, err
 	}
 
-	loader, err := CreateBultinLoader(subs["builtin"].AllSettings(), logger)
+	loader, err := CreateBuiltinLoader(subs["builtin"].AllSettings(), logger)
 	if err != nil {
 		return nil, err
 	}
