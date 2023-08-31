@@ -4,13 +4,14 @@
 package cmd
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_CogenGenCmd_unknown_argument(t *testing.T) {
-	cmd := NewCogenGenCmd()
+func Test_GenCmd_unknown_argument(t *testing.T) {
+	cmd := NewGenCmd()
 
 	args := []string{"--unknown-argument=val"}
 	cmd.SetArgs(args)
@@ -19,8 +20,8 @@ func Test_CogenGenCmd_unknown_argument(t *testing.T) {
 	assert.EqualError(t, err, "unknown flag: --unknown-argument")
 }
 
-func Test_CogenGenCmd_no_key_file(t *testing.T) {
-	cmd := NewCogenGenCmd()
+func Test_GenCmd_no_key_file(t *testing.T) {
+	cmd := NewGenCmd()
 
 	args := []string{"--attest-scheme=psa",
 		"--evidence-file=evidence.cbor",
@@ -31,8 +32,8 @@ func Test_CogenGenCmd_no_key_file(t *testing.T) {
 	assert.EqualError(t, err, "no key supplied")
 }
 
-func Test_CogenGenCmd_no_evidence_file(t *testing.T) {
-	cmd := NewCogenGenCmd()
+func Test_GenCmd_no_evidence_file(t *testing.T) {
+	cmd := NewGenCmd()
 
 	args := []string{"--attest-scheme=psa",
 		"--key-file=key.cbor",
@@ -43,8 +44,8 @@ func Test_CogenGenCmd_no_evidence_file(t *testing.T) {
 	assert.EqualError(t, err, "no evidence file supplied")
 }
 
-func Test_CogenGenCmd_no_attestation_scheme(t *testing.T) {
-	cmd := NewCogenGenCmd()
+func Test_GenCmd_no_attestation_scheme(t *testing.T) {
+	cmd := NewGenCmd()
 
 	args := []string{"--key-file=key.cbor",
 		"--evidence-file=evidence.cbor",
@@ -55,8 +56,8 @@ func Test_CogenGenCmd_no_attestation_scheme(t *testing.T) {
 	assert.EqualError(t, err, "no attestation scheme supplied")
 }
 
-func Test_CogenGenCmd_invalid_attestation_scheme(t *testing.T) {
-	cmd := NewCogenGenCmd()
+func Test_GenCmd_invalid_attestation_scheme(t *testing.T) {
+	cmd := NewGenCmd()
 
 	args := []string{"--key-file=key.cbor",
 		"--evidence-file=evidence.cbor",
@@ -68,9 +69,9 @@ func Test_CogenGenCmd_invalid_attestation_scheme(t *testing.T) {
 	assert.EqualError(t, err, "unsupported attestation scheme")
 }
 
-func Test_CogenGenCmd_cocli_psa_runs(t *testing.T) {
+func Test_GenCmd_cocli_psa_runs(t *testing.T) {
 
-	cmd := NewCogenGenCmd()
+	cmd := NewGenCmd()
 
 	args := []string{"--key-file=../data/es256.json",
 		"--evidence-file=../data/psa-evidence.cbor",
@@ -82,9 +83,9 @@ func Test_CogenGenCmd_cocli_psa_runs(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_CogenGenCmd_cocli_cca_runs(t *testing.T) {
+func Test_GenCmd_cocli_cca_runs(t *testing.T) {
 
-	cmd := NewCogenGenCmd()
+	cmd := NewGenCmd()
 
 	args := []string{"--key-file=../data/es256.json",
 		"--evidence-file=../data/cca-evidence.cbor",
@@ -94,4 +95,22 @@ func Test_CogenGenCmd_cocli_cca_runs(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
+}
+
+func Test_GenCmd_with_output(t *testing.T) {
+
+	cmd := NewGenCmd()
+
+	args := []string{"--key-file=../data/es256.json",
+		"--evidence-file=../data/cca-evidence.cbor",
+		"--attest-scheme=cca",
+		"--corim-file=../data/test-target.cbor",
+	}
+	cmd.SetArgs((args))
+
+	os.Remove("../data/test-target.cbor")
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+	assert.FileExists(t, "../data/test-target.cbor")
 }

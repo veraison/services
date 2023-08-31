@@ -25,12 +25,12 @@ var (
 	cogenCorimFile         *string
 )
 
-var cogenGenCmd = NewCogenGenCmd()
+var genCmd = NewGenCmd()
 
-func NewCogenGenCmd() *cobra.Command {
+func NewGenCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen",
-		Short: "PLACEHOLDER",
+		Short: "corim generation from CBOR-encoded evidence",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := checkCogenGenArgs(); err != nil {
 				return err
@@ -39,14 +39,13 @@ func NewCogenGenCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("PLACEHOLDER")
 			return nil
 		},
 	}
 
 	cogenAttestationScheme = cmd.Flags().StringP("attest-scheme", "a", "", "attestation scheme used")
 
-	cogenCorimFile = cmd.Flags().StringP("corim-files", "c", "", "name of the generated CoRIM  file")
+	cogenCorimFile = cmd.Flags().StringP("corim-file", "c", "", "name of the generated CoRIM  file")
 
 	cogenEvidenceFile = cmd.Flags().StringP("evidence-file", "e", "", "a CBOR-encoded evidence file")
 
@@ -138,6 +137,23 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 		measurements.AddMeasurement(measurement)
 	}
 
+	if *attestation_scheme == "cca" {
+		var config, err = claims.GetConfig()
+		if err != nil {
+			return err
+		}
+		configID := comid.CCAPlatformConfigID("cfg v1.0.0")
+		configID2 := comid.CCAPlatformConfigID(config)
+		configVal := comid.NewCCAPlatCfgMeasurement(configID2)
+		val, err := configVal.Key.MarshalJSON()
+		if err != nil {
+			return err
+		}
+		measurement := comid.NewCCAPlatCfgMeasurement(configID)
+		measurement.Val.RawValue = comid.NewRawValue().SetBytes(val)
+		measurements.AddMeasurement(measurement)
+	}
+
 	class := comid.NewClassImplID(implID)
 
 	refVal := comid.ReferenceValue{
@@ -145,7 +161,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 		Measurements: *measurements,
 	}
 
-	content, err = os.ReadFile("../data/comid-claims.json")
+	content, err = os.ReadFile("../data/comid-claims-template.json")
 	if err != nil {
 		return err
 	}
@@ -243,5 +259,5 @@ func PubKeyFromJWK(rawJWK []byte) (crypto.PublicKey, error) {
 }
 
 func init() {
-	cogenCmd.AddCommand(cogenGenCmd)
+	rootCmd.AddCommand(genCmd)
 }

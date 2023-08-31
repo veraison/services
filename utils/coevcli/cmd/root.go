@@ -17,7 +17,7 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:           "coevcli",
-	Short:         "PLACEHOLDER",
+	Short:         "create corim from supplied evidence",
 	Version:       "0.0.1",
 	SilenceUsage:  true,
 	SilenceErrors: true,
