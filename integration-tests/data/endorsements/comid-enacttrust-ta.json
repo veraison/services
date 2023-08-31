@@ -24,7 +24,7 @@
         },
         "verification-keys": [
           {
-            "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkLfat6Jif+izCEg/KBxcN6kF5seJqX1nEiDHtChzV3vJHIgqw4CrTunRP+liAiD3Rg9rLmmVbyUjPKXlwBdHxA=="
+            "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkLfat6Jif+izCEg/KBxcN6kF5seJqX1nEiDHtChzV3vJHIgqw4CrTunRP+liAiD3Rg9rLmmVbyUjPKXlwBdHxA==\n-----END PUBLIC KEY-----"
           }
         ]
       }

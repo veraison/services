@@ -4,8 +4,6 @@ package tpm_enacttrust
 
 import (
 	"encoding/base64"
-	"encoding/pem"
-	"fmt"
 	"os"
 	"testing"
 
@@ -52,11 +50,7 @@ func readPublicKeyBytes(path string) ([]byte, error) {
 		return nil, err
 	}
 
-	block, _ := pem.Decode(buf)
-	if block == nil || block.Type != "PUBLIC KEY" {
-		return nil, fmt.Errorf("could not decode EC public key from PEM block: %q", block)
-	}
-	return block.Bytes, nil
+	return buf, nil
 }
 
 func Test_ExtractVerifiedClaims_ok(t *testing.T) {

@@ -3,6 +3,6 @@
   "type": "VERIFICATION_KEY",
   "attributes": {
     "enacttrust-tpm.node-id": "7df7714e-aa04-4638-bcbf-434b1dd720f1",
-    "enacttrust.ak-pub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkLfat6Jif+izCEg/KBxcN6kF5seJqX1nEiDHtChzV3vJHIgqw4CrTunRP+liAiD3Rg9rLmmVbyUjPKXlwBdHxA=="
+    "enacttrust.ak-pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkLfat6Jif+izCEg/KBxcN6kF5seJqX1nEiDHtChzV3vJHIgqw4CrTunRP+liAiD3Rg9rLmmVbyUjPKXlwBdHxA==\n-----END PUBLIC KEY-----"
   }
 }
