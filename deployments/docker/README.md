@@ -23,9 +23,11 @@ currently not supported). You can interact with the deployment via the
 `veraison` command. E.g.:
 
     $ veraison status
-            vts: stopped
+             vts: stopped
     provisioning: stopped
     verification: stopped
+      management: stopped
+        keycloak: stopped
 
 To start Veraison services run:
 
@@ -39,9 +41,9 @@ Use the `-h` option to see the full list of available commands.
 
 ## Deployment Composition
 
-The deployment exists on its own Docker network. Each of the three services
-runs in its own container. Service logs and VTS stores reside inside docker
-volumes, independent of any container.
+The deployment exists on its own Docker network. Each of the services runs in
+its own container. Service logs and VTS stores reside inside docker volumes,
+independent of any container.
 
 ![deployment composition](./misc/veraison-docker-deployment.png)
 
