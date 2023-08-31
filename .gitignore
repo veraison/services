@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.bkp
 policy/cmd/polcli/polcli
 protogen
 provisioning/cmd/provisioning-service/provisioning-service
