@@ -3,14 +3,13 @@
 package tpm_enacttrust
 
 import (
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/scheme/common"
 )
 
 type Extractor struct {
@@ -122,14 +121,9 @@ func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
 }
 
 func checkKey(inKey string) error {
-	buf, err := base64.StdEncoding.DecodeString(inKey)
+	_, err := common.DecodePemSubjectPubKeyInfo([]byte(inKey))
 	if err != nil {
-		return fmt.Errorf("could not base64-decode ak-pub: %v", err)
-	}
-
-	_, err = x509.ParsePKIXPublicKey(buf)
-	if err != nil {
-		return fmt.Errorf("could not parse PKIX public key: %v", err)
+		return fmt.Errorf("could not parse ak-pub: %v", err)
 	}
 
 	return nil

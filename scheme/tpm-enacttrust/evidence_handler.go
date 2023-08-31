@@ -4,8 +4,6 @@ package tpm_enacttrust
 
 import (
 	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/scheme/common"
 )
 
 type EvidenceHandler struct{}
@@ -214,14 +213,9 @@ func parseKey(trustAnchor string) (*ecdsa.PublicKey, error) {
 		return nil, fmt.Errorf("could not decode trust anchor: %w", err)
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(taEndorsement.Attr.Key)
+	key, err := common.DecodePemSubjectPubKeyInfo([]byte(taEndorsement.Attr.Key))
 	if err != nil {
 		return nil, err
-	}
-
-	key, err := x509.ParsePKIXPublicKey(buf)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse public key: %v", err)
 	}
 
 	ret, ok := key.(*ecdsa.PublicKey)
