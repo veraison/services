@@ -175,6 +175,9 @@ func (s EvidenceHandler) AppraiseEvidence(
 	if endorsements.Digest == evidenceDigest {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		*appraisal.Status = ear.TrustTierAffirming
+	} else {
+		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+		*appraisal.Status = ear.TrustTierContraindicated
 	}
 
 	return result, nil
