@@ -1,3 +1,6 @@
+// Copyright 2023 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+
 package cmd
 
 import (
@@ -12,6 +15,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
@@ -19,59 +23,95 @@ import (
 )
 
 var (
-	cogenAttestationScheme *string
-	cogenEvidenceFile      *string
-	cogenKeyFile           *string
-	cogenCorimFile         *string
+	cfgFile                  string
+	coevcliAttestationScheme *string
+	coevcliEvidenceFile      *string
+	coevcliKeyFile           *string
+	coevcliCorimFile         *string
 )
 
-var genCmd = NewGenCmd()
+var rootCmd = NewRootCmd()
 
-func NewGenCmd() *cobra.Command {
+func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "gen",
-		Short: "corim generation from CBOR-encoded evidence",
+		Use:     "coevcli",
+		Short:   "create corim from supplied evidence",
+		Version: "0.0.1",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := checkCogenGenArgs(); err != nil {
 				return err
 			}
-			err := generate(cogenAttestationScheme, cogenEvidenceFile, cogenKeyFile, cogenCorimFile)
+			err := generate(coevcliAttestationScheme, coevcliEvidenceFile, coevcliKeyFile, coevcliCorimFile)
 			if err != nil {
 				return err
 			}
 			return nil
 		},
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
-	cogenAttestationScheme = cmd.Flags().StringP("attest-scheme", "a", "", "attestation scheme used")
+	coevcliAttestationScheme = cmd.Flags().StringP("attest-scheme", "a", "", "attestation scheme used")
 
-	cogenCorimFile = cmd.Flags().StringP("corim-file", "c", "", "name of the generated CoRIM  file")
+	coevcliCorimFile = cmd.Flags().StringP("corim-file", "c", "", "name of the generated CoRIM  file")
 
-	cogenEvidenceFile = cmd.Flags().StringP("evidence-file", "e", "", "a CBOR-encoded evidence file")
+	coevcliEvidenceFile = cmd.Flags().StringP("evidence-file", "e", "", "a CBOR-encoded evidence file")
 
-	cogenKeyFile = cmd.Flags().StringP("key-file", "k", "", "a JSON-encoded key file")
+	coevcliKeyFile = cmd.Flags().StringP("key-file", "k", "", "a JSON-encoded key file")
 
 	return cmd
 }
 
 func checkCogenGenArgs() error {
-	if cogenKeyFile == nil || *cogenKeyFile == "" {
-		return errors.New("no key supplied")
-	}
-
-	if cogenAttestationScheme == nil || *cogenAttestationScheme == "" {
+	if coevcliAttestationScheme == nil || *coevcliAttestationScheme == "" {
 		return errors.New("no attestation scheme supplied")
 	}
 
-	if cogenEvidenceFile == nil || *cogenEvidenceFile == "" {
+	if coevcliEvidenceFile == nil || *coevcliEvidenceFile == "" {
 		return errors.New("no evidence file supplied")
 	}
 
-	if *cogenAttestationScheme != "psa" && *cogenAttestationScheme != "cca" {
+	if coevcliKeyFile == nil || *coevcliKeyFile == "" {
+		return errors.New("no key supplied")
+	}
+
+	if *coevcliAttestationScheme != "psa" && *coevcliAttestationScheme != "cca" {
 		return errors.New("unsupported attestation scheme")
 	}
 
 	return nil
+}
+
+func Execute() {
+	cobra.CheckErr(rootCmd.Execute())
+}
+
+func init() {
+	cobra.OnInitialize(initConfig)
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
+}
+
+// initConfig reads in config file and ENV variables if set
+func initConfig() {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+
+		// search config in home directory with name ".cli" (without extension)
+		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName(".cli")
+	}
+
+	viper.AutomaticEnv() // read in environment variables that match
+
+	// if a config file is found, read it in
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	}
 }
 
 func generate(attestation_scheme *string, evidence_file *string, key_file *string, corim_file *string) error {
@@ -143,14 +183,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 			return err
 		}
 		configID := comid.CCAPlatformConfigID("cfg v1.0.0")
-		configID2 := comid.CCAPlatformConfigID(config)
-		configVal := comid.NewCCAPlatCfgMeasurement(configID2)
-		val, err := configVal.Key.MarshalJSON()
-		if err != nil {
-			return err
-		}
-		measurement := comid.NewCCAPlatCfgMeasurement(configID)
-		measurement.Val.RawValue = comid.NewRawValue().SetBytes(val)
+		measurement := comid.NewCCAPlatCfgMeasurement(configID).SetRawValueBytes(config, []byte{})
 		measurements.AddMeasurement(measurement)
 	}
 
@@ -256,8 +289,4 @@ func PubKeyFromJWK(rawJWK []byte) (crypto.PublicKey, error) {
 		return nil, fmt.Errorf("%w", err)
 	}
 	return pKey, nil
-}
-
-func init() {
-	rootCmd.AddCommand(genCmd)
 }
