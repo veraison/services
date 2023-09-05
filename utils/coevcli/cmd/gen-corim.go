@@ -7,17 +7,20 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/corim/corim"
 	"github.com/veraison/eat"
 	"github.com/veraison/psatoken"
 )
@@ -207,18 +210,11 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 		Measurements: *measurements,
 	}
 
-	content, err = os.ReadFile("../data/templates/comid-claims-template.json")
-	if err != nil {
-		_ = os.Remove(dir)
-		return err
-	}
-
 	comidClaims := comid.NewComid()
-	err = comidClaims.FromJSON(content)
-	if err != nil {
-		_ = os.Remove(dir)
-		return err
-	}
+	comidClaims.SetLanguage("en-GB")
+	comidClaims.SetTagIdentity("43bbe37f-2e61-4b33-aed3-53cff1428b16", 0) //this 0 may be an issue
+	regid := "https://acme.example"
+	comidClaims.AddEntity("ACME Ltd.", &regid, 0, 1, 2)
 
 	referenceValues := append(*new([]comid.ReferenceValue), refVal)
 	comidClaims.Triples.ReferenceValues = &referenceValues
@@ -260,10 +256,37 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 		return err
 	}
 
-	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/templates/corim-full.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*attestation_scheme+"-endorsements.cbor")
+	corimTemplate := corim.NewUnsignedCorim()
+	corimTemplate.SetID("5c57e8f4-46cd-421b-91c9-08cf93e13cfc")
+	hashEntry := comid.NewHashEntry(0, []byte("5Fty9cDAtXLbTY06t+l/No/3TmI0eoJN7LZ6hOUiTXU="))
+	corimTemplate.AddDependentRim("https://parent.example/rims/ccb3aa85-61b4-40f1-848e-02ad6e8a254b", hashEntry)
+	if *attestation_scheme == "psa" {
+		corimTemplate.AddProfile("http://arm.com/psa/iot/1")
+	} else {
+		corimTemplate.AddProfile("http://arm.com/cca/ssd/1")
+	}
+	location, err := time.LoadLocation("Local")
+	if err != nil {
+		_ = os.Remove(dir)
+		return err
+	}
+	notBefore := time.Date(2021, 12, 31, 0, 0, 0, 0, location)
+	notAfter := time.Date(2025, 12, 31, 0, 0, 0, 0, location)
+	corimTemplate.SetRimValidity(notAfter, &notBefore)
+	regID := "acme.example"
+	corimTemplate.AddEntity("ACME Ltd.", &regID, 0)
+
+	content, err = json.Marshal(corimTemplate)
+	if err != nil {
+		_ = os.Remove(dir)
+		return err
+	}
+	os.WriteFile(dir+"/corim-template.json", content, 0664)
+
+	corim_cmd := exec.Command("cocli", "corim", "create", "--template="+dir+"/corim-template.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*attestation_scheme+"-endorsements.cbor")
 
 	if *corim_file != "" {
-		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/templates/corim-full.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*corim_file)
+		corim_cmd = exec.Command("cocli", "corim", "create", "--template="+dir+"/corim-template.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*corim_file)
 	}
 
 	if err := corim_cmd.Run(); err != nil {
