@@ -23,9 +23,11 @@ currently not supported). You can interact with the deployment via the
 `veraison` command. E.g.:
 
     $ veraison status
-            vts: stopped
+             vts: stopped
     provisioning: stopped
     verification: stopped
+      management: stopped
+        keycloak: stopped
 
 To start Veraison services run:
 
@@ -39,9 +41,9 @@ Use the `-h` option to see the full list of available commands.
 
 ## Deployment Composition
 
-The deployment exists on its own Docker network. Each of the three services
-runs in its own container. Service logs and VTS stores reside inside docker
-volumes, independent of any container.
+The deployment exists on its own Docker network. Each of the services runs in
+its own container. Service logs and VTS stores reside inside docker volumes,
+independent of any container.
 
 ![deployment composition](./misc/veraison-docker-deployment.png)
 
@@ -128,6 +130,10 @@ will set the hostname of the builder container. Here, we're setting it to the
 hostname of the VTS service we just stopped, so that the provisioning and
 verification services that are still running will now talk to our debug container
 instead.
+
+(Note: if you were replacing a REST service, rather than VTS, you would also
+set the `DEBUG_PORT` variable to the value appropriate to the service (see
+[deployment.cfg](./deployment.cfg).)
 
 Next, navigate to the location of the VTS service executable (keeping in mind
 that the root of the repo is mapped to `/veraison/build` inside the container),

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 VERAISON=$THIS_DIR/../deployments/docker/veraison

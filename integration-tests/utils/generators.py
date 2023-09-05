@@ -1,3 +1,5 @@
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 import ast
 import os
 import shutil
@@ -15,13 +17,16 @@ def generate_endorsements(test):
     spec = test.test_vars['endorsements']
 
     if isinstance(spec, str):
+        tag = spec
         spec = test.common_vars['endorsements'][spec]
+    else:
+        tag = spec[0]
 
     corim_template_name = 'corim-{}-{}.json'.format(scheme, spec[0])
     corim_template = f'data/endorsements/{corim_template_name}'
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in spec[1:]]
-    output_path = f'{GENDIR}/endorsements/corim-{scheme}-{spec[0]}.cbor'
+    output_path = f'{GENDIR}/endorsements/corim-{scheme}-{tag}.cbor'
 
     generate_corim(corim_template, comid_templates, output_path)
 
@@ -97,10 +102,12 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
                 )
     elif scheme == 'enacttrust':
         key = signing
-        generate_eancttrust_evidence_token(
+        badnode = True if 'badnode' in evidence else False
+        generate_enacttrust_evidence_token(
                 claims_file,
                 f'data/keys/{key}.pem',
                 f'{GENDIR}/evidence/{outname}.cbor',
+                badnode,
                 )
     else:
         raise ValueError(f'Unexpected scheme: {scheme}')
@@ -137,7 +144,7 @@ def generate_evidence_no_nonce(scheme, evidence, signing, outname):
                 )
     elif scheme == 'enacttrust':
         key = signing
-        generate_eancttrust_evidence_token(
+        generate_enacttrust_evidence_token(
                 claims_file,
                 f'data/keys/{key}.pem',
                 f'{GENDIR}/evidence/{outname}.cbor',
@@ -175,6 +182,7 @@ def generate_cca_evidence_token(claims_file, iak_file, rak_file, token_file):
                     f"--iak={iak_file} --rak={rak_file} --token={token_file}"
     run_command(evcli_command, 'generate CCA token')
 
-def generate_eancttrust_evidence_token(claims_file, key_file, token_file):
-    gentoken_command = f"gen-enacttrust-token -key {key_file} -out {token_file} {claims_file}"
+def generate_enacttrust_evidence_token(claims_file, key_file, token_file, badnode):
+    bn_flag = '-bad-node' if badnode else ''
+    gentoken_command = f"gen-enacttrust-token {bn_flag} -key {key_file} -out {token_file} {claims_file}"
     run_command(gentoken_command, 'generate EnactTrust token')

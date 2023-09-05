@@ -16,6 +16,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/services/auth"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
@@ -265,7 +266,8 @@ func TestHandler_GetWellKnownProvisioningInfo_ok(t *testing.T) {
 	g.Request, _ = http.NewRequest(http.MethodGet, "/.well-known/veraison/provisioning", http.NoBody)
 	g.Request.Header.Add("Accept", expectedType)
 
-	NewRouter(h).ServeHTTP(w, g.Request)
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
 
 	var body capability.WellKnownInfo
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
@@ -305,7 +307,8 @@ func TestHandler_GetWellKnownProvisioningInfo_GetRegisteredMediaTypes_empty(t *t
 	g.Request, _ = http.NewRequest(http.MethodGet, "/.well-known/veraison/provisioning", http.NoBody)
 	g.Request.Header.Add("Accept", expectedType)
 
-	NewRouter(h).ServeHTTP(w, g.Request)
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
 
 	var body capability.WellKnownInfo
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
@@ -340,7 +343,8 @@ func TestHandler_GetWellKnownProvisioningInfo_GetServiceState_fail(t *testing.T)
 
 	g.Request, _ = http.NewRequest(http.MethodGet, "/.well-known/veraison/provisioning", http.NoBody)
 
-	NewRouter(h).ServeHTTP(w, g.Request)
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
 
 	var body problems.DefaultProblem
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
@@ -368,7 +372,8 @@ func TestHandler_GetWellKnownProvisioningInfo_UnsupportedAccept(t *testing.T) {
 	g.Request, _ = http.NewRequest(http.MethodGet, "/.well-known/veraison/provisioning", http.NoBody)
 	g.Request.Header.Add("Accept", "application/unsupported+ber")
 
-	NewRouter(h).ServeHTTP(w, g.Request)
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
 
 	var body problems.DefaultProblem
 	_ = json.Unmarshal(w.Body.Bytes(), &body)

@@ -1,3 +1,5 @@
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 import os
 import json
 from datetime import datetime, timedelta

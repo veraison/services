@@ -1,3 +1,5 @@
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 
@@ -21,6 +23,7 @@ class TavernTest:
 def pytest_tavern_beta_before_every_test_run(test_dict, variables):
     test = TavernTest(test_dict)
     setup(test, variables)
+
 
 def setup(test, variables):
     clear_stores()

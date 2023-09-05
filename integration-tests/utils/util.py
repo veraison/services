@@ -1,6 +1,12 @@
+# Copyright 2023 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 import json
+import os
 import re
 import subprocess
+import time
+
+import requests
 
 
 def to_identifier(text):
@@ -48,3 +54,36 @@ def clear_stores():
         run_command(command, f'clear {prefix} store')
 
 
+def get_access_token(test, role):
+    kc_host = os.getenv('KEYCLOAK_HOST')
+    kc_port = os.getenv('KEYCLOAK_PORT')
+    veraison_net = os.getenv('VERAISON_NETWORK')
+
+    # Wait for Keycloak service to come online. This takes a short while, and
+    # if the integration tests are run immediately after spinning up the
+    # deployment, it may not be there yet.
+    for _ in range(10):
+        try:
+            requests.get(f'http://{kc_host}.{veraison_net}:{kc_port}/')
+            break
+        except requests.ConnectionError:
+            time.sleep(1)
+    else:
+        raise RuntimeError('Keycloak service does not appear to be online')
+
+    credentials = test.common_vars['credentials'][role]
+    data = {
+        'client_id': test.common_vars['oauth2']['client-id'],
+        'client_secret': test.common_vars['oauth2']['client-secret'],
+        'grant_type': 'password',
+        'scope': 'openid',
+        'username': credentials['username'],
+        'password': credentials['password'],
+
+    }
+    url = f'http://{kc_host}.{veraison_net}:{kc_port}/realms/veraison/protocol/openid-connect/token'
+
+    r = requests.post(url, data=data)
+    resp = r.json()
+
+    return resp['access_token']

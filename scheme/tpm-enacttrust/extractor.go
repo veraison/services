@@ -9,6 +9,7 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/scheme/common"
 )
 
 type Extractor struct {
@@ -88,6 +89,10 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 
 	akPub := avk.VerifKeys[0].Key
 
+	if err := checkKey(akPub); err != nil {
+		return nil, err
+	}
+
 	taAttrs, err := makeTaAttrs(instanceAttrs, akPub)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
@@ -113,4 +118,13 @@ func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
 		return nil, err
 	}
 	return msg, nil
+}
+
+func checkKey(inKey string) error {
+	_, err := common.DecodePemSubjectPubKeyInfo([]byte(inKey))
+	if err != nil {
+		return fmt.Errorf("could not parse ak-pub: %v", err)
+	}
+
+	return nil
 }

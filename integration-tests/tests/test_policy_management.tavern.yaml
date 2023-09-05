@@ -10,6 +10,7 @@ stages:
       url: http://{management-service}/management/v1/policy/PSA_IOT
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 404
 
@@ -20,6 +21,7 @@ stages:
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
       file_body: data/policies/psa-short.rego
     response:
       status_code: 201
@@ -39,6 +41,7 @@ stages:
       url: http://{management-service}/management/v1/policy/PSA_IOT
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 404
 
@@ -48,6 +51,7 @@ stages:
       url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
       verify_response_with:
@@ -61,6 +65,8 @@ stages:
     request:
       method: POST
       url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}/activate
+      headers:
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
 
@@ -70,6 +76,7 @@ stages:
       url: http://{management-service}/management/v1/policy/PSA_IOT
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
       verify_response_with:
@@ -85,6 +92,7 @@ stages:
       url: http://{management-service}/management/v1/policy/BAD
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 400
       json:
@@ -98,6 +106,7 @@ stages:
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
       file_body: data/policies/psa.rego
     response:
       status_code: 201
@@ -117,6 +126,7 @@ stages:
       url: http://{management-service}/management/v1/policy/PSA_IOT
       headers:
         accept: application/vnd.veraison.policy+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
       verify_response_with:
@@ -132,6 +142,7 @@ stages:
       url: http://{management-service}/management/v1/policies/PSA_IOT
       headers:
         accept: application/vnd.veraison.policies+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
       verify_response_with:
@@ -143,6 +154,8 @@ stages:
     request:
       method: POST
       url: http://{management-service}/management/v1/policies/PSA_IOT/deactivate
+      headers:
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
 
@@ -152,6 +165,7 @@ stages:
       url: http://{management-service}/management/v1/policies/PSA_IOT
       headers:
         accept: application/vnd.veraison.policies+json
+        authorization: '{authorization}' # set via hook
     response:
       status_code: 200
       verify_response_with:

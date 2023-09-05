@@ -11,6 +11,7 @@ VTS_PORT ?= 50051
 PROVISIONING_PORT ?= 8888
 VERIFICATION_PORT ?= 8080
 MANAGEMENT_PORT ?= 8088
+KEYCLOAK_PORT ?= 11111
 
 # Deploy destination is either an absolute path to a directory on the host, or
 # the name of a docker volume.

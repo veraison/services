@@ -9,20 +9,24 @@ function status() {
     local prov=$(_get_container_state provisioning-service)
     local verif=$(_get_container_state verification-service)
     local manage=$(_get_container_state management-service)
+    local keycloak=$(_get_container_state keycloak-service)
 
     if [[ $_quiet == true ]]; then
         local vts=$(_strip_color $vts)
         local prov=$(_strip_color $prov)
         local verif=$(_strip_color $verif)
         local manage=$(_strip_color $manage)
+        local keycloak=$(_strip_color $keycloak)
 
         local status="${_yell}stopped${_reset}"
 
-        if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" || "$manage" == "running" ]]; then
+        if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" || \
+            "$manage" == "running" || "$keycloak" == "running" ]]; then
             status="${_yell}partial${_yell}"
         fi
 
-        if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running"  && "$manage" == "running" ]]; then
+        if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running"  && \
+            "$manage" == "running" && "$keycloak" == "running" ]]; then
             status="${_green}running${_reset}"
         fi
 
@@ -32,6 +36,7 @@ function status() {
         echo -e "provisioning: $prov"
         echo -e "verification: $verif"
         echo -e "  management: $manage"
+        echo -e "    keycloak: $keycloak"
     fi
 }
 
@@ -39,6 +44,7 @@ function start() {
     local what=$1
 
     if [[ "x$what" == "x" ]]; then
+        start_keycloak
         start_vts
         sleep 0.5 # wait for vts to start before starting the services that depend on it.
         start_provisioning
@@ -52,6 +58,8 @@ function start() {
         start_verification
     elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
         start_management
+    elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
+        start_keycloak
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -66,6 +74,7 @@ function stop() {
         stop_verification
         stop_provisioning
         stop_vts
+        stop_keycloak
     elif [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
         stop_vts
     elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
@@ -74,6 +83,8 @@ function stop() {
         stop_verification
     elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
         stop_management
+    elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
+        stop_keycloak
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -91,6 +102,8 @@ function follow() {
         follow_verification
     elif [[ "$what" == "management" || "$what" == "management-service" ]]; then
         follow_management
+    elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
+        follow_keycloak
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -143,6 +156,18 @@ function stop_management() {
 
 function follow_management() {
     docker container logs --follow --timestamps management-service
+}
+
+function start_keycloak() {
+    docker container start keycloak-service
+}
+
+function stop_keycloak() {
+    docker container stop keycloak-service
+}
+
+function follow_keycloak() {
+    docker container logs --follow --timestamps keycloak-service
 }
 
 function manager() {

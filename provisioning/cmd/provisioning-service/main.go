@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/veraison/services/auth"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/provisioning/api"
@@ -37,7 +38,7 @@ func main() {
 		ListenAddr: DefaultListenAddr,
 	}
 
-	subs, err := config.GetSubs(v, "provisioning", "vts", "*logging")
+	subs, err := config.GetSubs(v, "provisioning", "vts", "*logging", "*auth")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,8 +74,19 @@ func main() {
 	provisioner := provisioner.New(vtsClient)
 
 	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
+	authorizer, err := auth.NewAuthorizer(subs["auth"], log.Named("auth"))
+	if err != nil {
+		log.Fatalf("could not init authorizer: %v", err)
+	}
+	defer func() {
+		err := authorizer.Close()
+		if err != nil {
+			log.Errorf("Could not close authorizer: %v", err)
+		}
+	}()
+
 	apiHandler := api.NewHandler(provisioner, log.Named("api"))
-	go apiServer(apiHandler, cfg.ListenAddr)
+	go apiServer(apiHandler, authorizer, cfg.ListenAddr)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -95,8 +107,8 @@ func terminator(
 	done <- true
 }
 
-func apiServer(apiHandler api.IHandler, listenAddr string) {
-	if err := api.NewRouter(apiHandler).Run(listenAddr); err != nil {
+func apiServer(apiHandler api.IHandler, authorizer auth.IAuthorizer, listenAddr string) {
+	if err := api.NewRouter(apiHandler, authorizer).Run(listenAddr); err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
 }

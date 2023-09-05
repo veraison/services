@@ -101,17 +101,17 @@ func Test_ValidateEvidenceIntegrity_nok(t *testing.T) {
 		{
 			desc:        "invalid public key",
 			input:       "test/evidence/bad_key_endorsements.json",
-			expectedErr: `could not get public key from trust anchor: unable to parse public key: asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false private:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} AlgorithmIdentifier @2`,
+			expectedErr: `could not get public key from trust anchor: could not decode subject public key info: unable to parse public key: asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false private:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} AlgorithmIdentifier @2`,
 		},
 		{
 			desc:        "bad pem key header",
 			input:       "test/evidence/bad_key_header_endorsements.json",
-			expectedErr: `could not get public key from trust anchor: could not extract trust anchor PEM block`,
+			expectedErr: `could not get public key from trust anchor: could not decode subject public key info: could not extract trust anchor PEM block`,
 		},
 		{
 			desc:        "incorrect key type",
 			input:       "test/evidence/bad_key_private_key.json",
-			expectedErr: "could not get public key from trust anchor: unsupported key type: \"PRIVATE KEY\"",
+			expectedErr: "could not get public key from trust anchor: could not decode subject public key info: unsupported key type: \"PRIVATE KEY\"",
 		},
 	}
 
