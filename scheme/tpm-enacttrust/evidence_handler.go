@@ -4,8 +4,6 @@ package tpm_enacttrust
 
 import (
 	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
+	"github.com/veraison/services/scheme/common"
 )
 
 type EvidenceHandler struct{}
@@ -65,7 +64,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return "", err
+		return "", handler.BadEvidence(err)
 	}
 
 	return tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String()), nil
@@ -84,7 +83,7 @@ func (s EvidenceHandler) ExtractClaims(
 	}
 
 	if !supported {
-		return nil, fmt.Errorf("wrong media type: expect %q, but found %q",
+		return nil, handler.BadEvidence("wrong media type: expect %q, but found %q",
 			strings.Join(EvidenceMediaTypes, ", "),
 			token.MediaType,
 		)
@@ -93,11 +92,11 @@ func (s EvidenceHandler) ExtractClaims(
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return nil, fmt.Errorf("could not decode token: %w", err)
+		return nil, handler.BadEvidence("could not decode token: %w", err)
 	}
 
 	if decoded.AttestationData.Type != tpm2.TagAttestQuote {
-		return nil, fmt.Errorf("wrong TPMS_ATTEST type: want %d, got %d",
+		return nil, handler.BadEvidence("wrong TPMS_ATTEST type: want %d, got %d",
 			tpm2.TagAttestQuote, decoded.AttestationData.Type)
 	}
 
@@ -176,6 +175,9 @@ func (s EvidenceHandler) AppraiseEvidence(
 	if endorsements.Digest == evidenceDigest {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 		*appraisal.Status = ear.TrustTierAffirming
+	} else {
+		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+		*appraisal.Status = ear.TrustTierContraindicated
 	}
 
 	return result, nil
@@ -214,14 +216,9 @@ func parseKey(trustAnchor string) (*ecdsa.PublicKey, error) {
 		return nil, fmt.Errorf("could not decode trust anchor: %w", err)
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(taEndorsement.Attr.Key)
+	key, err := common.DecodePemSubjectPubKeyInfo([]byte(taEndorsement.Attr.Key))
 	if err != nil {
 		return nil, err
-	}
-
-	key, err := x509.ParsePKIXPublicKey(buf)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse public key: %v", err)
 	}
 
 	ret, ok := key.(*ecdsa.PublicKey)

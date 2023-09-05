@@ -67,7 +67,7 @@ func main() {
 	var evPluginManager plugin.IManager[handler.IEvidenceHandler]
 	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
 
-	psubs, err := config.GetSubs(subs["plugin"], "go-plugin")
+	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
 		log.Fatalf("could not get subs: %v", err)
 	}
@@ -96,7 +96,7 @@ func main() {
 			log.Fatalf("could not create endorsement PluginManagerWithLoader: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
-		loader, err := builtin.CreateBultinLoader(
+		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
 			log.Named("builtin"))
 		if err != nil {

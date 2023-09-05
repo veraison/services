@@ -25,7 +25,7 @@ func NewBuiltinLoader(logger *zap.SugaredLogger) *BuiltinLoader {
 	return &BuiltinLoader{logger: logger}
 }
 
-func CreateBultinLoader(
+func CreateBuiltinLoader(
 	cfg map[string]interface{},
 	logger *zap.SugaredLogger,
 ) (*BuiltinLoader, error) {
@@ -58,6 +58,11 @@ func DiscoverBuiltin[I plugin.IPluggable]() error {
 
 func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
 	for _, p := range plugins {
+		_, ok := p.(I)
+		if !ok {
+			continue
+		}
+
 		name := p.GetName()
 		if _, ok := loader.loadedByName[name]; ok {
 			loader.logger.Panicw("duplicate plugin name", "name", name)

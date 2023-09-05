@@ -35,4 +35,8 @@ po-store:
     datasource: stores/vts/po-store.sql
 po-agent:
     backend: opa
+auth:
+  backend: keycloak
+  host: keycloak-service
+  port: 11111
 # vim: set ft=yaml:
