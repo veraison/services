@@ -116,13 +116,20 @@ func initConfig() {
 
 func generate(attestation_scheme *string, evidence_file *string, key_file *string, corim_file *string) error {
 
-	evcli_cmd := exec.Command("evcli", *attestation_scheme, "check", "--token="+*evidence_file, "--key="+*key_file, "--claims=../data/output-evidence-claims.json")
-	if err := evcli_cmd.Run(); err != nil {
+	dir, err := os.MkdirTemp("", "coevcli_data")
+	if err != nil {
+		return err
+	}
+
+	evcli_cmd := exec.Command("evcli", *attestation_scheme, "check", "--token="+*evidence_file, "--key="+*key_file, "--claims="+dir+"/output-evidence-claims.json")
+	if err = evcli_cmd.Run(); err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
 	content, err := os.ReadFile(*evidence_file)
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
@@ -133,6 +140,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 		err = evidence.FromCOSE(content)
 		if err != nil {
+			_ = os.Remove(dir)
 			return err
 		}
 
@@ -142,6 +150,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 		err = evidence.FromCBOR(content)
 		if err != nil {
+			_ = os.Remove(dir)
 			return err
 		}
 
@@ -150,11 +159,13 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 	swComponents, err := claims.GetSoftwareComponents()
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
 	implIDByte, err := claims.GetImplID()
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 	var implID comid.ImplID
@@ -162,6 +173,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 	instID, err := claims.GetInstID()
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 	var ueid eat.UEID = instID
@@ -180,6 +192,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 	if *attestation_scheme == "cca" {
 		var config, err = claims.GetConfig()
 		if err != nil {
+			_ = os.Remove(dir)
 			return err
 		}
 		configID := comid.CCAPlatformConfigID("cfg v1.0.0")
@@ -194,14 +207,16 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 		Measurements: *measurements,
 	}
 
-	content, err = os.ReadFile("../data/comid-claims-template.json")
+	content, err = os.ReadFile("../data/templates/comid-claims-template.json")
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
 	comidClaims := comid.NewComid()
 	err = comidClaims.FromJSON(content)
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
@@ -210,6 +225,7 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 	key_data, err := convertJwkToPEM(*key_file)
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 	key := comid.NewVerifKey()
@@ -233,24 +249,29 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 
 	content, err = comidClaims.ToJSON()
 	if err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
-	os.WriteFile("../data/comid-claims.json", content, 0664)
+	os.WriteFile(dir+"/comid-claims.json", content, 0664)
 
-	comid_cmd := exec.Command("cocli", "comid", "create", "--template=../data/comid-claims.json", "--output-dir=../data")
+	comid_cmd := exec.Command("cocli", "comid", "create", "--template="+dir+"/comid-claims.json", "--output-dir="+dir)
 	if err := comid_cmd.Run(); err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
 
-	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output=../data/"+*attestation_scheme+"-endorsements.cbor")
+	corim_cmd := exec.Command("cocli", "corim", "create", "--template=../data/templates/corim-full.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*attestation_scheme+"-endorsements.cbor")
 
 	if *corim_file != "" {
-		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/corim-full.json", "--comid=../data/comid-claims.cbor", "--output="+*corim_file)
+		corim_cmd = exec.Command("cocli", "corim", "create", "--template=../data/templates/corim-full.json", "--comid="+dir+"/comid-claims.cbor", "--output="+*corim_file)
 	}
 
 	if err := corim_cmd.Run(); err != nil {
+		_ = os.Remove(dir)
 		return err
 	}
+
+	_ = os.Remove(dir)
 
 	return nil
 }

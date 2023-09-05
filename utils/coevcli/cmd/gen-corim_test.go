@@ -73,54 +73,57 @@ func Test_RootCmd_cocli_psa_runs(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/psa-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/corims/psa-evidence.cbor",
 		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
+	os.Remove("psa-endorsements.cbor")
 }
 
 func Test_RootCmd_cocli_cca_runs(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/cca-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/corims/cca-evidence.cbor",
 		"--attest-scheme=cca",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
+	os.Remove("cca-endorsements.cbor")
 }
 
 func Test_RootCmd_with_output(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/psa-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/corims/psa-evidence.cbor",
 		"--attest-scheme=psa",
-		"--corim-file=../data/test-target.cbor",
+		"--corim-file=../data/corims/test-target.cbor",
 	}
 	cmd.SetArgs((args))
 
-	os.Remove("../data/test-target.cbor")
+	os.Remove("../data/corims/test-target.cbor")
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
-	assert.FileExists(t, "../data/test-target.cbor")
+	assert.FileExists(t, "../data/corims/test-target.cbor")
+	os.Remove("../data/corims/test-target.cbor")
 }
 
 func Test_RootCmd_with_wrong_key(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/ec256.json",
-		"--evidence-file=../data/psa-evidence.cbor",
+	args := []string{"--key-file=../data/keys/ec256.json",
+		"--evidence-file=../data/corims/psa-evidence.cbor",
 		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
@@ -133,8 +136,8 @@ func Test_RootCmd_with_wrong_scheme(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/cca-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/templates/cca-evidence.cbor",
 		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
@@ -147,8 +150,8 @@ func Test_RootCmd_with_bad_evidence(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/bad-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/corims/bad-evidence.cbor",
 		"--attest-scheme=psa",
 	}
 	cmd.SetArgs((args))
@@ -161,8 +164,8 @@ func Test_RootCmd_with_bad_output_path(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/es256.json",
-		"--evidence-file=../data/psa-evidence.cbor",
+	args := []string{"--key-file=../data/keys/es256.json",
+		"--evidence-file=../data/corims/psa-evidence.cbor",
 		"--attest-scheme=psa",
 		"--corim-file=../data/",
 	}
@@ -183,10 +186,10 @@ func Test_convertJwkToPEM_with_bad_path(t *testing.T) {
 }
 
 func Test_convertJwkToPEM_with_pub_key(t *testing.T) {
-	_, err := convertJwkToPEM("../data/ec256.json")
+	_, err := convertJwkToPEM("../data/keys/ec256.json")
 	assert.Error(t, err)
 }
 func Test_convertJwkToPEM_with_bad_file(t *testing.T) {
-	_, err := convertJwkToPEM("../data/comid-claims-template.json")
+	_, err := convertJwkToPEM("../data/templates/comid-claims-template.json")
 	assert.Error(t, err)
 }
