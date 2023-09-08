@@ -29,6 +29,10 @@ function deploy() {
     mkdir -p $DEPLOY_DIR/logs
     mkdir -p $DEPLOY_DIR/utils
 
+    # tell git our build directory is "safe" -- the operating context of
+    # CVE-2022-24765 (i.e., multi-user machine) does not really apply here)
+    git config --global --add safe.directory $BUILD_DIR
+
     echo "deploying services"
     cp $BUILD_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
     cp $BUILD_DIR/verification/cmd/verification-service/verification-service $DEPLOY_DIR/
