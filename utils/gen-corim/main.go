@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/veraison/services/utils/coevcli/cmd"
+	"github.com/veraison/services/utils/gen-corim/cmd"
 )
 
 func main() {
