@@ -116,6 +116,6 @@ The key-values store is the Veraison Storage Layer. It is used to store both End
 
 KV Store details can be found under [kvstore](https://github.com/veraison/services/tree/migration/kvstore#kv-store)
 
-## CoRIM Generation
+## Utilities
 
 Services provides an API for CoRIM generation, see the [README.md](utils/gen-corim/README.md) inside utils/gen-corim directory for a more detailed explanation.
