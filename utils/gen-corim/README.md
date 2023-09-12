@@ -30,7 +30,7 @@ The attestation scheme to be used via the `--attest-scheme` switch (abbrev. `-a`
 
 ### Key File
 
-Pass the -encoded key material needed to verify the evidence via the `--key-file` switch (abbrev. `-k`). The key file is expected be in [jwk](https://openid.net/specs/draft-jones-json-web-key-03.html) format.
+Public key material needed to verify the evidence via the `--key-file` switch (abbrev. `-k`). The key file is expected be in [jwk](https://openid.net/specs/draft-jones-json-web-key-03.html) format.
 
 ### Template Directory
 
