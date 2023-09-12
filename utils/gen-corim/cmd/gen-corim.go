@@ -38,21 +38,28 @@ func NewRootCmd() *cobra.Command {
 		Long: `generate CoRIM from supplied evidence
 		
 		Generate CoRIM from evidence token (evidence.cbor), attestation scheme to use (only schemes supported 
-		by ths tool are psa and cca) and key material needed to verify the evidence (key.json). 
+		by ths tool are psa and cca), key material needed to verify the evidence (key.json) and templates
+		supplied in the template directory. 
 		Save it to the current working directory with default file name.
 
 				gen-corim --evidence-file=evidence.cbor \
 						--key-file=key.json \
-						--attest-scheme=scheme
+						--attest-scheme=scheme \
+						--template-dir=directory
 
 		Generate CoRIM from evidence token (evidence.cbor), attestation scheme to use (only schemes supported 
-		by ths tool are psa and cca) and key material needed to verify the evidence (key.json). 
+		by ths tool are psa and cca), key material needed to verify the evidence (key.json) and templates
+		supplied in the template directory.
 		Save it as target file name (endorsements.cbor)
 
 				gen-corim --evidence-file=evidence.cbor \
 						--key-file=key.json \
 						--attest-scheme=scheme \
+						--template-dir=directory \
 						--corim-file=endorsements.cbor
+
+		Note: the CoMID and CoRIM templates within the template directory must be named comid-template.json
+		and corim-template.json respectively
 		`,
 		Version: "0.0.1",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -305,6 +312,8 @@ func generate(attestation_scheme *string, evidence_file *string, key_file *strin
 	}
 
 	_ = os.RemoveAll(dir)
+
+	fmt.Println(`>> generated "` + *corim_file + `" using "` + *evidence_file + `"`)
 
 	return nil
 }
