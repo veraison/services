@@ -115,3 +115,7 @@ More details about the VTS can be found under [VTS](https://github.com/veraison/
 The key-values store is the Veraison Storage Layer. It is used to store both Endorsements and Trust Anchors.
 
 KV Store details can be found under [kvstore](https://github.com/veraison/services/tree/migration/kvstore#kv-store)
+
+## Utilities
+
+Services now contains a `utils` folder to host various utilities. One such utility is a quick generation of Endorsements from the Evidence. Please see the [README.md](utils/gen-corim/README.md) inside utils/gen-corim for a more detailed explanation.
