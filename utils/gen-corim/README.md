@@ -22,7 +22,7 @@ On success, you should see something like this printed to stdout:
 ### Supplied Arguments
 #### Evidence File
 
-Pass the CBOR-encoded evidence token to be used via the `--evidence-file` switch (or equivalently its `-e` shorthand).
+CBOR-encoded evidence token to be used via the `--evidence-file` switch (or equivalently its `-e` shorthand).
 
 ### Attestation Scheme
 
