@@ -20,7 +20,7 @@ On success, you should see something like this printed to stdout:
 >> generated "endorsements/output.cbor" using "evidence.cbor"
 ```
 ### Supplied Arguments
-### Evidence File
+#### Evidence File
 
 Pass the CBOR-encoded evidence token to be used via the `--evidence-file` switch (or equivalently its `-e` shorthand).
 
