@@ -26,7 +26,7 @@ CBOR-encoded evidence token to be used via the `--evidence-file` switch (or equi
 
 ### Attestation Scheme
 
-Pass the attestation scheme to be used via the `--attest-scheme` switch (abbrev. `-a`). The only attestation schemes supported by this service are `psa` and `cca`.
+The attestation scheme to be used via the `--attest-scheme` switch (abbrev. `-a`). The only attestation schemes supported by this service are `psa` and `cca`.
 
 ### Key File
 
