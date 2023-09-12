@@ -34,7 +34,7 @@ Pass the -encoded key material needed to verify the evidence via the `--key-file
 
 ### Template Directory
 
-Pass the directory containing the CoMID and CoRIM templates via the `--template-dir` switch (abbrev. `-t`). This directory must exist and must contain files named `comid-template.json` and `corim-template.json` which contain the respective templates. Some examples of CoMID and CoRIM JSON templates can be found in the [data/templates](data/templates) folder.
+The directory containing the CoMID and CoRIM templates via the `--template-dir` switch (abbrev. `-t`). This directory must exist and must contain files named `comid-template.json` and `corim-template.json` which contain the respective templates. Some examples of CoMID and CoRIM JSON templates can be found in the [data/templates](data/templates) folder.
 
 ### Output File (Optional)
 
