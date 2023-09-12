@@ -38,5 +38,5 @@ The directory containing the CoMID and CoRIM templates via the `--template-dir` 
 
 ### Output File (Optional)
 
-If you wish to specify the name and path of the produced endorsement then pass this via the `corim-file` switch (abbrev. `-c`). If this flag is not set then the produced endorsement will be saved in the current working directory under the file name `psa-endorsements.cbor` or `cca-endorsements.cbor` dependig on the attestation scheme used.
+If you wish to specify the name and path of the produced endorsement then pass this via the `corim-file` switch (abbrev. `-c`). If this flag is not set then the produced endorsement will be saved in the current working directory under the file name `psa-endorsements.cbor` or `cca-endorsements.cbor` depending on the attestation scheme used.
 
