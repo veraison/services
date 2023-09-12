@@ -118,4 +118,4 @@ KV Store details can be found under [kvstore](https://github.com/veraison/servic
 
 ## Utilities
 
-Services provides an API for CoRIM generation, see the [README.md](utils/gen-corim/README.md) inside utils/gen-corim directory for a more detailed explanation.
+Services now contains a `utils` folder to host various utilities. One such utility is a quick generation of Endorsements from the Evidence. Please see the [README.md](utils/gen-corim/README.md) inside utils/gen-corim for a more detailed explanation.
