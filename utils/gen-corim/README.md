@@ -38,7 +38,7 @@ Public key material needed to verify the evidence. The key file is expected be i
 
 ### Template Directory (Optional)
 
-The directory containing the CoMID and CoRIM templates via the `--template-dir` switch (abbrev. `-t`). This directory must exist and must contain files named `comid-template.json` and `corim-template.json` which contain the respective templates. Some examples of CoMID and CoRIM JSON templates can be found in the [data/templates](data/templates) folder.
+The directory containing the CoMID and CoRIM templates via the `--template-dir` switch (abbrev. `-t`). If this flag is not set the path for the template directory will default to `templates` within the current working directory. The template directory must exist and must contain files named `comid-template.json` and `corim-template.json` which contain the respective templates. Some examples of CoMID and CoRIM JSON templates can be found in the [data/templates](data/templates) folder.
 
 ### Output File (Optional)
 
