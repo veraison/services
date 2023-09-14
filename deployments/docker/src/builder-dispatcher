@@ -8,6 +8,8 @@ CONTEXT_DIR=/veraison
 BUILD_DIR=${CONTEXT_DIR}/build
 DEPLOY_DIR=${CONTEXT_DIR}/deploy
 
+chown -R builder:builder $BUILD_DIR
+
 function build() {
     _check_is_mount_point $BUILD_DIR
 
