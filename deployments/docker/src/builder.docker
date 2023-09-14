@@ -46,8 +46,7 @@ RUN chown builder:builder /veraison
 
 USER builder
 
-RUN mkdir --mode=775 logs stores
-
+RUN mkdir --mode=775 logs stores build
 ADD --chown=builder:builder go.mod go.sum ./
 
 # Download Go modules
