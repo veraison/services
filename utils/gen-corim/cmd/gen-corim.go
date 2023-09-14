@@ -33,7 +33,7 @@ var rootCmd = NewRootCmd()
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "gen-corim",
+		Use:   "gen-corim <scheme> <evidence-file> <key-file>",
 		Short: "generate CoRIM from supplied evidence",
 		Long: `generate CoRIM from supplied evidence
 		
@@ -42,9 +42,7 @@ func NewRootCmd() *cobra.Command {
 		supplied in the template directory. 
 		Save it to the current working directory with default file name.
 
-				gen-corim --evidence-file=evidence.cbor \
-						--key-file=key.json \
-						--attest-scheme=scheme \
+				gen-corim scheme evidence.cbor key.json \
 						--template-dir=directory
 
 		Generate CoRIM from evidence token (evidence.cbor), attestation scheme to use (only schemes supported 
@@ -52,9 +50,7 @@ func NewRootCmd() *cobra.Command {
 		supplied in the template directory.
 		Save it as target file name (endorsements.cbor)
 
-				gen-corim --evidence-file=evidence.cbor \
-						--key-file=key.json \
-						--attest-scheme=scheme \
+				gen-corim scheme evidence.cbor key.json \
 						--template-dir=directory \
 						--corim-file=endorsements.cbor
 
@@ -62,7 +58,11 @@ func NewRootCmd() *cobra.Command {
 		and corim-template.json respectively
 		`,
 		Version: "0.0.1",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			genCorimAttestationScheme = &args[0]
+			genCorimEvidenceFile = &args[1]
+			genCorimKeyFile = &args[2]
 			if err := checkGenCorimArgs(); err != nil {
 				return err
 			}
@@ -76,39 +76,18 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	genCorimAttestationScheme = cmd.Flags().StringP("attest-scheme", "a", "", "attestation scheme used")
-
 	genCorimCorimFile = cmd.Flags().StringP("corim-file", "c", "", "name of the generated CoRIM  file")
 
-	genCorimEvidenceFile = cmd.Flags().StringP("evidence-file", "e", "", "a CBOR-encoded evidence file")
-
-	genCorimKeyFile = cmd.Flags().StringP("key-file", "k", "", "a JSON-encoded key file")
-
-	genCorimTemplateDir = cmd.Flags().StringP("template-dir", "t", "", "path of directory containing the comid and corim templates")
+	genCorimTemplateDir = cmd.Flags().StringP("template-dir", "t", "templates", "path of directory containing the comid and corim templates")
 
 	return cmd
 }
 
-// checking that the arguments are non-empty and the relevent filepaths exist
+// checkGenCorimArgs checks that the arguments are non-empty and that the relevent filepaths exist
 func checkGenCorimArgs() error {
-	if genCorimAttestationScheme == nil || *genCorimAttestationScheme == "" {
-		return errors.New("no attestation scheme supplied")
-	}
-
-	if genCorimEvidenceFile == nil || *genCorimEvidenceFile == "" {
-		return errors.New("no evidence file supplied")
-	}
-
-	if genCorimKeyFile == nil || *genCorimKeyFile == "" {
-		return errors.New("no key supplied")
-	}
 
 	if *genCorimAttestationScheme != "psa" && *genCorimAttestationScheme != "cca" {
-		return errors.New("unsupported attestation scheme, only psa and cca are supported")
-	}
-
-	if genCorimTemplateDir == nil || *genCorimTemplateDir == "" {
-		return errors.New("no template directory supplied")
+		return fmt.Errorf("unsupported attestation scheme %s, only psa and cca are supported", *genCorimAttestationScheme)
 	}
 
 	if _, err := os.Stat(*genCorimTemplateDir); errors.Is(err, os.ErrNotExist) {
@@ -257,7 +236,7 @@ func PubKeyFromJWK(rawJWK []byte) (crypto.PublicKey, error) {
 	return pKey, nil
 }
 
-// reading in the corim template structure and checking the validity
+// GenComidClaimsFromTemplate reads in the corim template structure and checks the validity
 func GetComidClaimsFromTemplate(template_dir string) (*comid.Comid, error) {
 	content, err := os.ReadFile(template_dir + "/comid-template.json")
 	if err != nil {
@@ -278,7 +257,7 @@ func GetComidClaimsFromTemplate(template_dir string) (*comid.Comid, error) {
 	return comidClaims, nil
 }
 
-// creating a new measurements list to hold the measurements extracted from the evidence token
+// GetMeasurementsFromComponents creates a new measurements list to hold the measurements extracted from the evidence token
 func GetMeasurementsFromComponents(swComponents []psatoken.SwComponent, config []byte, isCca bool) comid.Measurements {
 	measurements := comid.NewMeasurements()
 
@@ -301,7 +280,7 @@ func GetMeasurementsFromComponents(swComponents []psatoken.SwComponent, config [
 	return *measurements
 }
 
-// reading in the evidence token and extracting the claims
+// GetEvidenceClaims reads in the evidence token and extracts the claims
 func GetEvidenceClaims(attestation_scheme string, evidence_file string) (psatoken.IClaims, error) {
 	content, err := os.ReadFile(evidence_file)
 	if err != nil {
@@ -332,19 +311,19 @@ func GetEvidenceClaims(attestation_scheme string, evidence_file string) (psatoke
 	return evidenceClaims, nil
 }
 
-// storing the key components of the the claims in the desired format
+// GetSchemeClaimsFromEvidenceClaims stores the key components of the the claims in the desired format
 func GetSchemeClaimsFromEvidenceClaims(evidenceClaims psatoken.IClaims, isCca bool) (*SchemeClaims, error) {
 	swComponents, err := evidenceClaims.GetSoftwareComponents()
 	if err != nil {
 		return nil, fmt.Errorf("error extracting software components: %w", err)
 	}
 
-	implIDByte, err := evidenceClaims.GetImplID()
+	implIDBytes, err := evidenceClaims.GetImplID()
 	if err != nil {
 		return nil, fmt.Errorf("error extracting implementation ID: %w", err)
 	}
 	var implID comid.ImplID
-	copy(implID[:], implIDByte)
+	copy(implID[:], implIDBytes)
 
 	instID, err := evidenceClaims.GetInstID()
 	if err != nil {
@@ -360,11 +339,12 @@ func GetSchemeClaimsFromEvidenceClaims(evidenceClaims psatoken.IClaims, isCca bo
 		}
 	}
 
-	return &SchemeClaims{swComponents: swComponents,
-			implID: implID,
-			instID: ueid,
-			config: config},
-		nil
+	return &SchemeClaims{
+		swComponents: swComponents,
+		implID:       implID,
+		instID:       ueid,
+		config:       config,
+	}, nil
 }
 
 type SchemeClaims struct {
@@ -391,7 +371,7 @@ func CreateComidFromClaims(comidClaims *comid.Comid, dir string) error {
 	return nil
 }
 
-// creating temporary directory to store intermediate files
+// CreateTemporaryDirectory creates a temporary directory to store the intermediate files
 func CreateTemporaryDirectory() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -406,7 +386,7 @@ func CreateTemporaryDirectory() (string, error) {
 	return dir, nil
 }
 
-// extracting the key data from the key file and using it to overwrite the AttestVerifKeys triple
+// CreateVerifKeysFromJWK extracts the key data from the key file and uses it to overwrite the AttestVerifKeys triple
 func CreateVerifKeysFromJWK(key_file string) (comid.VerifKeys, error) {
 	key_data, err := convertJwkToPEM(key_file)
 	if err != nil {

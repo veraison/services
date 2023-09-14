@@ -20,66 +20,39 @@ func Test_RootCmd_unknown_argument(t *testing.T) {
 	assert.EqualError(t, err, "unknown flag: --unknown-argument")
 }
 
-func Test_RootCmd_no_key_file(t *testing.T) {
+func Test_RootCmd_with_two_args(t *testing.T) {
 	cmd := NewRootCmd()
 
-	args := []string{"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=psa",
-		"--template-dir=../data/templates/psa",
+	args := []string{"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, "no key supplied")
-}
-
-func Test_RootCmd_no_evidence_file(t *testing.T) {
-	cmd := NewRootCmd()
-
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--attest-scheme=psa",
-		"--template-dir=../data/templates/psa",
-	}
-	cmd.SetArgs((args))
-
-	err := cmd.Execute()
-	assert.EqualError(t, err, "no evidence file supplied")
-}
-
-func Test_RootCmd_no_attestation_scheme(t *testing.T) {
-	cmd := NewRootCmd()
-
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--template-dir=../data/templates/psa",
-	}
-	cmd.SetArgs((args))
-
-	err := cmd.Execute()
-	assert.EqualError(t, err, "no attestation scheme supplied")
+	assert.EqualError(t, err, "accepts 3 arg(s), received 2")
 }
 
 func Test_RootCmd_invalid_attestation_scheme(t *testing.T) {
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=invalid-scheme",
+	args := []string{"invalid-scheme",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, "unsupported attestation scheme, only psa and cca are supported")
+	assert.EqualError(t, err, "unsupported attestation scheme invalid-scheme, only psa and cca are supported")
 }
 
 func Test_RootCmd_psa_runs(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa",
 	}
 	cmd.SetArgs((args))
@@ -93,10 +66,10 @@ func Test_RootCmd_cca_runs(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/cca-evidence.cbor",
-		"--attest-scheme=cca",
-		"--template-dir=../data/templates/cca",
+	args := []string{"cca",
+		"../data/corims/cca-evidence.cbor",
+		"../data/keys/es256.json",
+		"--template-dir=../data/templates/psa",
 	}
 	cmd.SetArgs((args))
 
@@ -109,11 +82,11 @@ func Test_RootCmd_with_output(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=psa",
-		"--corim-file=../data/corims/test-target.cbor",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa",
+		"--corim-file=../data/corims/test-target.cbor",
 	}
 	cmd.SetArgs((args))
 
@@ -127,21 +100,22 @@ func Test_RootCmd_with_output(t *testing.T) {
 
 func Test_RootCmd_Execute(t *testing.T) {
 
-	*genCorimAttestationScheme = "psa"
-	*genCorimEvidenceFile = "../data/corims/psa-evidence.cbor"
-	*genCorimKeyFile = "../data/keys/es256.json"
 	*genCorimTemplateDir = "../data/templates/psa"
+	*genCorimCorimFile = ""
+
+	os.Args = []string{"gen-corim", "psa", "../data/corims/psa-evidence.cbor", "../data/keys/es256.json"}
 
 	Execute()
+	os.Remove("psa-endorsements.cbor")
 }
 
 func Test_RootCmd_with_wrong_key(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/ec256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/ec256.json",
 		"--template-dir=../data/templates/psa",
 	}
 	cmd.SetArgs((args))
@@ -154,9 +128,9 @@ func Test_RootCmd_with_wrong_scheme(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/cca-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/cca-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/cca",
 	}
 	cmd.SetArgs((args))
@@ -169,9 +143,9 @@ func Test_RootCmd_with_bad_evidence(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/bad-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/bad-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa",
 	}
 	cmd.SetArgs((args))
@@ -184,9 +158,9 @@ func Test_RootCmd_with_bad_output_path(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/corims/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa",
 		"--corim-file=../data/",
 	}
@@ -200,23 +174,23 @@ func Test_RootCmd_with_no_template_dir(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 	}
 	cmd.SetArgs((args))
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, "no template directory supplied")
+	assert.EqualError(t, err, "template directory does not exist")
 }
 
 func Test_RootCmd_with_bad_template_dir_path(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/not-exist",
 	}
 	cmd.SetArgs((args))
@@ -229,9 +203,9 @@ func Test_RootCmd_with_missing_comid_template(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa/error-templates/just-corim",
 	}
 	cmd.SetArgs((args))
@@ -244,9 +218,9 @@ func Test_RootCmd_with_missing_corim_template(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa/error-templates/just-comid",
 	}
 	cmd.SetArgs((args))
@@ -259,9 +233,9 @@ func Test_RootCmd_with_bad_comid_template(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa/error-templates/bad-comid",
 	}
 	cmd.SetArgs((args))
@@ -274,9 +248,9 @@ func Test_RootCmd_with_bad_corim_template(t *testing.T) {
 
 	cmd := NewRootCmd()
 
-	args := []string{"--key-file=../data/keys/es256.json",
-		"--evidence-file=../data/templates/psa-evidence.cbor",
-		"--attest-scheme=psa",
+	args := []string{"psa",
+		"../data/corims/psa-evidence.cbor",
+		"../data/keys/es256.json",
 		"--template-dir=../data/templates/psa/error-templates/bad-corim",
 	}
 	cmd.SetArgs((args))

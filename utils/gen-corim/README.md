@@ -1,5 +1,9 @@
 # CoRIM Generation
 
+## Preconditions
+
+>>Note: the below assumes both the [evcli](https://github.com/veraison/evcli) and the [cocli](https://github.com/veraison/corim/tree/main/cocli) tools are installed on the system.
+
 ## Installing and configuring
 
 To install the `gen-corim` command, do:
@@ -11,7 +15,7 @@ $ go install github.com/veraison/services/gen-corim@latest
 ## Usage
 
 ```
-$ gen-corim --evidence-file=evidence.cbor --attest-scheme=psa --key-file=key.json --template-dir=templates (--corim-file=endorsements/output.cbor)
+$ gen-corim psa evidence.cbor key.json [--template-dir=templates] [--corim-file=endorsements/output.cbor]
 ```
 
 On success, you should see something like this printed to stdout:
@@ -20,19 +24,19 @@ On success, you should see something like this printed to stdout:
 >> generated "endorsements/output.cbor" using "evidence.cbor"
 ```
 ### Supplied Arguments
-#### Evidence File
-
-CBOR-encoded evidence token to be used via the `--evidence-file` switch (or equivalently its `-e` shorthand).
-
 ### Attestation Scheme
 
-The attestation scheme to be used via the `--attest-scheme` switch (abbrev. `-a`). The only attestation schemes supported by this service are `psa` and `cca`.
+The attestation scheme to be used. The only attestation schemes supported by this service are `psa` and `cca`.
+
+#### Evidence File
+
+CBOR-encoded evidence token to be used.
 
 ### Key File
 
-Public key material needed to verify the evidence via the `--key-file` switch (abbrev. `-k`). The key file is expected be in [jwk](https://openid.net/specs/draft-jones-json-web-key-03.html) format.
+Public key material needed to verify the evidence. The key file is expected be in [jwk](https://openid.net/specs/draft-jones-json-web-key-03.html) format.
 
-### Template Directory
+### Template Directory (Optional)
 
 The directory containing the CoMID and CoRIM templates via the `--template-dir` switch (abbrev. `-t`). This directory must exist and must contain files named `comid-template.json` and `corim-template.json` which contain the respective templates. Some examples of CoMID and CoRIM JSON templates can be found in the [data/templates](data/templates) folder.
 
