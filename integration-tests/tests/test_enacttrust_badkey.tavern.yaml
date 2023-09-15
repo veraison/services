@@ -29,11 +29,9 @@ stages:
       headers:
         content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
-      file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
+      file_body: data/endorsements/corim-{scheme}-badta.cbor
     response:
       status_code: 200
       json:
         status: failed
-        failure-reason: 'submit endorsement returned error: submit endorsements failed: RPC server returned error: plugin "unsigned-corim (TPM EnactTrust profile)" returned error: bad key in CoMID at index 0: could not parse ak-pub: could not extract trust anchor PEM block'
-        # NOTE: the commented version below is for builtin plugins.
-        #failure-reason: 'submit endorsement returned error: submit endorsements failed: bad key in CoMID at index 0: could not parse ak-pub: could not extract trust anchor PEM block'
+        failure-reason: 'submit endorsement returned error: submit endorsements failed: RPC server returned error: plugin "unsigned-corim (TPM EnactTrust profile)" returned error: decoding failed for CoMID at index 0: cbor: cannot unmarshal map into Go struct field comid.Comid.4 of type comid.ICryptoKeyValue'

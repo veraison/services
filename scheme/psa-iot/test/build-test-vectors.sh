@@ -17,6 +17,7 @@ generate_go_test_vector () {
 	cocli corim create -m $1.cbor -t $2 -o corim$1.cbor
 	echo "// automatically generated from:" >> $4
 	echo "// $1.json and $2" >> $4
+        echo "// nolint:unused" >> $4
 	echo "var $3$1 = "'`' >> $4
 	cat corim$1.cbor | xxd -p >> $4
 	echo '`' >> $4

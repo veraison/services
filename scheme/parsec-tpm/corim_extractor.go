@@ -74,7 +74,10 @@ func (o CorimExtractor) TaExtractor(
 	}
 
 	// Key can't be empty/nil -- the corim decoder is validating this
-	akPub := avk.VerifKeys[0].Key
+	akPub := avk.VerifKeys[0]
+	if _, ok := akPub.Value.(*comid.TaggedPKIXBase64Key); !ok {
+		return nil, fmt.Errorf("ak-pub does not appear to be a PEM key (%T)", akPub.Value)
+	}
 
 	taAttrs, err := makeTaAttrs(id, akPub)
 	if err != nil {
@@ -105,7 +108,7 @@ func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawM
 	return data, nil
 }
 
-func makeTaAttrs(id ID, key string) (json.RawMessage, error) {
+func makeTaAttrs(id ID, key *comid.CryptoKey) (json.RawMessage, error) {
 	if id.instance == nil {
 		return nil, errors.New("instance not found in ID")
 	}
@@ -113,7 +116,7 @@ func makeTaAttrs(id ID, key string) (json.RawMessage, error) {
 	attrs := map[string]interface{}{
 		"parsec-tpm.class-id":    id.class,
 		"parsec-tpm.instance-id": []byte(*id.instance),
-		"parsec-tpm.ak-pub":      key,
+		"parsec-tpm.ak-pub":      key.String(),
 	}
 
 	data, err := json.Marshal(attrs)

@@ -32,7 +32,7 @@
         "measurements": [
           {
             "key": {
-              "type": "PSA_IOT.refval-id",
+              "type": "psa.refval-id",
               "value": {
                 "label": "BL",
                 "version": "2.1.0",

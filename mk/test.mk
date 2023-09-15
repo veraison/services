@@ -50,7 +50,6 @@ check-mockgen:
 realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
 .PHONY: realtest
 
-COPYRIGHT_FLAGS :=
 ifdef CI_PIPELINE
 	COPYRIGHT_FLAGS += --no-year-check
 endif
