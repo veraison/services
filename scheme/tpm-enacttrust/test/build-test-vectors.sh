@@ -20,7 +20,7 @@ COMID_TEMPLATES="${COMID_TEMPLATES} ComidTpmEnactTrustAKBadInst"
 
 TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
 
-printf "package main\n\n" > ${TV_DOT_GO}
+printf "package tpm_enacttrust\n\n" > ${TV_DOT_GO}
 
 for t in ${COMID_TEMPLATES}
 do

@@ -9,7 +9,6 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/handler"
-	"github.com/veraison/services/scheme/common"
 )
 
 type Extractor struct {
@@ -87,10 +86,14 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 		return nil, errors.New("expecting exactly one AK public key")
 	}
 
-	akPub := avk.VerifKeys[0].Key
+	akPub := avk.VerifKeys[0]
 
-	if err := checkKey(akPub); err != nil {
-		return nil, err
+	if _, ok := akPub.Value.(*comid.TaggedPKIXBase64Key); !ok {
+		return nil, fmt.Errorf("ak-pub does not appear to be a PEM key (%T)", akPub.Value)
+	}
+
+	if err := akPub.Valid(); err != nil {
+		return nil, fmt.Errorf("could not parse ak-pub: %v", err)
 	}
 
 	taAttrs, err := makeTaAttrs(instanceAttrs, akPub)
@@ -107,10 +110,10 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 	return ta, nil
 }
 
-func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
+func makeTaAttrs(i InstanceAttributes, key *comid.CryptoKey) (json.RawMessage, error) {
 	attrs := map[string]interface{}{
 		"enacttrust-tpm.node-id": i.NodeID,
-		"enacttrust.ak-pub":      key,
+		"enacttrust.ak-pub":      key.String(),
 	}
 
 	msg, err := json.Marshal(attrs)
@@ -118,13 +121,4 @@ func makeTaAttrs(i InstanceAttributes, key string) (json.RawMessage, error) {
 		return nil, err
 	}
 	return msg, nil
-}
-
-func checkKey(inKey string) error {
-	_, err := common.DecodePemSubjectPubKeyInfo([]byte(inKey))
-	if err != nil {
-		return fmt.Errorf("could not parse ak-pub: %v", err)
-	}
-
-	return nil
 }

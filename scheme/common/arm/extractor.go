@@ -123,8 +123,10 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 		return nil, errors.New("expecting exactly one IAK public key")
 	}
 
-	iakPub := avk.VerifKeys[0].Key
-	// TODO(tho) check that format of IAK pub is as expected
+	iakPub := avk.VerifKeys[0]
+	if _, ok := iakPub.Value.(*comid.TaggedPKIXBase64Key); !ok {
+		return nil, fmt.Errorf("IAK does not appear to be a PEM key (%T)", iakPub.Value)
+	}
 
 	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub, o.Scheme)
 	if err != nil {
@@ -144,13 +146,13 @@ func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, 
 func makeTaAttrs(
 	i InstanceAttributes,
 	c ClassAttributes,
-	key string,
+	key *comid.CryptoKey,
 	scheme string,
 ) (json.RawMessage, error) {
 	taID := map[string]interface{}{
 		scheme + ".impl-id": c.ImplID,
 		scheme + ".inst-id": []byte(i.InstID),
-		scheme + ".iak-pub": key,
+		scheme + ".iak-pub": key.String(),
 	}
 
 	if c.Vendor != "" {

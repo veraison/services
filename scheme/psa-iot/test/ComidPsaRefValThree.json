@@ -21,7 +21,7 @@
         "environment": {
           "class": {
             "id": {
-              "type": "PSA_IOT.impl-id",
+              "type": "psa.impl-id",
               "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
             },
             "vendor": "ACME",
@@ -31,7 +31,7 @@
         "measurements": [
           {
             "key": {
-              "type": "PSA_IOT.refval-id",
+              "type": "psa.refval-id",
               "value": {
                 "label": "BL",
                 "version": "2.1.0",
@@ -46,7 +46,7 @@
           },
           {
             "key": {
-              "type": "PSA_IOT.refval-id",
+              "type": "psa.refval-id",
               "value": {
                 "label": "PRoT",
                 "version": "1.3.5",
@@ -61,7 +61,7 @@
           },
           {
             "key": {
-              "type": "PSA_IOT.refval-id",
+              "type": "psa.refval-id",
               "value": {
                 "label": "ARoT",
                 "version": "0.1.4",

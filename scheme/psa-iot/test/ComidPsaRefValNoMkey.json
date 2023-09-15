@@ -21,7 +21,7 @@
           "environment": {
             "class": {
               "id": {
-                "type": "PSA_IOT.impl-id",
+                "type": "psa.impl-id",
                 "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
               },
               "vendor": "ACME",

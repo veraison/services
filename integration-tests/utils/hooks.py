@@ -36,10 +36,10 @@ def setup_enacttrust_badnode(test, variables):
     generate_endorsements(test)
     generate_evidence_from_test(test)
 
+
 def setup_enacttrust_badkey(test, variables):
     _set_authorization(test, variables, 'provisioner')
     _set_content_types(test, variables)
-    generate_endorsements(test)
 
 
 def setup_policy_management(test, variables):

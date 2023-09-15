@@ -27,7 +27,8 @@
         },
         "verification-keys": [
           {
-            "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw=="
+            "type": "pkix-base64-key",
+            "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE/RwSXooI8DdatPOYg/uiKm2XrtT/uEMEvqQZrwJHHcfw0c3WVzGoqL3Y/Q6xkHFfdUVqS2WWkPdKO03uw==\n-----END PUBLIC KEY-----"
           }
         ]
       }
