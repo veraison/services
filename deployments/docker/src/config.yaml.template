@@ -38,5 +38,5 @@ po-agent:
 auth:
   backend: keycloak
   host: keycloak-service
-  port: 11111
+  port: ${KEYCLOAK_PORT}
 # vim: set ft=yaml:

@@ -48,6 +48,8 @@ function deploy() {
     set +a
     cat $BUILD_DIR/deployments/docker/src/config.yaml.template | envsubst > $DEPLOY_DIR/config.yaml
     cat $BUILD_DIR/deployments/docker/src/keycloak.conf.template | envsubst > $DEPLOY_DIR/keycloak.conf
+    cat $BUILD_DIR/deployments/docker/src/cocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/cocli-config.yaml
+    cat $BUILD_DIR/deployments/docker/src/pocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/pocli-config.yaml
 
     echo "initializing stores"
     for t in en ta po
