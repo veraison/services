@@ -1,0 +1,8 @@
+api_server: http://provisioning-service:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
+auth: oauth2
+username: veraison-provisioner
+password: veraison
+client_id: veraison-client
+client_secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z
+token_url: http://keycloak-service:${KEYCLOAK_PORT}/realms/veraison/protocol/openid-connect/token
+# vim: set ft=yaml:

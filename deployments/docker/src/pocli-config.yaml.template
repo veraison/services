@@ -1,0 +1,9 @@
+host: management-service
+port: ${MANAGEMENT_PORT}
+auth: oauth2
+username: veraison-provisioner
+password: veraison
+client_id: veraison-client
+client_secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z
+token_url: http://keycloak-service:${KEYCLOAK_PORT}/realms/veraison/protocol/openid-connect/token
+# vim: set ft=yaml:
