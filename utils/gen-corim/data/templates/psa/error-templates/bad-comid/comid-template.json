@@ -1,0 +1,18 @@
+{
+    "lang": "en-GB",
+    "tag-identity": {
+        "id": "43bbe37f-2e61-4b33-aed3-53cff1428b16"
+    },
+    "entities": [
+        {
+            "name": "ACME Ltd.",
+            "regid": "https://acme.example",
+            "roles": [
+                "tagCreator",
+                "creator",
+                "maintainer"
+            ],
+            "error": "error"
+        }
+    ]
+}
