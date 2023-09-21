@@ -387,6 +387,7 @@ func (o *GRPC) GetAttestation(
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
+	appraisedResult.Nonce = appraisal.Result.Nonce
 	appraisal.Result = appraisedResult
 	appraisal.InitPolicyID()
 
