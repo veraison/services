@@ -50,9 +50,21 @@ func (o *PolicyManager) Evaluate(
 		return err
 	}
 
+	appraisalContext := map[string]interface{}{
+		"nonce": appraisal.Result.Nonce,
+	}
+
 	for submod, submodAppraisal := range appraisal.Result.Submods {
 		evaluated, err := o.Agent.Evaluate(
-			ctx, scheme, pol, submod, submodAppraisal, appraisal.EvidenceContext, endorsements)
+			ctx,
+			appraisalContext,
+			scheme,
+			pol,
+			submod,
+			submodAppraisal,
+			appraisal.EvidenceContext,
+			endorsements,
+		)
 		if err != nil {
 			return err
 		}

@@ -1,0 +1,99 @@
+test_name: cca-verify-challenge
+
+marks:
+  - parametrize:
+      key:
+        #  Attestation scheme -- this is used to indicate how test cases should
+        #  be constructed (e.g. how the evidence token will be compiled.
+        - scheme
+        # Some attestation schemes (currently, only PSA) may support multiple
+        # profiles. If a scheme does not support multiple profiles, specify it
+        # as '_'.
+        - profile
+        # Which evidence description will be used to construct the evidence token.
+        - evidence
+        # The name of the endorsements spec within common.yaml
+        - endorsements
+        # Signing keys that will be used to construct the evidence. How this is
+        # used is dependent on the scheme.
+        - signing
+        # Expected structure of the returned EAR (EAT (Entity Attestation
+        # Token) Attestation Result).
+        - expected
+      vals:
+        - [cca, _, good, full, ccakeys, verify-challenge]
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: '{endorsements-content-type}' # set via hook
+        authorization: '{authorization}' # set via hook
+      file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
+    response:
+      status_code: 200
+
+  - name: submit cca policy
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policy/CCA_SSD_PLATFORM
+      headers:
+        content-type: application/vnd.veraison.policy.opa
+        accept: application/vnd.veraison.policy+json
+        authorization: '{alt-authorization}' # set via hook
+      file_body: data/policies/cca-verify-challenge.rego
+    response:
+      status_code: 201
+      save:
+        json:
+          policy-uuid: uuid
+
+  - name: activate cca policy
+    request:
+      method: POST
+      url: http://{management-service}/management/v1/policy/CCA_SSD_PLATFORM/{policy-uuid}/activate
+      headers:
+        authorization: '{alt-authorization}' # set via hook
+    response:
+      status_code: 200
+
+  - name: verify as relying party - creation of session resource
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={good-nonce-64}
+    response:
+      status_code: 201
+      save:
+        headers:
+          relying-party-session: Location
+
+  - name: verify as relying party - submitting the evidence
+    request:
+      method: POST
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+      headers:
+        content-type: '{evidence-content-type}' # set via hook
+      file_body: __generated__/evidence/{scheme}.{evidence}.cbor
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: checkers:save_result
+          extra_kwargs:
+            scheme: '{scheme}'
+            evidence: '{evidence}'
+        - function: checkers:compare_to_expected_result
+          extra_kwargs:
+            expected: data/results/{scheme}.{expected}.json
+            verifier_key: data/keys/verifier.jwk
+
+  - name: verify as relying party - deleting the session object
+    request:
+      method: DELETE
+      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+    response:
+      status_code: 204
