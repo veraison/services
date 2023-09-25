@@ -47,8 +47,9 @@ CONTRAINDICATED_SOURCES := 96
 
 submod := input.submod
 result := input.result
-evidence := input.evidence["evidence"]
+evidence := input.evidence
 endorsements := input.endorsements
+session := input.session
 
 scheme := input.scheme
 

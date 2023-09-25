@@ -158,14 +158,16 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	}
 
 	extracted, err := scheme.ExtractClaims(&token, string(taEndValBytes))
+	platformClaims := extracted.ClaimsSet["platform"].(map[string]interface{})
 
 	require.NoError(t, err)
-	assert.Equal(t, "http://arm.com/CCA-SSD/1.0.0", extracted.ClaimsSet["cca-platform-profile"].(string))
+	assert.Equal(t, "http://arm.com/CCA-SSD/1.0.0",
+		platformClaims["cca-platform-profile"].(string))
 
-	swComponents := extracted.ClaimsSet["cca-platform-sw-components"].([]interface{})
+	swComponents := platformClaims["cca-platform-sw-components"].([]interface{})
 	assert.Len(t, swComponents, 4)
 	assert.Equal(t, "BL", swComponents[0].(map[string]interface{})["measurement-type"].(string))
-	ccaPlatformCfg := extracted.ClaimsSet["cca-platform-config"]
+	ccaPlatformCfg := platformClaims["cca-platform-config"]
 	assert.Equal(t, "AQID", ccaPlatformCfg)
 }
 

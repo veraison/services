@@ -165,6 +165,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 		backend.EXPECT().
 			Evaluate(gomock.Eq(ctx),
 				gomock.Any(),
+				gomock.Any(),
 				gomock.Eq(policy.Rules),
 				gomock.Any(),
 				gomock.Any(),
@@ -174,7 +175,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 
 		agent := &Agent{Backend: backend, logger: logger}
 		submod := "test"
-		res, err := agent.Evaluate(ctx, "test", policy,
+		res, err := agent.Evaluate(ctx, map[string]interface{}{}, "test", policy,
 			submod, appraisal, evidence, endorsements)
 
 		if v.ExpectedError == "" {

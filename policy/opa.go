@@ -41,6 +41,7 @@ func (o *OPA) GetName() string {
 
 func (o *OPA) Evaluate(
 	ctx context.Context,
+	sessionContext map[string]interface{},
 	scheme string,
 	policy string,
 	result map[string]interface{},
@@ -48,7 +49,7 @@ func (o *OPA) Evaluate(
 	endorsements []string,
 ) (map[string]interface{}, error) {
 
-	input, err := constructInput(scheme, result, evidence, endorsements)
+	input, err := constructInput(scheme, sessionContext, result, evidence, endorsements)
 	if err != nil {
 		return nil, fmt.Errorf("could not construct policy input: %w", err)
 	}
@@ -96,6 +97,7 @@ func (o *OPA) Close() {
 
 func constructInput(
 	scheme string,
+	sessionContext map[string]interface{},
 	result map[string]interface{},
 	evidence map[string]interface{},
 	endorsementStrings []string,
@@ -114,6 +116,7 @@ func constructInput(
 
 	return map[string]interface{}{
 		"scheme":       scheme,
+		"session":      sessionContext,
 		"result":       result,
 		"evidence":     evidence,
 		"endorsements": endorsements,

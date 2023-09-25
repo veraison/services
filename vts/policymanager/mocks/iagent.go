@@ -51,18 +51,18 @@ func (mr *MockIAgentMockRecorder) Close() *gomock.Call {
 }
 
 // Evaluate mocks base method.
-func (m *MockIAgent) Evaluate(ctx context.Context, scheme string, policy *policy.Policy, submod string, appraisal *ear.Appraisal, evidence *proto.EvidenceContext, endorsements []string) (*ear.Appraisal, error) {
+func (m *MockIAgent) Evaluate(ctx context.Context, appraisalContext map[string]interface{}, scheme string, policy *policy.Policy, submod string, appraisal *ear.Appraisal, evidence *proto.EvidenceContext, endorsements []string) (*ear.Appraisal, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Evaluate", ctx, scheme, policy, submod, appraisal, evidence, endorsements)
+	ret := m.ctrl.Call(m, "Evaluate", ctx, appraisalContext, scheme, policy, submod, appraisal, evidence, endorsements)
 	ret0, _ := ret[0].(*ear.Appraisal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Evaluate indicates an expected call of Evaluate.
-func (mr *MockIAgentMockRecorder) Evaluate(ctx, scheme, policy, submod, appraisal, evidence, endorsements interface{}) *gomock.Call {
+func (mr *MockIAgentMockRecorder) Evaluate(ctx, appraisalContext, scheme, policy, submod, appraisal, evidence, endorsements interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIAgent)(nil).Evaluate), ctx, scheme, policy, submod, appraisal, evidence, endorsements)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIAgent)(nil).Evaluate), ctx, appraisalContext, scheme, policy, submod, appraisal, evidence, endorsements)
 }
 
 // GetBackendName mocks base method.

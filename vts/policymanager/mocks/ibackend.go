@@ -48,18 +48,18 @@ func (mr *MockIBackendMockRecorder) Close() *gomock.Call {
 }
 
 // Evaluate mocks base method.
-func (m *MockIBackend) Evaluate(ctx context.Context, scheme, policy string, result, evidence map[string]interface{}, endorsements []string) (map[string]interface{}, error) {
+func (m *MockIBackend) Evaluate(ctx context.Context, sessionContext map[string]interface{}, scheme, policy string, result, evidence map[string]interface{}, endorsements []string) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Evaluate", ctx, scheme, policy, result, evidence, endorsements)
+	ret := m.ctrl.Call(m, "Evaluate", ctx, sessionContext, scheme, policy, result, evidence, endorsements)
 	ret0, _ := ret[0].(map[string]interface{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Evaluate indicates an expected call of Evaluate.
-func (mr *MockIBackendMockRecorder) Evaluate(ctx, scheme, policy, result, evidence, endorsements interface{}) *gomock.Call {
+func (mr *MockIBackendMockRecorder) Evaluate(ctx, sessionContext, scheme, policy, result, evidence, endorsements interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIBackend)(nil).Evaluate), ctx, scheme, policy, result, evidence, endorsements)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Evaluate", reflect.TypeOf((*MockIBackend)(nil).Evaluate), ctx, sessionContext, scheme, policy, result, evidence, endorsements)
 }
 
 // GetName mocks base method.

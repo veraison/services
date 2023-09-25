@@ -68,6 +68,7 @@ func (o *Agent) GetBackendName() string {
 // overwrite the result status or any of the values in the result trust vector.
 func (o *Agent) Evaluate(
 	ctx context.Context,
+	sessionContext map[string]interface{},
 	scheme string,
 	policy *Policy,
 	submod string,
@@ -81,6 +82,7 @@ func (o *Agent) Evaluate(
 
 	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
+		sessionContext,
 		scheme,
 		policy.Rules,
 		resultMap,
@@ -109,7 +111,7 @@ func (o *Agent) Evaluate(
 	}
 
 	for k, v := range updatedTV {
-		if v != "" {
+		if v != "" && v != ear.NoClaim {
 			appraisalUpdated = true
 			resultMap["ear.trustworthiness-vector"].(map[string]interface{})[k] = v
 		}
@@ -118,7 +120,7 @@ func (o *Agent) Evaluate(
 	updatedAddedClaims, ok := updatedByPolicy["ear.veraison.policy-claims"].(*map[string]interface{})
 	if ok {
 		appraisalUpdated = true
-		resultMap["ear.veraison.policy-claims"] = updatedAddedClaims
+		resultMap["ear.veraison.policy-claims"] = *updatedAddedClaims
 	}
 
 	if appraisalUpdated {

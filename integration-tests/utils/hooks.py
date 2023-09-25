@@ -50,6 +50,14 @@ def setup_provisioning_fail_empty_body(test, variables):
     _set_authorization(test, variables, 'provisioner')
 
 
+def setup_cca_verify_challenge(test, variables):
+    _set_content_types(test, variables)
+    _set_authorization(test, variables, 'provisioner')
+    _set_alt_authorization(test, variables, 'manager')
+    generate_endorsements(test)
+    generate_evidence_from_test(test)
+
+
 def _set_content_types(test, variables):
     scheme = test.test_vars['scheme']
     profile = test.test_vars['profile']
@@ -64,3 +72,6 @@ def _set_authorization(test, variables, role):
     variables['authorization'] = f'Bearer {token}'
 
 
+def _set_alt_authorization(test, variables, role):
+    token = get_access_token(test, role)
+    variables['alt-authorization'] = f'Bearer {token}'

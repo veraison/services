@@ -14,6 +14,7 @@ type IAgent interface {
 	Init(v *viper.Viper) error
 	GetBackendName() string
 	Evaluate(ctx context.Context,
+		appraisalContext map[string]interface{},
 		scheme string,
 		policy *Policy,
 		submod string,

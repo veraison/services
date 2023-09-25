@@ -61,12 +61,22 @@ func (s EvidenceHandler) ExtractClaims(
 
 	var extracted handler.ExtractedClaims
 
-	claimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
+	platformClaimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
 	if err != nil {
-		return nil, handler.BadEvidence(err)
+		return nil, handler.BadEvidence(fmt.Errorf(
+			"could not convert platform claims: %w", err))
 	}
 
-	extracted.ClaimsSet = claimsSet
+	realmClaimsSet, err := common.ClaimsToMap(ccaToken.RealmClaims)
+	if err != nil {
+		return nil, handler.BadEvidence(fmt.Errorf(
+			"could not convert realm claims: %w", err))
+	}
+
+	extracted.ClaimsSet = map[string]interface{}{
+		"platform": platformClaimsSet,
+		"realm":    realmClaimsSet,
+	}
 
 	extracted.ReferenceID = arm.RefValLookupKey(
 		SchemeName,
@@ -135,7 +145,7 @@ func populateAttestationResult(
 	evidence map[string]interface{},
 	endorsements []handler.Endorsement,
 ) error {
-	claims, err := common.MapToClaims(evidence)
+	claims, err := common.MapToClaims(evidence["platform"].(map[string]interface{}))
 	if err != nil {
 		return err
 	}

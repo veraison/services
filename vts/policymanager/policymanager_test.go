@@ -140,8 +140,9 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Evaluate(
 			context.TODO(),
 			gomock.Any(),
-			gomock.Any(),
 			"test",
+			gomock.Any(),
+			gomock.Any(),
 			ar.Submods["test"],
 			ec,
 			endorsements,
@@ -177,7 +178,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	expectedErr := errors.New("could not evaluate policy: policy returned bad update")
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), gomock.Any(), "test", ar.Submods["test"], ec, endorsements).Return(nil, expectedErr)
+	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), "test", gomock.Any(), gomock.Any(), ar.Submods["test"], ec, endorsements).Return(nil, expectedErr)
 	pm := &PolicyManager{
 		Store:  &policy.Store{KVStore: store, Logger: log.Named("store")},
 		Agent:  agent,
