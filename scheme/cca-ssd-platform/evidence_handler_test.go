@@ -16,6 +16,17 @@ import (
 	"github.com/veraison/services/proto"
 )
 
+var testNonce = []byte{
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
+}
+
 func Test_GetTrustAnchorID_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/cca-token.cbor")
 	require.NoError(t, err)
@@ -23,6 +34,7 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	expectedTaID := "CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"
@@ -155,6 +167,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	extracted, err := scheme.ExtractClaims(&token, string(taEndValBytes))
@@ -183,6 +196,7 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
@@ -202,6 +216,7 @@ func Test_ValidateEvidenceIntegrity_invalid_key(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 	expectedErr := `could not get public key from trust anchor: could not decode subject public key info: unsupported key type: "PRIVATE KEY"`
 

@@ -43,10 +43,16 @@ def generate_expecte_result_from_response(response, scheme, expected):
     outfile = f'{GENDIR}/expected/{scheme}.{expected}.server-nonce.json'
     nonce = response.json()["nonce"]
 
-    if scheme in ['psa'] and nonce:
+    if scheme == 'psa' and nonce:
         update_json(
                 infile,
-                {'ear.veraison.annotated-evidence': {f'{scheme}-nonce': nonce}},
+                {'ear.veraison.annotated-evidence': {f'psa-nonce': nonce}},
+                outfile,
+                )
+    elif scheme == 'cca' and nonce:
+        update_json(
+                infile,
+                {'ear.veraison.annotated-evidence': {'realm': {f'cca-realm-challenge': nonce}}},
                 outfile,
                 )
     else:
@@ -56,7 +62,7 @@ def generate_expecte_result_from_response(response, scheme, expected):
 def generate_evidence_from_test(test):
     scheme = test.test_vars['scheme']
     evidence = test.test_vars['evidence']
-    nonce = test.common_vars['good-nonce']
+    nonce = test.common_vars[test.test_vars['nonce']]['value']
     signing = test.common_vars['keys'][test.test_vars['signing']]
     outname = f'{scheme}.{evidence}'
 
@@ -75,11 +81,20 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
     os.makedirs(f'{GENDIR}/evidence', exist_ok=True)
     os.makedirs(f'{GENDIR}/claims', exist_ok=True)
 
-    if scheme in ['psa', 'cca'] and nonce:
+    if scheme == 'psa' and nonce:
         claims_file = f'{GENDIR}/claims/{scheme}.{evidence}.json'
         update_json(
                 f'data/claims/{scheme}.{evidence}.json',
                 {f'{scheme}-nonce': nonce},
+                claims_file,
+                )
+    elif scheme == 'cca' and nonce:
+        claims_file = f'{GENDIR}/claims/{scheme}.{evidence}.json'
+        # convert nonce from base64url to base64
+        translated_nonce = nonce.replace('-', '+').replace('_', '/')
+        update_json(
+                f'data/claims/{scheme}.{evidence}.json',
+                {'cca-realm-delegated-token': {f'cca-realm-challenge': translated_nonce}},
                 claims_file,
                 )
     else:

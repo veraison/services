@@ -1,4 +1,5 @@
 {
+	"ear.appraisal-policy-id": "policy:PSA_IOT",
 	"ear.status": "contraindicated",
 	"ear.trustworthiness-vector": {
 		"configuration": 99,
@@ -10,7 +11,6 @@
 		"sourced-data": 99,
 		"storage-opaque": 99
 	},
-	"ear.appraisal-policy-id": "policy:PSA_IOT",
 	"ear.veraison.policy-claims": {
 		"problem": "integrity validation failed"
 	}

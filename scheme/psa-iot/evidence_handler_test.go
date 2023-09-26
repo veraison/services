@@ -14,6 +14,13 @@ import (
 	"github.com/veraison/services/proto"
 )
 
+var testNonce = []byte{
+	0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+	0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,
+	0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
+	0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18,
+}
+
 func Test_GetTrustAnchorID_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
 	require.NoError(t, err)
@@ -21,6 +28,7 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	expectedTaID := "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY"
@@ -44,6 +52,7 @@ func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "0",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	_, err = handler.ExtractClaims(&token, string(taEndValBytes))
@@ -64,6 +73,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	extracted, err := handler.ExtractClaims(&token, string(taEndValBytes))
@@ -88,6 +98,7 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId: "1",
 		Data:     tokenBytes,
+		Nonce:    testNonce,
 	}
 
 	err = handler.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
@@ -129,6 +140,7 @@ func Test_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 		token := proto.AttestationToken{
 			TenantId: "1",
 			Data:     tokenBytes,
+			Nonce:    testNonce,
 		}
 
 		err = h.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)

@@ -9,6 +9,7 @@ from util import run_command, get_access_token
 def setup_end_to_end(test, variables):
     _set_content_types(test, variables)
     _set_authorization(test, variables, 'provisioner')
+    _set_nonce(test, variables)
     generate_endorsements(test)
     generate_evidence_from_test(test)
 
@@ -26,6 +27,7 @@ def setup_no_nonce(test, variables):
 def setup_multi_nonce(test, variables):
     _set_content_types(test, variables)
     _set_authorization(test, variables, 'provisioner')
+    _set_nonce(test, variables)
     generate_endorsements(test)
     generate_evidence_from_test_no_nonce(test)
 
@@ -33,6 +35,7 @@ def setup_multi_nonce(test, variables):
 def setup_enacttrust_badnode(test, variables):
     _set_authorization(test, variables, 'provisioner')
     _set_content_types(test, variables)
+    _set_nonce(test, variables)
     generate_endorsements(test)
     generate_evidence_from_test(test)
 
@@ -54,6 +57,15 @@ def setup_cca_verify_challenge(test, variables):
     _set_content_types(test, variables)
     _set_authorization(test, variables, 'provisioner')
     _set_alt_authorization(test, variables, 'manager')
+    _set_nonce(test, variables)
+    generate_endorsements(test)
+    generate_evidence_from_test(test)
+
+
+def setup_freshness_check_fail(test, variables):
+    _set_content_types(test, variables)
+    _set_authorization(test, variables, 'provisioner')
+    _set_nonce(test, variables)
     generate_endorsements(test)
     generate_evidence_from_test(test)
 
@@ -75,3 +87,10 @@ def _set_authorization(test, variables, role):
 def _set_alt_authorization(test, variables, role):
     token = get_access_token(test, role)
     variables['alt-authorization'] = f'Bearer {token}'
+
+
+def _set_nonce(test, variables):
+    nonce_config = test.test_vars['nonce']
+    variables['nonce-value'] = test.common_vars[nonce_config]['value']
+    variables['nonce-bad-value'] = test.common_vars[nonce_config]['bad-value']
+    variables['nonce-size'] = test.common_vars[nonce_config]['size']
