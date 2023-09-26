@@ -3,6 +3,8 @@
 package psa_iot
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -84,6 +86,18 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 
 	if err := psaToken.FromCOSE(token.Data); err != nil {
 		return handler.BadEvidence(err)
+	}
+
+	psaNonce, err := psaToken.Claims.GetNonce()
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+	if !bytes.Equal(psaNonce, token.Nonce) {
+		return handler.BadEvidence(
+			"freshness: psa-nonce (%s) does not match session nonce (%s)",
+			hex.EncodeToString(psaNonce),
+			hex.EncodeToString(token.Nonce),
+		)
 	}
 
 	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchor)

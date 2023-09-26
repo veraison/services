@@ -1,4 +1,4 @@
-test_name: end-to-end
+test_name: freshness-check-fail
 
 marks:
   - parametrize:
@@ -23,14 +23,8 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [psa, p1, good, full, ec.p256, good, nonce32]
-        - [psa, p1, good, mini, ec.p256, good, nonce32]
-        - [psa, p1, missingclaims, mini, ec.p256, noident, nonce32]
-        - [psa, p1, good, mini, bad, badcrypto, nonce32]
-        - [psa, p1, badinstance, full, ec.p256, badinstance, nonce32]
-        - [psa, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
-        - [cca, _, good, full, ccakeys, good, nonce64]
-        - [enacttrust, _, good, mini, ec.p256.enacttrust, good, nonce32]
+        - [psa, p1, good, full, ec.p256, freshness-fail, nonce32]
+        - [cca, _, good, full, ccakeys, freshness-fail, nonce64]
 
 includes:
   - !include common.yaml
@@ -50,7 +44,7 @@ stages:
   - name: verify as relying party - creation of session resource
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonce={nonce-value}
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={nonce-bad-value}
     response:
       status_code: 201
       save:
@@ -80,45 +74,5 @@ stages:
     request:
       method: DELETE
       url: http://{verification-service}/challenge-response/v1/{relying-party-session}
-    response:
-      status_code: 204
-
-  - name: verify as attester - creation of session resource
-    request:
-      method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonceSize={nonce-size}
-    response:
-      status_code: 201
-      verify_response_with:
-        - function: generators:generate_artefacts_from_response
-          extra_kwargs:
-            scheme: '{scheme}'
-            evidence: '{evidence}'
-            signing: '{signing}'
-            keys: '{keys}'
-            expected: '{expected}'
-      save:
-        headers:
-          attester-session: Location
-
-  - name: verify as attester - submitting the evidence
-    request:
-      method: POST
-      url: http://{verification-service}/challenge-response/v1/{attester-session}
-      headers:
-        content-type: '{evidence-content-type}' # set via hook
-      file_body: __generated__/evidence/{scheme}.{evidence}.server-nonce.cbor
-    response:
-      status_code: 200
-      verify_response_with:
-        - function: checkers:compare_to_expected_result
-          extra_kwargs:
-            expected: __generated__/expected/{scheme}.{expected}.server-nonce.json
-            verifier_key: data/keys/verifier.jwk
-
-  - name: verify as attester - deleting the session object
-    request:
-      method: DELETE
-      url: http://{verification-service}/challenge-response/v1/{attester-session}
     response:
       status_code: 204

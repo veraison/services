@@ -4,6 +4,8 @@
 package cca_ssd_platform
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -102,6 +104,18 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 
 	if err := ccaToken.FromCBOR(token.Data); err != nil {
 		return handler.BadEvidence(err)
+	}
+
+	realmChallenge, err := ccaToken.RealmClaims.GetChallenge()
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+	if !bytes.Equal(realmChallenge, token.Nonce) {
+		return handler.BadEvidence(
+			"freshness: realm challenge (%s) does not match session nonce (%s)",
+			hex.EncodeToString(realmChallenge),
+			hex.EncodeToString(token.Nonce),
+		)
 	}
 
 	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchor)

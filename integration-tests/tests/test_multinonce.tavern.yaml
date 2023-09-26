@@ -20,8 +20,10 @@ marks:
         # Expected structure of the returned EAR (EAT (Entity Attestation
         # Token) Attestation Result).
         - expected
+        # Indicates which nonce configurations ought to be used.
+        - nonce
       vals:
-        - [psa, p1, multinonce, full, ec.p256, noident]
+        - [psa, p1, multinonce, full, ec.p256, noident, nonce32]
 
 includes:
   - !include common.yaml
@@ -41,7 +43,7 @@ stages:
   - name: verify - creation of session resource
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonce={good-nonce}
+      url: http://{verification-service}/challenge-response/v1/newSession?nonce={nonce-value}
     response:
       status_code: 201
       save:

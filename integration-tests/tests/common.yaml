@@ -6,8 +6,15 @@ variables:
   verification-service: '{tavern.env_vars.VERIFICATION_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.VERIFICATION_PORT}'
   management-service: '{tavern.env_vars.MANAGEMENT_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.MANAGEMENT_PORT}'
   keycloak-service: '{tavern.env_vars.KEYCLOAK_HOST}.{tavern.env_vars.VERAISON_NETWORK}:{tavern.env_vars.KEYCLOAK_PORT}'
-  good-nonce: QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk=
-  good-nonce-64: byTWuWNaLIu_WOkIuU4Ewb-zroDN6-gyQkV4SZ_jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==
+  nonce32:
+    value: QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk=
+    size: 32
+    bad-value: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdea=
+  nonce64:
+    value: byTWuWNaLIu_WOkIuU4Ewb-zroDN6-gyQkV4SZ_jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==
+    size: 64
+    bad-value: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbe==
+
   bad-nonce: Ppfdfe2JzZLOk=
   endorsements-content-types:
     psa.p1: application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1
