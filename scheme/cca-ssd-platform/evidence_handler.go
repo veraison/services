@@ -110,7 +110,14 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
-	if !bytes.Equal(realmChallenge, token.Nonce) {
+
+	// If the provided challenge was less than 64 bytes long, the RMM will
+	// zero-pad pad it when generating the attestation token, so do the
+	// same to the session nonce.
+	sessionNonce := make([]byte, 64)
+	copy(sessionNonce, token.Nonce)
+
+	if !bytes.Equal(realmChallenge, sessionNonce) {
 		return handler.BadEvidence(
 			"freshness: realm challenge (%s) does not match session nonce (%s)",
 			hex.EncodeToString(realmChallenge),
