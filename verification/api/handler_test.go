@@ -184,18 +184,18 @@ func TestHandler_NewChallengeResponse_AmbiguousQueryParameters(t *testing.T) {
 
 func TestHandler_NewChallengeResponse_NonceSizeTooBig(t *testing.T) {
 	q := url.Values{}
-	q.Add("nonceSize", "257")
+	q.Add("nonceSize", "88")
 
-	expectedErr := "failed handling nonce request: nonceSize must be in range 1..256"
+	expectedErr := "failed handling nonce request: nonceSize must be in range 8..64"
 
 	testHandler_NewChallengeResponse_BadNonce(t, q, expectedErr)
 }
 
-func TestHandler_NewChallengeResponse_NonceSizeIsZero(t *testing.T) {
+func TestHandler_NewChallengeResponse_NonceSizeTooSmall(t *testing.T) {
 	q := url.Values{}
-	q.Add("nonceSize", "0")
+	q.Add("nonceSize", "6")
 
-	expectedErr := "failed handling nonce request: nonce size cannot be 0"
+	expectedErr := "failed handling nonce request: nonceSize must be in range 8..64"
 
 	testHandler_NewChallengeResponse_BadNonce(t, q, expectedErr)
 }
@@ -269,11 +269,11 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	expectedType := ChallengeResponseSessionMediaType
 	expectedLocationRE := sessionURIRegexp
 	expectedSessionStatus := StatusWaiting
-	expectedNonce := []byte("nonce")
+	expectedNonce := []byte("nonce-value")
 
 	qParams := url.Values{}
-	// b64("nonce") => "bm9uY2U="
-	qParams.Add("nonce", "bm9uY2U=")
+	// b64("nonce-value") => "bm9uY2UtdmFsdWU="
+	qParams.Add("nonce", "bm9uY2UtdmFsdWU=")
 
 	w := httptest.NewRecorder()
 
