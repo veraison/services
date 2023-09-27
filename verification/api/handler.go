@@ -136,8 +136,8 @@ func parseNonceRequest(nonceParam, nonceSizeParam string) ([]byte, error) {
 	// a nonceSize was supplied, try to use it to mint a new nonce
 	if nonceSizeParam != "" {
 		nonceSize, err := aToU8(nonceSizeParam)
-		if err != nil {
-			return nil, errors.New("nonceSize must be in range 1..256")
+		if err != nil || nonceSize < 8 || nonceSize > 64 {
+			return nil, errors.New("nonceSize must be in range 8..64")
 		}
 		return mintNonce(nonceSize)
 	}
@@ -146,6 +146,14 @@ func parseNonceRequest(nonceParam, nonceSizeParam string) ([]byte, error) {
 	nonce, err := b64ToBytes(nonceParam)
 	if err != nil {
 		return nil, errors.New("nonce must be valid base64")
+	}
+
+	nonceLen := len(nonce)
+	if nonceLen < 8 || nonceLen > 64 {
+		return nil, fmt.Errorf(
+			"nonce must be between 8 and 64 bytes long; got %d",
+			nonceLen,
+		)
 	}
 
 	return nonce, nil
