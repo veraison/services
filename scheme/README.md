@@ -3,8 +3,7 @@ schemes. Currently the following schemes are implemented:
 
 - `cca-ssd-platform` Arm Confidential Compute Architecture attestation.
 - `psa-iot`: Arm Platform Security Architecture attestation.
-- `tcg-dice`: [TCG
-  DICE](https://trustedcomputinggroup.org/work-groups/dice-architectures/)-compatible
+- `riot`: [RIoT based DICE](https://trustedcomputinggroup.org/work-groups/dice-architectures/)-compatible
   attestation (note: this does not implement any specific DICE architecture).
 - `tmp-enacttrust`: TPM-based attestation for
   [EnactTrust](https://www.enacttrust.com/) security cloud.

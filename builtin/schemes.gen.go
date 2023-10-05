@@ -5,7 +5,7 @@ import (
 
 	scheme1 "github.com/veraison/services/scheme/cca-ssd-platform"
 	scheme4 "github.com/veraison/services/scheme/psa-iot"
-	scheme2 "github.com/veraison/services/scheme/tcg-dice"
+	scheme2 "github.com/veraison/services/scheme/riot"
 	scheme3 "github.com/veraison/services/scheme/tpm-enacttrust"
 )
 

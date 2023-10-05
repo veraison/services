@@ -1,7 +1,7 @@
 // Copyright 2021-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package tcg_dice
+package riot
 
 import (
 	"crypto/x509"
@@ -22,7 +22,7 @@ type EvidenceHandler struct {
 }
 
 func (s EvidenceHandler) GetName() string {
-	return "tcg-dice-evidence-handler"
+	return "riot-evidence-handler"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 PLUGIN := ../../../bin/tcg-dice-evidence-handler.plugin
-GOPKG := github.com/veraison/services/scheme/tcg-dice
+GOPKG := github.com/veraison/services/scheme/riot
 SRCS := main.go
 
 include ../../../../mk/common.mk
