@@ -3,7 +3,7 @@
 
 SUBDIR := common
 SUBDIR += cca-ssd-platform
-SUBDIR += tcg-dice
+SUBDIR += riot
 SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust
 SUBDIR += parsec-tpm

@@ -1,8 +1,8 @@
 # Copyright 2021 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../../../bin/tcg-dice.plugin
-GOPKG := github.com/veraison/services/scheme/tcg-dice
+PLUGIN := ../../../bin/riot.plugin
+GOPKG := github.com/veraison/services/scheme/riot
 SRCS := main.go
 
 include ../../../../mk/common.mk
