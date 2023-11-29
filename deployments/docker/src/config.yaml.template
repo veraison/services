@@ -36,7 +36,7 @@ po-store:
 po-agent:
     backend: opa
 auth:
-  backend: keycloak
+  backend: none
   host: keycloak-service
   port: ${KEYCLOAK_PORT}
 # vim: set ft=yaml:

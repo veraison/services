@@ -6,21 +6,21 @@ ta-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/ta-store.sql
+    datasource: ta-store.sql
 en-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/en-store.sql
+    datasource: en-store.sql
 po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/po-store.sql
+    datasource: po-store.sql
 po-agent:
   backend: opa
 vts:
-  server-addr: 127.0.0.1:50051
+  server-addr: localhost:50051
 ear-signer:
   alg: ES256
   key: ./skey.jwk

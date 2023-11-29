@@ -315,24 +315,19 @@ func (o *GRPC) addTrustAnchor(
 	return nil
 }
 
-func (o *GRPC) GetAttestation(
-	ctx context.Context,
-	token *proto.AttestationToken,
-) (*proto.AppraisalContext, error) {
-	o.logger.Infow("get attestation", "media-type", token.MediaType,
-		"tenant-id", token.TenantId)
+func (o *GRPC) getPerSchemeAttestation(ctx context.Context, mediaType string, token *proto.AttestationToken) (*appraisal.Appraisal, error) {
 
-	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
+	handler, err := o.EvPluginManager.LookupByMediaType(mediaType)
 	if err != nil {
 		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
 		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
 		appraisal.AddPolicyClaim("problem", "could not resolve media type")
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	appraisal, err := o.initEvidenceContext(handler, token)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	ta, err := o.getTrustAnchor(appraisal.EvidenceContext.TrustAnchorId)
@@ -343,7 +338,7 @@ func (o *GRPC) GetAttestation(
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
 		}
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	extracted, err := handler.ExtractClaims(token, ta)
@@ -351,13 +346,13 @@ func (o *GRPC) GetAttestation(
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.AddPolicyClaim("problem", err.Error())
 		}
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
 	if err != nil {
 		err = fmt.Errorf("unserializable claims in result: %w", err)
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	appraisal.EvidenceContext.ReferenceId = extracted.ReferenceID
@@ -368,7 +363,7 @@ func (o *GRPC) GetAttestation(
 
 	endorsements, err := o.EnStore.Get(appraisal.EvidenceContext.ReferenceId)
 	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	if len(endorsements) > 0 {
@@ -380,12 +375,12 @@ func (o *GRPC) GetAttestation(
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "integrity validation failed")
 		}
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 	appraisedResult.Nonce = appraisal.Result.Nonce
 	appraisal.Result = appraisedResult
@@ -393,12 +388,38 @@ func (o *GRPC) GetAttestation(
 
 	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, endorsements)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
-	return o.finalize(appraisal, nil)
+	return appraisal, nil
+}
+
+func (o *GRPC) GetAttestation(
+	ctx context.Context,
+	token *proto.AttestationToken,
+) (*proto.AppraisalContext, error) {
+	o.logger.Infow("get attestation", "media-type", token.MediaType,
+		"tenant-id", token.TenantId)
+
+	mediaType := token.MediaType
+	requireAttestation := true
+
+	for requireAttestation {
+		appraisal, err := o.getPerSchemeAttestation(ctx, mediaType, token)
+		if err != nil {
+			return o.finalize(appraisal, err)
+		}
+		if appraisal.EvidenceContext.RequireFurtherProcessing {
+			requireAttestation = true
+			mediaType = appraisal.EvidenceContext.MediaType
+		} else {
+			o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
+			return o.finalize(appraisal, err)
+		}
+	}
+	return nil, fmt.Errorf("invalid condition reached")
 }
 
 func (c *GRPC) initEvidenceContext(

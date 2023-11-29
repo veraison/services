@@ -5,5 +5,5 @@ logging:
 provisioning:
   listen-addr: 0.0.0.0:8888
 vts:
-  server-addr: vts-service:50051
+  server-addr: localhost:50051
 # vim: set ft=yaml:
