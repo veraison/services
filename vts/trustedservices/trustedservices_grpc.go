@@ -380,8 +380,11 @@ func (o *GRPC) getPerSchemeAttestation(ctx context.Context, mediaType string, to
 
 	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
+		o.logger.Infow("Appraise Evidence Failed with Cause", "error=", err)
 		return appraisal, err
 	}
+	o.logger.Infow("evaluated evidence context", "evidence-context require fp", appraisal.EvidenceContext.RequireFurtherProcessing)
+
 	appraisedResult.Nonce = appraisal.Result.Nonce
 	appraisal.Result = appraisedResult
 	appraisal.InitPolicyID()
@@ -391,7 +394,7 @@ func (o *GRPC) getPerSchemeAttestation(ctx context.Context, mediaType string, to
 		return appraisal, err
 	}
 
-	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
+	//o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
 	return appraisal, nil
 }
@@ -411,13 +414,20 @@ func (o *GRPC) GetAttestation(
 		if err != nil {
 			return o.finalize(appraisal, err)
 		}
-		if appraisal.EvidenceContext.RequireFurtherProcessing {
+		o.logger.Infow("Yogesh: Attestation Scheme =", "AS", appraisal.Scheme)
+		ar := appraisal.Result
+
+		if ar.UpMediaType != nil && *ar.UpMediaType != "" {
+			o.logger.Infow("Yogesh: Attestation UP Condition Met =")
 			requireAttestation = true
-			mediaType = appraisal.EvidenceContext.MediaType
+			mediaType = *ar.UpMediaType
+			o.logger.Infow("Yogesh: Extracted MediaType=", "EC MT", mediaType)
 		} else {
 			o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
+			requireAttestation = false
 			return o.finalize(appraisal, err)
 		}
+
 	}
 	return nil, fmt.Errorf("invalid condition reached")
 }
@@ -440,6 +450,10 @@ func (c *GRPC) initEvidenceContext(
 }
 
 func (c *GRPC) getTrustAnchor(id string) (string, error) {
+
+	if id == "" {
+		return "", nil
+	}
 	values, err := c.TaStore.Get(id)
 	if err != nil {
 		return "", err
