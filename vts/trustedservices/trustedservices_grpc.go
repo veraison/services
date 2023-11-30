@@ -383,7 +383,6 @@ func (o *GRPC) getPerSchemeAttestation(ctx context.Context, mediaType string, to
 		o.logger.Infow("Appraise Evidence Failed with Cause", "error=", err)
 		return appraisal, err
 	}
-	o.logger.Infow("evaluated evidence context", "evidence-context require fp", appraisal.EvidenceContext.RequireFurtherProcessing)
 
 	appraisedResult.Nonce = appraisal.Result.Nonce
 	appraisal.Result = appraisedResult

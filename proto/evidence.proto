@@ -10,6 +10,4 @@ message EvidenceContext {
   string trust_anchor_id = 2 [json_name = "trust-anchor-id"];
   string reference_id = 3 [json_name = "reference-id"];
   google.protobuf.Struct evidence = 5;
-  bool require_further_processing = 6 [json_name = "require-further-processing"];
-  string media_type = 7 [json_name = "media-type"];
 }
