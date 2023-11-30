@@ -407,12 +407,23 @@ func (o *GRPC) GetAttestation(
 
 	mediaType := token.MediaType
 	requireAttestation := true
+	var overallAppraisal *appraisal.Appraisal
 
 	for requireAttestation {
 		appraisal, err := o.getPerSchemeAttestation(ctx, mediaType, token)
 		if err != nil {
 			return o.finalize(appraisal, err)
 		}
+		if overallAppraisal == nil {
+			overallAppraisal = appraisal
+		} else {
+			// Note we can just append subModule here, however for the now, entire Appraisal is passed
+			overallAppraisal, err = overallAppraisal.Update(appraisal)
+			if err != nil {
+				return o.finalize(overallAppraisal, err)
+			}
+		}
+
 		o.logger.Infow("Yogesh: Attestation Scheme =", "AS", appraisal.Scheme)
 		ar := appraisal.Result
 
@@ -422,7 +433,12 @@ func (o *GRPC) GetAttestation(
 			mediaType = *ar.UpMediaType
 			o.logger.Infow("Yogesh: Extracted MediaType=", "EC MT", mediaType)
 		} else {
-			o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
+			// o.logger.Infow("evaluated attestation result", "attestation-result", overallAppraisal.Result)
+			for key, submod := range overallAppraisal.Result.Submods {
+				o.logger.Infow("evaluated sub mod", "key=", key, "value=", submod)
+				//o.Result.Submods[key] = submod
+			}
+
 			requireAttestation = false
 			return o.finalize(appraisal, err)
 		}

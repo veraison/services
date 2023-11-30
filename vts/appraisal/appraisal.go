@@ -88,3 +88,11 @@ func (o *Appraisal) InitPolicyID() {
 		submod.AppraisalPolicyID = &policyID
 	}
 }
+
+func (o *Appraisal) Update(apr *Appraisal) (*Appraisal, error) {
+	for key, submod := range apr.Result.Submods {
+		o.Result.Submods[key] = submod
+	}
+
+	return o, nil
+}

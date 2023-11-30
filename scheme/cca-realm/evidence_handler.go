@@ -184,7 +184,5 @@ func populateAttestationResult(
 	}
 	appraisal.UpdateStatusFromTrustVector()
 
-	appraisal.VeraisonAnnotatedEvidence = &evidence
-
 	return nil
 }
