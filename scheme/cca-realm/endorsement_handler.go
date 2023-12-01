@@ -4,6 +4,7 @@ package cca_realm
 
 import (
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/scheme/common"
 )
 
 type EndorsementHandler struct{}
@@ -29,5 +30,5 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 }
 
 func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return nil, nil
+	return common.UnsignedCorimDecoder(data, &CorimExtractor{})
 }
