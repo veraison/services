@@ -38,7 +38,7 @@ func (o CorimExtractor) RefValExtractor(
 
 		attrs, err := makeRefValAttrs(&classAttrs, algID, measurementValue)
 		if err != nil {
-			return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
+			return nil, fmt.Errorf("measurement[%d].digest: %w", i, err)
 		}
 
 		rv := &handler.Endorsement{
