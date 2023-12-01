@@ -3,9 +3,11 @@
 package cca_realm
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecoder_GetAttestationScheme(t *testing.T) {
@@ -62,4 +64,13 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 	_, err := d.Decode(invalidCbor)
 
 	assert.EqualError(t, err, expectedErr)
+}
+
+func TestDecoder_Decode_CoRIM_ok(t *testing.T) {
+	d := &EndorsementHandler{}
+	endBytes, err := os.ReadFile("test/corim-cca-realm.cbor")
+	require.NoError(t, err)
+
+	_, err = d.Decode(endBytes)
+	require.NoError(t, err)
 }

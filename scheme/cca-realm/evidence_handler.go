@@ -6,6 +6,8 @@ package cca_realm
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
@@ -18,6 +20,14 @@ import (
 )
 
 type EvidenceHandler struct{}
+
+type RealmAttr struct {
+	Vendor           string   `json:"cca-realm.vendor"`
+	Model            string   `json:"cca-realm.model"`
+	RealmID          string   `json:"cca-realm.id"`
+	AlgID            string   `json:"cca-realm.alg-id"`
+	MeasurementArray [][]byte `json:"cca-realm.measurement-array"`
+}
 
 func (s EvidenceHandler) GetName() string {
 	return "cca-realm-evidence-handler"
@@ -35,8 +45,30 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 	tenantID string,
 	refVal *handler.Endorsement,
 ) ([]string, error) {
-	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
+	var realm RealmAttr
 
+	attr := refVal.Attributes
+	err := json.Unmarshal(attr, &realm)
+	if err != nil {
+
+		return nil, fmt.Errorf("unable to UnMarshal Realm Attributes %w", err)
+	}
+	lookupKey := RefValLookupKey(SchemeName, tenantID, realm.RealmID)
+	log.Debugf("Scheme %s Plugin Reference Value Look Up Key= %s\n", SchemeName, lookupKey)
+
+	return []string{lookupKey}, nil
+}
+
+func RefValLookupKey(schemeName, tenantID, uuID string) string {
+	absPath := []string{uuID}
+
+	u := url.URL{
+		Scheme: schemeName,
+		Host:   tenantID,
+		Path:   strings.Join(absPath, "/"),
+	}
+
+	return u.String()
 }
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
@@ -49,6 +81,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	return "", nil
 }
 
+// TO DO COMPLETE THIS
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchor string,
@@ -74,6 +107,9 @@ func (s EvidenceHandler) ExtractClaims(
 			"could not convert realm claims: %w", err))
 	}
 
+	/* FROM THE REALM CLAIM SET GET THE REALM INITIAL MEASUREMENTS */
+	/* THAT WILL BE THE INPUT TO THE REFERENCE ID */
+
 	extracted.ClaimsSet = map[string]interface{}{
 		"platform": platformClaimsSet,
 		"realm":    realmClaimsSet,
@@ -84,6 +120,7 @@ func (s EvidenceHandler) ExtractClaims(
 		token.TenantId,
 		arm.MustImplIDString(ccaToken.PlatformClaims),
 	)
+
 	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
