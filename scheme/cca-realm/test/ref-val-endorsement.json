@@ -1,0 +1,19 @@
+{
+    "scheme": "CCA_REALM",
+    "type": "reference value",
+    "subType": "",
+    "attributes": {
+      "cca-realm.alg-id": "sha-384",
+      "cca-realm.id": "cd1f0e55-26f9-460d-b9d8-f7fde171787c",
+      "cca-realm.measurement-array": [
+        "QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1",
+        "IQe752H8pS2VE2oTVNt6TdV7Gya+DT2nHZ6yOYazS6YVq/ZRTPNeWp6lWgMtBop4",
+        "QQe752H8pS2VE2oTVNt6TdV7Gya+DT2nHZ6yOYazS6YVq/ZRTPNeWp6lWgMtBop4",
+        "JQe752H8pS2VE2oTVNt6TdV7Gya+DT2nHZ6yOYazS6YVq/ZRTPNeWp6lWgMtBop4",
+        "MQe752H8pS2VE2oTVNt6TdV7Gya+DT2nHZ6yOYazS6YVq/ZRTPNeWp6lWgMtBop4"
+      ],
+      "cca-realm.model": "",
+      "cca-realm.vendor": "Workload Client Ltd"
+    }
+  }
+  

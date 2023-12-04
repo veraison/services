@@ -4,6 +4,8 @@
 package cca_realm
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -11,12 +13,10 @@ import (
 
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
-	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/scheme/common/arm"
 )
 
 type EvidenceHandler struct{}
@@ -53,14 +53,21 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 
 		return nil, fmt.Errorf("unable to UnMarshal Realm Attributes %w", err)
 	}
-	lookupKey := RefValLookupKey(SchemeName, tenantID, realm.RealmID)
+	if realm.MeasurementArray == nil {
+		return nil, fmt.Errorf("no measurements in Realm Endorsements %w", err)
+	}
+
+	rim := base64.StdEncoding.EncodeToString(realm.MeasurementArray[0])
+	log.Debugf("base64 encoded rim value = %s", rim)
+
+	lookupKey := RefValLookupKey(SchemeName, tenantID, rim)
 	log.Debugf("Scheme %s Plugin Reference Value Look Up Key= %s\n", SchemeName, lookupKey)
 
 	return []string{lookupKey}, nil
 }
 
-func RefValLookupKey(schemeName, tenantID, uuID string) string {
-	absPath := []string{uuID}
+func RefValLookupKey(schemeName, tenantID, rim string) string {
+	absPath := []string{rim}
 
 	u := url.URL{
 		Scheme: schemeName,
@@ -81,7 +88,7 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 	return "", nil
 }
 
-// TO DO COMPLETE THIS
+// ExtractClaims extract Realm Claims and set the extracted Reference ID
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchor string,
@@ -107,20 +114,22 @@ func (s EvidenceHandler) ExtractClaims(
 			"could not convert realm claims: %w", err))
 	}
 
-	/* FROM THE REALM CLAIM SET GET THE REALM INITIAL MEASUREMENTS */
-	/* THAT WILL BE THE INPUT TO THE REFERENCE ID */
-
 	extracted.ClaimsSet = map[string]interface{}{
 		"platform": platformClaimsSet,
 		"realm":    realmClaimsSet,
 	}
 
-	extracted.ReferenceID = arm.RefValLookupKey(
+	brim, err := ccaToken.RealmClaims.GetInitialMeasurement()
+	if err != nil {
+		return nil, handler.BadEvidence(err)
+	}
+	rim := base64.StdEncoding.EncodeToString(brim)
+	log.Debugf("base64 encoded rim value = %s", rim)
+
+	extracted.ReferenceID = RefValLookupKey(
 		SchemeName,
 		token.TenantId,
-		arm.MustImplIDString(ccaToken.PlatformClaims),
-	)
-
+		rim)
 	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceID)
 	return &extracted, nil
 }
@@ -159,8 +168,6 @@ func (s EvidenceHandler) AppraiseEvidence(
 
 	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
 
-	// TO DO: Handle Unprocessed evidence when new Attestation Result interface
-	// is ready. Please see issue #105
 	return result, err
 }
 
@@ -169,57 +176,95 @@ func populateAttestationResult(
 	evidence map[string]interface{},
 	endorsements []handler.Endorsement,
 ) error {
-	claims, err := common.MapToClaims(evidence["platform"].(map[string]interface{}))
+	claims, err := mapToClaims(evidence["realm"].(map[string]interface{}))
 	if err != nil {
 		return err
 	}
 
 	appraisal := result.Submods[SchemeName]
 
-	// once the signature on the token is verified, we can claim the HW is
-	// authentic
-	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
-
-	rawLifeCycle, err := claims.GetSecurityLifeCycle()
+	// Match RIM Values first
+	brim, err := claims.GetInitialMeasurement()
 	if err != nil {
-		return handler.BadEvidence(err)
+		return fmt.Errorf("failed to get Realm Initial Measurements from Claims")
 	}
+	rim := base64.StdEncoding.EncodeToString(brim)
+	log.Debugf("base64 encoded rim value = %s", rim)
 
-	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)
-	if lifeCycle == psatoken.CcaStateSecured ||
-		lifeCycle == psatoken.CcaStateNonCcaPlatformDebug {
-		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
-		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
-		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim
-	} else {
-		appraisal.TrustVector.InstanceIdentity = ear.UntrustworthyInstanceClaim
-		appraisal.TrustVector.RuntimeOpaque = ear.VisibleMemoryRuntimeClaim
-		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
-	}
+	for _, endorsement := range endorsements {
+		var realmEnd RealmAttr
+		json.Unmarshal(endorsement.Attributes, &realmEnd)
+		er := realmEnd.MeasurementArray[0]
+		erim := base64.StdEncoding.EncodeToString(er)
+		log.Debugf("base64 encoded endorsement rim value = %s", erim)
 
-	swComps := arm.FilterRefVal(endorsements, "CCA_SSD_PLATFORM.sw-component")
-	match := arm.MatchSoftware(SchemeName, claims, swComps)
-	if match {
-		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		log.Debug("matchSoftware Success")
+		if rim == erim {
+			appraisal.TrustVector.Executables = ear.ApprovedBootClaim
+			log.Debug("realm Initial Measurement match Success")
 
-	} else {
-		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Debug("matchSoftware Failed")
-	}
+		} else {
+			appraisal.TrustVector.Executables = ear.ContraindicatedRuntimeClaim
+			log.Debug("realm Initial Measurement match Failed")
+		}
 
-	platformConfig := arm.FilterRefVal(endorsements, "CCA_SSD_PLATFORM.platform-config")
-	match = arm.MatchPlatformConfig(SchemeName, claims, platformConfig)
+		if appraisal.TrustVector.Executables == ear.ApprovedBootClaim {
+			execmatch, err := matchExecutables(claims, realmEnd)
+			if err != nil {
+				appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+				break
+			}
+			// Match REM Values to express Execution
+			if execmatch {
+				appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
+				log.Debug("Boot claim and run time both succeedded")
 
-	if match {
-		appraisal.TrustVector.Configuration = ear.ApprovedConfigClaim
-		log.Debug("matchPlatformConfig Success")
-
-	} else {
-		appraisal.TrustVector.Configuration = ear.UnsafeConfigClaim
-		log.Debug("matchPlatformConfig Failed")
+			} else {
+				appraisal.TrustVector.Executables = ear.UnsafeRuntimeClaim
+				log.Debug("Boot claim succeedded but run time both  Failed")
+			}
+			break
+		}
 	}
 	appraisal.UpdateStatusFromTrustVector()
 
 	return nil
+}
+
+func mapToClaims(in map[string]interface{}) (*ccatoken.RealmClaims, error) {
+	var cca ccatoken.RealmClaims
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+	err = cca.FromJSON(data)
+	if err != nil {
+		return nil, fmt.Errorf("unable to map claims for RealmClaims %w", err)
+	}
+	return &cca, nil
+}
+
+func matchExecutables(rc *ccatoken.RealmClaims, re RealmAttr) (bool, error) {
+
+	if rc == nil {
+		return false, fmt.Errorf("no realm claims in matchExecutables")
+	}
+	rems, err := rc.GetExtensibleMeasurements()
+	if err != nil {
+		return false, fmt.Errorf("unable to matchExecutables %w", err)
+	}
+
+	matched := false
+	for _, meas := range rems {
+		matched = false
+		for _, emeas := range re.MeasurementArray {
+			if bytes.Equal(meas, emeas) {
+				matched = true
+			}
+		}
+		if !matched {
+			return !matched, nil
+		}
+	}
+
+	return matched, nil
 }
