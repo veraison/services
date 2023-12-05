@@ -32,7 +32,7 @@ require (
 	github.com/veraison/cmw v0.1.0
 	github.com/veraison/corim v1.1.2-0.20231201124143-c98741c914fc
 	github.com/veraison/dice v0.0.1
-	github.com/veraison/ear v1.1.3-0.20231130183426-c7759f6f0da6
+	github.com/veraison/ear v1.1.3-0.20231204194725-a67c9e0e4e9f
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/parsec v0.1.1-0.20230915122508-f31e6c9be40e
 	github.com/veraison/psatoken v1.2.0

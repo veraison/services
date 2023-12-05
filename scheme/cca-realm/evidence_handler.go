@@ -222,6 +222,11 @@ func populateAttestationResult(
 				appraisal.TrustVector.Executables = ear.UnsafeRuntimeClaim
 				log.Debug("Boot claim succeedded but run time both  Failed")
 			}
+			if err := appraisal.SetRealmIdentity(realmEnd.RealmID); err != nil {
+				return fmt.Errorf("unable to set Realm Identity: %w", err)
+			} else {
+				log.Debugf("Realm Appraisal Extension set RealmID: = %s", realmEnd.RealmID)
+			}
 			break
 		}
 	}
