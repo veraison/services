@@ -23,7 +23,6 @@ require (
 	github.com/open-policy-agent/opa v0.43.1
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20211021192214-5ab2d9280aa9
 	github.com/spf13/afero v1.9.2
-	github.com/spf13/cobra v1.6.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.4
@@ -48,7 +47,6 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
