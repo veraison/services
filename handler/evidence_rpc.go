@@ -82,7 +82,7 @@ func (s *RPCServer) SynthKeysFromTrustAnchor(args SynthKeysArgs, resp *[]string)
 	return err
 }
 
-func (s *RPCServer) GetTrustAnchorID(data []byte, resp *string) error {
+func (s *RPCServer) GetTrustAnchorIDs(data []byte, resp *[]string) error {
 	var (
 		err   error
 		token proto.AttestationToken
@@ -93,14 +93,14 @@ func (s *RPCServer) GetTrustAnchorID(data []byte, resp *string) error {
 		return fmt.Errorf("unmarshaling attestation token: %w", err)
 	}
 
-	*resp, err = s.Impl.GetTrustAnchorID(&token)
+	*resp, err = s.Impl.GetTrustAnchorIDs(&token)
 
 	return err
 }
 
 type ExtractClaimsArgs struct {
-	Token       []byte
-	TrustAnchor string
+	Token        []byte
+	TrustAnchors []string
 }
 
 func (s *RPCServer) ExtractClaims(args ExtractClaimsArgs, resp *[]byte) error {
@@ -111,7 +111,7 @@ func (s *RPCServer) ExtractClaims(args ExtractClaimsArgs, resp *[]byte) error {
 		return fmt.Errorf("unmarshaling token: %w", err)
 	}
 
-	extracted, err := s.Impl.ExtractClaims(&token, args.TrustAnchor)
+	extracted, err := s.Impl.ExtractClaims(&token, args.TrustAnchors)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (s *RPCServer) ExtractClaims(args ExtractClaimsArgs, resp *[]byte) error {
 
 type ValidateEvidenceIntegrityArgs struct {
 	Token        []byte
-	TrustAnchor  string
+	TrustAnchors []string
 	Endorsements []string
 }
 
@@ -135,7 +135,7 @@ func (s *RPCServer) ValidateEvidenceIntegrity(args ValidateEvidenceIntegrityArgs
 		return fmt.Errorf("unmarshaling token: %w", err)
 	}
 
-	err = s.Impl.ValidateEvidenceIntegrity(&token, args.TrustAnchor, args.Endorsements)
+	err = s.Impl.ValidateEvidenceIntegrity(&token, args.TrustAnchors, args.Endorsements)
 
 	return err
 }
@@ -262,28 +262,28 @@ func (s *RPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) (
 	return resp, nil
 }
 
-func (s *RPCClient) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
+func (s *RPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	var (
 		err  error
 		data []byte
-		resp string
+		resp []string
 	)
 
 	data, err = json.Marshal(token)
 	if err != nil {
-		return "", fmt.Errorf("marshaling token: %w", err)
+		return []string{""}, fmt.Errorf("marshaling token: %w", err)
 	}
 
-	err = s.client.Call("Plugin.GetTrustAnchorID", data, &resp)
+	err = s.client.Call("Plugin.GetTrustAnchorIDs", data, &resp)
 	if err != nil {
 		err = ParseError(err)
-		return "", fmt.Errorf("Plugin.GetTrustAnchorID RPC call failed: %w", err) // nolint
+		return []string{""}, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
 	}
 
 	return resp, nil
 }
 
-func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchor string) (*ExtractedClaims, error) {
+func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchors []string) (*ExtractedClaims, error) {
 	var (
 		err       error
 		args      ExtractClaimsArgs
@@ -295,7 +295,7 @@ func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchor s
 	if err != nil {
 		return nil, fmt.Errorf("marshaling token: %w", err)
 	}
-	args.TrustAnchor = trustAnchor
+	args.TrustAnchors = trustAnchors
 
 	err = s.client.Call("Plugin.ExtractEvidence", args, &resp)
 	if err != nil {
@@ -313,7 +313,7 @@ func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchor s
 
 func (s *RPCClient) ValidateEvidenceIntegrity(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 	endorsements []string,
 ) error {
 	var (
@@ -326,7 +326,7 @@ func (s *RPCClient) ValidateEvidenceIntegrity(
 	if err != nil {
 		return fmt.Errorf("marshaling token: %w", err)
 	}
-	args.TrustAnchor = trustAnchor
+	args.TrustAnchors = trustAnchors
 	args.Endorsements = endorsements
 
 	err = s.client.Call("Plugin.ValidateEvidenceIntegrity", args, &resp)
@@ -360,7 +360,7 @@ func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []s
 	return &result, err
 }
 
-func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*ExtractedClaims, error) {
+func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*ExtractedClaims, error) {
 	var (
 		err             error
 		args            ExtractClaimsArgs
@@ -372,7 +372,7 @@ func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchor str
 		return nil, fmt.Errorf("marshaling token: %w", err)
 	}
 
-	args.TrustAnchor = trustAnchor
+	args.TrustAnchors = trustAnchors
 
 	var resp []byte
 	err = s.client.Call("Plugin.ExtractClaims", args, &resp)

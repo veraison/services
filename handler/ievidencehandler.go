@@ -14,22 +14,22 @@ import (
 type IEvidenceHandler interface {
 	plugin.IPluggable
 
-	// GetTrustAnchorID returns a string ID used to retrieve a trust anchor
-	// for this token. The trust anchor may be necessary to validate the
-	// token and/or extract its claims (if it is encrypted).
-	GetTrustAnchorID(token *proto.AttestationToken) (string, error)
+	// GetTrustAnchorIDs returns an array of trust anchor strings(handles) used to retrieve a
+	// set of trust anchors for this token. The trust anchors may be necessary to validate the
+	// entire token and/or extract its claims (if it is encrypted).
+	GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error)
 
 	// ExtractClaims parses the attestation token and returns claims
 	// extracted therefrom.
 	ExtractClaims(
 		token *proto.AttestationToken,
-		trustAnchor string,
+		trustAnchors []string,
 	) (*ExtractedClaims, error)
 
 	// ValidateEvidenceIntegrity verifies the structural integrity and validity of the
 	// token. The exact checks performed are scheme-specific, but they
 	// would typically involve, at the least, verifying the token's
-	// signature using the provided trust anchor and endorsements. If the
+	// signature using the provided trust anchors and endorsements. If the
 	// validation fails, an error detailing what went wrong is returned.
 	// Note: key material required to  validate the token would typically be
 	//       provisioned as a Trust Anchor. However, depending on the
@@ -44,7 +44,7 @@ type IEvidenceHandler interface {
 	// (i.e. signature not matching).
 	ValidateEvidenceIntegrity(
 		token *proto.AttestationToken,
-		trustAnchor string,
+		trustAnchors []string,
 		endorsementsStrings []string,
 	) error
 
@@ -65,14 +65,14 @@ type IEvidenceHandler interface {
 }
 
 // ExtractedClaims contains a map of claims extracted from an attestation
-// token along with the corresponding ReferenceID that is used to fetch
+// token along with the corresponding ReferenceIDs that are used to fetch
 // the associated endorsements.
 //
 //	ReferenceID is the key used to fetch all the Endorsements
 //	generated from claims extracted from the token
 type ExtractedClaims struct {
-	ClaimsSet   map[string]interface{} `json:"claims-set"`
-	ReferenceID string                 `json:"reference-id"`
+	ClaimsSet    map[string]interface{} `json:"claims-set"`
+	ReferenceIDs []string               `json:"reference-ids"`
 	// please refer issue #106 for unprocessed claim set
 }
 

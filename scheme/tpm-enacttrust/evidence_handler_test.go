@@ -27,7 +27,7 @@ func Test_DecodeAttestationData_ok(t *testing.T) {
 	assert.Equal(t, uint64(0x7), decoded.AttestationData.FirmwareVersion)
 }
 
-func Test_GetTrustAnchorID_ok(t *testing.T) {
+func Test_GetTrustAnchorIds_ok(t *testing.T) {
 	data, err := os.ReadFile("test/tokens/basic.token")
 	require.NoError(t, err)
 
@@ -39,9 +39,9 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 
 	var s EvidenceHandler
 
-	taID, err := s.GetTrustAnchorID(&ta)
+	taIDs, err := s.GetTrustAnchorIDs(&ta)
 	require.NoError(t, err)
-	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", taID)
+	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", taIDs[0])
 }
 
 func readPublicKeyBytes(path string) ([]byte, error) {
@@ -69,7 +69,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	require.NoError(t, err)
 	trustAnchor := base64.StdEncoding.EncodeToString(trustAnchorBytes)
 
-	ev, err := s.ExtractClaims(&ta, trustAnchor)
+	ev, err := s.ExtractClaims(&ta, []string{trustAnchor})
 	require.Nil(t, err)
 
 	expectedPCRDigest := []byte{
@@ -78,7 +78,8 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		0x7a, 0xf, 0xde, 0x60, 0xc4, 0xcf, 0x25, 0xc7,
 	}
 
-	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.ReferenceID)
+	assert.Equal(t, 1, len(ev.ReferenceIDs))
+	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.ReferenceIDs[0])
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)},
 		ev.ClaimsSet["pcr-selection"])
 	assert.Equal(t, int64(11), ev.ClaimsSet["hash-algorithm"])
@@ -99,8 +100,8 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 
 	trustAnchorBytes, err := os.ReadFile("test/trustanchor.json")
 	require.NoError(t, err)
-
-	err = s.ValidateEvidenceIntegrity(&ta, string(trustAnchorBytes), nil)
+	tas := string(trustAnchorBytes)
+	err = s.ValidateEvidenceIntegrity(&ta, []string{tas}, nil)
 	assert.Nil(t, err)
 
 }
@@ -118,10 +119,10 @@ func Test_GetAttestation(t *testing.T) {
 	require.NoError(t, err)
 
 	evidenceContext := &proto.EvidenceContext{
-		TenantId:      "0",
-		TrustAnchorId: "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		ReferenceId:   "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1",
-		Evidence:      evStruct,
+		TenantId:       "0",
+		TrustAnchorIds: []string{"TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1"},
+		ReferenceIds:   []string{"TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1"},
+		Evidence:       evStruct,
 	}
 
 	refvalBytes, err := os.ReadFile("test/refval.json")

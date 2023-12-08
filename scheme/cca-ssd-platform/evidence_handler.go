@@ -46,13 +46,17 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.E
 	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
 }
 
-func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	return arm.GetTrustAnchorID(SchemeName, token)
+func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
+	ta, err := arm.GetTrustAnchorID(SchemeName, token)
+	if err != nil {
+		return nil, err
+	}
+	return []string{ta}, nil
 }
 
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 ) (*handler.ExtractedClaims, error) {
 
 	var ccaToken ccatoken.Evidence
@@ -80,12 +84,12 @@ func (s EvidenceHandler) ExtractClaims(
 		"realm":    realmClaimsSet,
 	}
 
-	extracted.ReferenceID = arm.RefValLookupKey(
+	extracted.ReferenceIDs = []string{arm.RefValLookupKey(
 		SchemeName,
 		token.TenantId,
 		arm.MustImplIDString(ccaToken.PlatformClaims),
-	)
-	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceID)
+	)}
+	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceIDs)
 	return &extracted, nil
 }
 
@@ -95,7 +99,7 @@ func (s EvidenceHandler) ExtractClaims(
 // realm token.
 func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 	endorsementsStrings []string,
 ) error {
 	var (
@@ -125,7 +129,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 		)
 	}
 
-	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchor)
+	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchors[0])
 	if err != nil {
 		return fmt.Errorf("could not get public key from trust anchor: %w", err)
 	}

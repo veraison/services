@@ -52,7 +52,7 @@
 	    "cca-realm-public-key-hash-algo-id": "sha-512"
 	  }
   },
-  "reference-id": "CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
-  "trust-anchor-id": "CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/",
+  "reference-ids": ["CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY"],
+  "trust-anchor-ids": ["CCA_SSD_PLATFORM://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/"],
   "tenant-id": "1"
 }
