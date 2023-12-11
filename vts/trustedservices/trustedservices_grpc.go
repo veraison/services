@@ -374,13 +374,8 @@ func (o *GRPC) GetAttestation(
 			return o.finalize(appraisal, err)
 		}
 
-		if len(endorsements) > 0 {
-			o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
-		} else {
-			o.logger.Debugw("no endorsements for", "refvalID", refvalID)
-		}
+		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
 		multEndorsements = append(multEndorsements, endorsements...)
-
 	}
 
 	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
