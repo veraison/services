@@ -366,22 +366,24 @@ func (o *GRPC) GetAttestation(
 		"software-id", appraisal.EvidenceContext.ReferenceIds,
 		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorIds)
 
-	var tendorsements []string
-	for _, reference := range appraisal.EvidenceContext.ReferenceIds {
+	var multEndorsements []string
+	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
 
-		endorsements, err := o.EnStore.Get(reference)
+		endorsements, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 			return o.finalize(appraisal, err)
 		}
 
 		if len(endorsements) > 0 {
 			o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
+		} else {
+			o.logger.Debugw("no endorsements for", "refvalID", refvalID)
 		}
-		tendorsements = append(tendorsements, endorsements...)
+		multEndorsements = append(multEndorsements, endorsements...)
 
 	}
 
-	if err = handler.ValidateEvidenceIntegrity(token, tas, tendorsements); err != nil {
+	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "integrity validation failed")
@@ -389,7 +391,7 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
-	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, tendorsements)
+	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, multEndorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -397,7 +399,7 @@ func (o *GRPC) GetAttestation(
 	appraisal.Result = appraisedResult
 	appraisal.InitPolicyID()
 
-	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, tendorsements)
+	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, multEndorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -426,20 +428,21 @@ func (c *GRPC) initEvidenceContext(
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
 
-	ta_values := make([]string, 0)
-	for _, taId := range id {
-		values, err := c.TaStore.Get(taId)
+	var taValues []string //nolint
+	for _, taID := range id {
+		values, err := c.TaStore.Get(taID)
 		if err != nil {
 			return []string{""}, err
 		}
 
+		// For now, Veraison schemes only support one trust anchor per trustAnchorID
 		if len(values) != 1 {
 			return []string{""}, fmt.Errorf("found %d trust anchors, want 1", len(values))
 		}
-		ta_values = append(ta_values, values[0])
+		taValues = append(taValues, values[0])
 	}
 
-	return ta_values, nil
+	return taValues, nil
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {

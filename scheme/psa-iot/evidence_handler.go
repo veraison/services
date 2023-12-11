@@ -47,7 +47,7 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.E
 func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	taID, err := arm.GetTrustAnchorID(SchemeName, token)
 	if err != nil {
-		return nil, err
+		return []string{""}, err
 	}
 
 	return []string{taID}, nil

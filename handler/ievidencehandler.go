@@ -14,8 +14,8 @@ import (
 type IEvidenceHandler interface {
 	plugin.IPluggable
 
-	// GetTrustAnchorIDs returns an array of trust anchor strings(handles) used to retrieve a
-	// set of trust anchors for this token. The trust anchors may be necessary to validate the
+	// GetTrustAnchorIDs returns an array of trust anchor identifiers used
+	// to retrieve the trust anchors associated with this token. The trust anchors may be necessary to validate the
 	// entire token and/or extract its claims (if it is encrypted).
 	GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error)
 

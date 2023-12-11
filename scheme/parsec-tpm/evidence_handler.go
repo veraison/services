@@ -78,12 +78,12 @@ func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]str
 	var ev tpm.Evidence
 	err := ev.FromCBOR(token.Data)
 	if err != nil {
-		return nil, handler.BadEvidence(err)
+		return []string{""}, handler.BadEvidence(err)
 	}
 
 	kat := ev.Kat
 	if kat == nil {
-		return nil, errors.New("no key attestation token to fetch Key ID")
+		return []string{""}, errors.New("no key attestation token to fetch Key ID")
 	}
 	kid := *kat.KID
 	instance_id := base64.StdEncoding.EncodeToString(kid)
