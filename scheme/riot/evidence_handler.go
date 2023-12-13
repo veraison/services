@@ -33,8 +33,8 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
-	return "dice://", nil
+func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
+	return []string{"dice://"}, nil
 }
 
 func (s EvidenceHandler) SynthKeysFromRefValue(tenantID string, swComp *handler.Endorsement) ([]string, error) {
@@ -47,12 +47,12 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.E
 
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 ) (*handler.ExtractedClaims, error) {
 	roots := x509.NewCertPool()
 	intermediates := x509.NewCertPool()
 
-	if err := parseTrustAnchor([]byte(trustAnchor), roots, intermediates); err != nil {
+	if err := parseTrustAnchor([]byte(trustAnchors[0]), roots, intermediates); err != nil {
 		return nil, err
 	}
 
@@ -80,8 +80,8 @@ func (s EvidenceHandler) ExtractClaims(
 	}
 
 	extracted := handler.ExtractedClaims{
-		ClaimsSet:   claims,
-		ReferenceID: "dice://",
+		ClaimsSet:    claims,
+		ReferenceIDs: []string{"dice://"},
 	}
 
 	return &extracted, nil
@@ -89,7 +89,7 @@ func (s EvidenceHandler) ExtractClaims(
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 	endorsements []string,
 ) error {
 	// Cert verified earlier when extracting claims -- see note inside ExtractClaims above.

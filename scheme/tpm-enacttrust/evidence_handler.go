@@ -43,7 +43,7 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.E
 	return synthKeysFromAttrs("trust anchor", tenantID, ta.Attributes)
 }
 
-func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
+func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	supported := false
 	for _, mt := range EvidenceMediaTypes {
 		if token.MediaType == mt {
@@ -58,21 +58,21 @@ func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string
 			strings.Join(EvidenceMediaTypes, ", "),
 			token.MediaType,
 		)
-		return "", err
+		return []string{""}, err
 	}
 
 	var decoded Token
 
 	if err := decoded.Decode(token.Data); err != nil {
-		return "", handler.BadEvidence(err)
+		return nil, handler.BadEvidence(err)
 	}
 
-	return tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String()), nil
+	return []string{tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())}, nil
 }
 
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 ) (*handler.ExtractedClaims, error) {
 	supported := false
 	for _, mt := range EvidenceMediaTypes {
@@ -111,14 +111,14 @@ func (s EvidenceHandler) ExtractClaims(
 	evidence.ClaimsSet["firmware-version"] = decoded.AttestationData.FirmwareVersion
 	evidence.ClaimsSet["node-id"] = decoded.NodeId.String()
 	evidence.ClaimsSet["pcr-digest"] = []byte(decoded.AttestationData.AttestedQuoteInfo.PCRDigest)
-	evidence.ReferenceID = tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())
+	evidence.ReferenceIDs = []string{tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())}
 
 	return evidence, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	token *proto.AttestationToken,
-	trustAnchor string,
+	trustAnchors []string,
 	endorsements []string,
 ) error {
 	var decoded Token
@@ -127,7 +127,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 		return handler.BadEvidence("could not decode token: %w", err)
 	}
 
-	pubKey, err := parseKey(trustAnchor)
+	pubKey, err := parseKey(trustAnchors[0])
 	if err != nil {
 		return fmt.Errorf("could not parse trust anchor: %w", err)
 	}

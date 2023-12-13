@@ -21,7 +21,7 @@ var testNonce = []byte{
 	0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18,
 }
 
-func Test_GetTrustAnchorID_ok(t *testing.T) {
+func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
 	require.NoError(t, err)
 
@@ -35,9 +35,10 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 
 	handler := &EvidenceHandler{}
 
-	taID, err := handler.GetTrustAnchorID(&token)
+	taIDs, err := handler.GetTrustAnchorIDs(&token)
 	require.NoError(t, err)
-	assert.Equal(t, expectedTaID, taID)
+	assert.Equal(t, 1, len(taIDs))
+	assert.Equal(t, expectedTaID, taIDs[0])
 }
 
 func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
@@ -54,8 +55,8 @@ func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {
 		Data:     tokenBytes,
 		Nonce:    testNonce,
 	}
-
-	_, err = handler.ExtractClaims(&token, string(taEndValBytes))
+	ta := string(taEndValBytes)
+	_, err = handler.ExtractClaims(&token, []string{ta})
 
 	require.NoError(t, err)
 
@@ -75,8 +76,8 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		Data:     tokenBytes,
 		Nonce:    testNonce,
 	}
-
-	extracted, err := handler.ExtractClaims(&token, string(taEndValBytes))
+	ta := string(taEndValBytes)
+	extracted, err := handler.ExtractClaims(&token, []string{ta})
 
 	require.NoError(t, err)
 	assert.Equal(t, "PSA_IOT_PROFILE_1", extracted.ClaimsSet["psa-profile"].(string))
@@ -101,7 +102,8 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 		Nonce:    testNonce,
 	}
 
-	err = handler.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+	ta := string(taEndValBytes)
+	err = handler.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 
 	assert.NoError(t, err)
 }
@@ -142,8 +144,9 @@ func Test_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 			Data:     tokenBytes,
 			Nonce:    testNonce,
 		}
+		ta := string(taEndValBytes)
+		err = h.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 
-		err = h.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
 		assert.EqualError(t, err, tv.expectedErr)
 	}
 }

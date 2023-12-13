@@ -41,8 +41,8 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		TenantId: "1",
 		Data:     deviceData,
 	}
-
-	evidence, err := s.ExtractClaims(&token, string(taData))
+	ta := string(taData)
+	evidence, err := s.ExtractClaims(&token, []string{ta})
 	assert.Nil(t, err)
 	assert.Equal(t, FWID, evidence.ClaimsSet["FWID"])
 	assert.Equal(t, DeviceID, evidence.ClaimsSet["DeviceID"])

@@ -27,7 +27,7 @@ var testNonce = []byte{
 	0x41, 0x42, 0x41, 0x42, 0x41, 0x42, 0x41, 0x42,
 }
 
-func Test_GetTrustAnchorID_ok(t *testing.T) {
+func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/cca-token.cbor")
 	require.NoError(t, err)
 
@@ -37,11 +37,11 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 		Nonce:    testNonce,
 	}
 
-	expectedTaID := "CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"
+	expectedTaID := []string{"CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"}
 
 	scheme := &EvidenceHandler{}
 
-	taID, err := scheme.GetTrustAnchorID(&token)
+	taID, err := scheme.GetTrustAnchorIDs(&token)
 	require.NoError(t, err)
 	assert.Equal(t, expectedTaID, taID)
 }
@@ -169,8 +169,9 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		Data:     tokenBytes,
 		Nonce:    testNonce,
 	}
+	ta := string(taEndValBytes)
 
-	extracted, err := scheme.ExtractClaims(&token, string(taEndValBytes))
+	extracted, err := scheme.ExtractClaims(&token, []string{ta})
 	platformClaims := extracted.ClaimsSet["platform"].(map[string]interface{})
 
 	require.NoError(t, err)
@@ -198,8 +199,9 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 		Data:     tokenBytes,
 		Nonce:    testNonce,
 	}
+	ta := string(taEndValBytes)
 
-	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+	err = scheme.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 
 	assert.NoError(t, err)
 }
@@ -220,7 +222,8 @@ func Test_ValidateEvidenceIntegrity_invalid_key(t *testing.T) {
 	}
 	expectedErr := `could not get public key from trust anchor: could not decode subject public key info: unsupported key type: "PRIVATE KEY"`
 
-	err = scheme.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+	ta := string(taEndValBytes)
+	err = scheme.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 	assert.EqualError(t, err, expectedErr)
 }
 

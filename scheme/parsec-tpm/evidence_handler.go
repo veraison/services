@@ -74,24 +74,24 @@ func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.E
 	return synthKeysFromAttr(ScopeTrustAnchor, tenantID, ta.Attributes)
 }
 
-func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
+func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	var ev tpm.Evidence
 	err := ev.FromCBOR(token.Data)
 	if err != nil {
-		return "", handler.BadEvidence(err)
+		return []string{""}, handler.BadEvidence(err)
 	}
 
 	kat := ev.Kat
 	if kat == nil {
-		return "", errors.New("no key attestation token to fetch Key ID")
+		return []string{""}, errors.New("no key attestation token to fetch Key ID")
 	}
 	kid := *kat.KID
 	instance_id := base64.StdEncoding.EncodeToString(kid)
-	return tpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id), nil
+	return []string{tpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id)}, nil
 
 }
 
-func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchor string) (*handler.ExtractedClaims, error) {
+func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*handler.ExtractedClaims, error) {
 	var (
 		evidence    tpm.Evidence
 		endorsement TaEndorsements
@@ -108,17 +108,17 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 		return nil, handler.BadEvidence(err)
 	}
 	extracted.ClaimsSet = claimsSet
-	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
+	if err := json.Unmarshal([]byte(trustAnchors[0]), &endorsement); err != nil {
 		log.Errorf("Could not decode Endorsements in ExtractClaims: %v", err)
 		return nil, fmt.Errorf("could not decode endorsement: %w", err)
 	}
 
 	class_id := *endorsement.Attr.ClassID
-	extracted.ReferenceID = tpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")
+	extracted.ReferenceIDs = []string{tpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")}
 	return &extracted, nil
 }
 
-func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchor string, endorsements []string) error {
+func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchors []string, endorsements []string) error {
 	var (
 		endorsement TaEndorsements
 		ev          tpm.Evidence
@@ -128,7 +128,7 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken
 		return handler.BadEvidence(err)
 	}
 
-	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
+	if err := json.Unmarshal([]byte(trustAnchors[0]), &endorsement); err != nil {
 		log.Errorf("Could not decode trust anchor in ValidateEvidenceIntegrity: %v", err)
 		return fmt.Errorf("could not decode trust anchor: %w", err)
 	}

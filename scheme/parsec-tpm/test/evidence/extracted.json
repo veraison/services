@@ -14,7 +14,7 @@
       "tpmVer": "2.0"
     }
   },
-  "reference-id": "PARSEC_TPM://1/YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE=",
-  "trust-anchor-id": "PARSEC_TPM://1/AagIEsUMYDNxd1p5UuAACkxJGfJf9rcUZ/oyRFHDcAxn",
+  "reference-ids": ["PARSEC_TPM://1/YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="],
+  "trust-anchor-ids": ["PARSEC_TPM://1/AagIEsUMYDNxd1p5UuAACkxJGfJf9rcUZ/oyRFHDcAxn"],
   "tenant-id": "1"
 }

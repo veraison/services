@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-func Test_GetTrustAnchorID_ok(t *testing.T) {
+func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	tokenBytes, err := os.ReadFile("test/evidence/evidence.cbor")
 	require.NoError(t, err)
 
@@ -29,9 +29,9 @@ func Test_GetTrustAnchorID_ok(t *testing.T) {
 
 	handler := &EvidenceHandler{}
 
-	taID, err := handler.GetTrustAnchorID(&token)
+	taIDs, err := handler.GetTrustAnchorIDs(&token)
 	require.NoError(t, err)
-	assert.Equal(t, expectedTaID, taID)
+	assert.Equal(t, expectedTaID, taIDs[0])
 }
 
 func Test_ExtractClaims_ok(t *testing.T) {
@@ -48,7 +48,8 @@ func Test_ExtractClaims_ok(t *testing.T) {
 		Data:     tokenBytes,
 	}
 
-	_, err = handler.ExtractClaims(&token, string(taEndValBytes))
+	ta := string(taEndValBytes)
+	_, err = handler.ExtractClaims(&token, []string{ta})
 	require.NoError(t, err)
 }
 
@@ -65,8 +66,8 @@ func Test_ExtractClaims_nok_bad_evidence(t *testing.T) {
 		TenantId: "0",
 		Data:     tokenBytes,
 	}
-
-	_, err = h.ExtractClaims(&token, string(taEndValBytes))
+	ta := string(taEndValBytes)
+	_, err = h.ExtractClaims(&token, []string{ta})
 	err1 := errors.Unwrap(err)
 	require.NotNil(t, err1)
 	assert.EqualError(t, err1, expectedErr)
@@ -83,7 +84,8 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 		TenantId: "1",
 		Data:     tokenBytes,
 	}
-	err = h.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+	ta := string(taEndValBytes)
+	err = h.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 	require.NoError(t, err)
 }
 
@@ -120,6 +122,7 @@ func Test_ValidateEvidenceIntegrity_nok(t *testing.T) {
 		require.NoError(t, err)
 
 		taEndValBytes, err := os.ReadFile(tv.input)
+		ta := string(taEndValBytes)
 		require.NoError(t, err)
 		h := &EvidenceHandler{}
 
@@ -128,7 +131,7 @@ func Test_ValidateEvidenceIntegrity_nok(t *testing.T) {
 			Data:     tokenBytes,
 		}
 
-		err = h.ValidateEvidenceIntegrity(&token, string(taEndValBytes), nil)
+		err = h.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 		assert.EqualError(t, err, tv.expectedErr)
 	}
 }
