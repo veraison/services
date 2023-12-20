@@ -114,5 +114,5 @@ More details about the VTS can be found under [VTS](https://github.com/veraison/
 
 The key-values store is the Veraison Storage Layer. It is used to store both Endorsements and Trust Anchors.
 
-KV Store details can be found under [kvstore](https://github.com/veraison/services/tree/migration/kvstore#kv-store)
+KV Store details can be found under [kvstore](https://github.com/veraison/services/tree/main/kvstore/README.md#kv-store)
 
