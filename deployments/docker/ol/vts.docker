@@ -1,0 +1,43 @@
+# VTS service container.
+# The context for building this image is assumed to be the Veraison deployment
+# directory (/tmp/veraison is the default for make build).
+FROM container-registry.oracle.com/os/oraclelinux:9 as veraison-vts
+
+RUN dnf update -y \
+    && dnf install -y \
+	uuid \
+	ca-certificates \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && rm -rf /var/tmp/* /tmp/*
+
+RUN groupadd -g 616 veraison && \
+    useradd -m  -g veraison  --system veraison
+
+ADD --chown=root:root certs/rootCA.crt /etc/pki/ca-trust/source/anchors/veraison-ca.crt
+RUN update-ca-trust
+
+USER veraison
+
+WORKDIR /opt/veraison
+
+# The stores should be modifiable by any member of group veraison (GID 616).
+# This is to allow both the vts services' veraison user, and the manger's
+# manager user to modify them. We can't simply match UID's of the users in the
+# two containers because the manager has to UID-match the host's user. In order
+# for a database to be modifiable, sqlite3 requires that not only the file is
+# writable, but that the directory containing the file is also writable. When
+# docker creates a mount point, the mode bits are set based on umask, and there
+# does not appear to be a way to override that on case-by-case basis. To get
+# around that, we need to create a subdirectory under the mount point, that we
+# _can_ set mode bits on. Hence the stores are deployed into vts/ subdir inside
+# the volume.
+RUN mkdir -p --mode=0775 stores/vts
+
+ADD --chown=veraison:nobody plugins plugins
+ADD --chown=veraison:veraison --chmod=0660 stores/* stores/vts
+ADD --chown=veraison:nobody config.yaml skey.jwk vts-service service-entrypoint \
+	certs/vts.crt certs/vts.key ./
+
+ENTRYPOINT ["/opt/veraison/service-entrypoint"]
+CMD ["/opt/veraison/vts-service"]
+

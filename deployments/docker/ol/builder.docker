@@ -1,0 +1,76 @@
+FROM container-registry.oracle.com/os/oraclelinux:9 as veraison-builder
+
+# User identity that will be used to build the project. This should be
+# overriden at build time to match the host user running the builder, who owns
+# the git checkout of the source.
+ARG BUILDER_UID=1000
+ARG BUILDER_GID=1000
+
+RUN cat /etc/redhat-release
+RUN dnf config-manager --set-enabled ol9_codeready_builder
+RUN dnf install -y git
+RUN dnf install -y make
+
+RUN dnf update -y \
+    && dnf install -y \
+        protobuf* \
+        sqlite \
+	uuid \
+	gettext \
+        vim \
+        jq \
+        iputils \
+        nmap \
+        wget \
+        sudo \
+        ca-certificates \
+        gcc \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && rm -rf /var/tmp/* /tmp/*
+
+
+SHELL ["/bin/bash", "-c"]
+
+# Builder password is "builder" (sans quotes).
+RUN groupadd -g ${BUILDER_GID} builder && \
+    groupadd -g 616 veraison && \
+    useradd -m -u ${BUILDER_UID} -g builder -G root,veraison,wheel -p paxyJoB0NZsNU -s /bin/bash builder
+
+RUN groupadd -g 1001 opc
+RUN useradd -m -u 1001 -g opc -G root,veraison,wheel -p paxyJoB0NZsNU -s /bin/bash opc
+
+ADD --chown=root:root rootCA.crt /etc/pki/ca-trust/source/anchors/veraison-ca.crt
+RUN update-ca-trust
+
+RUN wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz
+RUN rm -rf /usr/local/go
+RUN tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz
+ENV PATH=$PATH:/usr/local/go/bin
+
+WORKDIR /veraison
+
+RUN chown -R builder:builder /veraison
+
+#USER builder
+
+RUN mkdir --mode=775 logs stores
+ADD --chown=builder:builder go.mod go.sum ./
+
+# Download Go modules
+RUN go mod download &&\
+    go install golang.org/x/tools/gopls@latest &&\
+    go install golang.org/x/tools/cmd/guru@latest &&\
+    go install github.com/golang/mock/mockgen@v1.7.0-rc.1 &&\
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest &&\
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
+    go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
+    go install github.com/veraison/corim/cocli@latest &&\
+    go install github.com/veraison/evcli/v2@latest &&\
+    go install github.com/veraison/pocli@latest &&\
+    go install github.com/go-delve/delve/cmd/dlv@latest
+
+ADD --chown=builder:builder builder-dispatcher .
+ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc
+
+ENTRYPOINT ["/veraison/builder-dispatcher"]
+CMD ["help"]

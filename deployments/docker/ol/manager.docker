@@ -1,0 +1,41 @@
+# VTS service container.
+# The context for building this image is assumed to be the Veraison deployment
+# directory (/tmp/veraison is the default for make build).
+FROM container-registry.oracle.com/os/oraclelinux:9 as veraison-verification
+
+# User identity that will be used to build the project. This should be
+# overriden at build time to match the host user running the builder, who owns
+# the git checkout of the source.
+ARG MANAGER_UID=1000
+ARG MANAGER_GID=1000
+ARG VERAISON_GID=616
+
+RUN dnf update -y \
+    && dnf install -y \
+        sqlite \
+        jq \
+	uuid \
+	ca-certificates \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && rm -rf /var/tmp/* /tmp/*
+
+RUN groupadd -g ${MANAGER_GID} manager && \
+    groupadd -g ${VERAISON_GID} veraison && \
+    useradd -m -u ${MANAGER_UID} -g manager -G veraison -s /bin/bash manager
+
+ADD --chown=root:root certs/rootCA.crt /etc/pki/ca-trust/source/anchors/veraison-ca.crt
+RUN update-ca-trust
+
+USER manager
+
+WORKDIR /opt/veraison
+
+RUN mkdir -p /home/manager/.config/pocli && \
+    echo "host: management-service" > /home/manager/.config/pocli/config.yaml
+
+ADD --chown=manager:nobody utils/evcli utils/cocli utils/pocli ./utils/
+ADD --chown=manager:nobody manager-dispatcher ./
+
+ENTRYPOINT ["/opt/veraison/manager-dispatcher"]
+CMD ["help"]
+

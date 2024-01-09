@@ -1,0 +1,29 @@
+# Management service container.
+# The context for building this image is assumed to be the Veraison deployment
+# directory (/tmp/veraison is the default for make build).
+FROM container-registry.oracle.com/os/oraclelinux:9 as veraison-management
+
+RUN dnf update -y \
+    && dnf install -y \
+	uuid \
+	ca-certificates \
+    && uuidgen | tr -d - > /etc/machine-id \
+    && rm -rf /var/tmp/* /tmp/*
+
+RUN groupadd -g 616 veraison && \
+    useradd -m  -g veraison  --system veraison
+
+ADD --chown=root:root certs/rootCA.crt /etc/pki/ca-trust/source/anchors/veraison-ca.crt
+RUN update-ca-trust
+
+USER veraison
+
+WORKDIR /opt/veraison
+
+ADD --chown=veraison:nobody plugins plugins
+ADD --chown=veraison:nobody config.yaml management-service service-entrypoint \
+    certs/management.crt certs/management.key ./
+
+ENTRYPOINT ["/opt/veraison/service-entrypoint"]
+CMD ["/opt/veraison/management-service"]
+

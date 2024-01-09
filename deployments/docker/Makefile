@@ -34,7 +34,15 @@ ifneq ($(DEBUG_PORT),)
 DEBUG_PORT_FLAG := -p $(DEBUG_PORT):$(DEBUG_PORT)
 endif
 
-DISTRO_DIR := $(THIS_DIR)ubuntu/
+# Determine OS distribution
+DISTRO := $(shell cat /etc/os-release | grep -w ID | cut -d '=' -f2 | cut -d '"' -f2)
+
+# Fallback to Ubuntu build
+ifneq ($(DISTRO), ol)
+DISTRO = ubuntu
+endif
+
+DISTRO_DIR := $(THIS_DIR)$(DISTRO)/
 
 .PHONY: all
 all: builder build deploy deployment prune
