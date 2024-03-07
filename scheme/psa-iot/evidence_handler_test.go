@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package psa_iot
 
@@ -19,26 +19,6 @@ var testNonce = []byte{
 	0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,
 	0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
 	0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18,
-}
-
-func Test_GetTrustAnchorIDs_ok(t *testing.T) {
-	tokenBytes, err := os.ReadFile("test/psa-token.cbor")
-	require.NoError(t, err)
-
-	token := proto.AttestationToken{
-		TenantId: "1",
-		Data:     tokenBytes,
-		Nonce:    testNonce,
-	}
-
-	expectedTaID := "PSA_IOT://1/BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=/AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY"
-
-	handler := &EvidenceHandler{}
-
-	taIDs, err := handler.GetTrustAnchorIDs(&token)
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(taIDs))
-	assert.Equal(t, expectedTaID, taIDs[0])
 }
 
 func Test_ExtractVerifiedClaimsInteg_ok(t *testing.T) {

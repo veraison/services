@@ -10,7 +10,7 @@ configuration:
 
 ### Verification service configuration
 
-- `listen-addr` (optional): the address, in the form `<host>:<port>` the provisioning
+- `listen-addr` (optional): the address, in the form `<host>:<port>` the verification
   server will be listening on. If not specified, this defaults to
   `localhost:8080`.
 

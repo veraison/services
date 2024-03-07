@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -43,59 +43,6 @@ func (s *RPCServer) GetAttestationScheme(args interface{}, resp *string) error {
 func (s *RPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = s.Impl.GetSupportedMediaTypes()
 	return nil
-}
-
-type SynthKeysArgs struct {
-	TenantID        string
-	EndorsementJSON []byte
-}
-
-func (s *RPCServer) SynthKeysFromRefValue(args SynthKeysArgs, resp *[]string) error {
-	var (
-		err    error
-		swComp Endorsement
-	)
-
-	err = json.Unmarshal(args.EndorsementJSON, &swComp)
-	if err != nil {
-		return fmt.Errorf("unmarshaling software component: %w", err)
-	}
-
-	*resp, err = s.Impl.SynthKeysFromRefValue(args.TenantID, &swComp)
-
-	return err
-}
-
-func (s *RPCServer) SynthKeysFromTrustAnchor(args SynthKeysArgs, resp *[]string) error {
-	var (
-		err error
-		ta  Endorsement
-	)
-
-	err = json.Unmarshal(args.EndorsementJSON, &ta)
-	if err != nil {
-		return fmt.Errorf("unmarshaling trust anchor: %w", err)
-	}
-
-	*resp, err = s.Impl.SynthKeysFromTrustAnchor(args.TenantID, &ta)
-
-	return err
-}
-
-func (s *RPCServer) GetTrustAnchorIDs(data []byte, resp *[]string) error {
-	var (
-		err   error
-		token proto.AttestationToken
-	)
-
-	err = json.Unmarshal(data, &token)
-	if err != nil {
-		return fmt.Errorf("unmarshaling attestation token: %w", err)
-	}
-
-	*resp, err = s.Impl.GetTrustAnchorIDs(&token)
-
-	return err
 }
 
 type ExtractClaimsArgs struct {
@@ -214,73 +161,6 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 	}
 
 	return resp
-}
-
-func (s *RPCClient) SynthKeysFromRefValue(tenantID string, swComp *Endorsement) ([]string, error) {
-	var (
-		err  error
-		resp []string
-		args SynthKeysArgs
-	)
-
-	args.TenantID = tenantID
-
-	args.EndorsementJSON, err = json.Marshal(swComp)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling software component: %w", err)
-	}
-
-	err = s.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)
-	if err != nil {
-		err = ParseError(err)
-		return nil, fmt.Errorf("Plugin.SynthKeysFromRefValue RPC call failed: %w", err) // nolint
-	}
-
-	return resp, nil
-}
-
-func (s *RPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
-	var (
-		err  error
-		resp []string
-		args SynthKeysArgs
-	)
-
-	args.TenantID = tenantID
-
-	args.EndorsementJSON, err = json.Marshal(ta)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling trust anchor: %w", err)
-	}
-
-	err = s.client.Call("Plugin.SynthKeysFromTrustAnchor", args, &resp)
-	if err != nil {
-		err = ParseError(err)
-		return nil, fmt.Errorf("Plugin.SynthKeysFromTrustAnchor RPC call failed: %w", err) // nolint
-	}
-
-	return resp, nil
-}
-
-func (s *RPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
-	var (
-		err  error
-		data []byte
-		resp []string
-	)
-
-	data, err = json.Marshal(token)
-	if err != nil {
-		return []string{""}, fmt.Errorf("marshaling token: %w", err)
-	}
-
-	err = s.client.Call("Plugin.GetTrustAnchorIDs", data, &resp)
-	if err != nil {
-		err = ParseError(err)
-		return []string{""}, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
-	}
-
-	return resp, nil
 }
 
 func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchors []string) (*ExtractedClaims, error) {

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -66,6 +66,7 @@ func main() {
 	log.Info("loading attestation schemes")
 	var evPluginManager plugin.IManager[handler.IEvidenceHandler]
 	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
+	var storePluginManager plugin.IManager[handler.IStoreHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
@@ -95,6 +96,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create endorsement PluginManagerWithLoader: %v", err)
 		}
+		storePluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"store-handler",
+			log.Named("plugin"),
+			handler.StoreHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
+		}
 	} else if config.SchemeLoader == "builtin" {
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
@@ -111,6 +120,12 @@ func main() {
 		endPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
 			loader, log.Named("builtin"),
 			"endorsement-handler")
+		if err != nil {
+			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
+		}
+		storePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IStoreHandler](
+			loader, log.Named("builtin"),
+			"store-handler")
 		if err != nil {
 			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
 		}
@@ -136,11 +151,11 @@ func main() {
 
 	log.Info("initializing service")
 	// from this point onwards taStore, enStore, evPluginManager, endPluginManager,
-	// policyManager and earSigner are owned by vts
+	// storePluginManager, policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		evPluginManager, endPluginManager, policyManager, earSigner, log.Named("vts"))
+		evPluginManager, endPluginManager, storePluginManager, policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager); err != nil {
+	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

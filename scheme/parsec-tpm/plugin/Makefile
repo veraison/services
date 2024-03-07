@@ -1,9 +1,10 @@
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 ifndef COMBINED_PLUGINS
   SUBDIR += endorsement-handler
   SUBDIR += evidence-handler
+  SUBDIR += store-handler
 else
   SUBDIR += combined
 endif

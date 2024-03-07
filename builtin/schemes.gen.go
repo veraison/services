@@ -12,9 +12,13 @@ import (
 var plugins = []plugin.IPluggable{
 	&scheme1.EvidenceHandler{},
 	&scheme1.EndorsementHandler{},
+	&scheme1.StoreHandler{},
 	&scheme2.EvidenceHandler{},
+	&scheme2.StoreHandler{},
 	&scheme3.EvidenceHandler{},
 	&scheme3.EndorsementHandler{},
+	&scheme3.StoreHandler{},
 	&scheme4.EvidenceHandler{},
 	&scheme4.EndorsementHandler{},
+	&scheme4.StoreHandler{},
 }
