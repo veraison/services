@@ -145,32 +145,6 @@ func (s EvidenceHandler) AppraiseEvidence(
 	return result, nil
 }
 
-func synthKeysFromAttrs(scope string, tenantID string, attr json.RawMessage) ([]string, error) {
-	var (
-		nodeID string
-		err    error
-	)
-
-	switch scope {
-	case "software component":
-		var att RefValAttr
-		if err = json.Unmarshal(attr, &att); err != nil {
-			return nil, fmt.Errorf("unable to extract sw component: %w", err)
-		}
-		nodeID = att.NodeID
-	case "trust anchor":
-		var att TaAttr
-		if err = json.Unmarshal(attr, &att); err != nil {
-			return nil, fmt.Errorf("unable to extract trust anchor: %w", err)
-		}
-		nodeID = att.NodeID
-	default:
-		return nil, fmt.Errorf("invalid scope: %s", scope)
-	}
-
-	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil
-}
-
 func parseKey(trustAnchor string) (*ecdsa.PublicKey, error) {
 	var taEndorsement TrustAnchorEndorsement
 

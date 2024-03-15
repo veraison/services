@@ -11,8 +11,7 @@
 
 TEST_ARGS ?= -v -cover -race
 MOCKGEN := $(shell go env GOPATH)/bin/mockgen
-COPYRIGHT_FLAGS ?= 
-CI_PIPELINE ?=
+COPYRIGHT_FLAGS ?=
 
 define MOCK_template
 mock_$(1): $(1)

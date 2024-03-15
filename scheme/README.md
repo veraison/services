@@ -22,8 +22,8 @@ schemes. Currently the following schemes are implemented:
 Supporting a new attestation scheme requires defining how to provision
 endorsements (if any) by implementing [`IEndorsementHandler`](../handler/iendorsementhandler.go),
 how to process evidence tokens by implementing [`IEvidenceHandler`](../handler/ievidencehandler.go) and
-defining the suitable store interface [`IStoreHandler`](../handler/istorehandler.go)
-required by both `IEndorsementHandler` & `IEvidenceHandler`.
+how to create and obtain scheme-specific keys used to store and retrieve endorsements and trust anchors
+by implementing [`IStoreHandler`](../handler/istorehandler.go).
 
 Finally, an executable should be created that [registers](../handler/plugin.go)
 and serves them.

@@ -4,7 +4,9 @@ package parsec_tpm
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/veraison/parsec/tpm"
 	"github.com/veraison/services/handler"
@@ -48,4 +50,38 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 	instance_id := base64.StdEncoding.EncodeToString(kid)
 	return []string{tpmLookupKey(ScopeTrustAnchor, token.TenantId, "", instance_id)}, nil
 
+}
+
+func synthKeysFromAttr(scope, tenantID string, attr json.RawMessage) ([]string, error) {
+	var (
+		instance string
+		class    string
+		err      error
+	)
+
+	switch scope {
+	case ScopeTrustAnchor:
+		var ta TaAttr
+		if err := json.Unmarshal(attr, &ta); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from TA: %w", err)
+		}
+		if ta.ClassID == nil || ta.InstID == nil {
+			return nil, fmt.Errorf("missing InstID or ClassID from TA: %w", err)
+		}
+		class = *ta.ClassID
+		instance = *ta.InstID
+	case ScopeRefValues:
+		var sw SwAttr
+		if err := json.Unmarshal(attr, &sw); err != nil {
+			return nil, fmt.Errorf("unable to extract endorsements from RefVal: %w", err)
+		}
+		if sw.ClassID == nil {
+			return nil, fmt.Errorf("missing ClassID in reference value: %w", err)
+		}
+		class = *sw.ClassID
+	default:
+		return nil, fmt.Errorf("invalid scope argument: %s", scope)
+	}
+
+	return []string{tpmLookupKey(scope, tenantID, class, instance)}, nil
 }

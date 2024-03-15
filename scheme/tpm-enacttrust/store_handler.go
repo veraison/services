@@ -4,6 +4,8 @@
 package tpm_enacttrust
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/veraison/services/handler"
@@ -61,4 +63,30 @@ func (s StoreHandler) SynthKeysFromRefValue(
 
 func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 	return synthKeysFromAttrs("trust anchor", tenantID, ta.Attributes)
+}
+
+func synthKeysFromAttrs(scope string, tenantID string, attr json.RawMessage) ([]string, error) {
+	var (
+		nodeID string
+		err    error
+	)
+
+	switch scope {
+	case "software component":
+		var att RefValAttr
+		if err = json.Unmarshal(attr, &att); err != nil {
+			return nil, fmt.Errorf("unable to extract sw component: %w", err)
+		}
+		nodeID = att.NodeID
+	case "trust anchor":
+		var att TaAttr
+		if err = json.Unmarshal(attr, &att); err != nil {
+			return nil, fmt.Errorf("unable to extract trust anchor: %w", err)
+		}
+		nodeID = att.NodeID
+	default:
+		return nil, fmt.Errorf("invalid scope: %s", scope)
+	}
+
+	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil
 }

@@ -38,27 +38,6 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) SynthKeysFromRefValue(
-	tenantID string,
-	refVal *handler.Endorsement,
-) ([]string, error) {
-
-	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
-}
-
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
-
-	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
-}
-
-func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
-	ta, err := arm.GetTrustAnchorID(SchemeName, token)
-	if err != nil {
-		return []string{""}, err
-	}
-	return []string{ta}, nil
-}
-
 func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*handler.ExtractedClaims, error) {
 	var (
 		extracted handler.ExtractedClaims

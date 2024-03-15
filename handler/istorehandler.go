@@ -7,10 +7,10 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-// IStoreHandler defines the interface to functionality for working with
-// attestation scheme specific store interfaces. This includes extracting
-// Trust Anchor IDs from attestation token, and synthesizing,
-// Reference Value and TrustAnchor Keys from supplied endorsements
+// IStoreHandler defines the interfaces for creating and obtaining keys
+// to access objects in the Veraison storage layer.
+// This includes obtaining Trust Anchor IDs from evidence and synthesizing
+// Reference Value and TrustAnchor keys from endorsements
 type IStoreHandler interface {
 	plugin.IPluggable
 
