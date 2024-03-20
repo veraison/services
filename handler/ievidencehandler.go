@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -10,14 +10,9 @@ import (
 
 // IEvidenceHandler defines the interface to functionality for working with
 // attestation scheme specific evidence tokens. This includes validating token
-// integrity, and extracting an appraising claims.
+// integrity, extracting and appraising claims.
 type IEvidenceHandler interface {
 	plugin.IPluggable
-
-	// GetTrustAnchorIDs returns an array of trust anchor identifiers used
-	// to retrieve the trust anchors associated with this token. The trust anchors may be necessary to validate the
-	// entire token and/or extract its claims (if it is encrypted).
-	GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error)
 
 	// ExtractClaims parses the attestation token and returns claims
 	// extracted therefrom.
@@ -48,20 +43,12 @@ type IEvidenceHandler interface {
 		endorsementsStrings []string,
 	) error
 
-	// AppraiseEvidence evaluates the specified  EvidenceContext against
+	// AppraiseEvidence evaluates the specified EvidenceContext against
 	// the specified endorsements, and returns an AttestationResult.
 	AppraiseEvidence(
 		ec *proto.EvidenceContext,
 		endorsements []string,
 	) (*ear.AttestationResult, error)
-
-	// SynthKeysFromRefValue synthesizes lookup key(s) for the
-	// provided reference value endorsement.
-	SynthKeysFromRefValue(tenantID string, refVal *Endorsement) ([]string, error)
-
-	// SynthKeysFromTrustAnchor synthesizes lookup key(s) for the provided
-	// trust anchor.
-	SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error)
 }
 
 // ExtractedClaims contains a map of claims extracted from an attestation

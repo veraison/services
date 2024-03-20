@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -54,12 +54,13 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore          kvstore.IKVStore
-	EnStore          kvstore.IKVStore
-	EvPluginManager  plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager plugin.IManager[handler.IEndorsementHandler]
-	PolicyManager    *policymanager.PolicyManager
-	EarSigner        earsigner.IEarSigner
+	TaStore            kvstore.IKVStore
+	EnStore            kvstore.IKVStore
+	EvPluginManager    plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager   plugin.IManager[handler.IEndorsementHandler]
+	StorePluginManager plugin.IManager[handler.IStoreHandler]
+	PolicyManager      *policymanager.PolicyManager
+	EarSigner          earsigner.IEarSigner
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -73,18 +74,20 @@ func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
 	evpluginManager plugin.IManager[handler.IEvidenceHandler],
 	endpluginManager plugin.IManager[handler.IEndorsementHandler],
+	storepluginManager plugin.IManager[handler.IStoreHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:          taStore,
-		EnStore:          enStore,
-		EvPluginManager:  evpluginManager,
-		EndPluginManager: endpluginManager,
-		PolicyManager:    policyManager,
-		EarSigner:        earSigner,
-		logger:           logger,
+		TaStore:            taStore,
+		EnStore:            enStore,
+		EvPluginManager:    evpluginManager,
+		EndPluginManager:   endpluginManager,
+		StorePluginManager: storepluginManager,
+		PolicyManager:      policyManager,
+		EarSigner:          earSigner,
+		logger:             logger,
 	}
 }
 
@@ -97,7 +100,12 @@ func (o *GRPC) Run() error {
 	return o.Server.Serve(o.Socket)
 }
 
-func (o *GRPC) Init(v *viper.Viper, evm plugin.IManager[handler.IEvidenceHandler], endm plugin.IManager[handler.IEndorsementHandler]) error {
+func (o *GRPC) Init(
+	v *viper.Viper,
+	evm plugin.IManager[handler.IEvidenceHandler],
+	endm plugin.IManager[handler.IEndorsementHandler],
+	stm plugin.IManager[handler.IStoreHandler],
+) error {
 	var err error
 
 	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
@@ -109,6 +117,7 @@ func (o *GRPC) Init(v *viper.Viper, evm plugin.IManager[handler.IEvidenceHandler
 
 	o.EvPluginManager = evm
 	o.EndPluginManager = endm
+	o.StorePluginManager = stm
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -140,11 +149,15 @@ func (o *GRPC) Close() error {
 	}
 
 	if err := o.EvPluginManager.Close(); err != nil {
-		o.logger.Errorf("plugin manager shutdown failed: %v", err)
+		o.logger.Errorf("evidence plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.EndPluginManager.Close(); err != nil {
-		o.logger.Errorf("plugin manager shutdown failed: %v", err)
+		o.logger.Errorf("endorsement plugin manager shutdown failed: %v", err)
+	}
+
+	if err := o.StorePluginManager.Close(); err != nil {
+		o.logger.Errorf("store plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.TaStore.Close(); err != nil {
@@ -238,11 +251,11 @@ func (o *GRPC) addRefValues(ctx context.Context, refVal *handler.Endorsement) er
 	var (
 		err     error
 		keys    []string
-		handler handler.IEvidenceHandler
+		handler handler.IStoreHandler
 		val     []byte
 	)
 
-	handler, err = o.EvPluginManager.LookupByAttestationScheme(refVal.Scheme)
+	handler, err = o.StorePluginManager.LookupByAttestationScheme(refVal.Scheme)
 	if err != nil {
 		return err
 	}
@@ -277,7 +290,7 @@ func (o *GRPC) addTrustAnchor(
 	var (
 		err     error
 		keys    []string
-		handler handler.IEvidenceHandler
+		handler handler.IStoreHandler
 		val     []byte
 	)
 
@@ -287,7 +300,7 @@ func (o *GRPC) addTrustAnchor(
 		return errors.New("nil trust anchor in request")
 	}
 
-	handler, err = o.EvPluginManager.LookupByAttestationScheme(req.Scheme)
+	handler, err = o.StorePluginManager.LookupByAttestationScheme(req.Scheme)
 	if err != nil {
 		return err
 	}
@@ -330,7 +343,16 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
-	appraisal, err := o.initEvidenceContext(handler, token)
+	scheme := handler.GetAttestationScheme()
+	stHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	if err != nil {
+		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+		appraisal.AddPolicyClaim("problem", "could not resolve scheme name")
+		return o.finalize(appraisal, err)
+	}
+
+	appraisal, err := o.initEvidenceContext(stHandler, token)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -405,7 +427,7 @@ func (o *GRPC) GetAttestation(
 }
 
 func (c *GRPC) initEvidenceContext(
-	handler handler.IEvidenceHandler,
+	handler handler.IStoreHandler,
 	token *proto.AttestationToken,
 ) (*appraisal.Appraisal, error) {
 	var err error

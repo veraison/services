@@ -11,6 +11,7 @@
 
 TEST_ARGS ?= -v -cover -race
 MOCKGEN := $(shell go env GOPATH)/bin/mockgen
+COPYRIGHT_FLAGS ?=
 
 define MOCK_template
 mock_$(1): $(1)
@@ -51,7 +52,7 @@ realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
 .PHONY: realtest
 
 ifdef CI_PIPELINE
-	COPYRIGHT_FLAGS += --no-year-check
+COPYRIGHT_FLAGS += --no-year-check
 endif
 
 checkcopyrights: ; python3 $(THIS_DIR)../scripts/check-copyright $(COPYRIGHT_FLAGS) .

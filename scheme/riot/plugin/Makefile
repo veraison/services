@@ -1,6 +1,7 @@
 
 ifndef COMBINED_PLUGINS
   SUBDIR += evidence-handler
+  SUBDIR += store-handler
 else
   SUBDIR += combined
 endif

@@ -20,10 +20,12 @@ schemes. Currently the following schemes are implemented:
 > for how to convert them to the new framework.
 
 Supporting a new attestation scheme requires defining how to provision
-endorsements (if any) and how to process evidence tokens. The former is done by
-implementing [`IEndorsementHandler`](../decoder/iendorsementdecoder.go), and the
-latter by implementing [`IEvidenceHandler`](../decoder/ievidencedecoder.go).
-Finally, an executable should be created that [registers](../decoder/plugin.go)
+endorsements (if any) by implementing [`IEndorsementHandler`](../handler/iendorsementhandler.go),
+how to process evidence tokens by implementing [`IEvidenceHandler`](../handler/ievidencehandler.go) and
+how to create and obtain scheme-specific keys used to store and retrieve endorsements and trust anchors
+by implementing [`IStoreHandler`](../handler/istorehandler.go).
+
+Finally, an executable should be created that [registers](../handler/plugin.go)
 and serves them.
 
 ```
@@ -46,10 +48,16 @@ type MyEndrosementHandler struct {}
 // Implementation of IEndrosementHandler for MyEndrosementHandler
 // ...
 
+type MyStoreHandler struct {}
+
+// ...
+// Implementation of IStoreHandler for MyStoreHandler
+// ...
 
 func main() {
 	handler.RegisterEndorsementHandler(&MyEndorsementHandler{})
 	handler.RegisterEvidenceHandler(&MyEvidenceHandler{})
+	handler.RegisterStoreHandler(&MyStoreHandler{})
 
 	plugin.Serve()
 }

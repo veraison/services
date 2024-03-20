@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 set -e
 
 TEMP_DIR=/tmp/veraison-end-to-end

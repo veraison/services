@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
+      CI_PIPELINE: true
     steps:
     - uses: actions/setup-go@v3
       with:
@@ -39,4 +40,4 @@ jobs:
     - name: Run tests
       run: |
         go version
-        make -w test
+        make -w test CI_PIPELINE=${{ env.CI_PIPELINE }}

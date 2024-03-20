@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package tpm_enacttrust
 
@@ -25,23 +25,6 @@ func Test_DecodeAttestationData_ok(t *testing.T) {
 
 	assert.Equal(t, uint32(4283712327), decoded.AttestationData.Magic)
 	assert.Equal(t, uint64(0x7), decoded.AttestationData.FirmwareVersion)
-}
-
-func Test_GetTrustAnchorIds_ok(t *testing.T) {
-	data, err := os.ReadFile("test/tokens/basic.token")
-	require.NoError(t, err)
-
-	ta := proto.AttestationToken{
-		TenantId:  "0",
-		MediaType: "application/vnd.enacttrust.tpm-evidence",
-		Data:      data,
-	}
-
-	var s EvidenceHandler
-
-	taIDs, err := s.GetTrustAnchorIDs(&ta)
-	require.NoError(t, err)
-	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", taIDs[0])
 }
 
 func readPublicKeyBytes(path string) ([]byte, error) {

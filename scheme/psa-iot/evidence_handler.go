@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package psa_iot
 
@@ -29,28 +29,6 @@ func (s EvidenceHandler) GetAttestationScheme() string {
 
 func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
-}
-
-func (s EvidenceHandler) SynthKeysFromRefValue(
-	tenantID string,
-	refValue *handler.Endorsement,
-) ([]string, error) {
-
-	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refValue)
-}
-
-func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
-
-	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
-}
-
-func (s EvidenceHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
-	taID, err := arm.GetTrustAnchorID(SchemeName, token)
-	if err != nil {
-		return []string{""}, err
-	}
-
-	return []string{taID}, nil
 }
 
 func (s EvidenceHandler) ExtractClaims(
