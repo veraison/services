@@ -33,7 +33,6 @@ type StoreRPCServer struct {
 	Impl IStoreHandler
 }
 
-
 func (s *StoreRPCServer) GetName(args interface{}, resp *string) error {
 	*resp = s.Impl.GetName()
 	return nil
@@ -57,15 +56,15 @@ type SynthKeysArgs struct {
 func (s *StoreRPCServer) SynthKeysFromRefValue(args SynthKeysArgs, resp *[]string) error {
 	var (
 		err    error
-		swComp Endorsement
+		refVal Endorsement
 	)
 
-	err = json.Unmarshal(args.EndorsementJSON, &swComp)
+	err = json.Unmarshal(args.EndorsementJSON, &refVal)
 	if err != nil {
-		return fmt.Errorf("unmarshaling software component: %w", err)
+		return fmt.Errorf("unmarshaling reference value: %w", err)
 	}
 
-	*resp, err = s.Impl.SynthKeysFromRefValue(args.TenantID, &swComp)
+	*resp, err = s.Impl.SynthKeysFromRefValue(args.TenantID, &refVal)
 
 	return err
 }
@@ -165,7 +164,7 @@ func (c StoreRPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, swComp *Endorsement) ([]string, error) {
+func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, refVal *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -174,9 +173,9 @@ func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, swComp *Endorsem
 
 	args.TenantID = tenantID
 
-	args.EndorsementJSON, err = json.Marshal(swComp)
+	args.EndorsementJSON, err = json.Marshal(refVal)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling software component: %w", err)
+		return nil, fmt.Errorf("marshaling reference value: %w", err)
 	}
 
 	err = s.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)

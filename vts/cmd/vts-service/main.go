@@ -115,19 +115,19 @@ func main() {
 			loader, log.Named("builtin"),
 			"evidence-handler")
 		if err != nil {
-			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
+			log.Fatalf("could not create evidence BuiltinManagerWithLoader: %v", err)
 		}
 		endPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
 			loader, log.Named("builtin"),
 			"endorsement-handler")
 		if err != nil {
-			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
+			log.Fatalf("could not create endorsement BuiltinManagerWithLoader: %v", err)
 		}
 		storePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IStoreHandler](
 			loader, log.Named("builtin"),
 			"store-handler")
 		if err != nil {
-			log.Fatalf("could not create BuiltinManagerWithLoader: %v", err)
+			log.Fatalf("could not create store BuiltinManagerWithLoader: %v", err)
 		}
 	} else {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
