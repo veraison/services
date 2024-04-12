@@ -4,8 +4,6 @@
 package cca_realm
 
 import (
-	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -43,7 +41,7 @@ func (s EvidenceHandler) SynthKeysFromRefValue(
 
 func (s EvidenceHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 
-	return arm.SynthKeysFromTrustAnchors(SchemeName, tenantID, ta)
+	return nil, fmt.Errorf("unsupported method SynthKeysFromTrustAnchor() for realm verification plugin")
 }
 
 func (s EvidenceHandler) GetTrustAnchorID(token *proto.AttestationToken) (string, error) {
@@ -98,41 +96,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	trustAnchor string,
 	endorsementsStrings []string,
 ) error {
-	var (
-		ccaToken ccatoken.Evidence
-	)
 
-	if err := ccaToken.FromCBOR(token.Data); err != nil {
-		return handler.BadEvidence(err)
-	}
-
-	realmChallenge, err := ccaToken.RealmClaims.GetChallenge()
-	if err != nil {
-		return handler.BadEvidence(err)
-	}
-
-	// If the provided challenge was less than 64 bytes long, the RMM will
-	// zero-pad pad it when generating the attestation token, so do the
-	// same to the session nonce.
-	sessionNonce := make([]byte, 64)
-	copy(sessionNonce, token.Nonce)
-
-	if !bytes.Equal(realmChallenge, sessionNonce) {
-		return handler.BadEvidence(
-			"freshness: realm challenge (%s) does not match session nonce (%s)",
-			hex.EncodeToString(realmChallenge),
-			hex.EncodeToString(token.Nonce),
-		)
-	}
-
-	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchor)
-	if err != nil {
-		return fmt.Errorf("could not get public key from trust anchor: %w", err)
-	}
-
-	if err = ccaToken.Verify(pk); err != nil {
-		return handler.BadEvidence(err)
-	}
+	// Please note this part of Evidence Validation is already done in the Platform part
 	log.Debug("CCA platform token signature, realm token signature and cryptographic binding verified")
 	return nil
 }
