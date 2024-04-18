@@ -58,7 +58,7 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 	invalidCbor := []byte("invalid CBOR")
 
-	expectedErr := `CBOR decoding failed: cbor: cannot unmarshal UTF-8 text string into Go value of type corim.UnsignedCorim`
+	expectedErr := `CBOR decoding failed: expected map (CBOR Major Type 5), found Major Type 3`
 
 	_, err := d.Decode(invalidCbor)
 

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package arm
 
@@ -51,14 +51,15 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsem
 		}
 
 		// Check which MKey is present and then decide which extractor to invoke
-		if m.Key.IsPSARefValID() { // nolint:gocritic
+		switch m.Key.Type() {
+		case comid.PSARefValIDType:
 			var swCompAttrs SwCompAttributes
 
 			refVal, err = extractMeasurement(&swCompAttrs, m, classAttrs, o.Scheme)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
-		} else if m.Key.IsCCAPlatformConfigID() {
+		case comid.CCAPlatformConfigIDType:
 			if (o.Scheme != "CCA_SSD_PLATFORM") && (o.Scheme != "PARSEC_CCA") {
 				return nil, fmt.Errorf("measurement error at index %d: incorrect profile %s", i, o.Scheme)
 			}
@@ -67,7 +68,7 @@ func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsem
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
-		} else {
+		default:
 			return nil, fmt.Errorf("unknown measurement key: %T", reflect.TypeOf(m.Key))
 		}
 		refVals = append(refVals, refVal)
