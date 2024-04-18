@@ -38,7 +38,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "key with an instance identifier of an unexpected type",
 			input:       unsignedCorimComidParsecTpmKeyUnknownInstanceType,
-			expectedErr: `bad key in CoMID at index 0: could not extract id from AVK environment: could not extract instance-id (UEID) from instance: instance-id type is: comid.TaggedUUID`,
+			expectedErr: `bad key in CoMID at index 0: could not extract id from AVK environment: could not extract instance-id (UEID) from instance: instance-id type is: *comid.TaggedUUID`,
 		},
 		{
 			desc:        "key without class",
@@ -73,7 +73,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "measurement with PCR of an unexpected type",
 			input:       unsignedCorimComidParsecTpmPcrsUnknownPCRType,
-			expectedErr: `bad software component in CoMID at index 0: could not extract PCR: measurement key is not uint: measurement-key type is: comid.TaggedUUID`,
+			expectedErr: `bad software component in CoMID at index 0: could not extract PCR: measurement key is not uint: measurement-key type is: *comid.TaggedUUID`,
 		},
 		{
 			desc:        "measurement with PCR without digests",
@@ -139,7 +139,7 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 	invalidCbor := []byte("invalid CBOR")
 
-	expectedErr := `CBOR decoding failed: cbor: cannot unmarshal UTF-8 text string into Go value of type corim.UnsignedCorim`
+	expectedErr := `CBOR decoding failed: expected map (CBOR Major Type 5), found Major Type 3`
 
 	_, err := d.Decode(invalidCbor)
 

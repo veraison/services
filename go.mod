@@ -29,7 +29,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.5.0
 	github.com/veraison/ccatoken v1.1.0
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.2-0.20230912171018-eeb7bd486d3c
+	github.com/veraison/corim v1.1.2
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
@@ -62,7 +62,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

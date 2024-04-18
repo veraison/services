@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package parsec_tpm
 
@@ -174,7 +174,7 @@ func (o *ID) FromEnvironment(e comid.Environment) error {
 		return fmt.Errorf("class-id not found in class")
 	}
 
-	if classID.Type() != comid.ClassIDTypeUUID {
+	if classID.Type() != comid.UUIDType {
 		return fmt.Errorf("class-id not in UUID format")
 	}
 

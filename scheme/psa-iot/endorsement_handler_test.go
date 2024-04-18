@@ -58,7 +58,7 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 	invalidCbor := []byte("invalid CBOR")
 
-	expectedErr := `CBOR decoding failed: cbor: cannot unmarshal UTF-8 text string into Go value of type corim.UnsignedCorim`
+	expectedErr := `CBOR decoding failed: expected map (CBOR Major Type 5), found Major Type 3`
 
 	_, err := d.Decode(invalidCbor)
 
@@ -102,12 +102,12 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "missing measurement identifier",
 			input:       unsignedCorimComidPsaRefValNoMkey,
-			expectedErr: "bad software component in CoMID at index 0: measurement key is not present",
+			expectedErr: `decoding failed for CoMID at index 0: error unmarshalling field "Triples": error unmarshalling field "ReferenceValues": error unmarshalling field "Flags": expected map (CBOR Major Type 5), found Major Type 0`,
 		},
 		{
 			desc:        "no implementation id specified in the measurement",
 			input:       unsignedCorimComidPsaRefValNoImplID,
-			expectedErr: `bad software component in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
+			expectedErr: `bad software component in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: *comid.TaggedUUID`,
 		},
 		{
 			desc:        "no instance id specified in the verification key triple",
@@ -117,7 +117,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "no implementation id specified in the verification key triple",
 			input:       unsignedCorimComidPsaIakPubNoImplID,
-			expectedErr: `bad key in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: comid.TaggedUUID`,
+			expectedErr: `bad key in CoMID at index 0: could not extract PSA class attributes: could not extract implementation-id from class-id: class-id type is: *comid.TaggedUUID`,
 		}}
 
 	for _, tv := range tvs {
