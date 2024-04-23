@@ -61,12 +61,18 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		0x7a, 0xf, 0xde, 0x60, 0xc4, 0xcf, 0x25, 0xc7,
 	}
 
-	assert.Equal(t, 1, len(ev.ReferenceIDs))
-	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", ev.ReferenceIDs[0])
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)},
-		ev.ClaimsSet["pcr-selection"])
-	assert.Equal(t, int64(11), ev.ClaimsSet["hash-algorithm"])
-	assert.Equal(t, expectedPCRDigest, ev.ClaimsSet["pcr-digest"])
+		ev["pcr-selection"])
+	assert.Equal(t, int64(11), ev["hash-algorithm"])
+	assert.Equal(t, expectedPCRDigest, ev["pcr-digest"])
+
+	var sh StoreHandler
+
+	refIDs, err := sh.GetRefValueIDs("0", []string{trustAnchor}, ev)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(refIDs))
+	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", refIDs[0])
 }
 
 func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {

@@ -34,28 +34,19 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
-) (*handler.ExtractedClaims, error) {
+) (map[string]interface{}, error) {
 	var psaToken psatoken.Evidence
 
 	if err := psaToken.FromCOSE(token.Data); err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	var extracted handler.ExtractedClaims
-
 	claimsSet, err := common.ClaimsToMap(psaToken.Claims)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
-	extracted.ClaimsSet = claimsSet
 
-	extracted.ReferenceIDs = []string{arm.RefValLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(psaToken.Claims),
-	)}
-	log.Printf("\n Extracted SW ID Key = %s", extracted.ReferenceIDs)
-	return &extracted, nil
+	return claimsSet, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(

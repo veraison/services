@@ -8,9 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"sort"
-	"strings"
 
 	"github.com/veraison/ear"
 	"github.com/veraison/parsec/tpm"
@@ -19,11 +17,6 @@ import (
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/swid"
-)
-
-const (
-	ScopeTrustAnchor = "trust anchor"
-	ScopeRefValues   = "ref values"
 )
 
 type EvidenceHandler struct{}
@@ -65,31 +58,23 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*handler.ExtractedClaims, error) {
-	var (
-		evidence    tpm.Evidence
-		endorsement TaEndorsements
-		extracted   handler.ExtractedClaims
-	)
+func (s EvidenceHandler) ExtractClaims(
+	token *proto.AttestationToken,
+	trustAnchors []string,
+) (map[string]interface{}, error) {
+	var evidence    tpm.Evidence
 
 	err := evidence.FromCBOR(token.Data)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	claimsSet, err := evidenceAsMap(evidence)
+	claims, err := evidenceAsMap(evidence)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
-	extracted.ClaimsSet = claimsSet
-	if err := json.Unmarshal([]byte(trustAnchors[0]), &endorsement); err != nil {
-		log.Errorf("Could not decode Endorsements in ExtractClaims: %v", err)
-		return nil, fmt.Errorf("could not decode endorsement: %w", err)
-	}
 
-	class_id := *endorsement.Attr.ClassID
-	extracted.ReferenceIDs = []string{tpmLookupKey(ScopeRefValues, token.TenantId, class_id, "")}
-	return &extracted, nil
+	return claims, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchors []string, endorsements []string) error {
@@ -136,25 +121,6 @@ func (s EvidenceHandler) AppraiseEvidence(ec *proto.EvidenceContext, endorsement
 	}
 	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
 	return result, err
-}
-
-func tpmLookupKey(scope, tenantID, class, instance string) string {
-	var absPath []string
-
-	switch scope {
-	case ScopeTrustAnchor:
-		absPath = []string{instance}
-	case ScopeRefValues:
-		absPath = []string{class}
-	}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
 }
 
 func evidenceAsMap(e tpm.Evidence) (map[string]interface{}, error) {

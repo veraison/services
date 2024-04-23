@@ -6,7 +6,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 
 	tpm2 "github.com/google/go-tpm/tpm2"
@@ -35,7 +34,7 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
-) (*handler.ExtractedClaims, error) {
+) (map[string]interface{}, error) {
 	supported := false
 	for _, mt := range EvidenceMediaTypes {
 		if token.MediaType == mt {
@@ -67,15 +66,14 @@ func (s EvidenceHandler) ExtractClaims(
 		pcrs = append(pcrs, int64(pcr))
 	}
 
-	evidence := handler.NewExtractedClaims()
-	evidence.ClaimsSet["pcr-selection"] = pcrs
-	evidence.ClaimsSet["hash-algorithm"] = int64(decoded.AttestationData.AttestedQuoteInfo.PCRSelection.Hash)
-	evidence.ClaimsSet["firmware-version"] = decoded.AttestationData.FirmwareVersion
-	evidence.ClaimsSet["node-id"] = decoded.NodeId.String()
-	evidence.ClaimsSet["pcr-digest"] = []byte(decoded.AttestationData.AttestedQuoteInfo.PCRDigest)
-	evidence.ReferenceIDs = []string{tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())}
+	claims := make(map[string]interface{})
+	claims["pcr-selection"] = pcrs
+	claims["hash-algorithm"] = int64(decoded.AttestationData.AttestedQuoteInfo.PCRSelection.Hash)
+	claims["firmware-version"] = decoded.AttestationData.FirmwareVersion
+	claims["node-id"] = decoded.NodeId.String()
+	claims["pcr-digest"] = []byte(decoded.AttestationData.AttestedQuoteInfo.PCRDigest)
 
-	return evidence, nil
+	return claims, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(
@@ -163,16 +161,4 @@ func parseKey(trustAnchor string) (*ecdsa.PublicKey, error) {
 	}
 
 	return ret, nil
-}
-
-func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
-	absPath := []string{nodeID}
-
-	u := url.URL{
-		Scheme: SchemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
 }

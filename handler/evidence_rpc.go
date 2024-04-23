@@ -163,12 +163,15 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchors []string) (*ExtractedClaims, error) {
+func (s *RPCClient) ExtractEvidence(
+	token *proto.AttestationToken,
+	trustAnchors []string,
+) (map[string]interface{}, error) {
 	var (
 		err       error
 		args      ExtractClaimsArgs
 		resp      []byte
-		extracted ExtractedClaims
+		extracted map[string]interface{}
 	)
 
 	args.Token, err = json.Marshal(token)
@@ -188,7 +191,7 @@ func (s *RPCClient) ExtractEvidence(token *proto.AttestationToken, trustAnchors 
 		return nil, fmt.Errorf("unmarshaling extracted evidence: %w", err)
 	}
 
-	return &extracted, nil
+	return extracted, nil
 }
 
 func (s *RPCClient) ValidateEvidenceIntegrity(
@@ -240,11 +243,14 @@ func (s *RPCClient) AppraiseEvidence(ec *proto.EvidenceContext, endorsements []s
 	return &result, err
 }
 
-func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*ExtractedClaims, error) {
+func (s *RPCClient) ExtractClaims(
+	token *proto.AttestationToken,
+	trustAnchors []string,
+) (map[string]interface{}, error) {
 	var (
 		err             error
 		args            ExtractClaimsArgs
-		extractedClaims ExtractedClaims
+		extractedClaims map[string]interface{}
 	)
 
 	args.Token, err = json.Marshal(token)
@@ -266,5 +272,5 @@ func (s *RPCClient) ExtractClaims(token *proto.AttestationToken, trustAnchors []
 		return nil, fmt.Errorf("unmarshaling extracted claims: %w", err)
 	}
 
-	return &extractedClaims, nil
+	return extractedClaims, nil
 }

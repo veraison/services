@@ -36,7 +36,7 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
-) (*handler.ExtractedClaims, error) {
+) (map[string]interface{}, error) {
 
 	var ccaToken ccatoken.Evidence
 
@@ -44,7 +44,6 @@ func (s EvidenceHandler) ExtractClaims(
 		return nil, handler.BadEvidence(err)
 	}
 
-	var extracted handler.ExtractedClaims
 
 	platformClaimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
 	if err != nil {
@@ -58,18 +57,12 @@ func (s EvidenceHandler) ExtractClaims(
 			"could not convert realm claims: %w", err))
 	}
 
-	extracted.ClaimsSet = map[string]interface{}{
+	claims := map[string]interface{}{
 		"platform": platformClaimsSet,
 		"realm":    realmClaimsSet,
 	}
 
-	extracted.ReferenceIDs = []string{arm.RefValLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(ccaToken.PlatformClaims),
-	)}
-	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceIDs)
-	return &extracted, nil
+	return claims, nil
 }
 
 // ValidateEvidenceIntegrity, decodes CCA collection and then invokes Verify API of ccatoken library

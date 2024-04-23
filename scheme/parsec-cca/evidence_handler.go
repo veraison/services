@@ -38,9 +38,11 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
-func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAnchors []string) (*handler.ExtractedClaims, error) {
+func (s EvidenceHandler) ExtractClaims(
+	token *proto.AttestationToken,
+	trustAnchors []string,
+) (map[string]interface{}, error) {
 	var (
-		extracted handler.ExtractedClaims
 		evidence  parsec_cca.Evidence
 		claimsSet = make(map[string]interface{})
 		kat       = make(map[string]interface{})
@@ -70,15 +72,7 @@ func (s EvidenceHandler) ExtractClaims(token *proto.AttestationToken, trustAncho
 	}
 	claimsSet["cca.realm"] = rmap
 
-	extracted.ClaimsSet = claimsSet
-
-	extracted.ReferenceIDs = []string{arm.RefValLookupKey(
-		SchemeName,
-		token.TenantId,
-		arm.MustImplIDString(evidence.Pat.PlatformClaims),
-	)}
-	log.Debugf("extracted Reference ID Key = %s", extracted.ReferenceIDs)
-	return &extracted, nil
+	return claimsSet, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(token *proto.AttestationToken, trustAnchors []string, endorsements []string) error {

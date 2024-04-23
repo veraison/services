@@ -101,6 +101,28 @@ func (s *StoreRPCServer) GetTrustAnchorIDs(data []byte, resp *[]string) error {
 	return err
 }
 
+type GetRefValueIDsArgs struct {
+	TenantID string
+	TrustAnchors []string
+	Claims []byte
+}
+
+func (s *StoreRPCServer) GetRefValueIDs(args GetRefValueIDsArgs, resp *[]string) error {
+	var claims map[string]interface{}
+
+	err := json.Unmarshal(args.Claims, &claims)
+	if err != nil {
+		return fmt.Errorf("unmarshaling token: %w", err)
+	}
+
+	*resp, err = s.Impl.GetRefValueIDs(args.TenantID, args.TrustAnchors, claims)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 /*
   RPC client
   (plugin caller side)
@@ -226,6 +248,35 @@ func (s *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]str
 	if err != nil {
 		err = ParseError(err)
 		return []string{""}, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
+	}
+
+	return resp, nil
+}
+
+func (s *StoreRPCClient) GetRefValueIDs(
+	tenantID string,
+	trustAnchors []string,
+	claims map[string]interface{},
+) ([]string, error) {
+	var (
+		err error
+		resp []string
+	)
+
+	args := GetRefValueIDsArgs{
+		TenantID: tenantID,
+		TrustAnchors: trustAnchors,
+	}
+
+	args.Claims, err = json.Marshal(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.client.Call("Plugin.GetRefValueIDs", args, &resp)
+	if err != nil {
+		err = ParseError(err)
+		return nil, fmt.Errorf("Plugin.GetRefValueIDs RPC call failed: %w", err) // nolint
 	}
 
 	return resp, nil

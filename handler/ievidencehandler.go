@@ -19,7 +19,7 @@ type IEvidenceHandler interface {
 	ExtractClaims(
 		token *proto.AttestationToken,
 		trustAnchors []string,
-	) (*ExtractedClaims, error)
+	) (map[string]interface{}, error)
 
 	// ValidateEvidenceIntegrity verifies the structural integrity and validity of the
 	// token. The exact checks performed are scheme-specific, but they
@@ -49,22 +49,4 @@ type IEvidenceHandler interface {
 		ec *proto.EvidenceContext,
 		endorsements []string,
 	) (*ear.AttestationResult, error)
-}
-
-// ExtractedClaims contains a map of claims extracted from an attestation
-// token along with the corresponding ReferenceIDs that are used to fetch
-// the associated endorsements.
-//
-//	ReferenceID is the key used to fetch all the Endorsements
-//	generated from claims extracted from the token
-type ExtractedClaims struct {
-	ClaimsSet    map[string]interface{} `json:"claims-set"`
-	ReferenceIDs []string               `json:"reference-ids"`
-	// please refer issue #106 for unprocessed claim set
-}
-
-func NewExtractedClaims() *ExtractedClaims {
-	return &ExtractedClaims{
-		ClaimsSet: make(map[string]interface{}),
-	}
 }

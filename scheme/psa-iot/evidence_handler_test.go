@@ -57,12 +57,12 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 		Nonce:    testNonce,
 	}
 	ta := string(taEndValBytes)
-	extracted, err := handler.ExtractClaims(&token, []string{ta})
+	claims, err := handler.ExtractClaims(&token, []string{ta})
 
 	require.NoError(t, err)
-	assert.Equal(t, "PSA_IOT_PROFILE_1", extracted.ClaimsSet["psa-profile"].(string))
+	assert.Equal(t, "PSA_IOT_PROFILE_1", claims["psa-profile"].(string))
 
-	swComponents := extracted.ClaimsSet["psa-software-components"].([]interface{})
+	swComponents := claims["psa-software-components"].([]interface{})
 	assert.Len(t, swComponents, 4)
 	assert.Equal(t, "BL", swComponents[0].(map[string]interface{})["measurement-type"].(string))
 }
