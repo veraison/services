@@ -36,7 +36,7 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
-) (*handler.ExtractedClaims, error) {
+) (map[string]interface{}, error) {
 	roots := x509.NewCertPool()
 	intermediates := x509.NewCertPool()
 
@@ -67,12 +67,7 @@ func (s EvidenceHandler) ExtractClaims(
 			"failed to verify alias cert: " + err.Error())
 	}
 
-	extracted := handler.ExtractedClaims{
-		ClaimsSet:    claims,
-		ReferenceIDs: []string{"dice://"},
-	}
-
-	return &extracted, nil
+	return claims, nil
 }
 
 func (s EvidenceHandler) ValidateEvidenceIntegrity(

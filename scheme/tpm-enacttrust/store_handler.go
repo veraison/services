@@ -6,6 +6,7 @@ package tpm_enacttrust
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/veraison/services/handler"
@@ -54,6 +55,19 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 	return []string{tpmEnactTrustLookupKey(token.TenantId, decoded.NodeId.String())}, nil
 }
 
+func (s StoreHandler) GetRefValueIDs(
+	tenantID string,
+	trustAnchors []string,
+	claims map[string]interface{},
+) ([]string, error) {
+	nodeID, ok := claims["node-id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid node-id value: %v", claims["node-id"])
+	}
+
+	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil
+}
+
 func (s StoreHandler) SynthKeysFromRefValue(
 	tenantID string,
 	swComp *handler.Endorsement,
@@ -89,4 +103,16 @@ func synthKeysFromAttrs(scope string, tenantID string, attr json.RawMessage) ([]
 	}
 
 	return []string{tpmEnactTrustLookupKey(tenantID, nodeID)}, nil
+}
+
+func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
+	absPath := []string{nodeID}
+
+	u := url.URL{
+		Scheme: SchemeName,
+		Host:   tenantID,
+		Path:   strings.Join(absPath, "/"),
+	}
+
+	return u.String()
 }

@@ -28,9 +28,8 @@ func Test_ExtractClaims_ok(t *testing.T) {
 		Data:     tokenBytes,
 	}
 	ta := string(taEndValBytes)
-	ex, err := handler.ExtractClaims(&token, []string{ta})
+	claims, err := handler.ExtractClaims(&token, []string{ta})
 	require.NoError(t, err)
-	claims := ex.ClaimsSet
 	assert.Equal(t, claims["kat"].(map[string]interface{})["kid"].(string), claims["pat"].(map[string]interface{})["kid"].(string))
 }
 
@@ -54,21 +53,17 @@ func Test_ExtractClaims_nok_bad_evidence(t *testing.T) {
 	assert.EqualError(t, err1, expectedErr)
 }
 
-func Test_ExtractClaims_nok_bad_endorsement(t *testing.T) {
-	tokenBytes, err := os.ReadFile("test/evidence/evidence.cbor")
-	require.NoError(t, err)
-
+func Test_GetRefValueIDs_nok_bad_endorsement(t *testing.T) {
 	taEndValBytes, err := os.ReadFile("test/evidence/bad_ta_endorsements.json")
 	require.NoError(t, err)
 	expectedErr := "could not decode endorsement: json: cannot unmarshal number into Go struct field TaAttr.attributes.parsec-tpm.class-id of type string"
-	h := &EvidenceHandler{}
 
-	token := proto.AttestationToken{
-		TenantId: "0",
-		Data:     tokenBytes,
-	}
+	h := &StoreHandler{}
+
 	ta := string(taEndValBytes)
-	_, err = h.ExtractClaims(&token, []string{ta})
+	claims := map[string]interface{}{}
+
+	_, err = h.GetRefValueIDs("0", []string{ta}, claims)
 	assert.EqualError(t, err, expectedErr)
 }
 
@@ -174,8 +169,10 @@ func Test_AppraiseEvidence_nok(t *testing.T) {
 		var ec proto.EvidenceContext
 		err = json.Unmarshal(extractedBytes, &ec)
 		require.NoError(t, err)
+
 		endorsementsBytes, err := os.ReadFile(tv.input)
 		require.NoError(t, err)
+
 		err = json.Unmarshal(endorsementsBytes, &endorsemementsArray)
 		require.NoError(t, err)
 

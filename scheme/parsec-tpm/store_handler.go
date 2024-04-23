@@ -7,9 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/veraison/parsec/tpm"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 )
 
@@ -52,6 +55,22 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 
 }
 
+func (s StoreHandler) GetRefValueIDs(
+	tenantID string,
+	trustAnchors []string,
+	claims map[string]interface{},
+) ([]string, error) {
+	var endorsement TaEndorsements
+
+	if err := json.Unmarshal([]byte(trustAnchors[0]), &endorsement); err != nil {
+		log.Errorf("Could not decode Endorsements in ExtractClaims: %v", err)
+		return nil, fmt.Errorf("could not decode endorsement: %w", err)
+	}
+
+	class_id := *endorsement.Attr.ClassID
+	return []string{tpmLookupKey(ScopeRefValues, tenantID, class_id, "")}, nil
+}
+
 func synthKeysFromAttr(scope, tenantID string, attr json.RawMessage) ([]string, error) {
 	var (
 		instance string
@@ -85,3 +104,23 @@ func synthKeysFromAttr(scope, tenantID string, attr json.RawMessage) ([]string, 
 
 	return []string{tpmLookupKey(scope, tenantID, class, instance)}, nil
 }
+
+func tpmLookupKey(scope, tenantID, class, instance string) string {
+	var absPath []string
+
+	switch scope {
+	case ScopeTrustAnchor:
+		absPath = []string{instance}
+	case ScopeRefValues:
+		absPath = []string{class}
+	}
+
+	u := url.URL{
+		Scheme: SchemeName,
+		Host:   tenantID,
+		Path:   strings.Join(absPath, "/"),
+	}
+
+	return u.String()
+}
+

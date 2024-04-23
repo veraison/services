@@ -29,6 +29,14 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 	return []string{"dice://"}, nil
 }
 
+func (s StoreHandler) GetRefValueIDs(
+	tenantID string,
+	trustAnchors []string,
+	claims map[string]interface{},
+) ([]string, error) {
+	return []string{"dice://"}, nil
+}
+
 func (s StoreHandler) SynthKeysFromRefValue(tenantID string, swComp *handler.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }

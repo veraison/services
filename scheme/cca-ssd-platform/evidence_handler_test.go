@@ -110,7 +110,7 @@ func Test_ExtractVerifiedClaims_ok(t *testing.T) {
 	ta := string(taEndValBytes)
 
 	extracted, err := scheme.ExtractClaims(&token, []string{ta})
-	platformClaims := extracted.ClaimsSet["platform"].(map[string]interface{})
+	platformClaims := extracted["platform"].(map[string]interface{})
 
 	require.NoError(t, err)
 	assert.Equal(t, "http://arm.com/CCA-SSD/1.0.0",

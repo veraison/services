@@ -14,10 +14,19 @@ import (
 type IStoreHandler interface {
 	plugin.IPluggable
 
-	// GetTrustAnchorIDs returns an array of trust anchor identifiers used
+	// GetTrustAnchorIDs returns a slice of trust anchor identifiers used
 	// to retrieve the trust anchors associated with this token. The trust anchors may be necessary to validate the
 	// entire token and/or extract its claims (if it is encrypted).
 	GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error)
+
+	// GetRefValueIDs returns a slice of identifiers used to retrieve
+	// reference values for an attestation scheme, using the claims
+	// extracted from attestation token and the associated trust anchors.
+	GetRefValueIDs(
+		tenantID string,
+		trustAnchors []string,
+		claims map[string]interface{},
+	) ([]string, error)
 
 	// SynthKeysFromRefValue synthesizes lookup key(s) for the
 	// provided reference value endorsement.

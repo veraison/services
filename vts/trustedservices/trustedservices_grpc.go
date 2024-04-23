@@ -368,7 +368,7 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
-	extracted, err := handler.ExtractClaims(token, tas)
+	claims, err := handler.ExtractClaims(token, tas)
 	if err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.AddPolicyClaim("problem", err.Error())
@@ -376,13 +376,18 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
-	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(extracted.ClaimsSet)
+	referenceIDs, err := stHandler.GetRefValueIDs(token.TenantId, tas, claims)
+	if err != nil {
+		return o.finalize(appraisal, err)
+	}
+
+	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(claims)
 	if err != nil {
 		err = fmt.Errorf("unserializable claims in result: %w", err)
 		return o.finalize(appraisal, err)
 	}
 
-	appraisal.EvidenceContext.ReferenceIds = extracted.ReferenceIDs
+	appraisal.EvidenceContext.ReferenceIds = referenceIDs
 
 	o.logger.Debugw("constructed evidence context",
 		"software-id", appraisal.EvidenceContext.ReferenceIds,
