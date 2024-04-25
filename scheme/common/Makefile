@@ -3,12 +3,6 @@
 
 SUBDIR := arm
 
-all: all-hook-pre
-clean:
-
-all-hook-pre all-test-pre all-lint-pre:
-	$(MAKE) -C ../../handler
-
 include ../../mk/common.mk
 include ../../mk/lint.mk
 include ../../mk/test.mk
