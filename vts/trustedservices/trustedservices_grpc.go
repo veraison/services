@@ -393,19 +393,13 @@ func (o *GRPC) GetAttestation(
 		"software-id", appraisal.EvidenceContext.ReferenceIds,
 		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorIds)
 
-	var multEndorsements []string
-	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-
-		endorsements, err := o.EnStore.Get(refvalID)
-		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-			return o.finalize(appraisal, err)
-		}
-
-		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
-		multEndorsements = append(multEndorsements, endorsements...)
+	endorsements, err := o.EnStore.GetMultiple(appraisal.EvidenceContext.ReferenceIds)
+	if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
+		return o.finalize(appraisal, err)
 	}
+	o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
 
-	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
+	if err = handler.ValidateEvidenceIntegrity(token, tas, endorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "integrity validation failed")
@@ -413,7 +407,7 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
-	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, multEndorsements)
+	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, endorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -421,7 +415,7 @@ func (o *GRPC) GetAttestation(
 	appraisal.Result = appraisedResult
 	appraisal.InitPolicyID()
 
-	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, multEndorsements)
+	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, endorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}

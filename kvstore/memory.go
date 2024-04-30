@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -61,6 +61,10 @@ func (o Memory) Get(key string) ([]string, error) {
 	}
 
 	return vals, nil
+}
+
+func (o Memory) GetMultiple(keys []string) ([]string, error) {
+	return getMultiple(&o, keys)
 }
 
 func (o Memory) GetKeys() ([]string, error) {
