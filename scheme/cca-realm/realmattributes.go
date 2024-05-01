@@ -70,10 +70,10 @@ func (o *RealmAttributes) extractRegisterIndexes(r *comid.IntegrityRegisters) er
 	return nil
 }
 
-func (o RealmAttributes) isCompatibleAlgID(HashAlgID string) bool {
+func (o RealmAttributes) isCompatibleAlgID(hashAlgID string) bool {
 	compatible := true
 	if o.HashAlgID != "" {
-		if HashAlgID != o.HashAlgID {
+		if hashAlgID != o.HashAlgID {
 			compatible = false
 		}
 	}
