@@ -8,6 +8,7 @@ SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust
 SUBDIR += parsec-tpm
 SUBDIR += parsec-cca
+SUBDIR += cca-realm
 
 clean: ; $(RM) -rf ./bin
 
