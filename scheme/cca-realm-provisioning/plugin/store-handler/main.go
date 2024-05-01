@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
-	scheme "github.com/veraison/services/scheme/cca-realm"
+	scheme "github.com/veraison/services/scheme/cca-realm-provisioning"
 )
 
 func main() {
