@@ -37,4 +37,4 @@ used to launch a Realm.
 
 ## Trust Anchor
 
-CCA_Realm scheme has no explicit Trsut Anchor, as they are supplied inline in the Realm attestation token
+CCA_Realm scheme has no explicit Trust Anchor to provision, as they are supplied inline in the Realm attestation token
