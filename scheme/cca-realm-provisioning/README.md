@@ -10,9 +10,9 @@ used to launch a Realm.
     "scheme": "CCA_REALM",
     "type": "REFERENCE_VALUE",
     "attributes": {
-        "CCA_REALM.vendor": "Worload Client Ltd",
+        "CCA_REALM.vendor": "Workload Client Ltd",
         "CCA_REALM.class-id": "CD1F0E55-26F9-460D-B9D8-F7FDE171787C",
-        "CCA_REALM.inst-id": "QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1",
+        "CCA_REALM-realm-initial-measurement": "QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1",
         "CCA_REALM.hash-alg-id": "sha-384",
         "CCA_REALM.measurements": [
             {

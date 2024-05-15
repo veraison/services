@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package cca_realm_provisioning
 
@@ -28,18 +28,17 @@ func (o *ClassAttributes) FromEnvironment(e comid.Environment) error {
 
 	if classID == nil {
 		log.Debug("no classID in the environment")
-	}
-	if classID != nil {
-		uuID, err := classID.GetUUID()
+	} else {
+		UUID, err := classID.GetUUID()
 		if err != nil {
 			return fmt.Errorf("could not extract uu-id from class-id: %w", err)
 		}
 
-		if err := uuID.Valid(); err != nil {
+		if err := UUID.Valid(); err != nil {
 			return fmt.Errorf("no valid uu-id: %w", err)
 		}
 
-		o.UUID = uuID.String()
+		o.UUID = UUID.String()
 	}
 
 	if class.Vendor != nil {

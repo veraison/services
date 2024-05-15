@@ -26,11 +26,11 @@ func (o CorimExtractor) RefValExtractor(
 		return nil, fmt.Errorf("could not extract Realm instance attributes: %w", err)
 	}
 
-	// Each measurement is encoded in a measurement-map of a CoMID
+	// Measurements are encoded in a measurement-map of a CoMID
 	// reference-triple-record.  Since a measurement-map can encode one or more
 	// measurements, a single reference-triple-record can carry as many
-	// measurements as needed. However for Realm Instance, only one measurement
-	// record is set, with both the "rim" & "rem" measurements carried in an
+	// measurements as needed. Hence for a Realm Instance, all the measurements
+	// which comprise of both the "rim" & "rem" measurements are carried in an
 	// integrity register
 	refVals := make([]*handler.Endorsement, 0, len(rv.Measurements))
 
@@ -64,15 +64,15 @@ func makeRefValAttrs(cAttr *ClassAttributes,
 	rAttr *RealmAttributes) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
-		"CCA_REALM.vendor":      cAttr.Vendor,
-		"CCA_REALM-class-id":    cAttr.UUID,
-		"CCA_REALM-instance-id": rAttr.Rim,
-		"CCA_REALM.hash-alg-id": rAttr.HashAlgID,
-		"CCA_REALM.rim":         rAttr.Rim,
-		"CCA_REALM.rem0":        rAttr.Rem[0],
-		"CCA_REALM.rem1":        rAttr.Rem[1],
-		"CCA_REALM.rem2":        rAttr.Rem[2],
-		"CCA_REALM.rem3":        rAttr.Rem[3],
+		"CCA_REALM.vendor":                    cAttr.Vendor,
+		"CCA_REALM-class-id":                  cAttr.UUID,
+		"CCA_REALM-realm-initial-measurement": rAttr.Rim,
+		"CCA_REALM.hash-alg-id":               rAttr.HashAlgID,
+		"CCA_REALM.rim":                       rAttr.Rim,
+		"CCA_REALM.rem0":                      rAttr.Rem[0],
+		"CCA_REALM.rem1":                      rAttr.Rem[1],
+		"CCA_REALM.rem2":                      rAttr.Rem[2],
+		"CCA_REALM.rem3":                      rAttr.Rem[3],
 	}
 
 	data, err := json.Marshal(attrs)
