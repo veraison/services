@@ -3,7 +3,6 @@
 package cca_realm_provisioning
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -25,12 +24,11 @@ func (o *RealmAttributes) FromMeasurement(m comid.Measurement) error {
 }
 
 func (o *RealmAttributes) extractRealmDigest(digests comid.Digests) (algID string, hash []byte, err error) {
-
 	if err := digests.Valid(); err != nil {
 		return "", nil, fmt.Errorf("invalid digest: %v", err)
 	}
 	if len(digests) != 1 {
-		return "", nil, fmt.Errorf("invalid number %d for digest", len(digests))
+		return "", nil, fmt.Errorf("expecting 1 digest, got %d", len(digests))
 	}
 
 	return digests[0].AlgIDToString(), digests[0].HashValue, nil
@@ -40,7 +38,7 @@ func (o *RealmAttributes) extractRegisterIndexes(r *comid.IntegrityRegisters) er
 	for k, val := range r.M {
 		a, d, err := o.extractRealmDigest(val)
 		if err != nil {
-			return errors.New("unable to extract digest for ")
+			return fmt.Errorf("unable to extract realm digest: %v", err)
 		}
 		switch t := k.(type) {
 		case string:
@@ -71,11 +69,5 @@ func (o *RealmAttributes) extractRegisterIndexes(r *comid.IntegrityRegisters) er
 }
 
 func (o RealmAttributes) isCompatibleAlgID(hashAlgID string) bool {
-	compatible := true
-	if o.HashAlgID != "" {
-		if hashAlgID != o.HashAlgID {
-			compatible = false
-		}
-	}
-	return compatible
+	return o.HashAlgID == "" || hashAlgID == o.HashAlgID
 }

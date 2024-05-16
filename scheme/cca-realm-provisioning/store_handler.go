@@ -46,13 +46,13 @@ func (s StoreHandler) SynthKeysFromRefValue(
 		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
 	}
 
-	lookupKey := RefValLookupKey(SchemeName, tenantID, instID)
-	log.Debugf("Scheme %s Plugin TA Look Up Key= %s\n", SchemeName, lookupKey)
+	lookupKey := refValLookupKey(SchemeName, tenantID, instID)
+	log.Debugf("Scheme %s Plugin RefVal Look Up Key= %s\n", SchemeName, lookupKey)
 	return []string{lookupKey}, nil
 
 }
 
-func RefValLookupKey(schemeName, tenantID, instID string) string {
+func refValLookupKey(schemeName, tenantID, instID string) string {
 	absPath := []string{instID}
 
 	u := url.URL{
