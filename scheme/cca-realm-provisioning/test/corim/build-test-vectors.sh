@@ -33,7 +33,7 @@ COMID_TEMPLATES="${COMID_TEMPLATES} comidCcaRealmInvalidClass"
 
 TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
 
-printf "package cca_realm\n\n" > ${TV_DOT_GO}
+printf "package cca_realm_provisioning\n\n" > ${TV_DOT_GO}
 
 for t in ${COMID_TEMPLATES}
 do

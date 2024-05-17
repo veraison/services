@@ -7,15 +7,20 @@ import (
 	"strings"
 
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/services/log"
 )
 
 type RealmAttributes struct {
 	Rim       []byte
 	Rem       [4][]byte
 	HashAlgID string
+	Rpv       []byte
 }
 
 func (o *RealmAttributes) FromMeasurement(m comid.Measurement) error {
+	if err := o.extractRealmPersonalizationValue(m.Val.RawValue); err != nil {
+		return fmt.Errorf("extracting rpv: %w", err)
+	}
 	if err := o.extractRegisterIndexes(m.Val.IntegrityRegisters); err != nil {
 		return fmt.Errorf("extracting measurement: %w", err)
 	}
@@ -70,4 +75,21 @@ func (o *RealmAttributes) extractRegisterIndexes(r *comid.IntegrityRegisters) er
 
 func (o RealmAttributes) isCompatibleAlgID(hashAlgID string) bool {
 	return o.HashAlgID == "" || hashAlgID == o.HashAlgID
+}
+
+func (o *RealmAttributes) extractRealmPersonalizationValue(r *comid.RawValue) error {
+	var err error
+	if r == nil {
+		log.Debug("realm personalization value not present")
+		return nil
+	}
+	o.Rpv, err = r.GetBytes()
+	if err != nil {
+		return err
+	} else if len(o.Rpv) != 64 {
+		{
+			return fmt.Errorf("invalid length %d, for realm personalization value", len(o.Rpv))
+		}
+	}
+	return nil
 }

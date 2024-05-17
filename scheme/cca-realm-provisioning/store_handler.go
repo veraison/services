@@ -43,7 +43,7 @@ func (s StoreHandler) SynthKeysFromRefValue(
 
 	instID, err := common.GetInstID(SchemeName, refVal.Attributes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to synthesize reference value abs-path: %w", err)
+		return nil, fmt.Errorf("unable to get instance id for synthesize reference value: %w", err)
 	}
 
 	lookupKey := refValLookupKey(SchemeName, tenantID, instID)

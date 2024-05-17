@@ -34,6 +34,10 @@
                 "measurements": [
                     {
                         "value": {
+                            "raw-value": {
+                                "type": "bytes",
+                                "value": "5Fty9cDAtXLbTY06t+l/No/3TmI0eoJN7LZ6hOUiTXXkW3L1wMC1cttNjTq36X82j/dOYjR6gk3stnqE5SJNdQ=="
+                            },
                             "integrity-registers": {
                                 "rim": {
                                     "key-type": "text",

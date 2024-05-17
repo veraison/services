@@ -64,15 +64,16 @@ func makeRefValAttrs(cAttr *ClassAttributes,
 	rAttr *RealmAttributes) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
-		"CCA_REALM.vendor":                    cAttr.Vendor,
-		"CCA_REALM-class-id":                  cAttr.UUID,
-		"CCA_REALM-realm-initial-measurement": rAttr.Rim,
-		"CCA_REALM.hash-alg-id":               rAttr.HashAlgID,
-		"CCA_REALM.rim":                       rAttr.Rim,
-		"CCA_REALM.rem0":                      rAttr.Rem[0],
-		"CCA_REALM.rem1":                      rAttr.Rem[1],
-		"CCA_REALM.rem2":                      rAttr.Rem[2],
-		"CCA_REALM.rem3":                      rAttr.Rem[3],
+		"CCA_REALM.vendor":                      cAttr.Vendor,
+		"CCA_REALM-class-id":                    cAttr.UUID,
+		"CCA_REALM-realm-initial-measurement":   rAttr.Rim,
+		"CCA_REALM.hash-alg-id":                 rAttr.HashAlgID,
+		"CCA_REALM.realm-personalization-value": rAttr.Rpv,
+		"CCA_REALM.rim":                         rAttr.Rim,
+		"CCA_REALM.rem0":                        rAttr.Rem[0],
+		"CCA_REALM.rem1":                        rAttr.Rem[1],
+		"CCA_REALM.rem2":                        rAttr.Rem[2],
+		"CCA_REALM.rem3":                        rAttr.Rem[3],
 	}
 
 	data, err := json.Marshal(attrs)
