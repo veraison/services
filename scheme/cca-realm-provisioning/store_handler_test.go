@@ -49,17 +49,33 @@ func Test_GetTrustAnchorID_nok(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func Test_SynthKeysFromRefValue_ok(t *testing.T) {
-	endorsementsBytes, err := os.ReadFile("test/store/refvalEndorsements.json")
-	require.NoError(t, err)
+func Test_SynthKeysFromRefValue1_ok(t *testing.T) {
+	tvs := []struct {
+		desc        string
+		input       string
+		expectedKey string
+	}{
+		{
+			desc:        "no realm personalization in reference value",
+			input:       "test/store/refvalEndorsementsNoRpv.json",
+			expectedKey: "CCA_REALM://1/QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1",
+		},
+		{
+			desc:        "complete reference value with rim and personalization value",
+			input:       "test/store/refvalEndorsements.json",
+			expectedKey: "CCA_REALM://1/QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1/5Fty9cDAtXLbTY06t+l/No/3TmI0eoJN7LZ6hOUiTXXkW3L1wMC1cttNjTq36X82j/dOYjR6gk3stnqE5SJNdQ==",
+		},
+	}
 
-	var endors handler.Endorsement
-	err = json.Unmarshal(endorsementsBytes, &endors)
-	require.NoError(t, err)
-	expectedKey := "CCA_REALM://1/QoS1aUymwNLPR4mguVrIAlyBjeUjBDZL580pgbLS7caFsyInfsJYGZYkE9jJssH1"
-
-	scheme := &StoreHandler{}
-	key_list, err := scheme.SynthKeysFromRefValue("1", &endors)
-	require.NoError(t, err)
-	assert.Equal(t, expectedKey, key_list[0])
+	for _, tv := range tvs {
+		endorsementsBytes, err := os.ReadFile(tv.input)
+		require.NoError(t, err)
+		var endors handler.Endorsement
+		err = json.Unmarshal(endorsementsBytes, &endors)
+		require.NoError(t, err)
+		scheme := &StoreHandler{}
+		key, err := scheme.SynthKeysFromRefValue("1", &endors)
+		require.NoError(t, err)
+		assert.Equal(t, tv.expectedKey, key[0])
+	}
 }

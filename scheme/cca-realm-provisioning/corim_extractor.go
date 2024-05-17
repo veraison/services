@@ -65,8 +65,8 @@ func makeRefValAttrs(cAttr *ClassAttributes,
 
 	var attrs = map[string]interface{}{
 		"CCA_REALM.vendor":                      cAttr.Vendor,
-		"CCA_REALM-class-id":                    cAttr.UUID,
-		"CCA_REALM-realm-initial-measurement":   rAttr.Rim,
+		"CCA_REALM.class-id":                    cAttr.UUID,
+		"CCA_REALM.realm-initial-measurement":   rAttr.Rim,
 		"CCA_REALM.hash-alg-id":                 rAttr.HashAlgID,
 		"CCA_REALM.realm-personalization-value": rAttr.Rpv,
 		"CCA_REALM.rim":                         rAttr.Rim,

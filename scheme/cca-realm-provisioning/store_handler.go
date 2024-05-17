@@ -5,13 +5,11 @@ package cca_realm_provisioning
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
+	"github.com/veraison/services/scheme/common/arm"
 )
 
 type StoreHandler struct{}
@@ -41,27 +39,12 @@ func (s StoreHandler) SynthKeysFromRefValue(
 	refVal *handler.Endorsement,
 ) ([]string, error) {
 
-	instID, err := common.GetInstID(SchemeName, refVal.Attributes)
+	lookupKey, err := arm.SynthKeyFromRefVal(SchemeName, tenantID, refVal)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get instance id for synthesize reference value: %w", err)
+		return nil, fmt.Errorf("unable to SynthKeyFromRefVal for scheme %s: %w", SchemeName, err)
 	}
-
-	lookupKey := refValLookupKey(SchemeName, tenantID, instID)
 	log.Debugf("Scheme %s Plugin RefVal Look Up Key= %s\n", SchemeName, lookupKey)
 	return []string{lookupKey}, nil
-
-}
-
-func refValLookupKey(schemeName, tenantID, instID string) string {
-	absPath := []string{instID}
-
-	u := url.URL{
-		Scheme: schemeName,
-		Host:   tenantID,
-		Path:   strings.Join(absPath, "/"),
-	}
-
-	return u.String()
 }
 
 func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
