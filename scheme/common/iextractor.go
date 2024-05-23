@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package common
 
@@ -20,4 +20,5 @@ import (
 type IExtractor interface {
 	RefValExtractor(comid.ReferenceValue) ([]*handler.Endorsement, error)
 	TaExtractor(comid.AttestVerifKey) (*handler.Endorsement, error)
+	SetProfile(string)
 }

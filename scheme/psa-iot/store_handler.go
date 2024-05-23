@@ -6,7 +6,6 @@ package psa_iot
 import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
 )
 
@@ -49,14 +48,5 @@ func (s StoreHandler) GetRefValueIDs(
 	trustAnchors []string,
 	claims map[string]interface{},
 ) ([]string, error) {
-	psaClaims, err := common.MapToClaims(claims)
-	if err != nil {
-		return nil, err
-	}
-
-	return []string{arm.RefValLookupKey(
-		SchemeName,
-		tenantID,
-		arm.MustImplIDString(psaClaims),
-	)}, nil
+	return arm.GetReferenceIDs(SchemeName, tenantID, claims)
 }

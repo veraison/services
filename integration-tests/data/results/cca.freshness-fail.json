@@ -1,5 +1,5 @@
 {
-        "ear.appraisal-policy-id": "policy:CCA_SSD_PLATFORM",
+        "ear.appraisal-policy-id": "policy:CCA_SSD",
         "ear.status": "contraindicated",
         "ear.trustworthiness-vector": {
             "configuration": 99,

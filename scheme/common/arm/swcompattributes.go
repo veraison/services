@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package arm
 
@@ -18,7 +18,6 @@ type SwCompAttributes struct {
 }
 
 func (o *SwCompAttributes) FromMeasurement(m comid.Measurement) error {
-
 	if m.Key == nil {
 		return fmt.Errorf("measurement key is not present")
 	}
@@ -64,29 +63,29 @@ func (o SwCompAttributes) GetRefValType() string {
 	return "sw-component"
 }
 
-func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, scheme string) (json.RawMessage, error) {
+func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, subScheme string) (json.RawMessage, error) {
 
 	swAttrs := map[string]interface{}{
-		scheme + ".impl-id":           c.ImplID,
-		scheme + ".signer-id":         o.SignerID,
-		scheme + ".measurement-value": o.MeasurementValue,
-		scheme + ".measurement-desc":  o.AlgID,
+		subScheme + ".impl-id":           c.ImplID,
+		subScheme + ".signer-id":         o.SignerID,
+		subScheme + ".measurement-value": o.MeasurementValue,
+		subScheme + ".measurement-desc":  o.AlgID,
 	}
 
 	if c.Vendor != "" {
-		swAttrs[scheme+".hw-vendor"] = c.Vendor
+		swAttrs[subScheme+".hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		swAttrs[scheme+".hw-model"] = c.Model
+		swAttrs[subScheme+".hw-model"] = c.Model
 	}
 
 	if o.MeasurementType != "" {
-		swAttrs[scheme+".measurement-type"] = o.MeasurementType
+		swAttrs[subScheme+".measurement-type"] = o.MeasurementType
 	}
 
 	if o.Version != "" {
-		swAttrs[scheme+".version"] = o.Version
+		swAttrs[subScheme+".version"] = o.Version
 	}
 	msg, err := json.Marshal(swAttrs)
 	if err != nil {

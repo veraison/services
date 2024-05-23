@@ -3,11 +3,8 @@
 package parsec_cca
 
 import (
-	"fmt"
-
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
 )
 
@@ -51,19 +48,5 @@ func (s StoreHandler) GetRefValueIDs(
 	trustAnchors []string,
 	claims map[string]interface{},
 ) ([]string, error) {
-	platformClaimsMap, ok := claims["cca.platform"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("claims to do not contain patform map: %v", claims)
-	}
-
-	platformClaims, err := common.MapToClaims(platformClaimsMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return []string{arm.RefValLookupKey(
-		SchemeName,
-		tenantID,
-		arm.MustImplIDString(platformClaims),
-	)}, nil
+	return arm.GetReferenceIDs(SchemeName, tenantID, claims)
 }

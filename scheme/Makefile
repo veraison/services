@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 SUBDIR := common
-SUBDIR += cca-ssd-platform
+SUBDIR += cca
 SUBDIR += riot
 SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust

@@ -29,7 +29,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.5.0
 	github.com/veraison/ccatoken v1.1.0
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.2
+	github.com/veraison/corim v1.1.3-0.20240513181923-a0e8f54e1f67
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53

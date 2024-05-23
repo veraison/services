@@ -11,8 +11,9 @@ const (
 )
 
 type Endorsement struct {
-	Scheme string `json:"scheme"`
-	Type   string `json:"type"`
+	Scheme    string `json:"scheme"`
+	SubScheme string `json:"subscheme"`
+	Type      string `json:"type"`
 
 	SubType    string          `json:"subType"`
 	Attributes json.RawMessage `json:"attributes"`
