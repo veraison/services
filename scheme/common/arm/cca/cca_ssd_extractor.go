@@ -53,7 +53,7 @@ func (o CcaSsdExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.En
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		case comid.CCAPlatformConfigIDType:
-			var ccaPlatformConfigID platform.CCAPlatformConfigID
+			var ccaPlatformConfigID CCAPlatformConfigID
 			refVal, err = o.extractMeas(&ccaPlatformConfigID, m, classAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)

@@ -1,12 +1,13 @@
 // Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package platform
+package cca
 
 import (
 	"encoding/json"
 	"fmt"
 
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/services/scheme/common/arm/platform"
 )
 
 type CCAPlatformConfigID struct {
@@ -39,7 +40,7 @@ func (o CCAPlatformConfigID) GetRefValType() string {
 
 // For CCAPlatformConfigID object, scheme argument is not strictly required, but is required for other
 // usage of the same interface
-func (o CCAPlatformConfigID) MakeRefAttrs(c ClassAttributes, scheme string) (json.RawMessage, error) {
+func (o CCAPlatformConfigID) MakeRefAttrs(c platform.ClassAttributes, scheme string) (json.RawMessage, error) {
 	refAttrs := map[string]interface{}{
 		scheme + ".impl-id":               c.ImplID,
 		scheme + ".platform-config-label": o.Label,
