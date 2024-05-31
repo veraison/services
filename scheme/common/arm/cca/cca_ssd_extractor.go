@@ -1,6 +1,6 @@
 // Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package arm
+package cca
 
 import (
 	"encoding/json"
@@ -10,16 +10,16 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/scheme/common/arm/platform"
 )
 
 type CcaSsdExtractor struct {
 	Scheme    string
 	SubScheme string
-	Profile   string
 }
 
 func (o CcaSsdExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
-	var classAttrs ClassAttributes
+	var classAttrs platform.ClassAttributes
 
 	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
@@ -46,14 +46,14 @@ func (o CcaSsdExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.En
 		// Check which MKey is present and then decide which extractor to invoke
 		switch m.Key.Type() {
 		case comid.PSARefValIDType:
-			var swCompAttrs SwCompAttributes
+			var swCompAttrs platform.SwCompAttributes
 
 			refVal, err = o.extractMeas(&swCompAttrs, m, classAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		case comid.CCAPlatformConfigIDType:
-			var ccaPlatformConfigID CCAPlatformConfigID
+			var ccaPlatformConfigID platform.CCAPlatformConfigID
 			refVal, err = o.extractMeas(&ccaPlatformConfigID, m, classAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
@@ -72,9 +72,9 @@ func (o CcaSsdExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.En
 }
 
 func (o CcaSsdExtractor) extractMeas(
-	obj MeasurementExtractor,
+	obj platform.MeasurementExtractor,
 	m comid.Measurement,
-	class ClassAttributes,
+	class platform.ClassAttributes,
 ) (*handler.Endorsement, error) {
 	if err := obj.FromMeasurement(m); err != nil {
 		return nil, err
@@ -96,13 +96,13 @@ func (o CcaSsdExtractor) extractMeas(
 
 func (o CcaSsdExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	// extract implementation ID
-	var classAttrs ClassAttributes
+	var classAttrs platform.ClassAttributes
 	if err := classAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 	}
 
 	// extract instance ID
-	var instanceAttrs InstanceAttributes
+	var instanceAttrs platform.InstanceAttributes
 	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA instance-id: %w", err)
 	}
@@ -133,8 +133,8 @@ func (o CcaSsdExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorse
 }
 
 func makeTaAttrs(
-	i InstanceAttributes,
-	c ClassAttributes,
+	i platform.InstanceAttributes,
+	c platform.ClassAttributes,
 	key *comid.CryptoKey,
 	subscheme string,
 ) (json.RawMessage, error) {
@@ -157,8 +157,4 @@ func makeTaAttrs(
 		return nil, fmt.Errorf("unable to marshal TA attributes: %w", err)
 	}
 	return msg, nil
-}
-
-func (o *CcaSsdExtractor) SetProfile(profile string) {
-	o.Profile = profile
 }

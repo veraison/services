@@ -10,7 +10,7 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/handler"
-	"github.com/veraison/services/scheme/common/arm"
+	"github.com/veraison/services/scheme/common/arm/platform"
 )
 
 type PsaExtractor struct {
@@ -19,7 +19,7 @@ type PsaExtractor struct {
 }
 
 func (o PsaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
-	var classAttrs arm.ClassAttributes
+	var classAttrs platform.ClassAttributes
 
 	if (o.Profile == "") || (o.Profile != "http://arm.com/psa/iot/1") {
 		return nil, fmt.Errorf("incorrect profile: %s for Scheme: %s", o.Profile, o.Scheme)
@@ -50,8 +50,7 @@ func (o PsaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endor
 		// Check which MKey is present and then decide which extractor to invoke
 		switch m.Key.Type() {
 		case comid.PSARefValIDType:
-			var swCompAttrs arm.SwCompAttributes
-
+			var swCompAttrs platform.SwCompAttributes
 			refVal, err = o.extractMeas(&swCompAttrs, m, classAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
@@ -70,9 +69,9 @@ func (o PsaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endor
 }
 
 func (o PsaExtractor) extractMeas(
-	obj arm.MeasurementExtractor,
+	obj platform.MeasurementExtractor,
 	m comid.Measurement,
-	class arm.ClassAttributes,
+	class platform.ClassAttributes,
 ) (*handler.Endorsement, error) {
 	if err := obj.FromMeasurement(m); err != nil {
 		return nil, err
@@ -93,13 +92,13 @@ func (o PsaExtractor) extractMeas(
 
 func (o PsaExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	// extract implementation ID
-	var classAttrs arm.ClassAttributes
+	var classAttrs platform.ClassAttributes
 	if err := classAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 	}
 
 	// extract instance ID
-	var instanceAttrs arm.InstanceAttributes
+	var instanceAttrs platform.InstanceAttributes
 	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract PSA instance-id: %w", err)
 	}
@@ -130,8 +129,8 @@ func (o PsaExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsemen
 }
 
 func makeTaAttrs(
-	i arm.InstanceAttributes,
-	c arm.ClassAttributes,
+	i platform.InstanceAttributes,
+	c platform.ClassAttributes,
 	key *comid.CryptoKey,
 	scheme string,
 ) (json.RawMessage, error) {

@@ -5,7 +5,7 @@ package parsec_cca
 import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/scheme/common/arm"
+	"github.com/veraison/services/scheme/common/arm/cca"
 )
 
 type EndorsementHandler struct{}
@@ -31,5 +31,5 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 }
 
 func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return common.UnsignedCorimDecoder(data, &arm.CcaExtractor{Scheme: SchemeName})
+	return common.UnsignedCorimDecoder(data, &cca.CcaExtractor{Scheme: SchemeName})
 }

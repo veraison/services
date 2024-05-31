@@ -1,6 +1,6 @@
 // Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package arm
+package cca
 
 import (
 	"encoding/json"
@@ -13,16 +13,11 @@ import (
 type CcaRealmExtractor struct {
 	Scheme    string
 	SubScheme string
-	Profile   string
 }
 
 func (o CcaRealmExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
 	var classAttrs RealmClassAttributes
 	var instAttrs RealmInstanceAttributes
-
-	if (o.Profile == "") || (o.Profile != "http://arm.com/cca/realm/1") {
-		return nil, fmt.Errorf("incorrect profile: %s for Scheme: %s", o.Profile, o.Scheme)
-	}
 
 	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract Realm class attributes: %w", err)
@@ -66,10 +61,6 @@ func (o CcaRealmExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.
 	return refVals, nil
 }
 
-func (o *CcaRealmExtractor) TaExtractor(comid.AttestVerifKey) (*handler.Endorsement, error) {
-	return nil, fmt.Errorf("cca realm endorsements does not have a Trust Anchor")
-}
-
 func makeRefValAttrs(cAttr *RealmClassAttributes,
 	iAttr *RealmInstanceAttributes,
 	rAttr *RealmAttributes) (json.RawMessage, error) {
@@ -107,8 +98,4 @@ func makeRefValAttrs(cAttr *RealmClassAttributes,
 		return nil, fmt.Errorf("unable to marshal reference value attributes: %w", err)
 	}
 	return data, nil
-}
-
-func (o *CcaRealmExtractor) SetProfile(profile string) {
-	o.Profile = profile
 }
