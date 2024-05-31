@@ -10,8 +10,7 @@ import (
 	"fmt"
 
 	"github.com/veraison/ccatoken"
-	"github.com/veraison/ear"
-	"github.com/veraison/psatoken"
+	ar "github.com/veraison/ear"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
@@ -114,86 +113,70 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 
 func (s EvidenceHandler) AppraiseEvidence(
 	ec *proto.EvidenceContext, endorsementsStrings []string,
-) (*ear.AttestationResult, error) {
+) (*ar.AttestationResult, error) {
 	var endorsements []handler.Endorsement // nolint:prealloc
+	var err error
+	subSchemes := []string{"CCA_SSD_PLATFORM", "CCA_REALM"}
+	result := handler.CreateAttestationResult(subSchemes[0])
 
-	result := handler.CreateAttestationResult(SchemeName)
+	for _, subscheme := range subSchemes {
+		endorsements, err = filterEndorsements(subscheme, endorsementsStrings)
+		if err != nil {
+			return nil, err
+		}
+		appraisal, err := createSubMod(subscheme, result)
+		if err != nil {
+			return nil, err
+		}
 
+		subAttester, err := getSubAttester(subscheme)
+		if err != nil {
+			return nil, err
+		}
+		err = subAttester.PerformAppraisal(appraisal, ec.Evidence.AsMap(), endorsements)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return result, err
+}
+
+func filterEndorsements(subscheme string, endorsementsStrings []string) ([]handler.Endorsement, error) {
+	var endorsements []handler.Endorsement
 	for i, e := range endorsementsStrings {
 		var endorsement handler.Endorsement
 
 		if err := json.Unmarshal([]byte(e), &endorsement); err != nil {
 			return nil, fmt.Errorf("could not decode endorsement at index %d: %w", i, err)
 		}
-
-		endorsements = append(endorsements, endorsement)
+		if endorsement.SubScheme == subscheme {
+			endorsements = append(endorsements, endorsement)
+		}
 	}
-
-	err := populateAttestationResult(result, ec.Evidence.AsMap(), endorsements)
-
-	// TO DO: Handle Unprocessed evidence when new Attestation Result interface
-	// is ready. Please see issue #105
-	return result, err
+	return endorsements, nil
 }
 
-func populateAttestationResult(
-	result *ear.AttestationResult,
-	evidence map[string]interface{},
-	endorsements []handler.Endorsement,
-) error {
-	claims, err := common.MapToClaims(evidence["platform"].(map[string]interface{}))
-	if err != nil {
-		return err
+func getSubAttester(subscheme string) (ISubAttester, error) {
+	switch subscheme {
+	case "CCA_SSD_PLATFORM":
+		return &Cca_platform_attester{}, nil
+	case "CCA_REALM":
+		return &Cca_realm_attester{}, nil
+	default:
+		return nil, fmt.Errorf("invalid scheme: %s", subscheme)
 	}
+}
 
-	appraisal := result.Submods[SchemeName]
-
-	// once the signature on the token is verified, we can claim the HW is
-	// authentic
-	appraisal.TrustVector.Hardware = ear.GenuineHardwareClaim
-
-	rawLifeCycle, err := claims.GetSecurityLifeCycle()
-	if err != nil {
-		return handler.BadEvidence(err)
+func createSubMod(submodname string, ear *ar.AttestationResult) (*ar.Appraisal, error) {
+	submod, ok := ear.Submods[submodname]
+	if submod == nil {
+		log.Debugf("SUBMOD IS NIL for subMod= %s", submodname)
 	}
-
-	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)
-	if lifeCycle == psatoken.CcaStateSecured ||
-		lifeCycle == psatoken.CcaStateNonCcaPlatformDebug {
-		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
-		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
-		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim
-	} else {
-		appraisal.TrustVector.InstanceIdentity = ear.UntrustworthyInstanceClaim
-		appraisal.TrustVector.RuntimeOpaque = ear.VisibleMemoryRuntimeClaim
-		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
+	if !ok {
+		log.Debugf("createSubMod IS NOT OK FOR SCHEME= %s", submodname)
+		submod = &ar.Appraisal{}
+		ear.Submods[submodname] = submod
 	}
-
-	swComps := arm.FilterRefVal(endorsements, "CCA.sw-component")
-	match := arm.MatchSoftware(SchemeName, claims, swComps)
-	if match {
-		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		log.Debug("matchSoftware Success")
-
-	} else {
-		appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
-		log.Debug("matchSoftware Failed")
-	}
-
-	platformConfig := arm.FilterRefVal(endorsements, "CCA.platform-config")
-	match = arm.MatchPlatformConfig(SchemeName, claims, platformConfig)
-
-	if match {
-		appraisal.TrustVector.Configuration = ear.ApprovedConfigClaim
-		log.Debug("matchPlatformConfig Success")
-
-	} else {
-		appraisal.TrustVector.Configuration = ear.UnsafeConfigClaim
-		log.Debug("matchPlatformConfig Failed")
-	}
-	appraisal.UpdateStatusFromTrustVector()
-
-	appraisal.VeraisonAnnotatedEvidence = &evidence
-
-	return nil
+	return submod, nil
 }

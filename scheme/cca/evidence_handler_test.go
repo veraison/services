@@ -34,7 +34,7 @@ func Test_AppraiseEvidence_ok(t *testing.T) { // nolint: dupl
 	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
 
-	attestation := result.Submods["CCA"]
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.ApprovedRuntimeClaim)
@@ -60,7 +60,7 @@ func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) { // nolint: dupl
 	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
 
-	attestation := result.Submods["CCA"]
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierWarning, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.UnrecognizedRuntimeClaim)
@@ -86,7 +86,7 @@ func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) { // nolint: dupl
 	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
 	require.NoError(t, err)
 
-	attestation := result.Submods["CCA"]
+	attestation := result.Submods["CCA_SSD_PLATFORM"]
 
 	assert.Equal(t, ear.TrustTierWarning, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.ApprovedRuntimeClaim)
