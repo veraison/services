@@ -1,9 +1,10 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
@@ -20,6 +21,17 @@ var (
 
 type cfg struct {
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
+	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
+	Cert       string `mapstructure:"cert"`
+	CertKey    string `mapstructure:"cert-key"`
+}
+
+func (o cfg) Validate() error {
+	if o.Protocol == "https" && (o.Cert == "[unset]" || o.CertKey == "[unset]") {
+		return errors.New(`both cert and cert-key must be specified when protocol is "https"`)
+	}
+
+	return nil
 }
 
 func main() {
@@ -64,19 +76,38 @@ func main() {
 
 	apiHandler := api.NewHandler(sessionManager, verifier)
 
-	cfg := cfg{ListenAddr: DefaultListenAddr}
+	cfg := cfg{
+		ListenAddr: DefaultListenAddr,
+		Protocol: "https",
+		Cert: "[unset]",
+		CertKey: "[unset]",
+	}
+
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(subs["verification"]); err != nil {
-		log.Fatalf("Could not load verfication config: %v", err)
+		log.Fatalf("Could not load verification config: %v", err)
 
 	}
 
-	log.Infow("initializing verification API service", "address", cfg.ListenAddr)
-	apiServer(apiHandler, cfg.ListenAddr)
+	if cfg.Protocol == "https" {
+		apiServerTLS(apiHandler, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
+	} else {
+		apiServer(apiHandler, cfg.ListenAddr)
+	}
 }
 
 func apiServer(apiHandler api.IHandler, listenAddr string) {
+	log.Infow("initializing verification API HTTP service", "address", listenAddr)
+
 	if err := api.NewRouter(apiHandler).Run(listenAddr); err != nil {
+		log.Fatalf("Gin engine failed: %v", err)
+	}
+}
+
+func apiServerTLS(apiHandler api.IHandler, listenAddr, certFile, keyFile string) {
+	log.Infow("initializing verification API HTTPS service", "address", listenAddr)
+
+	if err := api.NewRouter(apiHandler).RunTLS(listenAddr, certFile, keyFile); err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
 }

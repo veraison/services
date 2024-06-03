@@ -5,10 +5,19 @@ logging:
     - logs/{{ .service }}-stdout.log
 provisioning:
   listen-addr: 0.0.0.0:${PROVISIONING_PORT}
+  protocol: https
+  cert: /opt/veraison/provisioning.crt
+  cert-key: /opt/veraison/provisioning.key
 verification:
   listen-addr: 0.0.0.0:${VERIFICATION_PORT}
+  protocol: https
+  cert: /opt/veraison/verification.crt
+  cert-key: /opt/veraison/verification.key
 management:
   listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
+  protocol: https
+  cert: /opt/veraison/management.crt
+  cert-key: /opt/veraison/management.key
 vts:
   server-addr: vts-service:${VTS_PORT}
 ear-signer:

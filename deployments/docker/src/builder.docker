@@ -57,7 +57,7 @@ RUN go mod download &&\
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
     go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
-    go install github.com/veraison/corim/cocli@eeb7bd48 &&\
+    go install github.com/veraison/corim/cocli@latest &&\
     go install github.com/veraison/evcli/v2@latest &&\
     go install github.com/veraison/pocli@latest &&\
     go install github.com/go-delve/delve/cmd/dlv@latest

@@ -28,6 +28,8 @@ RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${MANAGER_UID}" | cut -d: -f1
     groupadd -g 616 veraison && \
     useradd -m -u ${MANAGER_UID} -g manager -G veraison -s /bin/bash manager
 
+ADD --chown=root:root certs/rootCA.crt /etc/ssl/certs/veraison-ca.crt
+
 USER manager
 
 WORKDIR /opt/veraison

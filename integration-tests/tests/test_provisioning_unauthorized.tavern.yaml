@@ -7,7 +7,8 @@ stages:
   - name: submit post request to the provisioning service with no authorization
     request:
       method: POST
-      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      url: https://{provisioning-service}/endorsement-provisioning/v1/submit
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
     response:
@@ -16,7 +17,8 @@ stages:
   - name: get active policy with no authorization
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
     response:

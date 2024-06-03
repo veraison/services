@@ -37,13 +37,16 @@ RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${TESTER_UID}" | cut -d: -f1)
     useradd -m -u ${TESTER_UID} -g tavern -G veraison \
     -s /bin/bash tavern
 
+ADD --chown=root:root rootCA.crt /etc/ssl/certs/veraison-ca.crt
+
 WORKDIR /integration-tests
 
 USER tavern
 
 RUN pip install --upgrade pip &&  \
-    pip install jsonschema==3.2.0 \
-                tavern==2.0.5 \
+    pip install jsonschema==4.22.0 \
+                tavern==2.11.0 \
+                urllib3==2.2.1 \
                 python-jose==3.3.0 \
                 ipdb==0.13.11
 

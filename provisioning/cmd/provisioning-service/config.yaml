@@ -4,6 +4,9 @@ logging:
   level: debug  # valid levels: error, warning, info, debug
 provisioning:
   listen-addr: 0.0.0.0:8888
+  protocol: https
+  cert: provisioning.crt
+  cert-key: provisioning.key
 vts:
   server-addr: vts-service:50051
 # vim: set ft=yaml:
