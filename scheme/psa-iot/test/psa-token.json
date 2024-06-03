@@ -1,0 +1,36 @@
+{
+    "psa-boot-seed": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-nonce": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-client-id": 2,
+    "psa-implementation-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+    "psa-instance-id": "AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY",
+    "psa-profile": "PSA_IOT_PROFILE_1",
+    "psa-security-lifecycle": 3,
+    "psa-software-components": [
+        {
+            "measurement-description": "TF-M_SHA256MemPreXIP",
+            "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "measurement-type": "BL",
+            "version": "3.4.2"
+        },
+        {
+            "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "measurement-type": "M1",
+            "version": "1.2.0"
+        },
+        {
+            "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "measurement-type": "M2",
+            "version": "1.2.3"
+        },
+        {
+            "measurement-value": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
+            "measurement-type": "M3",
+            "version": "1.0.0"
+        }
+    ]
+}

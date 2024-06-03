@@ -32,6 +32,31 @@ func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	assert.Equal(t, []string{expectedTaID}, taIDs)
 }
 
+func Test_GetRefValueIDs_ok(t *testing.T) {
+	rawTA, err := os.ReadFile("test/evidence/ta_endorsements.json")
+	require.NoError(t, err)
+
+	trustAnchors := []string{string(rawTA)}
+
+	rawToken, err := os.ReadFile("test/evidence/extracted.json")
+	require.NoError(t, err)
+
+	tokenJSON := make(map[string]interface{})
+	err = json.Unmarshal(rawToken, &tokenJSON)
+	require.NoError(t, err)
+
+	claims := tokenJSON["evidence"].(map[string]interface{})
+
+	expectedRefvalID := "PARSEC_TPM://1/cd1f0e55-26f9-460d-b9d8-f7fde171787c"
+
+	handler := &StoreHandler{}
+
+	refvalIDs, err := handler.GetRefValueIDs("1", trustAnchors, claims)
+	require.NoError(t, err)
+	assert.Equal(t, []string{expectedRefvalID}, refvalIDs)
+}
+
+
 func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/evidence/ta_endorsements.json")
 	require.NoError(t, err)
