@@ -3,6 +3,7 @@
 package tpm_enacttrust
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-func Test_GetTrustAnchorIds_ok(t *testing.T) {
+func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	data, err := os.ReadFile("test/tokens/basic.token")
 	require.NoError(t, err)
 
@@ -26,4 +27,21 @@ func Test_GetTrustAnchorIds_ok(t *testing.T) {
 	taIDs, err := s.GetTrustAnchorIDs(&ta)
 	require.NoError(t, err)
 	assert.Equal(t, "TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1", taIDs[0])
+}
+
+func Test_GetRefValueIDs_ok(t *testing.T) {
+	raw, err := os.ReadFile("test/tokens/basic.json")
+	require.NoError(t, err)
+
+	claims := make(map[string]interface{})
+	err = json.Unmarshal(raw, &claims)
+	require.NoError(t, err)
+
+	expectedRefvalIDs := []string{"TPM_ENACTTRUST://0/7df7714e-aa04-4638-bcbf-434b1dd720f1"}
+
+	s := StoreHandler{}
+
+	refvalIDs, err := s.GetRefValueIDs("0", nil, claims)
+	require.NoError(t, err)
+	assert.Equal(t, expectedRefvalIDs, refvalIDs)
 }

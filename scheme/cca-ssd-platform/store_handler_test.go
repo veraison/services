@@ -45,6 +45,27 @@ func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	assert.Equal(t, expectedTaID, taID)
 }
 
+func Test_GetRefValueIDs_ok(t *testing.T) {
+	rawToken, err := os.ReadFile("test/cca-token.json")
+	require.NoError(t, err)
+
+	tokenJSON := make(map[string]map[string]interface{})
+	err = json.Unmarshal(rawToken, &tokenJSON)
+	require.NoError(t, err)
+
+	platformClaims := tokenJSON["cca-platform-token"]
+	platformClaims["cca-platform-challenge"] = testNonce
+
+	claims := map[string]interface{}{"platform": platformClaims}
+
+	expectedRefvalIDs := []string{"CCA_SSD_PLATFORM://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="}
+
+	scheme := &StoreHandler{}
+	refvalIDs, err := scheme.GetRefValueIDs("1", nil, claims)
+	require.NoError(t, err)
+	assert.Equal(t, expectedRefvalIDs, refvalIDs)
+}
+
 func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	endorsementsBytes, err := os.ReadFile("test/ta-endorsements.json")
 	require.NoError(t, err)
