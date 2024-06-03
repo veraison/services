@@ -7,7 +7,8 @@ stages:
   - name: verify as relying party - creation of resource with bad nonce
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonce={bad-nonce}
+      url: https://{verification-service}/challenge-response/v1/newSession?nonce={bad-nonce}
+      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 400
       json:

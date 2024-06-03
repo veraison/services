@@ -19,12 +19,18 @@ configuration:
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the
   management server will be listening on. If not specified, this defaults to
   `localhost:8088`.
+- `protocol` (optional): the protocol that will be used. Must be either "http" or "https". Defaults to "https" if not specified.
+- `cert`: path to the x509 certificate to be used. Must be specified if protocol is "https"
+- `cert-key`: path to the key associated with the certificate specified in `cert`. Must be specified if protocol is "https"
 
 ### Example
 
 ```yaml
 management:
   listen-addr: 0.0.0.0:8088
+  protocol: https
+  cert: management.crt
+  cert-key: management.key
 po-store:
   backend: sql
   sql:

@@ -13,6 +13,9 @@ configuration:
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the verification
   server will be listening on. If not specified, this defaults to
   `localhost:8080`.
+- `protocol` (optional): the protocol that will be used. Defaults to "https" if not specified. Must be either "http" or "https".
+- `cert`: path to the x509 certificate to be used. Must be specified if protocol is "https"
+- `cert-key`: path to the key associated with the certificate specified in `cert`. Must be specified if protocol is "https"
 
 ### Verifier configuration
 
@@ -23,6 +26,9 @@ The verifier currently doesn't support any configuration.
 ```yaml
 verification:
   listen-addr: localhost:8888
+  protocol: https
+  cert: verification.crt
+  cert-key: verification.key
 vts:
   server-addr: 127.0.0.1:50051
 ```

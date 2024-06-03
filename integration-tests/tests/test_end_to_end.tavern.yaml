@@ -39,7 +39,8 @@ stages:
   - name: submit post request to the provisioning service successfully
     request:
       method: POST
-      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      url: https://{provisioning-service}/endorsement-provisioning/v1/submit
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
@@ -50,7 +51,8 @@ stages:
   - name: verify as relying party - creation of session resource
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonce={nonce-value}
+      url: https://{verification-service}/challenge-response/v1/newSession?nonce={nonce-value}
+      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 201
       save:
@@ -60,7 +62,8 @@ stages:
   - name: verify as relying party - submitting the evidence
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+      url: https://{verification-service}/challenge-response/v1/{relying-party-session}
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{evidence-content-type}' # set via hook
       file_body: __generated__/evidence/{scheme}.{evidence}.cbor
@@ -79,14 +82,16 @@ stages:
   - name: verify as relying party - deleting the session object
     request:
       method: DELETE
-      url: http://{verification-service}/challenge-response/v1/{relying-party-session}
+      url: https://{verification-service}/challenge-response/v1/{relying-party-session}
+      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 204
 
   - name: verify as attester - creation of session resource
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/newSession?nonceSize={nonce-size}
+      url: https://{verification-service}/challenge-response/v1/newSession?nonceSize={nonce-size}
+      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 201
       verify_response_with:
@@ -104,7 +109,8 @@ stages:
   - name: verify as attester - submitting the evidence
     request:
       method: POST
-      url: http://{verification-service}/challenge-response/v1/{attester-session}
+      url: https://{verification-service}/challenge-response/v1/{attester-session}
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{evidence-content-type}' # set via hook
       file_body: __generated__/evidence/{scheme}.{evidence}.server-nonce.cbor
@@ -119,6 +125,7 @@ stages:
   - name: verify as attester - deleting the session object
     request:
       method: DELETE
-      url: http://{verification-service}/challenge-response/v1/{attester-session}
+      url: https://{verification-service}/challenge-response/v1/{attester-session}
+      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 204

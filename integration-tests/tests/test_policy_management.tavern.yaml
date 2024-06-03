@@ -7,7 +7,8 @@ stages:
   - name: get active policy (non-existent)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -17,7 +18,8 @@ stages:
   - name: submit initial policy
     request:
       method: POST
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
@@ -38,7 +40,8 @@ stages:
   - name: get active policy (none activated)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -48,7 +51,8 @@ stages:
   - name: get policy by uuid
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}
+      url: https://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -64,7 +68,8 @@ stages:
   - name: activate policy
     request:
       method: POST
-      url: http://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}/activate
+      url: https://{management-service}/management/v1/policy/PSA_IOT/{policy-uuid}/activate
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         authorization: '{authorization}' # set via hook
     response:
@@ -73,7 +78,8 @@ stages:
   - name: get active policy (ok)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -89,7 +95,8 @@ stages:
   - name: get active policy (bad scheme)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/BAD
+      url: https://{management-service}/management/v1/policy/BAD
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -102,7 +109,8 @@ stages:
   - name: submit replacement policy
     request:
       method: POST
-      url: http://{management-service}/management/v1/policy/PSA_IOT?name=test
+      url: https://{management-service}/management/v1/policy/PSA_IOT?name=test
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
@@ -123,7 +131,8 @@ stages:
   - name: get active policy (ok)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policy/PSA_IOT
+      url: https://{management-service}/management/v1/policy/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policy+json
         authorization: '{authorization}' # set via hook
@@ -139,7 +148,8 @@ stages:
   - name: get policies (one active)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policies/PSA_IOT
+      url: https://{management-service}/management/v1/policies/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policies+json
         authorization: '{authorization}' # set via hook
@@ -153,7 +163,8 @@ stages:
   - name: deactivate all
     request:
       method: POST
-      url: http://{management-service}/management/v1/policies/PSA_IOT/deactivate
+      url: https://{management-service}/management/v1/policies/PSA_IOT/deactivate
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         authorization: '{authorization}' # set via hook
     response:
@@ -162,7 +173,8 @@ stages:
   - name: get policies (no active)
     request:
       method: GET
-      url: http://{management-service}/management/v1/policies/PSA_IOT
+      url: https://{management-service}/management/v1/policies/PSA_IOT
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         accept: application/vnd.veraison.policies+json
         authorization: '{authorization}' # set via hook

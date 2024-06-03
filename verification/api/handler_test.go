@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -971,7 +971,8 @@ func TestHandler_GetWellKnownVerificationInfo_ok(t *testing.T) {
 	NewRouter(h).ServeHTTP(w, req)
 
 	var body capability.WellKnownInfo
-	_ = json.Unmarshal(w.Body.Bytes(), &body)
+	bytes := w.Body.Bytes()
+	_ = json.Unmarshal(bytes, &body)
 
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))

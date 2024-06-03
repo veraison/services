@@ -25,7 +25,8 @@ stages:
   - name: submit post request to the provisioning service successfully
     request:
       method: POST
-      url: http://{provisioning-service}/endorsement-provisioning/v1/submit
+      url: https://{provisioning-service}/endorsement-provisioning/v1/submit
+      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook

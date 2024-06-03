@@ -22,7 +22,8 @@ WORKDIR /opt/veraison
 
 RUN mkdir logs
 
-ADD --chown=veraison:nogroup config.yaml verification-service service-entrypoint ./
+ADD --chown=veraison:nogroup config.yaml verification-service service-entrypoint \
+    certs/verification.crt certs/verification.key ./
 
 ENTRYPOINT ["/opt/veraison/service-entrypoint"]
 CMD ["/opt/veraison/verification-service"]

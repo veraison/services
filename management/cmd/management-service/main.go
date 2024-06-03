@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -17,6 +17,9 @@ var (
 
 type cfg struct {
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
+	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
+	Cert       string `mapstructure:"cert"`
+	CertKey    string `mapstructure:"cert-key"`
 }
 
 func main() {
@@ -46,14 +49,18 @@ func main() {
 		log.Fatalf("could not init policy manager: %v", err)
 	}
 
-	cfg := cfg{ListenAddr: DefaultListenAddr}
+	cfg := cfg{
+		ListenAddr: DefaultListenAddr,
+		Protocol: "https",
+		Cert: "[unset]",
+		CertKey: "[unset]",
+	}
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(subs["management"]); err != nil {
 		log.Fatalf("Could not load verfication config: %v", err)
 
 	}
 
-	log.Infow("initializing management API service", "address", cfg.ListenAddr)
 	authorizer, err := auth.NewAuthorizer(subs["auth"], log.Named("auth"))
 	if err != nil {
 		log.Fatalf("could not init authorizer: %v", err)
@@ -66,7 +73,25 @@ func main() {
 	}()
 
 	handler := api.NewHandler(pm, log.Named("api"))
-	if err := api.NewRouter(handler, authorizer).Run(cfg.ListenAddr); err != nil {
-		log.Errorf("Gin engine failed: %v", err)
+
+	if cfg.Protocol == "https" {
+		apiServerTLS(handler, authorizer, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
+	} else {
+		apiServer(handler, authorizer, cfg.ListenAddr)
+	}
+}
+
+func apiServer(apiHandler api.Handler, auth auth.IAuthorizer, listenAddr string) {
+	log.Infow("initializing management API HTTP service", "address", listenAddr)
+	if err := api.NewRouter(apiHandler, auth).Run(listenAddr); err != nil {
+		log.Fatalf("Gin engine failed: %v", err)
+	}
+}
+
+func apiServerTLS(apiHandler api.Handler, auth auth.IAuthorizer, listenAddr, certFile, keyFile string) {
+	log.Infow("initializing management API HTTPS service", "address", listenAddr)
+
+	if err := api.NewRouter(apiHandler, auth).RunTLS(listenAddr, certFile, keyFile); err != nil {
+		log.Fatalf("Gin engine failed: %v", err)
 	}
 }

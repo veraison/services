@@ -1,10 +1,11 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,6 +25,17 @@ var (
 
 type cfg struct {
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
+	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
+	Cert       string `mapstructure:"cert"`
+	CertKey    string `mapstructure:"cert-key"`
+}
+
+func (o cfg) Validate() error {
+	if o.Protocol == "https" && (o.Cert == "[unset]" || o.CertKey == "[unset]") {
+		return errors.New(`both cert and cert-key must be specified when protocol is "https"`)
+	}
+
+	return nil
 }
 
 func main() {
@@ -36,6 +48,9 @@ func main() {
 
 	cfg := cfg{
 		ListenAddr: DefaultListenAddr,
+		Protocol: "https",
+		Cert: "[unset]",
+		CertKey: "[unset]",
 	}
 
 	subs, err := config.GetSubs(v, "provisioning", "vts", "*logging", "*auth")
@@ -86,7 +101,12 @@ func main() {
 	}()
 
 	apiHandler := api.NewHandler(provisioner, log.Named("api"))
-	go apiServer(apiHandler, authorizer, cfg.ListenAddr)
+
+	if cfg.Protocol == "https" {
+		go apiServerTLS(apiHandler, authorizer, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
+	} else {
+		go apiServer(apiHandler, authorizer, cfg.ListenAddr)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -108,7 +128,22 @@ func terminator(
 }
 
 func apiServer(apiHandler api.IHandler, authorizer auth.IAuthorizer, listenAddr string) {
+	log.Infow("initializing provisioning API HTTP service", "address", listenAddr)
+
 	if err := api.NewRouter(apiHandler, authorizer).Run(listenAddr); err != nil {
+		log.Fatalf("Gin engine failed: %v", err)
+	}
+}
+
+func apiServerTLS(
+	apiHandler api.IHandler,
+	authorizer auth.IAuthorizer,
+	listenAddr, certFile, keyFile string,
+) {
+	log.Infow("initializing provisioning API HTTPS service", "address", listenAddr)
+
+	err := api.NewRouter(apiHandler, authorizer).RunTLS(listenAddr, certFile, keyFile)
+	if err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
 }

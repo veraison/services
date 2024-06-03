@@ -1,6 +1,7 @@
 #!/bin/bash
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
+# shellcheck disable=SC2155,SC2086
 # This script is the entry point for the builder docker container.
 
 _ERROR='\e[0;31mERROR\e[0m'
@@ -28,6 +29,7 @@ function deploy() {
     mkdir -p $DEPLOY_DIR/stores
     mkdir -p $DEPLOY_DIR/logs
     mkdir -p $DEPLOY_DIR/utils
+    mkdir -p $DEPLOY_DIR/certs
 
     echo "deploying services"
     cp $BUILD_DIR/provisioning/cmd/provisioning-service/provisioning-service $DEPLOY_DIR/
@@ -38,6 +40,13 @@ function deploy() {
     cp $BUILD_DIR/deployments/docker/src/skey.jwk $DEPLOY_DIR/
     cp $BUILD_DIR/deployments/docker/src/service-entrypoint $DEPLOY_DIR/
     cp $BUILD_DIR/deployments/docker/src/veraison-realm.json $DEPLOY_DIR/
+    cp $BUILD_DIR/deployments/docker/src/certs/rootCA.crt $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/verification.crt $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/verification.key $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/provisioning.crt $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/provisioning.key $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/management.crt $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/management.key $DEPLOY_DIR/certs/
     cp $gobin/evcli $DEPLOY_DIR/utils/
     cp $gobin/cocli $DEPLOY_DIR/utils/
     cp $gobin/pocli $DEPLOY_DIR/utils/
