@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/veraison/ccatoken"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
@@ -31,67 +32,84 @@ func (Cca_realm_attester) PerformAppraisal(
 	// we can safely assume the Realm instance to be trustworthy
 	appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 
-	// Compare RIM and PV (if provided)
-	rimClaim, err := claims.GetInitialMeasurement()
-	if err != nil {
-		handler.BadEvidence(err)
-	}
-	pvClaim, err := claims.GetPersonalizationValue()
-	if err != nil {
-		handler.BadEvidence(err)
-	}
 	for _, endorsement := range endorsements {
-		rimRpvMatch := false
-		r, err := cca.GetRim(endorsement.SubScheme, endorsement.Attributes)
-		if err != nil {
-			return fmt.Errorf("unable to get rim endorsements: %w", err)
-		}
-		rim, err := base64.StdEncoding.DecodeString(r)
-		if err != nil {
-			return err
-		}
-		pv, err := cca.GetRpv(endorsement.SubScheme, endorsement.Attributes)
-		if err != nil {
-			return fmt.Errorf("unable to get rpv endorsements: %w", err)
-		}
-		if bytes.Equal(rimClaim, rim) {
-			if (pv == nil) || bytes.Equal(pvClaim, pv) {
-				log.Debug("Realm Initial Measurements and RPV match")
-				rimRpvMatch = true
-			}
-		}
+		rimRpvMatch := matchRimRpv(claims, &endorsement)
 		if rimRpvMatch {
 			appraisal.TrustVector.Executables = ear.ApprovedBootClaim
-			remMatch := false
 			// Match REM's
-			remsClaim, err := claims.GetExtensibleMeasurements()
-			if err != nil {
-				return handler.BadEvidence(err)
-			}
-			rems, err := cca.GetRems(endorsement.SubScheme, endorsement.Attributes)
-			if err != nil {
-				return err
-			}
-			for i, rem := range rems {
-				if bytes.Equal(remsClaim[i], rem) {
-					log.Debugf("Realm Extended Measurement match at index: %d", i)
-					remMatch = true
-				} else {
-					remMatch = false
-					break /* the rem loop */
-				}
-			}
+			remMatch := matchRem(claims, &endorsement)
 			if remMatch {
 				appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
-			} else {
-				appraisal.TrustVector.Executables = ear.ContraindicatedRuntimeClaim
 			}
-			// break from the Endorsement loop once Rim, Rpv match
 			break
 		} else {
 			// TO DO “UNRECOGNIZED_BOOT" is missing
 			appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 		}
 	}
+	appraisal.UpdateStatusFromTrustVector()
+	appraisal.VeraisonAnnotatedEvidence = &claimsMap
+
 	return nil
+}
+
+func matchRimRpv(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
+	// Compare RIM and PV (if provided)
+	rimClaim, err := claims.GetInitialMeasurement()
+	if err != nil {
+		log.Errorf("matchRimRpv failed: %w", handler.BadEvidence(err))
+		return false
+	}
+	pvClaim, err := claims.GetPersonalizationValue()
+	if err != nil {
+		log.Errorf("matchRimRpv failed: %w", handler.BadEvidence(err))
+		return false
+	}
+
+	r, err := cca.GetRim(endorsement.SubScheme, endorsement.Attributes)
+	if err != nil {
+		log.Errorf("unable to get rim endorsements: %w", err)
+		return false
+	}
+	rim, err := base64.StdEncoding.DecodeString(r)
+	if err != nil {
+		log.Errorf("matchRimRpv failed: %w", err)
+		return false
+	}
+	pv, err := cca.GetRpv(endorsement.SubScheme, endorsement.Attributes)
+	if err != nil {
+		log.Errorf("unable to get rpv endorsements: %w", err)
+		return false
+	}
+	if bytes.Equal(rimClaim, rim) {
+		if (pv == nil) || bytes.Equal(pvClaim, pv) {
+			log.Debug("Realm Initial Measurements and RPV match")
+			return true
+		}
+	}
+	return false
+}
+
+func matchRem(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
+	remMatch := false
+	remsClaim, err := claims.GetExtensibleMeasurements()
+	if err != nil {
+		log.Errorf("unable to get realm extensible measurements from claims: %w", handler.BadEvidence(err))
+		return remMatch
+	}
+	rems, err := cca.GetRems(endorsement.SubScheme, endorsement.Attributes)
+	if err != nil {
+		log.Errorf("unable to get REM endorsements: %w", err)
+		return remMatch
+	}
+	for i, rem := range rems {
+		if bytes.Equal(remsClaim[i], rem) {
+			log.Debugf("Realm Extended Measurement match at index: %d", i)
+			remMatch = true
+		} else {
+			remMatch = false
+			break /* the rem loop */
+		}
+	}
+	return remMatch
 }

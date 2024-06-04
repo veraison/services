@@ -72,7 +72,7 @@ func (Cca_platform_attester) PerformAppraisal(
 	}
 	appraisal.UpdateStatusFromTrustVector()
 
-	//appraisal.VeraisonAnnotatedEvidence = &evidence
+	appraisal.VeraisonAnnotatedEvidence = &claimsMap
 
 	return nil
 }
