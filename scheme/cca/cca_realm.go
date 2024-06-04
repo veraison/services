@@ -44,7 +44,7 @@ func (Cca_realm_attester) PerformAppraisal(
 			break
 		} else {
 			// TO DO “UNRECOGNIZED_BOOT" is missing
-			appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
+			appraisal.TrustVector.Executables = ear.ContraindicatedRuntimeClaim
 		}
 	}
 	appraisal.UpdateStatusFromTrustVector()
