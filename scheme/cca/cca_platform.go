@@ -4,6 +4,8 @@
 package cca
 
 import (
+	"fmt"
+
 	"github.com/veraison/ear"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
@@ -17,12 +19,12 @@ type Cca_platform_attester struct {
 
 func (Cca_platform_attester) PerformAppraisal(
 	appraisal *ear.Appraisal,
-	evidence map[string]interface{},
+	claimsMap map[string]interface{},
 	endorsements []handler.Endorsement,
 ) error {
-	claims, err := common.MapToClaims(evidence["platform"].(map[string]interface{}))
+	claims, err := common.MapToClaims(claimsMap)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get platform claims from platform claims map: %w", err)
 	}
 
 	// once the signature on the token is verified, we can claim the HW is
@@ -70,7 +72,7 @@ func (Cca_platform_attester) PerformAppraisal(
 	}
 	appraisal.UpdateStatusFromTrustVector()
 
-	appraisal.VeraisonAnnotatedEvidence = &evidence
+	//appraisal.VeraisonAnnotatedEvidence = &evidence
 
 	return nil
 }

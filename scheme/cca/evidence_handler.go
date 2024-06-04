@@ -124,16 +124,16 @@ func (s EvidenceHandler) AppraiseEvidence(
 		if err != nil {
 			return nil, err
 		}
-		appraisal, err := createSubMod(subscheme, result)
+		appraisal, err := createAppraisal(subscheme, result)
 		if err != nil {
 			return nil, err
 		}
 
-		subAttester, err := getSubAttester(subscheme)
+		subAttester, claims, err := getSubAttester(subscheme, ec)
 		if err != nil {
 			return nil, err
 		}
-		err = subAttester.PerformAppraisal(appraisal, ec.Evidence.AsMap(), endorsements)
+		err = subAttester.PerformAppraisal(appraisal, claims, endorsements)
 		if err != nil {
 			return nil, err
 		}
@@ -157,25 +157,32 @@ func filterEndorsements(subscheme string, endorsementsStrings []string) ([]handl
 	return endorsements, nil
 }
 
-func getSubAttester(subscheme string) (ISubAttester, error) {
+func getSubAttester(
+	subscheme string,
+	ec *proto.EvidenceContext,
+) (ISubAttester, map[string]interface{}, error) {
+	var claims map[string]interface{}
+	evidence := ec.Evidence.AsMap()
 	switch subscheme {
 	case "CCA_SSD_PLATFORM":
-		return &Cca_platform_attester{}, nil
+		claims = evidence["platform"].(map[string]interface{})
+		return &Cca_platform_attester{}, claims, nil
 	case "CCA_REALM":
-		return &Cca_realm_attester{}, nil
+		claims = evidence["realm"].(map[string]interface{})
+		return &Cca_realm_attester{}, claims, nil
 	default:
-		return nil, fmt.Errorf("invalid scheme: %s", subscheme)
+		return nil, claims, fmt.Errorf("invalid scheme: %s", subscheme)
 	}
 }
 
-func createSubMod(submodname string, ear *ar.AttestationResult) (*ar.Appraisal, error) {
+func createAppraisal(submodname string, ear *ar.AttestationResult) (*ar.Appraisal, error) {
 	submod, ok := ear.Submods[submodname]
-	if submod == nil {
-		log.Debugf("SUBMOD IS NIL for subMod= %s", submodname)
-	}
 	if !ok {
-		log.Debugf("createSubMod IS NOT OK FOR SCHEME= %s", submodname)
-		submod = &ar.Appraisal{}
+		var status ar.TrustTier
+		submod = &ar.Appraisal{
+			TrustVector: &ar.TrustVector{},
+			Status:      &status,
+		}
 		ear.Submods[submodname] = submod
 	}
 	return submod, nil
