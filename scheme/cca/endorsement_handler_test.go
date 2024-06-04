@@ -67,8 +67,8 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 func TestDecoder_Decode_CcaSsdRefVal_OK(t *testing.T) {
 	tvs := []string{
-		unsignedCorimComidCcaRefValOne,
-		unsignedCorimComidCcaRefValFour,
+		unsignedcorimCcacomidCcaRefValOne,
+		unsignedcorimCcacomidCcaRefValFour,
 	}
 
 	d := &EndorsementHandler{}
@@ -88,12 +88,12 @@ func TestDecoder_Decode_CCaSsdRefVal_NOK(t *testing.T) {
 	}{
 		{
 			desc:        "missing profile inside corim containing one CCA platform config measurement",
-			input:       unsignedCorimNoProfileComidCcaRefValOne,
+			input:       unsignedcorimCcaNoProfilecomidCcaRefValOne,
 			expectedErr: "no profile information set in CoRIM",
 		},
 		{
 			desc:        "missing profile inside corim containing multiple reference value measurements",
-			input:       unsignedCorimNoProfileComidCcaRefValFour,
+			input:       unsignedcorimCcaNoProfilecomidCcaRefValFour,
 			expectedErr: "no profile information set in CoRIM",
 		},
 	}
@@ -108,8 +108,8 @@ func TestDecoder_Decode_CCaSsdRefVal_NOK(t *testing.T) {
 
 func TestDecoder_DecodeCcaRealm_OK(t *testing.T) {
 	tvs := []string{
-		unsignedCorimcomidCcaRealm,
-		unsignedCorimcomidCcaRealmNoClass,
+		unsignedcorimCcaRealmcomidCcaRealm,
+		unsignedcorimCcaRealmcomidCcaRealmNoClass,
 	}
 
 	d := &EndorsementHandler{}
@@ -129,17 +129,17 @@ func TestDecoder_DecodeCcaRealm_negative_tests(t *testing.T) {
 	}{
 		{
 			desc:        "no realm instance identity in corim",
-			input:       unsignedCorimcomidCcaRealmNoInstance,
+			input:       unsignedcorimCcaRealmcomidCcaRealmNoInstance,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm instance attributes: expecting instance in environment",
 		},
 		{
 			desc:        "invalid instance identity in corim",
-			input:       unsignedCorimcomidCcaRealmInvalidInstance,
+			input:       unsignedcorimCcaRealmcomidCcaRealmInvalidInstance,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm instance attributes: expecting instance as bytes for CCA Realm",
 		},
 		{
 			desc:        "invalid class identity in corim",
-			input:       unsignedCorimcomidCcaRealmInvalidClass,
+			input:       unsignedcorimCcaRealmcomidCcaRealmInvalidClass,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm class attributes: could not extract uu-id from class-id: class-id type is: *comid.TaggedImplID",
 		},
 	}

@@ -1,10 +1,11 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
+
 package cca
 
 // automatically generated from:
-// ComidCcaRefValOne.json and corimCca.json
-var unsignedCorimComidCcaRefValOne = `
+// comidCcaRefValOne.json and corimCca.json
+var unsignedcorimCcacomidCcaRefValOne = `
 a600505c57e8f446cd421b91c908cf93e13cfc018158b3d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
 434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d70
@@ -21,8 +22,8 @@ d902305272617776616c75650a72617776616c75650a0281a200d8207840
 `
 
 // automatically generated from:
-// ComidCcaRefValFour.json and corimCca.json
-var unsignedCorimComidCcaRefValFour = `
+// comidCcaRefValFour.json and corimCca.json
+var unsignedcorimCcacomidCcaRefValFour = `
 a600505c57e8f446cd421b91c908cf93e13cfc01815901cbd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
 41434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d
@@ -49,8 +50,8 @@ c11a695467800581a3006941434d45204c74642e01d8206c61636d652e65
 `
 
 // automatically generated from:
-// ComidCcaRefValOne.json and corimCcaNoProfile.json
-var unsignedCorimNoProfileComidCcaRefValOne = `
+// comidCcaRefValOne.json and corimCcaNoProfile.json
+var unsignedcorimCcaNoProfilecomidCcaRefValOne = `
 a500505c57e8f446cd421b91c908cf93e13cfc018158b3d901faa4006565
 6e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a3006941
 434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d70
@@ -66,8 +67,8 @@ d902305272617776616c75650a72617776616c75650a0281a200d8207840
 `
 
 // automatically generated from:
-// ComidCcaRefValFour.json and corimCcaNoProfile.json
-var unsignedCorimNoProfileComidCcaRefValFour = `
+// comidCcaRefValFour.json and corimCcaNoProfile.json
+var unsignedcorimCcaNoProfilecomidCcaRefValFour = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901cbd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30069
 41434d45204c74642e01d8207468747470733a2f2f61636d652e6578616d
@@ -94,7 +95,7 @@ c3f9bebb6bc24f32ffd5b67b387244c2c909da779a1478a200d9025a6961
 
 // automatically generated from:
 // comidCcaRealm.json and corimCcaRealm.json
-var unsignedCorimcomidCcaRealm = `
+var unsignedcorimCcaRealmcomidCcaRealm = `
 a500505c57e8f446cd421b91c908cf93e13cfc0181590234d901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30074
 576f726b6c6f616420436c69656e74204c74642e01d820781e6874747073
@@ -122,7 +123,7 @@ b23986b34ba615abf6514cf35e5a9ea55a032d068a786472656d32818207
 
 // automatically generated from:
 // comidCcaRealmNoClass.json and corimCcaRealm.json
-var unsignedCorimcomidCcaRealmNoClass = `
+var unsignedcorimCcaRealmcomidCcaRealmNoClass = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901c3d901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30074
 576f726b6c6f616420436c69656e74204c74642e01d820781e6874747073
@@ -146,7 +147,7 @@ a71d9eb23986b34ba615abf6514cf35e5a9ea55a032d068a780381781a68
 
 // automatically generated from:
 // comidCcaRealmNoInstance.json and corimCcaRealm.json
-var unsignedCorimcomidCcaRealmNoInstance = `
+var unsignedcorimCcaRealmcomidCcaRealmNoInstance = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901b8d901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30074
 576f726b6c6f616420436c69656e74204c74642e01d820781e6874747073
@@ -170,7 +171,7 @@ f6514cf35e5a9ea55a032d068a780381781a687474703a2f2f61726d2e63
 
 // automatically generated from:
 // comidCcaRealmInvalidInstance.json and corimCcaRealm.json
-var unsignedCorimcomidCcaRealmInvalidInstance = `
+var unsignedcorimCcaRealmcomidCcaRealmInvalidInstance = `
 a500505c57e8f446cd421b91c908cf93e13cfc01815901dfd901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30074
 576f726b6c6f616420436c69656e74204c74642e01d820781e6874747073
@@ -195,7 +196,7 @@ a71d9eb23986b34ba615abf6514cf35e5a9ea55a032d068a786472656d33
 
 // automatically generated from:
 // comidCcaRealmInvalidClass.json and corimCcaRealm.json
-var unsignedCorimcomidCcaRealmInvalidClass = `
+var unsignedcorimCcaRealmcomidCcaRealmInvalidClass = `
 a500505c57e8f446cd421b91c908cf93e13cfc0181590237d901faa40065
 656e2d474201a1005043bbe37f2e614b33aed353cff1428b160281a30074
 576f726b6c6f616420436c69656e74204c74642e01d820781e6874747073
