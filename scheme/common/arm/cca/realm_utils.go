@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/veraison/ccatoken"
+	"github.com/veraison/services/log"
 )
 
 func GetRim(subscheme string, attr json.RawMessage) (string, error) {
@@ -54,7 +55,9 @@ func GetRems(subscheme string, attr json.RawMessage) ([][]byte, error) {
 		return nil, err
 	}
 	for _, key := range keys {
-		rem, ok := at[subscheme+key].(string)
+		key = subscheme + "." + key
+		log.Debugf("Rem key = %s", key)
+		rem, ok := at[key].(string)
 		if ok {
 			brem, err := base64.StdEncoding.DecodeString(rem)
 			if err != nil {
@@ -62,6 +65,7 @@ func GetRems(subscheme string, attr json.RawMessage) ([][]byte, error) {
 			}
 			rems = append(rems, brem)
 		} else {
+			log.Debugf("No Rem with key = %s", key)
 			break
 		}
 	}

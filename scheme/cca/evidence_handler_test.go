@@ -15,7 +15,7 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-func Test_AppraiseEvidence_ok(t *testing.T) { // nolint: dupl
+func Test_AppraiseEvidence_Platform(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -28,7 +28,6 @@ func Test_AppraiseEvidence_ok(t *testing.T) { // nolint: dupl
 	require.NoError(t, err)
 	err = json.Unmarshal(endorsementsBytes, &endorsemementsArray)
 	require.NoError(t, err)
-
 	scheme := &EvidenceHandler{}
 
 	result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
@@ -39,6 +38,67 @@ func Test_AppraiseEvidence_ok(t *testing.T) { // nolint: dupl
 	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 	assert.Equal(t, attestation.TrustVector.Executables, ear.ApprovedRuntimeClaim)
 	assert.Equal(t, attestation.TrustVector.Configuration, ear.ApprovedConfigClaim)
+}
+
+func Test_AppraiseEvidence_Realm(t *testing.T) { // nolint: dupl
+	tvs := []struct {
+		desc           string
+		input          string
+		expectedStatus ear.TrustTier
+		expectedExec   ear.TrustClaim
+	}{
+
+		{
+			desc:           "No realm endorsements",
+			input:          "test/no-realm-endorsements.json",
+			expectedStatus: ear.TrustTierWarning,
+			expectedExec:   ear.UnrecognizedRuntimeClaim,
+		},
+		{
+			desc:           "No matching rim measurements",
+			input:          "test/rim-mismatch-endorsements.json",
+			expectedStatus: ear.TrustTierContraindicated,
+			expectedExec:   ear.ContraindicatedRuntimeClaim,
+		},
+		{
+			desc:           "matching rim & rpv, no rem",
+			input:          "test/no-rem-endorsements.json",
+			expectedStatus: ear.TrustTierAffirming,
+			expectedExec:   ear.ApprovedBootClaim,
+		},
+		{
+			desc:           "matching rim & rem, no rpv",
+			input:          "test/no-rpv-endorsements.json",
+			expectedStatus: ear.TrustTierAffirming,
+			expectedExec:   ear.ApprovedRuntimeClaim,
+		},
+		{
+			desc:           "matching rim, rpv and rem measurements",
+			input:          "test/match-endorsements.json",
+			expectedStatus: ear.TrustTierAffirming,
+			expectedExec:   ear.ApprovedRuntimeClaim,
+		},
+	}
+	for _, tv := range tvs {
+		extractedBytes, err := os.ReadFile("test/extracted.json")
+		require.NoError(t, err)
+
+		var ec proto.EvidenceContext
+		err = json.Unmarshal(extractedBytes, &ec)
+		require.NoError(t, err)
+		var endorsemementsArray []string
+		endorsementsBytes, err := os.ReadFile(tv.input)
+		require.NoError(t, err)
+		err = json.Unmarshal(endorsementsBytes, &endorsemementsArray)
+		require.NoError(t, err)
+		scheme := &EvidenceHandler{}
+		result, err := scheme.AppraiseEvidence(&ec, endorsemementsArray)
+		require.NoError(t, err)
+
+		attestation := result.Submods["CCA_REALM"]
+		assert.Equal(t, tv.expectedStatus, *attestation.Status)
+		assert.Equal(t, tv.expectedExec, attestation.TrustVector.Executables)
+	}
 }
 
 func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) { // nolint: dupl

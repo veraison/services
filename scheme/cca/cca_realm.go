@@ -31,6 +31,7 @@ func (Cca_realm_attester) PerformAppraisal(
 	// If crypto verification (including chaining) completes correctly,
 	// we can safely assume the Realm instance to be trustworthy
 	appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
+	appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 
 	for _, endorsement := range endorsements {
 		rimRpvMatch := matchRimRpv(claims, &endorsement)
@@ -107,6 +108,7 @@ func matchRem(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
 			log.Debugf("Realm Extended Measurement match at index: %d", i)
 			remMatch = true
 		} else {
+			log.Debugf("Realm Extended Measurement does not match at index: %d", i)
 			remMatch = false
 			break /* the rem loop */
 		}
