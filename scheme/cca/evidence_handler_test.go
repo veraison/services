@@ -15,7 +15,7 @@ import (
 	"github.com/veraison/services/proto"
 )
 
-func Test_AppraiseEvidence_Platform(t *testing.T) { // nolint: dupl
+func Test_AppraiseEvidence_Platform_ok(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -101,7 +101,7 @@ func Test_AppraiseEvidence_Realm(t *testing.T) { // nolint: dupl
 	}
 }
 
-func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) { // nolint: dupl
+func Test_AppraiseEvidence_Platform_mismatch_refval_meas(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
@@ -127,7 +127,7 @@ func Test_AppraiseEvidence_mismatch_refval_meas(t *testing.T) { // nolint: dupl
 	assert.Equal(t, attestation.TrustVector.Configuration, ear.ApprovedConfigClaim)
 }
 
-func Test_AppraiseEvidence_mismatch_refval_cfg(t *testing.T) { // nolint: dupl
+func Test_AppraiseEvidence_Platform_mismatch_refval_cfg(t *testing.T) { // nolint: dupl
 	extractedBytes, err := os.ReadFile("test/extracted.json")
 	require.NoError(t, err)
 
