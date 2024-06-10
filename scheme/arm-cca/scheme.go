@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package arm_cca
 
-const SchemeName = "CCA"
+const SchemeName = "ARM_CCA"
 
 var (
 	EndorsementMediaTypes = []string{

@@ -22,30 +22,30 @@ import (
 )
 
 type SwAttr struct {
-	ImplID           []byte `cca:"CCA.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	Model            string `cca:"CCA.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor           string `cca:"CCA.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	MeasDesc         string `cca:"CCA.measurement-desc" psa:"PSA_IOT.measurement-desc" parcca:"PARSEC_CCA.measurement-desc"`
-	MeasurementType  string `cca:"CCA.measurement-type" psa:"PSA_IOT.measurement-type" parcca:"PARSEC_CCA.measurement-type"`
-	MeasurementValue []byte `cca:"CCA.measurement-value" psa:"PSA_IOT.measurement-value" parcca:"PARSEC_CCA.measurement-value"`
-	SignerID         []byte `cca:"CCA.signer-id" psa:"PSA_IOT.signer-id" parcca:"PARSEC_CCA.signer-id"`
-	Version          string `cca:"CCA.version" psa:"PSA_IOT.version" parcca:"PARSEC_CCA.version"`
+	ImplID           []byte `cca:"ARM_CCA.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
+	Model            string `cca:"ARM_CCA.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
+	Vendor           string `cca:"ARM_CCA.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
+	MeasDesc         string `cca:"ARM_CCA.measurement-desc" psa:"PSA_IOT.measurement-desc" parcca:"PARSEC_CCA.measurement-desc"`
+	MeasurementType  string `cca:"ARM_CCA.measurement-type" psa:"PSA_IOT.measurement-type" parcca:"PARSEC_CCA.measurement-type"`
+	MeasurementValue []byte `cca:"ARM_CCA.measurement-value" psa:"PSA_IOT.measurement-value" parcca:"PARSEC_CCA.measurement-value"`
+	SignerID         []byte `cca:"ARM_CCA.signer-id" psa:"PSA_IOT.signer-id" parcca:"PARSEC_CCA.signer-id"`
+	Version          string `cca:"ARM_CCA.version" psa:"PSA_IOT.version" parcca:"PARSEC_CCA.version"`
 }
 
 type TaAttr struct {
-	Model    string `cca:"CCA.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor   string `cca:"CCA.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	VerifKey string `cca:"CCA.iak-pub" psa:"PSA_IOT.iak-pub" parcca:"PARSEC_CCA.iak-pub"`
-	ImplID   []byte `cca:"CCA.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	InstID   string `cca:"CCA.inst-id" psa:"PSA_IOT.inst-id" parcca:"PARSEC_CCA.inst-id"`
+	Model    string `cca:"ARM_CCA.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
+	Vendor   string `cca:"ARM_CCA.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
+	VerifKey string `cca:"ARM_CCA.iak-pub" psa:"PSA_IOT.iak-pub" parcca:"PARSEC_CCA.iak-pub"`
+	ImplID   []byte `cca:"ARM_CCA.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
+	InstID   string `cca:"ARM_CCA.inst-id" psa:"PSA_IOT.inst-id" parcca:"PARSEC_CCA.inst-id"`
 }
 
 type CcaPlatformCfg struct {
-	ImplID []byte `cca:"CCA.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	Model  string `cca:"CCA.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor string `cca:"CCA.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	Label  string `cca:"CCA.platform-config-label" parcca:"PARSEC_CCA.platform-config-label"`
-	Value  []byte `cca:"CCA.platform-config-id" parcca:"PARSEC_CCA.platform-config-id"`
+	ImplID []byte `cca:"ARM_CCA.impl-id" parcca:"PARSEC_CCA.impl-id"`
+	Model  string `cca:"ARM_CCA.hw-model" parcca:"PARSEC_CCA.hw-model"`
+	Vendor string `cca:"ARM_CCA.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
+	Label  string `cca:"ARM_CCA.platform-config-label" parcca:"PARSEC_CCA.platform-config-label"`
+	Value  []byte `cca:"ARM_CCA.platform-config-id" parcca:"PARSEC_CCA.platform-config-id"`
 }
 
 func SynthKeysFromRefValue(scheme string, tenantID string,
@@ -55,7 +55,7 @@ func SynthKeysFromRefValue(scheme string, tenantID string,
 	switch scheme {
 	case "PSA_IOT", "PARSEC_CCA":
 		return synthKeysForPlatform(scheme, tenantID, refVal)
-	case "CCA":
+	case "ARM_CCA":
 		switch refVal.SubScheme {
 		case "CCA_SSD_PLATFORM":
 			return synthKeysForPlatform(scheme, tenantID, refVal)
@@ -92,7 +92,7 @@ func GetReferenceIDs(
 	switch scheme {
 	case "PSA_IOT", "PARSEC_CCA":
 		return getPlatformReferenceIDs(scheme, tenantID, claims)
-	case "CCA":
+	case "ARM_CCA":
 		pids, err := getPlatformReferenceIDs(scheme, tenantID, claims)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cca platform reference IDs: %w", err)
@@ -160,7 +160,7 @@ func GetTrustAnchorID(scheme string, token *proto.AttestationToken) (string, err
 		}
 		claims = psaToken.Claims
 
-	case "CCA":
+	case "ARM_CCA":
 		var evidence ccatoken.Evidence
 
 		err := evidence.FromCBOR(token.Data)
@@ -199,7 +199,7 @@ func MatchSoftware(scheme string, evidence psatoken.IClaims, endorsements []hand
 	switch scheme {
 	case "PSA_IOT":
 		schemeJSON = jsoniter.Config{TagKey: "psa"}.Froze()
-	case "CCA":
+	case "ARM_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
 	case "PARSEC_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()
@@ -267,7 +267,7 @@ func GetPublicKeyFromTA(scheme string, trustAnchor string) (crypto.PublicKey, er
 	switch scheme {
 	case "PSA_IOT":
 		schemeJSON = jsoniter.Config{TagKey: "psa"}.Froze()
-	case "CCA":
+	case "ARM_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
 	case "PARSEC_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()
@@ -298,7 +298,7 @@ func MatchPlatformConfig(scheme string, evidence psatoken.IClaims, endorsements 
 	)
 
 	switch scheme {
-	case "CCA":
+	case "ARM_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
 	case "PARSEC_CCA":
 		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()

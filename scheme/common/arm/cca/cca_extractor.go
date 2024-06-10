@@ -19,7 +19,7 @@ type CcaExtractor struct {
 func (o CcaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
 
 	switch o.Scheme {
-	case "CCA":
+	case "ARM_CCA":
 		switch o.Profile {
 		case "http://arm.com/cca/ssd/1":
 			subScheme := &ccaplatform.CcaSsdExtractor{Scheme: o.Scheme, SubScheme: "CCA_SSD_PLATFORM"}
@@ -45,7 +45,7 @@ func (o CcaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endor
 
 func (o CcaExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	switch o.Scheme {
-	case "CCA":
+	case "ARM_CCA":
 		switch o.Profile {
 		case "http://arm.com/cca/ssd/1":
 			subScheme := &ccaplatform.CcaSsdExtractor{Scheme: o.Scheme, SubScheme: "CCA_SSD_PLATFORM"}

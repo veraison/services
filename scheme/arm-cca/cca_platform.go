@@ -48,7 +48,7 @@ func (Cca_platform_attester) PerformAppraisal(
 		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
 	}
 
-	swComps := arm.FilterRefVal(endorsements, "CCA.sw-component")
+	swComps := arm.FilterRefVal(endorsements, "ARM_CCA.sw-component")
 	match := arm.MatchSoftware(SchemeName, claims, swComps)
 	if match {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
@@ -59,7 +59,7 @@ func (Cca_platform_attester) PerformAppraisal(
 		log.Debug("matchSoftware Failed")
 	}
 
-	platformConfig := arm.FilterRefVal(endorsements, "CCA.platform-config")
+	platformConfig := arm.FilterRefVal(endorsements, "ARM_CCA.platform-config")
 	match = arm.MatchPlatformConfig(SchemeName, claims, platformConfig)
 
 	if match {
