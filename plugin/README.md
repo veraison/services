@@ -5,7 +5,7 @@
 > implement plugins to support new attestation schemes.
 
 Veraison services functionality can be extended via plugins. Extension points
-are defined via interfaces that embed `plugin.IPluggable` interface (which defines
+are defined via interfaces that embed `plugin.IPluggable` interface which defines
 functionality common to all plugins. `plugin.IPluggable` implementations are
 managed via a `plugin.IManager[I IPluggable]`, which allows obtaining plugin
 implementations either by name or media type.
@@ -78,7 +78,7 @@ here](https://pkg.go.dev/github.com/hashicorp/go-plugin) for further details.
 ## Creating plugins
 
 > :information_source: For the specifics of how to create implementations of the already
-> defined `IEndorsmentHandler` and `IEvidenceHandler` Veraison plugins, [see
+> defined `IEndorsmentHandler`, `IEvidenceHandler` & `IStoreHandler` Veraison plugins, [see
 > here](../handler/README.md).
 
 Plugins are created by implementing the corresponding interface, registering

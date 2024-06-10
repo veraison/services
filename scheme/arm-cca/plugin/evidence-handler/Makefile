@@ -1,8 +1,8 @@
 # Copyright 2021 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../../../bin/cca-evidence-handler.plugin
-GOPKG := github.com/veraison/services/scheme/cca
+PLUGIN := ../../../bin/arm-cca-evidence-handler.plugin
+GOPKG := github.com/veraison/services/scheme/arm-cca
 SRCS := main.go
 
 include ../../../../mk/common.mk
