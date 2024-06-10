@@ -12,7 +12,7 @@ import (
 	"github.com/veraison/ear"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
-	"github.com/veraison/services/scheme/common/arm/cca"
+	cca "github.com/veraison/services/scheme/common/cca/realm"
 )
 
 type Cca_realm_attester struct {

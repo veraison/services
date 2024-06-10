@@ -18,7 +18,7 @@ import (
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/scheme/common/arm/cca"
+	realm "github.com/veraison/services/scheme/common/cca/realm"
 )
 
 type SwAttr struct {
@@ -60,7 +60,7 @@ func SynthKeysFromRefValue(scheme string, tenantID string,
 		case "CCA_SSD_PLATFORM":
 			return synthKeysForPlatform(scheme, tenantID, refVal)
 		case "CCA_REALM":
-			return cca.SynthKeysForCcaRealm(refVal.SubScheme, tenantID, refVal)
+			return realm.SynthKeysForCcaRealm(refVal.SubScheme, tenantID, refVal)
 		default:
 			return nil, fmt.Errorf("invalid subscheme: %s, for Scheme: %s", refVal.SubScheme, refVal.Scheme)
 		}
@@ -97,7 +97,7 @@ func GetReferenceIDs(
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cca platform reference IDs: %w", err)
 		}
-		rids, err := cca.GetRealmReferenceIDs(scheme, tenantID, claims)
+		rids, err := realm.GetRealmReferenceIDs(scheme, tenantID, claims)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cca realm reference IDs: %w", err)
 		}
