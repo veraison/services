@@ -2,10 +2,10 @@
     "scheme":"PARSEC_CCA",
     "type":"VERIFICATION_KEY",
     "attributes":{
-        "PARSEC_CCA.hw-model":"RoadRunner",
-        "PARSEC_CCA.hw-vendor":"ACME",
-        "PARSEC_CCA.impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        "PARSEC_CCA.iak-pub":"-----BEGIN -----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEIShnxS4rlQiwpCCpBWDzlNLfqiG911FP\n8akBr+fh94uxHU5m+Kijivp2r2oxxN6MhM4tr8mWQli1P61xh3T0ViDREbF26DGO\nEYfbAjWjGNN7pZf+6A4OTHYqEryz6m7U\n-----END PUBLIC KEY-----",
-        "PARSEC_CCA.inst-id":"Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+        "hw-model":"RoadRunner",
+        "hw-vendor":"ACME",
+        "impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "iak-pub":"-----BEGIN -----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEIShnxS4rlQiwpCCpBWDzlNLfqiG911FP\n8akBr+fh94uxHU5m+Kijivp2r2oxxN6MhM4tr8mWQli1P61xh3T0ViDREbF26DGO\nEYfbAjWjGNN7pZf+6A4OTHYqEryz6m7U\n-----END PUBLIC KEY-----",
+        "inst-id":"Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
     }
 }

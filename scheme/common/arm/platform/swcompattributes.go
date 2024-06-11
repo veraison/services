@@ -63,29 +63,29 @@ func (o SwCompAttributes) GetRefValType() string {
 	return "sw-component"
 }
 
-func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes, subScheme string) (json.RawMessage, error) {
+func (o *SwCompAttributes) MakeRefAttrs(c ClassAttributes) (json.RawMessage, error) {
 
 	swAttrs := map[string]interface{}{
-		subScheme + ".impl-id":           c.ImplID,
-		subScheme + ".signer-id":         o.SignerID,
-		subScheme + ".measurement-value": o.MeasurementValue,
-		subScheme + ".measurement-desc":  o.AlgID,
+		"impl-id":           c.ImplID,
+		"signer-id":         o.SignerID,
+		"measurement-value": o.MeasurementValue,
+		"measurement-desc":  o.AlgID,
 	}
 
 	if c.Vendor != "" {
-		swAttrs[subScheme+".hw-vendor"] = c.Vendor
+		swAttrs["hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		swAttrs[subScheme+".hw-model"] = c.Model
+		swAttrs["hw-model"] = c.Model
 	}
 
 	if o.MeasurementType != "" {
-		swAttrs[subScheme+".measurement-type"] = o.MeasurementType
+		swAttrs["measurement-type"] = o.MeasurementType
 	}
 
 	if o.Version != "" {
-		swAttrs[subScheme+".version"] = o.Version
+		swAttrs["version"] = o.Version
 	}
 	msg, err := json.Marshal(swAttrs)
 	if err != nil {

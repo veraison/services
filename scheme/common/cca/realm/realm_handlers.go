@@ -27,7 +27,7 @@ func GetRealmReferenceIDs(
 	tenantID string,
 	claims map[string]interface{},
 ) ([]string, error) {
-	realmClaimsMap, ok := claims["cca.realm"].(map[string]interface{})
+	realmClaimsMap, ok := claims["realm"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("claims do not contain realm map: %v", claims)
 	}

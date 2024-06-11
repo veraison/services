@@ -184,7 +184,7 @@ func populateAttestationResult(
 		appraisal.TrustVector.StorageOpaque = ear.UnencryptedSecretsClaim
 	}
 
-	swComps := arm.FilterRefVal(endorsements, "PARSEC_CCA.sw-component")
+	swComps := arm.FilterRefVal(endorsements, "sw-component")
 	match := arm.MatchSoftware(SchemeName, claims, swComps)
 	if match {
 		appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
@@ -195,7 +195,7 @@ func populateAttestationResult(
 		log.Debug("matchSoftware Failed")
 	}
 
-	platformConfig := arm.FilterRefVal(endorsements, "PARSEC_CCA.platform-config")
+	platformConfig := arm.FilterRefVal(endorsements, "platform-config")
 	match = arm.MatchPlatformConfig(SchemeName, claims, platformConfig)
 
 	if match {

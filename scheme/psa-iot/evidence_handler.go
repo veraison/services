@@ -117,7 +117,7 @@ func populateAttestationResult(
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
-
+	log.Println("Yogesh Reched here")
 	appraisal := result.Submods[SchemeName]
 
 	// once the signature on the token is verified, we can claim the HW is

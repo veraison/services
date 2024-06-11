@@ -38,7 +38,7 @@ func TestSwCompAttributes_MakeRefAttrs(t *testing.T) {
 				AlgID:            tt.fields.AlgID,
 				MeasurementValue: tt.fields.MeasurementValue,
 			}
-			got, err := o.MakeRefAttrs(tt.args.c, tt.args.scheme)
+			got, err := o.MakeRefAttrs(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SwCompAttributes.MakeRefAttrs() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -40,19 +40,19 @@ func (o CCAPlatformConfigID) GetRefValType() string {
 
 // For CCAPlatformConfigID object, scheme argument is not strictly required, but is required for other
 // usage of the same interface
-func (o CCAPlatformConfigID) MakeRefAttrs(c platform.ClassAttributes, scheme string) (json.RawMessage, error) {
+func (o CCAPlatformConfigID) MakeRefAttrs(c platform.ClassAttributes) (json.RawMessage, error) {
 	refAttrs := map[string]interface{}{
-		scheme + ".impl-id":               c.ImplID,
-		scheme + ".platform-config-label": o.Label,
-		scheme + ".platform-config-id":    o.Value,
+		"impl-id":               c.ImplID,
+		"platform-config-label": o.Label,
+		"platform-config-id":    o.Value,
 	}
 
 	if c.Vendor != "" {
-		refAttrs[scheme+".hw-vendor"] = c.Vendor
+		refAttrs["hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		refAttrs[scheme+".hw-model"] = c.Model
+		refAttrs["hw-model"] = c.Model
 	}
 
 	msg, err := json.Marshal(refAttrs)

@@ -2,12 +2,12 @@
     "scheme": "ARM_CCA",
     "subscheme": "CCA_SSD_PLATFORM",
     "type":"REFERENCE_VALUE",
-    "subType": "ARM_CCA.platform-config",
+    "subType": "platform-config",
     "attributes":{
-        "ARM_CCA.hw-model":"RoadRunner",
-        "ARM_CCA.hw-vendor":"ACME", 
-        "ARM_CCA.impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        "ARM_CCA.platform-config-label": "abcd",
-        "ARM_CCA.platform-config-id": "AQID"
+        "hw-model":"RoadRunner",
+        "hw-vendor":"ACME", 
+        "impl-id":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "platform-config-label": "abcd",
+        "platform-config-id": "AQID"
     }
 }

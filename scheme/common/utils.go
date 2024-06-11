@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	"github.com/veraison/psatoken"
+	"github.com/veraison/services/log"
 )
 
 type ClaimMapper interface {
@@ -40,11 +41,12 @@ func MapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
 
 func GetImplID(scheme string, attr json.RawMessage) (string, error) {
 	var at map[string]interface{}
+	log.Debugf("get implementation id for scheme: %s", scheme)
 	err := json.Unmarshal(attr, &at)
 	if err != nil {
 		return "", fmt.Errorf("unable to get Implementation ID: %w", err)
 	}
-	key := scheme + ".impl-id"
+	key := "impl-id"
 	implID, ok := at[key].(string)
 	if !ok {
 		return "", errors.New("unable to get Implementation ID")
@@ -54,11 +56,12 @@ func GetImplID(scheme string, attr json.RawMessage) (string, error) {
 
 func GetInstID(scheme string, attr json.RawMessage) (string, error) {
 	var at map[string]interface{}
+	log.Debugf("get instance id for scheme: %s", scheme)
 	err := json.Unmarshal(attr, &at)
 	if err != nil {
 		return "", fmt.Errorf("unable to get Instance ID: %w", err)
 	}
-	key := scheme + ".inst-id"
+	key := "inst-id"
 	instID, ok := at[key].(string)
 	if !ok {
 		return "", errors.New("unable to get Instance ID")

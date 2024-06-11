@@ -80,7 +80,7 @@ func (o CcaSsdExtractor) extractMeas(
 		return nil, err
 	}
 
-	refAttrs, err := obj.MakeRefAttrs(class, o.Scheme)
+	refAttrs, err := obj.MakeRefAttrs(class)
 	if err != nil {
 		return &handler.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
@@ -88,7 +88,7 @@ func (o CcaSsdExtractor) extractMeas(
 		Scheme:     o.Scheme,
 		SubScheme:  o.SubScheme,
 		Type:       handler.EndorsementType_REFERENCE_VALUE,
-		SubType:    o.Scheme + "." + obj.GetRefValType(),
+		SubType:    obj.GetRefValType(),
 		Attributes: refAttrs,
 	}
 	return &refVal, nil
@@ -117,7 +117,7 @@ func (o CcaSsdExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorse
 		return nil, fmt.Errorf("IAK does not appear to be a PEM key (%T)", iakPub.Value)
 	}
 
-	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub, o.SubScheme)
+	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor attributes: %w", err)
 	}
@@ -125,6 +125,7 @@ func (o CcaSsdExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorse
 	// note we do not need a subType for TA
 	ta := &handler.Endorsement{
 		Scheme:     o.Scheme,
+		SubScheme:  o.SubScheme,
 		Type:       handler.EndorsementType_VERIFICATION_KEY,
 		Attributes: taAttrs,
 	}
@@ -136,20 +137,19 @@ func makeTaAttrs(
 	i platform.InstanceAttributes,
 	c platform.ClassAttributes,
 	key *comid.CryptoKey,
-	subscheme string,
 ) (json.RawMessage, error) {
 	taID := map[string]interface{}{
-		subscheme + ".impl-id": c.ImplID,
-		subscheme + ".inst-id": []byte(i.InstID),
-		subscheme + ".iak-pub": key.String(),
+		"impl-id": c.ImplID,
+		"inst-id": []byte(i.InstID),
+		"iak-pub": key.String(),
 	}
 
 	if c.Vendor != "" {
-		taID[subscheme+".hw-vendor"] = c.Vendor
+		taID["hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		taID[subscheme+".hw-model"] = c.Model
+		taID["hw-model"] = c.Model
 	}
 
 	msg, err := json.Marshal(taID)

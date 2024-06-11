@@ -1,5 +1,5 @@
 {
-    "cca.platform": {
+    "platform": {
       "cca-platform-profile": "http://arm.com/CCA-SSD/1.0.0",
       "cca-platform-challenge": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
       "cca-platform-implementation-id": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
@@ -36,7 +36,7 @@
       "cca-platform-service-indicator" : "https://veraison.example/v1/challenge-response",
       "cca-platform-hash-algo-id": "sha-256"
     },
-    "cca.realm": {
+    "realm": {
       "cca-realm-challenge": "byTWuWNaLIu/WOkIuU4Ewb+zroDN6+gyQkV4SZ/jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==",
       "cca-realm-personalization-value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA==",
       "cca-realm-initial-measurement": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",

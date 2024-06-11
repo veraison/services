@@ -77,14 +77,14 @@ func (o PsaExtractor) extractMeas(
 		return nil, err
 	}
 
-	refAttrs, err := obj.MakeRefAttrs(class, o.Scheme)
+	refAttrs, err := obj.MakeRefAttrs(class)
 	if err != nil {
 		return &handler.Endorsement{}, fmt.Errorf("failed to create software component attributes: %w", err)
 	}
 	refVal := handler.Endorsement{
 		Scheme:     o.Scheme,
 		Type:       handler.EndorsementType_REFERENCE_VALUE,
-		SubType:    o.Scheme + "." + obj.GetRefValType(),
+		SubType:    obj.GetRefValType(),
 		Attributes: refAttrs,
 	}
 	return &refVal, nil
@@ -113,7 +113,7 @@ func (o PsaExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsemen
 		return nil, fmt.Errorf("IAK does not appear to be a PEM key (%T)", iakPub.Value)
 	}
 
-	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub, o.Scheme)
+	taAttrs, err := makeTaAttrs(instanceAttrs, classAttrs, iakPub)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor attributes: %w", err)
 	}
@@ -132,20 +132,19 @@ func makeTaAttrs(
 	i platform.InstanceAttributes,
 	c platform.ClassAttributes,
 	key *comid.CryptoKey,
-	scheme string,
 ) (json.RawMessage, error) {
 	taID := map[string]interface{}{
-		scheme + ".impl-id": c.ImplID,
-		scheme + ".inst-id": []byte(i.InstID),
-		scheme + ".iak-pub": key.String(),
+		"impl-id": c.ImplID,
+		"inst-id": []byte(i.InstID),
+		"iak-pub": key.String(),
 	}
 
 	if c.Vendor != "" {
-		taID[scheme+".hw-vendor"] = c.Vendor
+		taID["hw-vendor"] = c.Vendor
 	}
 
 	if c.Model != "" {
-		taID[scheme+".hw-model"] = c.Model
+		taID["hw-model"] = c.Model
 	}
 
 	msg, err := json.Marshal(taID)
