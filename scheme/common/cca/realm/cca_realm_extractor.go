@@ -66,31 +66,31 @@ func makeRefValAttrs(cAttr *RealmClassAttributes,
 	rAttr *RealmAttributes) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
-		"CCA_REALM.realm-initial-measurement": *rAttr.Rim,
-		"CCA_REALM.hash-alg-id":               rAttr.HashAlgID,
-		"CCA_REALM.rim":                       *rAttr.Rim,
+		"realm-initial-measurement": *rAttr.Rim,
+		"hash-alg-id":               rAttr.HashAlgID,
+		"rim":                       *rAttr.Rim,
 	}
 	if rAttr.Rpv != nil {
-		attrs["CCA_REALM.realm-personalization-value"] = *rAttr.Rpv
+		attrs["realm-personalization-value"] = *rAttr.Rpv
 	}
 
 	if cAttr.Vendor != nil {
-		attrs["CCA_REALM.vendor"] = *cAttr.Vendor
+		attrs["vendor"] = *cAttr.Vendor
 	}
 	if cAttr.UUID != nil {
-		attrs["CCA_REALM.class-id"] = *cAttr.UUID
+		attrs["class-id"] = *cAttr.UUID
 	}
 	if rAttr.Rem[0] != nil {
-		attrs["CCA_REALM.rem0"] = *rAttr.Rem[0]
+		attrs["rem0"] = *rAttr.Rem[0]
 	}
 	if rAttr.Rem[1] != nil {
-		attrs["CCA_REALM.rem1"] = *rAttr.Rem[1]
+		attrs["rem1"] = *rAttr.Rem[1]
 	}
 	if rAttr.Rem[2] != nil {
-		attrs["CCA_REALM.rem2"] = *rAttr.Rem[2]
+		attrs["rem2"] = *rAttr.Rem[2]
 	}
 	if rAttr.Rem[3] != nil {
-		attrs["CCA_REALM.rem3"] = *rAttr.Rem[3]
+		attrs["rem3"] = *rAttr.Rem[3]
 	}
 
 	data, err := json.Marshal(attrs)

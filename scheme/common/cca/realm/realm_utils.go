@@ -20,7 +20,7 @@ func GetRim(subscheme string, attr json.RawMessage) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to get Instance ID: %w", err)
 	}
-	key := subscheme + ".realm-initial-measurement"
+	key := "realm-initial-measurement"
 	rim, ok := at[key].(string)
 	if !ok {
 		return "", errors.New("unable to get realm initial measurements")
@@ -34,7 +34,7 @@ func GetRpv(subscheme string, attr json.RawMessage) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	key := subscheme + ".realm-personalization-value"
+	key := "realm-personalization-value"
 	r, ok := at[key].(string)
 	if !ok {
 		return nil, nil
@@ -55,7 +55,6 @@ func GetRems(subscheme string, attr json.RawMessage) ([][]byte, error) {
 		return nil, err
 	}
 	for _, key := range keys {
-		key = subscheme + "." + key
 		log.Debugf("Rem key = %s", key)
 		rem, ok := at[key].(string)
 		if ok {
