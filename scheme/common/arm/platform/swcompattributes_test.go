@@ -17,8 +17,7 @@ func TestSwCompAttributes_MakeRefAttrs(t *testing.T) {
 		MeasurementValue []byte
 	}
 	type args struct {
-		c      ClassAttributes
-		scheme string
+		c ClassAttributes
 	}
 	tests := []struct {
 		name    string
