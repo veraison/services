@@ -40,7 +40,8 @@
                 }
               ],
               "psa-instance-id":  "Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI",
-              "psa-verification-service-indicator": "https://psa-verifier.org"
+              "psa-verification-service-indicator": "https://psa-verifier.org",
+              "psa-nonce": "QUp8F0FBs9DpodKK8xUg8NQimf6sQAfe2J1ormzZLxk="
             }
     }
   }
