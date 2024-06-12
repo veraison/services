@@ -48,7 +48,7 @@ func (o *KeycloakAuthorizer) Init(v *viper.Viper, logger *zap.SugaredLogger) err
 	}
 
 	o.config = ginkeycloak.KeycloakConfig{
-		Url:                fmt.Sprintf("http://%s:%s", cfg.Host, cfg.Port),
+		Url:                fmt.Sprintf("https://%s:%s", cfg.Host, cfg.Port),
 		Realm:              cfg.Realm,
 		CustomClaimsMapper: mapTenantID,
 	}

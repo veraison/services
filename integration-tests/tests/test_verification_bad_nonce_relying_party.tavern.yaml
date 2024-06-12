@@ -8,7 +8,6 @@ stages:
     request:
       method: POST
       url: https://{verification-service}/challenge-response/v1/newSession?nonce={bad-nonce}
-      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 400
       json:

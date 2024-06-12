@@ -47,6 +47,8 @@ function deploy() {
     cp $BUILD_DIR/deployments/docker/src/certs/provisioning.key $DEPLOY_DIR/certs/
     cp $BUILD_DIR/deployments/docker/src/certs/management.crt $DEPLOY_DIR/certs/
     cp $BUILD_DIR/deployments/docker/src/certs/management.key $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/keycloak.crt $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/keycloak.key $DEPLOY_DIR/certs/
     cp $gobin/evcli $DEPLOY_DIR/utils/
     cp $gobin/cocli $DEPLOY_DIR/utils/
     cp $gobin/pocli $DEPLOY_DIR/utils/

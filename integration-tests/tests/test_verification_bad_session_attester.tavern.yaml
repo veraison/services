@@ -24,7 +24,6 @@ stages:
     request:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
         authorization: '{authorization}' # set via hook
@@ -36,7 +35,6 @@ stages:
     request:
       method: POST
       url: https://{verification-service}/challenge-response/v1/newSession?nonceSize=32
-      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 201
 
@@ -44,7 +42,6 @@ stages:
     request:
       method: POST
       url: https://{verification-service}/challenge-response/v1/1111-2222-3333
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: application/psa-attestation-token
       file_body: __generated__/evidence/{scheme}.{evidence}.cbor
