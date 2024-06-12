@@ -8,6 +8,7 @@ RUN apt-get update \
         --assume-yes \
         --no-install-recommends \
 	uuid-runtime \
+	ca-certificates \
     && uuidgen | tr -d - > /etc/machine-id \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
@@ -15,6 +16,9 @@ RUN apt-get update \
 
 RUN groupadd -g 616 veraison && \
     useradd -m  -g veraison  --system veraison
+
+ADD --chown=root:root certs/rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
+RUN update-ca-certificates
 
 USER veraison
 

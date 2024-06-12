@@ -1,5 +1,5 @@
 # See https://www.keycloak.org/server/all-config for all alvailable configuration.
-http-enabled=true
-http-port=${KEYCLOAK_PORT}
+http-enabled=false
+https-port=${KEYCLOAK_PORT}
 hostname-strict=false
 

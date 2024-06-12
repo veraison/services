@@ -37,7 +37,9 @@ RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${TESTER_UID}" | cut -d: -f1)
     useradd -m -u ${TESTER_UID} -g tavern -G veraison \
     -s /bin/bash tavern
 
-ADD --chown=root:root rootCA.crt /etc/ssl/certs/veraison-ca.crt
+ADD --chown=root:root rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
+RUN update-ca-certificates
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /integration-tests
 

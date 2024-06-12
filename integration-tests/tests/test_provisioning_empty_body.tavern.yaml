@@ -8,7 +8,6 @@ stages:
     request:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
         authorization: '{authorization}' # set via hook

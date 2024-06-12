@@ -64,7 +64,7 @@ def get_access_token(test, role):
     # deployment, it may not be there yet.
     for _ in range(10):
         try:
-            requests.get(f'http://{kc_host}.{veraison_net}:{kc_port}/')
+            requests.get(f'https://{kc_host}.{veraison_net}:{kc_port}/')
             break
         except requests.ConnectionError:
             time.sleep(1)
@@ -81,7 +81,7 @@ def get_access_token(test, role):
         'password': credentials['password'],
 
     }
-    url = f'http://{kc_host}.{veraison_net}:{kc_port}/realms/veraison/protocol/openid-connect/token'
+    url = f'https://{kc_host}.{veraison_net}:{kc_port}/realms/veraison/protocol/openid-connect/token'
 
     r = requests.post(url, data=data)
     resp = r.json()

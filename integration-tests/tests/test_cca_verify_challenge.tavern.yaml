@@ -33,7 +33,6 @@ stages:
     request:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
@@ -45,7 +44,6 @@ stages:
     request:
       method: POST
       url: https://{management-service}/management/v1/policy/CCA_SSD_PLATFORM
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
@@ -61,7 +59,6 @@ stages:
     request:
       method: POST
       url: https://{management-service}/management/v1/policy/CCA_SSD_PLATFORM/{policy-uuid}/activate
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         authorization: '{alt-authorization}' # set via hook
     response:
@@ -71,7 +68,6 @@ stages:
     request:
       method: POST
       url: https://{verification-service}/challenge-response/v1/newSession?nonce={nonce-value}
-      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 201
       save:
@@ -82,7 +78,6 @@ stages:
     request:
       method: POST
       url: https://{verification-service}/challenge-response/v1/{relying-party-session}
-      verify: /etc/ssl/certs/veraison-ca.crt
       headers:
         content-type: '{evidence-content-type}' # set via hook
       file_body: __generated__/evidence/{scheme}.{evidence}.cbor
@@ -102,6 +97,5 @@ stages:
     request:
       method: DELETE
       url: https://{verification-service}/challenge-response/v1/{relying-party-session}
-      verify: /etc/ssl/certs/veraison-ca.crt
     response:
       status_code: 204

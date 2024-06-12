@@ -4,5 +4,5 @@ username: veraison-provisioner
 password: veraison
 client_id: veraison-client
 client_secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z
-token_url: http://keycloak-service:${KEYCLOAK_PORT}/realms/veraison/protocol/openid-connect/token
+token_url: https://keycloak-service:${KEYCLOAK_PORT}/realms/veraison/protocol/openid-connect/token
 # vim: set ft=yaml:

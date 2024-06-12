@@ -17,6 +17,7 @@ RUN apt-get update \
         sqlite3 \
         jq \
 	uuid-runtime \
+	ca-certificates \
     && uuidgen | tr -d - > /etc/machine-id \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
@@ -28,7 +29,8 @@ RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${MANAGER_UID}" | cut -d: -f1
     groupadd -g 616 veraison && \
     useradd -m -u ${MANAGER_UID} -g manager -G veraison -s /bin/bash manager
 
-ADD --chown=root:root certs/rootCA.crt /etc/ssl/certs/veraison-ca.crt
+ADD --chown=root:root certs/rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
+RUN update-ca-certificates
 
 USER manager
 
