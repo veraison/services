@@ -1,17 +1,20 @@
 {
-    "ear.status": "contraindicated",
-    "ear.trustworthiness-vector": {
-        "configuration": 99,
-        "executables": 99,
-        "file-system": 99,
-        "hardware": 99,
-        "instance-identity": 99,
-        "runtime-opaque": 99,
-        "sourced-data": 99,
-        "storage-opaque": 99
-    },
-    "ear.appraisal-policy-id": "policy:TPM_ENACTTRUST",
-    "ear.veraison.policy-claims": {
-        "problem": "could not establish identity from evidence"
+   "TPM_ENACTTRUST": {
+        "ear.status": "contraindicated",
+        "ear.trustworthiness-vector": {
+            "configuration": 99,
+            "executables": 99,
+            "file-system": 99,
+            "hardware": 99,
+            "instance-identity": 99,
+            "runtime-opaque": 99,
+            "sourced-data": 99,
+            "storage-opaque": 99
+        },
+        "ear.appraisal-policy-id": "policy:TPM_ENACTTRUST",
+        "ear.veraison.policy-claims": {
+            "problem": "could not establish identity from evidence"
+        }
     }
+
 }

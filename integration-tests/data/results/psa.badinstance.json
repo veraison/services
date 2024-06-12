@@ -1,17 +1,19 @@
 {
-    "ear.status": "contraindicated",
-    "ear.trustworthiness-vector": {
-        "instance-identity": 99,
-        "configuration": 99,
-        "executables": 99,
-        "file-system": 99,
-        "hardware": 99,
-        "runtime-opaque": 99,
-        "storage-opaque": 99,
-        "sourced-data": 99
-    },
-    "ear.appraisal-policy-id": "policy:PSA_IOT",
-    "ear.veraison.policy-claims": {
-            "problem": "no trust anchor for evidence"
+  "PSA_IOT":  {
+        "ear.status": "contraindicated",
+        "ear.trustworthiness-vector": {
+            "instance-identity": 99,
+            "configuration": 99,
+            "executables": 99,
+            "file-system": 99,
+            "hardware": 99,
+            "runtime-opaque": 99,
+            "storage-opaque": 99,
+            "sourced-data": 99
+        },
+        "ear.appraisal-policy-id": "policy:PSA_IOT",
+        "ear.veraison.policy-claims": {
+                "problem": "no trust anchor for evidence"
+        }
     }
-}
+  }
