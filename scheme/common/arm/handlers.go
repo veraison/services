@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package arm
@@ -10,44 +10,40 @@ import (
 	"encoding/json"
 	"fmt"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/veraison/ccatoken"
-	parsec_cca "github.com/veraison/parsec/cca"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
-	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common"
 )
 
 type SwAttr struct {
-	ImplID           []byte `cca:"CCA_SSD_PLATFORM.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	Model            string `cca:"CCA_SSD_PLATFORM.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor           string `cca:"CCA_SSD_PLATFORM.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	MeasDesc         string `cca:"CCA_SSD_PLATFORM.measurement-desc" psa:"PSA_IOT.measurement-desc" parcca:"PARSEC_CCA.measurement-desc"`
-	MeasurementType  string `cca:"CCA_SSD_PLATFORM.measurement-type" psa:"PSA_IOT.measurement-type" parcca:"PARSEC_CCA.measurement-type"`
-	MeasurementValue []byte `cca:"CCA_SSD_PLATFORM.measurement-value" psa:"PSA_IOT.measurement-value" parcca:"PARSEC_CCA.measurement-value"`
-	SignerID         []byte `cca:"CCA_SSD_PLATFORM.signer-id" psa:"PSA_IOT.signer-id" parcca:"PARSEC_CCA.signer-id"`
-	Version          string `cca:"CCA_SSD_PLATFORM.version" psa:"PSA_IOT.version" parcca:"PARSEC_CCA.version"`
+	ImplID           []byte `json:"impl-id"`
+	Model            string `json:"hw-model"`
+	Vendor           string `json:"hw-vendor"`
+	MeasDesc         string `json:"measurement-desc"`
+	MeasurementType  string `json:"measurement-type"`
+	MeasurementValue []byte `json:"measurement-value"`
+	SignerID         []byte `json:"signer-id"`
+	Version          string `json:"version"`
 }
 
 type TaAttr struct {
-	Model    string `cca:"CCA_SSD_PLATFORM.hw-model" psa:"PSA_IOT.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor   string `cca:"CCA_SSD_PLATFORM.hw-vendor" psa:"PSA_IOT.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	VerifKey string `cca:"CCA_SSD_PLATFORM.iak-pub" psa:"PSA_IOT.iak-pub" parcca:"PARSEC_CCA.iak-pub"`
-	ImplID   []byte `cca:"CCA_SSD_PLATFORM.impl-id" psa:"PSA_IOT.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	InstID   string `cca:"CCA_SSD_PLATFORM.inst-id" psa:"PSA_IOT.inst-id" parcca:"PARSEC_CCA.inst-id"`
+	Model    string `json:"hw-model"`
+	Vendor   string `json:"hw-vendor"`
+	VerifKey string `json:"iak-pub"`
+	ImplID   []byte `json:"impl-id"`
+	InstID   string `json:"inst-id"`
 }
 
 type CcaPlatformCfg struct {
-	ImplID []byte `cca:"CCA_SSD_PLATFORM.impl-id" parcca:"PARSEC_CCA.impl-id"`
-	Model  string `cca:"CCA_SSD_PLATFORM.hw-model" parcca:"PARSEC_CCA.hw-model"`
-	Vendor string `cca:"CCA_SSD_PLATFORM.hw-vendor" parcca:"PARSEC_CCA.hw-vendor"`
-	Label  string `cca:"CCA_SSD_PLATFORM.platform-config-label" parcca:"PARSEC_CCA.platform-config-label"`
-	Value  []byte `cca:"CCA_SSD_PLATFORM.platform-config-id" parcca:"PARSEC_CCA.platform-config-id"`
+	ImplID []byte `json:"impl-id"`
+	Model  string `json:"hw-model"`
+	Vendor string `json:"hw-vendor"`
+	Label  string `json:"platform-config-label"`
+	Value  []byte `json:"platform-config-id"`
 }
 
-func SynthKeysFromRefValue(scheme string, tenantID string,
+func SynthKeysForPlatform(scheme string, tenantID string,
 	refVal *handler.Endorsement,
 ) ([]string, error) {
 
@@ -60,13 +56,28 @@ func SynthKeysFromRefValue(scheme string, tenantID string,
 	log.Debugf("Scheme %s Plugin Reference Value Look Up Key= %s\n", scheme, lookupKey)
 
 	return []string{lookupKey}, nil
+}
 
+func GetPlatformReferenceIDs(
+	scheme string,
+	tenantID string,
+	claims map[string]interface{},
+) ([]string, error) {
+	platformClaims, err := common.MapToClaims(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{RefValLookupKey(
+		scheme,
+		tenantID,
+		MustImplIDString(platformClaims),
+	)}, nil
 }
 
 func SynthKeysFromTrustAnchors(scheme string, tenantID string,
 	ta *handler.Endorsement,
 ) ([]string, error) {
-
 	implID, err := common.GetImplID(scheme, ta.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to synthesize reference value: %w", err)
@@ -82,45 +93,10 @@ func SynthKeysFromTrustAnchors(scheme string, tenantID string,
 	return []string{lookupKey}, nil
 }
 
-func GetTrustAnchorID(scheme string, token *proto.AttestationToken) (string, error) {
-	var claims psatoken.IClaims
-
-	switch scheme {
-	case "PSA_IOT":
-		var psaToken psatoken.Evidence
-
-		err := psaToken.FromCOSE(token.Data)
-		if err != nil {
-			return "", handler.BadEvidence(err)
-		}
-		claims = psaToken.Claims
-
-	case "CCA_SSD_PLATFORM":
-		var evidence ccatoken.Evidence
-
-		err := evidence.FromCBOR(token.Data)
-		if err != nil {
-			return "", handler.BadEvidence(err)
-		}
-
-		claims = evidence.PlatformClaims
-
-	case "PARSEC_CCA":
-		var evidence parsec_cca.Evidence
-
-		err := evidence.FromCBOR(token.Data)
-		if err != nil {
-			return "", handler.BadEvidence(err)
-		}
-		claims = evidence.Pat.PlatformClaims
-	default:
-		return "", fmt.Errorf("invalid scheme argument to GetTrustAnchorID : %s", scheme)
-
-	}
-
+func GetTrustAnchorID(scheme string, tenantID string, claims psatoken.IClaims) (string, error) {
 	return TaLookupKey(
 		scheme,
-		token.TenantId,
+		tenantID,
 		MustImplIDString(claims),
 		MustInstIDString(claims),
 	), nil
@@ -129,25 +105,11 @@ func GetTrustAnchorID(scheme string, token *proto.AttestationToken) (string, err
 func MatchSoftware(scheme string, evidence psatoken.IClaims, endorsements []handler.Endorsement) bool {
 	var attr SwAttr
 
-	var schemeJSON jsoniter.API
-
-	switch scheme {
-	case "PSA_IOT":
-		schemeJSON = jsoniter.Config{TagKey: "psa"}.Froze()
-	case "CCA_SSD_PLATFORM":
-		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
-	case "PARSEC_CCA":
-		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()
-	default:
-
-	}
 	evidenceComponents := make(map[string]psatoken.SwComponent)
-
 	swComps, err := evidence.GetSoftwareComponents()
 	if err != nil {
 		return false
 	}
-
 	for _, c := range swComps {
 		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
 		evidenceComponents[key] = c
@@ -157,7 +119,7 @@ func MatchSoftware(scheme string, evidence psatoken.IClaims, endorsements []hand
 		// If we have Endorsements we assume they match to begin with
 		matched = true
 
-		if err := schemeJSON.Unmarshal(endorsement.Attributes, &attr); err != nil {
+		if err := json.Unmarshal(endorsement.Attributes, &attr); err != nil {
 			log.Error("could not decode sw attributes from endorsements")
 			return false
 		}
@@ -196,24 +158,13 @@ func GetPublicKeyFromTA(scheme string, trustAnchor string) (crypto.PublicKey, er
 	var (
 		endorsement handler.Endorsement
 		ta          TaAttr
-		schemeJSON  jsoniter.API
 	)
 
-	switch scheme {
-	case "PSA_IOT":
-		schemeJSON = jsoniter.Config{TagKey: "psa"}.Froze()
-	case "CCA_SSD_PLATFORM":
-		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
-	case "PARSEC_CCA":
-		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()
-	default:
-		return nil, fmt.Errorf("invalid scheme: %s", scheme)
-	}
 	if err := json.Unmarshal([]byte(trustAnchor), &endorsement); err != nil {
-		return nil, fmt.Errorf("could not decode trust anchor: %w", err)
+		return nil, fmt.Errorf("for scheme, %s, could not decode trust anchor: %w", scheme, err)
 	}
 
-	if err := schemeJSON.Unmarshal(endorsement.Attributes, &ta); err != nil {
+	if err := json.Unmarshal(endorsement.Attributes, &ta); err != nil {
 		return nil, fmt.Errorf("could not unmarshal trust anchor: %w", err)
 	}
 	pem := ta.VerifKey
@@ -226,22 +177,7 @@ func GetPublicKeyFromTA(scheme string, trustAnchor string) (crypto.PublicKey, er
 }
 
 func MatchPlatformConfig(scheme string, evidence psatoken.IClaims, endorsements []handler.Endorsement) bool {
-
-	var (
-		attr       CcaPlatformCfg
-		schemeJSON jsoniter.API
-	)
-
-	switch scheme {
-	case "CCA_SSD_PLATFORM":
-		schemeJSON = jsoniter.Config{TagKey: "cca"}.Froze()
-	case "PARSEC_CCA":
-		schemeJSON = jsoniter.Config{TagKey: "parcca"}.Froze()
-	default:
-		log.Errorf("invalid scheme name: %s", scheme)
-		return false
-	}
-
+	var attr CcaPlatformCfg
 	pfConfig, err := evidence.GetConfig()
 	if err != nil {
 		return false
@@ -251,7 +187,7 @@ func MatchPlatformConfig(scheme string, evidence psatoken.IClaims, endorsements 
 		return false
 	}
 
-	if err := schemeJSON.Unmarshal(endorsements[0].Attributes, &attr); err != nil {
+	if err := json.Unmarshal(endorsements[0].Attributes, &attr); err != nil {
 		log.Error("could not decode cca platform config in MatchPlatformConfig")
 		return false
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/veraison/swid"
 )
 
-type CorimExtractor struct{}
+type CorimExtractor struct{ Profile string }
 
 func (o CorimExtractor) RefValExtractor(
 	rv comid.ReferenceValue,
@@ -181,4 +181,8 @@ func (o *ID) FromEnvironment(e comid.Environment) error {
 	o.class = classID.String()
 
 	return nil
+}
+
+func (o *CorimExtractor) SetProfile(profile string) {
+	o.Profile = profile
 }

@@ -5,9 +5,9 @@ package parsec_cca
 import (
 	"fmt"
 
+	parsec_cca "github.com/veraison/parsec/cca"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
 )
 
@@ -30,7 +30,7 @@ func (s StoreHandler) SynthKeysFromRefValue(
 	refVal *handler.Endorsement,
 ) ([]string, error) {
 
-	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refVal)
+	return arm.SynthKeysForPlatform(SchemeName, tenantID, refVal)
 }
 
 func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
@@ -39,11 +39,20 @@ func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endo
 }
 
 func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
-	ta, err := arm.GetTrustAnchorID(SchemeName, token)
+	var evidence parsec_cca.Evidence
+
+	err := evidence.FromCBOR(token.Data)
+	if err != nil {
+		return []string{""}, handler.BadEvidence(err)
+	}
+	claims := evidence.Pat.PlatformClaims
+
+	taID, err := arm.GetTrustAnchorID(SchemeName, token.TenantId, claims)
 	if err != nil {
 		return []string{""}, err
 	}
-	return []string{ta}, nil
+
+	return []string{taID}, nil
 }
 
 func (s StoreHandler) GetRefValueIDs(
@@ -53,17 +62,7 @@ func (s StoreHandler) GetRefValueIDs(
 ) ([]string, error) {
 	platformClaimsMap, ok := claims["cca.platform"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("claims to do not contain patform map: %v", claims)
+		return nil, fmt.Errorf("claims do not contain platform map: %v", claims)
 	}
-
-	platformClaims, err := common.MapToClaims(platformClaimsMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return []string{arm.RefValLookupKey(
-		SchemeName,
-		tenantID,
-		arm.MustImplIDString(platformClaims),
-	)}, nil
+	return arm.GetPlatformReferenceIDs(SchemeName, tenantID, platformClaimsMap)
 }

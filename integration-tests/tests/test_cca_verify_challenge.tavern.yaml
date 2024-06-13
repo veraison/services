@@ -43,7 +43,7 @@ stages:
   - name: submit cca policy
     request:
       method: POST
-      url: https://{management-service}/management/v1/policy/CCA_SSD_PLATFORM
+      url: https://{management-service}/management/v1/policy/ARM_CCA
       headers:
         content-type: application/vnd.veraison.policy.opa
         accept: application/vnd.veraison.policy+json
@@ -58,7 +58,7 @@ stages:
   - name: activate cca policy
     request:
       method: POST
-      url: https://{management-service}/management/v1/policy/CCA_SSD_PLATFORM/{policy-uuid}/activate
+      url: https://{management-service}/management/v1/policy/ARM_CCA/{policy-uuid}/activate
       headers:
         authorization: '{alt-authorization}' # set via hook
     response:

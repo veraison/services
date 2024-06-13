@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package common
 
@@ -40,14 +40,15 @@ func MapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
 
 func GetImplID(scheme string, attr json.RawMessage) (string, error) {
 	var at map[string]interface{}
+
 	err := json.Unmarshal(attr, &at)
 	if err != nil {
-		return "", fmt.Errorf("unable to get Implementation ID: %w", err)
+		return "", fmt.Errorf("unable to get Implementation ID for scheme: %s %w", scheme, err)
 	}
-	key := scheme + ".impl-id"
+	key := "impl-id"
 	implID, ok := at[key].(string)
 	if !ok {
-		return "", errors.New("unable to get Implementation ID")
+		return "", fmt.Errorf("unable to get Implementation ID for scheme: %s", scheme)
 	}
 	return implID, nil
 }
@@ -58,7 +59,7 @@ func GetInstID(scheme string, attr json.RawMessage) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to get Instance ID: %w", err)
 	}
-	key := scheme + ".inst-id"
+	key := "inst-id"
 	instID, ok := at[key].(string)
 	if !ok {
 		return "", errors.New("unable to get Instance ID")

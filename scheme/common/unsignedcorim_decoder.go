@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package common
 
@@ -41,10 +41,11 @@ func UnsignedCorimDecoder(
 			return nil, fmt.Errorf("found multiple profiles (expected exactly one): %s", strings.Join(profiles, ", "))
 		}
 		p := (*uc.Profiles)[0]
-		_, err := p.Get()
+		profile, err := p.Get()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get the profile information: %w", err)
 		}
+		xtr.SetProfile(profile)
 	} else {
 		return nil, fmt.Errorf("no profile information set in CoRIM")
 	}
