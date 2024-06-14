@@ -8,6 +8,7 @@ import (
 
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/proto"
 	"github.com/veraison/services/verification/api"
 	"github.com/veraison/services/verification/sessionmanager"
 	"github.com/veraison/services/verification/verifier"
@@ -65,7 +66,13 @@ func main() {
 
 	vtsState, err := vtsClient.GetServiceState(context.TODO(), &emptypb.Empty{})
 	if err == nil {
-		log.Infow("vts connection established", "server-version", vtsState.ServerVersion)
+		if vtsState.Status == proto.ServiceStatus_SERVICE_STATUS_READY {
+			log.Infow("vts connection established", "server-version",
+				vtsState.ServerVersion)
+		} else {
+			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+				"server-state", vtsState.Status.String())
+		}
 	} else {
 		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
 			"error", err)
