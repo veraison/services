@@ -1,0 +1,229 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project. SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
+set -e
+
+ROOT_CERT_NAME=rootCA
+DEFAULT_DOMAIN=veraison-net
+DEFAULT_SUFFIX=-service
+
+SERVICES=(provisioning verification management keycloak vts)
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+function create_root_cert() {
+	_check_openssl
+	pushd "$THIS_DIR" > /dev/null || exit 1
+
+	openssl ecparam -name prime256v1 -genkey -noout -out ${ROOT_CERT_NAME}.key
+	openssl req -x509 -new -nodes -key ${ROOT_CERT_NAME}.key -sha256 -days 3650 \
+		-subj "/O=Veraison" -out ${ROOT_CERT_NAME}.crt
+
+	echo "Created ${THIS_DIR}/${ROOT_CERT_NAME}.crt"
+
+	popd > /dev/null || exit 1
+}
+
+function create_service_cert() {
+	_check_openssl
+	_check_root_cert
+	pushd "$THIS_DIR" > /dev/null || exit 1
+
+	local service=$1
+	local suffix=$2
+	local domain=$3
+	local force=$4
+	local san
+
+	san=$(printf "subjectAltName = DNS:%s%s.%s,DNS:%s%s,DNS:localhost" \
+				"$service" "$suffix" "$domain" "$service" "$suffix")
+
+	if [[ -f "${service}.crt" || -f "${service}.key" ]]; then
+		if [[ $force == false ]]; then
+			echo "ERROR: artefact(s) for ${service} already exit(s); use -f to overwrite"
+			exit 1
+		fi
+	fi
+
+	openssl ecparam -name prime256v1 -genkey -noout -out "${service}.key"
+	openssl req -new -key "${service}.key" -out "${service}.csr" \
+		-subj "/CN=${service}${suffix}.${domain}"
+	openssl x509 -req -in "${service}.csr" -CA rootCA.crt -CAkey ${ROOT_CERT_NAME}.key \
+		-CAcreateserial -out "${service}.crt" -days 3650 -sha256 \
+		-extfile <(echo "$san")
+
+	echo "Created ${THIS_DIR}/${service}.crt"
+
+	popd > /dev/null || exit 1
+}
+
+function create_all() {
+	local suffix=$1
+	local domain=$2
+	local force=$3
+
+	for service in "${SERVICES[@]}"; do
+		if [[ ! -f "${THIS_DIR}/${service}.crt" ]];  then
+			create_service_cert "$service" "$suffix" "$domain" "$force"
+		fi
+	done
+}
+
+function clean_intermediate() {
+	pushd "$THIS_DIR" > /dev/null || exit 1
+
+	echo "rm -f -- *.csr *.srl"
+	rm -f -- *.csr *.srl
+
+	popd > /dev/null || exit 1
+}
+
+function clean_cert() {
+	pushd "$THIS_DIR" > /dev/null || exit 1
+
+	local cert=$1
+
+	echo "rm -f \"${cert}.crt\" \"${cert}.key\""
+	rm -f "${cert}.crt" "${cert}.key"
+
+	popd > /dev/null || exit 1
+}
+
+function clean_all() {
+	clean_intermediate
+
+	for service in "${SERVICES[@]}"; do
+		clean_cert "$service"
+	done
+
+	clean_cert $ROOT_CERT_NAME
+}
+
+function help() {
+	set +e
+	read -r -d '' usage <<-EOF
+	Usage: gen-certs [-h] [-C] [-s SUFFIX] [-d DOMAIN] [COMMAND] [ARGS...]
+
+	This script is used to (re-)generate certificates used for a veraison
+	deployment. The certificates are signed by a CA certificate called
+	${ROOT_CERT_NAME}.crt. If this does not exists, a self-signed one will
+	be generated.
+
+	The script assumes that services will be running on hosts whose names
+	follow the pattern
+
+	         <SERVICE><SUFFIX>.<DOMAIN>
+
+	Where <SERVICE> is the name of the service, <SUFFIX> can be specifed using
+	-s option (defaults to "-service"), and <DOMAIN> can be specified using
+	-d option (defaults to "veraison-net"). e.g. by default, the host for the
+	vts service will be assumed to be "vts-service.veraison-net". The defaults
+	match the names of the docker deployment.
+
+	Commands:
+
+	create [ vts | provisoning | verification | management | keycloak ]
+	        Create cert for the specified service, or all, if not specified.
+	        
+	root
+	        Create root CA certificate that will be used to sign service certs.
+	        (note: if not already created, this will be automatically created by
+	        "create" command).
+
+	clean [ vts | provisoning | verification | management | keycloak ]
+	        Without an arguement, clean up all intermediate artefacts (e.g.,
+	        CSRs).
+	        With an argument, clean output artefacts for the specified
+	        service.
+
+	clean_all
+	        Clean both intermediate and output artefacts for everything (including
+	        the root CA cert).
+
+	help
+	        Print this message and exit (same as -h option).
+
+	Options:
+
+	-h         Print this message and exit.
+	-C         Do not clean up intermediate artefacts (e.g., CSRs).
+	-s SUFFIX  Specify the suffix to be used for service Common Name/SAN inside the
+	           certs. Defaults to "-service".
+	-d DOMAIN  Specify the domain to be used for the Common Name/SAN inside the certs.
+	           Defaults to "veraison-net".
+
+	        e.g. with default domain and suffix, "vts" will have the
+	        common name/SAN "vts-service.veraison-net"
+	        (note: SAN is the Subject Alternative Name x509 extension)
+
+	EOF
+
+	echo "$usage"
+}
+
+function _check_openssl() {
+	if [[ "$(which openssl 2>/dev/null)" == "" ]]; then
+		echo -e "ERROR: openssl executable must be installed to use this command."
+		exit 1
+	fi
+}
+
+function _check_root_cert() {
+	if [[ ! -f "${THIS_DIR}/${ROOT_CERT_NAME}.crt" ]]; then
+		create_root_cert
+	fi
+}
+
+_should_clean_intermediate=true
+_force=false
+_suffix=$DEFAULT_SUFFIX
+_domain=$DEFAULT_DOMAIN
+
+OPTIND=1
+
+while getopts "hCfd:s:" opt; do
+	case "$opt" in
+		h) help; exit 0;;
+		C) _should_clean_intermediate=false;;
+		f) _force=true;;
+		s) _suffix=$OPTARG;;
+		d) _domain=$OPTARG;;
+		*) break;;
+	esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+command=$1
+case $command in
+	help)
+		help
+		exit 0
+		;;
+	clean)
+		if [[ "$2" == "" ]]; then
+			clean_intermediate
+		else
+			clean_cert "$2"
+		fi
+		;;
+	clean-all)
+		clean_all
+		;;
+	create | "")
+		if [[ "$2" == "" ]]; then
+			create_all "$_suffix" "$_domain" "$_force"
+		else
+			create_service_cert "$2" "$_suffix" "$_domain" "$_force"
+		fi
+		if [[ $_should_clean_intermediate == true ]]; then
+			clean_intermediate
+		fi
+		;;
+	root)
+		create_root_cert
+		;;
+	*)
+		echo -e "ERROR: unexpected command: \"$command\" (use -h for help)"
+		;;
+esac
