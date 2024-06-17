@@ -40,15 +40,8 @@ function deploy() {
     cp $BUILD_DIR/deployments/docker/src/skey.jwk $DEPLOY_DIR/
     cp $BUILD_DIR/deployments/docker/src/service-entrypoint $DEPLOY_DIR/
     cp $BUILD_DIR/deployments/docker/src/veraison-realm.json $DEPLOY_DIR/
-    cp $BUILD_DIR/deployments/docker/src/certs/rootCA.crt $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/verification.crt $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/verification.key $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/provisioning.crt $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/provisioning.key $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/management.crt $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/management.key $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/keycloak.crt $DEPLOY_DIR/certs/
-    cp $BUILD_DIR/deployments/docker/src/certs/keycloak.key $DEPLOY_DIR/certs/
+    cp $BUILD_DIR/deployments/docker/src/certs/* $DEPLOY_DIR/certs/
+    rm -f $DEPLOY_DIR/certs/rootCA.key
     cp $gobin/evcli $DEPLOY_DIR/utils/
     cp $gobin/cocli $DEPLOY_DIR/utils/
     cp $gobin/pocli $DEPLOY_DIR/utils/

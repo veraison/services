@@ -1,12 +1,10 @@
 plugin:
-  backend: go-plugin
-  go-plugin:
-    dir: ../../../scheme/bin/
+  backend: builtin
 po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /tmp/po-store.sql
+    datasource: /veraison/stores/vts/po-store.sql
 management:
   listen-addr: 0.0.0.0:8088
   protocol: https
@@ -18,6 +16,6 @@ logging:
   level: debug
 auth:
   backend: keycloak
-  host: localhost
+  host: keycloak-service
   port: 11111
   realm: veraison

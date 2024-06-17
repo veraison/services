@@ -23,12 +23,12 @@ var (
 type cfg struct {
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
 	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
-	Cert       string `mapstructure:"cert"`
-	CertKey    string `mapstructure:"cert-key"`
+	Cert       string `mapstructure:"cert" config:"zerodefault"`
+	CertKey    string `mapstructure:"cert-key" config:"zerodefault"`
 }
 
 func (o cfg) Validate() error {
-	if o.Protocol == "https" && (o.Cert == "[unset]" || o.CertKey == "[unset]") {
+	if o.Protocol == "https" && (o.Cert == "" || o.CertKey == "") {
 		return errors.New(`both cert and cert-key must be specified when protocol is "https"`)
 	}
 
@@ -41,6 +41,10 @@ func main() {
 	v, err := config.ReadRawConfig(*config.File, false)
 	if err != nil {
 		log.Fatalf("Could not read config: %v", err)
+	}
+	cfg := cfg{
+		ListenAddr: DefaultListenAddr,
+		Protocol: "https",
 	}
 
 	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification", "*logging")
@@ -56,11 +60,16 @@ func main() {
 
 	log.Infow("Initializing Verification Service", "version", config.Version)
 
+	loader := config.NewLoader(&cfg)
+	if err := loader.LoadFromViper(subs["verification"]); err != nil {
+		log.Fatalf("Could not load verification config: %v", err)
+	}
+
 	sessionManager := sessionmanager.NewSessionManagerTTLCache()
 
 	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()
-	if err := vtsClient.Init(subs["vts"]); err != nil {
+	if err := vtsClient.Init(subs["vts"], cfg.Cert, cfg.CertKey); err != nil {
 		log.Fatalf("Could not initialize VTS client: %v", err)
 	}
 
@@ -82,19 +91,6 @@ func main() {
 	verifier := verifier.New(subs["verifier"], vtsClient)
 
 	apiHandler := api.NewHandler(sessionManager, verifier)
-
-	cfg := cfg{
-		ListenAddr: DefaultListenAddr,
-		Protocol: "https",
-		Cert: "[unset]",
-		CertKey: "[unset]",
-	}
-
-	loader := config.NewLoader(&cfg)
-	if err := loader.LoadFromViper(subs["verification"]); err != nil {
-		log.Fatalf("Could not load verification config: %v", err)
-
-	}
 
 	if cfg.Protocol == "https" {
 		apiServerTLS(apiHandler, cfg.ListenAddr, cfg.Cert, cfg.CertKey)

@@ -1,3 +1,6 @@
+# This config file assumes the service is being run directly from its build
+# location and that the stores have need initialized under /tmp/ (this is done
+# automatically if run via  ./run-vts script.
 plugin:
   backend: go-plugin
   go-plugin:
@@ -6,21 +9,26 @@ ta-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/ta-store.sql
+    datasource: /tmp/ta-store.sql
 en-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/en-store.sql
+    datasource: /tmp/en-store.sql
 po-store:
   backend: sql
   sql:
     driver: sqlite3
-    datasource: /veraison/stores/vts/po-store.sql
+    datasource: /tmp/po-store.sql
 po-agent:
   backend: opa
 vts:
   server-addr: 127.0.0.1:50051
+  tls: true
+  cert: ../../../deployments/docker/src/certs/vts.crt
+  cert-key: ../../../deployments/docker/src/certs/vts.key
+  ca-certs:
+      - ../../../deployments/docker/src/certs/rootCA.crt
 ear-signer:
   alg: ES256
   key: ./skey.jwk

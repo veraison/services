@@ -1,0 +1,31 @@
+# This config file assumes the service is being run via "debug" command
+# from the docker deployment debug shell.
+plugin:
+  backend: builtin
+ta-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/ta-store.sql
+en-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/en-store.sql
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: /veraison/stores/vts/po-store.sql
+po-agent:
+  backend: opa
+vts:
+  server-addr: 127.0.0.1:50051
+  tls: true
+  cert: ../../../deployments/docker/src/certs/vts.crt
+  cert-key: ../../../deployments/docker/src/certs/vts.key
+ear-signer:
+  alg: ES256
+  key: ./skey.jwk
+logging:
+  level: debug

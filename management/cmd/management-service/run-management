@@ -1,0 +1,13 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+set -e
+
+echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+    sqlite3 /tmp/po-store.sql
+
+if [[ ! -f ./management-service ]]; then
+	make
+fi
+
+./management-service "$@"

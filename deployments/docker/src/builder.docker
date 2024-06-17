@@ -24,6 +24,7 @@ RUN apt-get update \
         iputils-ping \
         nmap \
         sudo \
+	ca-certificates \
     && uuidgen | tr -d - > /etc/machine-id \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
@@ -39,6 +40,8 @@ RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${BUILDER_UID}" | cut -d: -f1
     useradd -m -u ${BUILDER_UID} -g builder -G sudo,veraison \
     -p paxyJoB0NZsNU -s /bin/bash builder
 
+ADD --chown=root:root rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
+RUN update-ca-certificates
 
 WORKDIR /veraison
 
@@ -64,6 +67,7 @@ RUN go mod download &&\
 
 ADD --chown=builder:builder builder-dispatcher .
 ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc
+
 
 ENTRYPOINT ["/veraison/builder-dispatcher"]
 CMD ["help"]
