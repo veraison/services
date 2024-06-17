@@ -1,5 +1,5 @@
-# This config file assumes the service is being run directly from its build
-# location, and that VTS is running on localhost
+# This config file assumes the service is being run via "debug" command
+# from the docker deployment debug shell.
 logging:
   level: debug  # valid levels: error, warning, info, debug
 verification:
@@ -8,8 +8,6 @@ verification:
   cert: ../../../deployments/docker/src/certs/verification.crt
   cert-key: ../../../deployments/docker/src/certs/verification.key
 vts:
-  server-addr: localhost:50051
+  server-addr: vts-service:50051 # change to localhost:50051 when running outside docker
   tls: true
-  ca-certs:
-      - ../../../deployments/docker/src/certs/rootCA.crt
 # vim: set ft=yaml:

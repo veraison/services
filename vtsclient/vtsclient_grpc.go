@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package vtsclient
 
@@ -6,13 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -40,18 +40,16 @@ func (o NoConnectionError) Unwrap() error {
 
 type GRPC struct {
 	ServerAddress     string
+	Credentials       credentials.TransportCredentials
 	Connection        *grpc.ClientConn
-	ConnectionTimeout time.Duration
 }
 
 // NewGRPC instantiate a new gRPC VTS client with default settings
 func NewGRPC() *GRPC {
-	return &GRPC{
-		ConnectionTimeout: time.Second,
-	}
+	return &GRPC{}
 }
 
-func (o *GRPC) Init(v *viper.Viper) error {
+func (o *GRPC) Init(v *viper.Viper, certPath, keyPath string) error {
 	cfg := trustedservices.NewGRPCConfig()
 
 	loader := config.NewLoader(cfg)
@@ -60,6 +58,17 @@ func (o *GRPC) Init(v *viper.Viper) error {
 	}
 
 	o.ServerAddress = cfg.ServerAddress
+
+	if cfg.UseTLS {
+		creds, err := trustedservices.LoadTLSCreds(certPath, keyPath, cfg.CACerts)
+		if err != nil {
+			return err
+		}
+
+		o.Credentials = creds
+	} else {
+		o.Credentials = insecure.NewCredentials()
+	}
 
 	return nil
 }
@@ -70,9 +79,7 @@ func (o *GRPC) GetServiceState(
 	opts ...grpc.CallOption,
 ) (*proto.ServiceState, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return &proto.ServiceState{
-			Status: proto.ServiceStatus_SERVICE_STATUS_DOWN,
-		}, nil
+		return nil, err
 	}
 
 	c := o.GetProvisionerClient()
@@ -154,15 +161,7 @@ func (o *GRPC) EnsureConnection() error {
 		return nil
 	}
 
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), o.ConnectionTimeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, o.ServerAddress, opts...)
+	conn, err := grpc.NewClient(o.ServerAddress, grpc.WithTransportCredentials(o.Credentials))
 	if err != nil {
 		return fmt.Errorf("connection to gRPC VTS server [%s] failed: %w", o.ServerAddress, err)
 	}

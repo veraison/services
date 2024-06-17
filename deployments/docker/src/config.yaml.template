@@ -20,6 +20,9 @@ management:
   cert-key: /opt/veraison/management.key
 vts:
   server-addr: vts-service:${VTS_PORT}
+  tls: true
+  cert: /opt/veraison/vts.crt
+  cert-key: /opt/veraison/vts.key
 ear-signer:
   alg: ES256
   key: skey.jwk

@@ -27,12 +27,12 @@ var (
 type cfg struct {
 	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
 	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
-	Cert       string `mapstructure:"cert"`
-	CertKey    string `mapstructure:"cert-key"`
+	Cert       string `mapstructure:"cert" config:"zerodefault"`
+	CertKey    string `mapstructure:"cert-key" config:"zerodefault"`
 }
 
 func (o cfg) Validate() error {
-	if o.Protocol == "https" && (o.Cert == "[unset]" || o.CertKey == "[unset]") {
+	if o.Protocol == "https" && (o.Cert == "" || o.CertKey == "") {
 		return errors.New(`both cert and cert-key must be specified when protocol is "https"`)
 	}
 
@@ -50,8 +50,6 @@ func main() {
 	cfg := cfg{
 		ListenAddr: DefaultListenAddr,
 		Protocol: "https",
-		Cert: "[unset]",
-		CertKey: "[unset]",
 	}
 
 	subs, err := config.GetSubs(v, "provisioning", "vts", "*logging", "*auth")
@@ -74,7 +72,7 @@ func main() {
 
 	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()
-	if err := vtsClient.Init(subs["vts"]); err != nil {
+	if err := vtsClient.Init(subs["vts"], cfg.Cert, cfg.CertKey); err != nil {
 		log.Fatalf("Could not initilize VTS client: %v", err)
 	}
 

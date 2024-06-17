@@ -4,15 +4,19 @@ package trustedservices
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -41,10 +45,13 @@ const DummyTenantID = "0"
 //   - TODO(tho) load balancing config
 //     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
 //
-// * TODO(tho) auth'n credentials (e.g., TLS / JWT credentials)
 type GRPCConfig struct {
-	ServerAddress string `mapstructure:"server-addr" valid:"dialstring"`
-	ListenAddress string `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
+	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
+	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
+	UseTLS	      bool     `mapstructure:"tls" config:"zerodefault"`
+	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
+	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
+	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -108,7 +115,10 @@ func (o *GRPC) Init(
 ) error {
 	var err error
 
-	cfg := GRPCConfig{ServerAddress: DefaultVTSAddr}
+	cfg := GRPCConfig{
+		ServerAddress: DefaultVTSAddr,
+		UseTLS: true,
+	}
 
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(v); err != nil {
@@ -131,8 +141,17 @@ func (o *GRPC) Init(
 		return fmt.Errorf("listening socket initialisation failed: %w", err)
 	}
 
-	// TODO load from config credentials for securing the transport endpoint
 	var opts []grpc.ServerOption
+
+	if cfg.UseTLS {
+		o.logger.Info("loading TLS credentials")
+		creds, err :=  LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		if err != nil {
+			return err
+		}
+
+		opts = append(opts, grpc.Creds(creds))
+	}
 
 	server := grpc.NewServer(opts...)
 	proto.RegisterVTSServer(server, o)
@@ -543,4 +562,49 @@ func (o *GRPC) finalize(
 	}
 
 	return appraisal.GetContext(), err
+}
+
+func LoadTLSCreds(
+	certPath, keyPath string,
+	caPaths []string,
+) (credentials.TransportCredentials, error) {
+	if certPath == "" {
+		return nil, fmt.Errorf("cert path must be specified when TLS is enabled")
+	}
+
+	if keyPath == "" {
+		return nil, fmt.Errorf("cert key path must be specified when TLS is enabled")
+	}
+
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("error loading cert key pair: %w", err)
+	}
+
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("error loading system certs: %w", err)
+	}
+
+	for _, caPath := range caPaths {
+		caCertPEM, err := os.ReadFile(caPath)
+		if err != nil {
+			return nil, fmt.Errorf("error reading CA cert in %s: %w", caPath, err)
+		}
+
+
+		if !certPool.AppendCertsFromPEM(caCertPEM) {
+			return nil, fmt.Errorf("invalid CA cert in %s", caPath)
+		}
+	}
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		RootCAs: certPool,
+		ClientCAs: certPool,
+		MinVersion: tls.VersionTLS12,
+	}
+
+	return credentials.NewTLS(config), nil
 }

@@ -41,10 +41,11 @@ all: builder build deploy deployment prune
 builder: .built/builder
 
 .built/builder: $(SRC_DIR)builder.docker $(SRC_DIR)builder-dispatcher $(SRC_DIR)builder-bashrc \
-	        $(THIS_DIR)../../go.mod
+	        $(SRC_DIR)certs/rootCA.crt $(THIS_DIR)../../go.mod
 	mkdir -p $(BUILDER_CONTEXT)
 	cp $(SRC_DIR)builder-dispatcher $(BUILDER_CONTEXT)/
 	cp $(SRC_DIR)builder-bashrc $(BUILDER_CONTEXT)/
+	cp $(SRC_DIR)certs/rootCA.crt $(BUILDER_CONTEXT)/
 	cp $(THIS_DIR)../../go.{mod,sum} $(BUILDER_CONTEXT)/
 	docker build $(DOCKER_BUILD_FLAGS) \
 		-t veraison/builder $(BUILDER_CONTEXT) -f $(SRC_DIR)builder.docker \

@@ -148,3 +148,16 @@ debug executable will be built with evidence handling plugins compiled in (same
 as if you ran `make SCHEME_LOADER=builtin`). This means you can set the
 breakpoint inside your code directly from here, and you don't need to worry
 about attaching the debugger to a separate plugin process.
+
+(Note: the config.yaml files in service directories -- such as
+`/veraison/build/vts/cmd/vts-service/config.yaml` -- that are loaded by
+default, are configured for running the service directly on the build host,
+outside docker. For running inside a docker container, the `config-docker.yaml`
+in the same location should be used. `debug` command demonstrated above does
+that, so you don't need to worry about it. However, if you want to run the
+service executable directly, then you must remember to specify the appropriate
+config, e.g.
+
+    # inside the debug shell:
+    cd /veraison/build/vts/cmd/vts-service
+    ./veraison-service --config config-docker.yaml

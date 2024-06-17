@@ -21,6 +21,19 @@ configuration:
 
 The verifier currently doesn't support any configuration.
 
+### Config files
+
+There are two config files in this directory:
+
+- `config.yaml` is designed to be used when running `verification-service`
+  directly from this directory on the build host (i.e. outside docker).
+- `config-docker.yaml` this is the file that is designed to be used when running
+  inside the debug docker container. See [debugging docker
+  deployment](/deployments/docker/README.md#Debugging). The `debug` command
+  inside the debug container will automatically use it. If running the
+  executable directly inside docker shell, rather than via the command, this
+  file will need to be specified with `--config` option.
+
 ### Example
 
 ```yaml
