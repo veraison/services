@@ -1,0 +1,12 @@
+{
+  "scheme": "ARM_CCA",
+  "type": "REFERENCE_VALUE",
+  "subType": "platform.config",
+  "attributes": {
+    "hw-model": "RoadRunner",
+    "hw-vendor": "ACME",
+    "impl-id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "platform-config-label": "abcd",
+    "platform-config-id": "AQID"
+  }
+}

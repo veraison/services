@@ -1065,8 +1065,8 @@ github.com/veraison/ccatoken v1.1.0 h1:U0Z5fOQRsdz3ksvvxVzTITczo+kfRxIlkWahJNP6I
 github.com/veraison/ccatoken v1.1.0/go.mod h1:qh/KBwsrhPyGJqttlh8PU56wt1rPkUCX9A3ZAA/53Nc=
 github.com/veraison/cmw v0.1.0 h1:vD6tBlGPROCW/HlDcG1jh+XUJi5ihrjXatKZBjrv8mU=
 github.com/veraison/cmw v0.1.0/go.mod h1:WoBrlgByc6C1FeHhdze1/bQx1kv5d1sWKO5ezEf4Hs4=
-github.com/veraison/corim v1.1.2 h1:JIk6ZK/OzKEb0FJUFHSnmkn67yyGy+5NChYax0bwttA=
-github.com/veraison/corim v1.1.2/go.mod h1:yoN6+vVQJgzS926nheCbJi68SvOlN0CpiPuTxYSe5FU=
+github.com/veraison/corim v1.1.3-0.20240615102753-72283bb916a0 h1:FgWzsb/wUxeeKZ3Dd3NOTnwHBJ397EPNiF3o3ZJ/64o=
+github.com/veraison/corim v1.1.3-0.20240615102753-72283bb916a0/go.mod h1:KB6TVcLcz1QppfzoyIesUMfdYodI/ndg7bqBdtqgc90=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=
 github.com/veraison/dice v0.0.1/go.mod h1:QPMLc5LVMj08VZ+HNMYk4XxWoVYGAUBVm8Rd5V1hzxs=
 github.com/veraison/ear v1.1.2 h1:Xs41FqAG8IyJaceqNFcX2+nf51Et1uyhmCJV8SZqw/8=

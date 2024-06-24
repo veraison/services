@@ -69,10 +69,9 @@ func (o *PolicyManager) Evaluate(
 			return err
 		}
 		appraisal.Result.Submods[submod] = evaluated
-
-		if err := appraisal.UpdatePolicyID(pol); err != nil {
-			return err
-		}
+	}
+	if err := appraisal.UpdatePolicyID(pol); err != nil {
+		return err
 	}
 
 	return nil

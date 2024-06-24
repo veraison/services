@@ -27,29 +27,35 @@ def save_result(response, scheme, evidence):
 
 
 def compare_to_expected_result(response, expected, verifier_key):
-    decoded = _extract_appraisal(response, verifier_key)
+    decoded_submods = _extract_submods(response, verifier_key)
 
     with open(expected) as fh:
-        expected_claims = json.load(fh)
+        expected_submods = json.load(fh)
 
-    assert decoded["ear.status"] == expected_claims["ear.status"]
+    for key, expected_claims in expected_submods.items():
+        try:
+            decoded_claims = decoded_submods[key]
+            print("Key exists in the dictionary.")
+        except KeyError:
+            print(f"Key {key} does not exist in the dictionary.")
 
-    if "ear.appraisal-policy-id" in expected_claims:
-        assert decoded["ear.appraisal-policy-id"] ==\
-                expected_claims["ear.appraisal-policy-id"]
+        assert decoded_claims["ear.status"] == expected_claims["ear.status"]
+        print(f"Evaluating Submod with SubModName {key}")
+        if "ear.appraisal-policy-id" in expected_claims:
+            assert decoded_claims["ear.appraisal-policy-id"] ==\
+                    expected_claims["ear.appraisal-policy-id"]
 
-    for trust_claim, tc_value in decoded["ear.trustworthiness-vector"].items():
-        expected_value = expected_claims["ear.trustworthiness-vector"][trust_claim]
-        assert expected_value == tc_value, f'mismatch for claim "{trust_claim}"'
+        for trust_claim, tc_value in decoded_claims["ear.trustworthiness-vector"].items():
+            expected_value = expected_claims["ear.trustworthiness-vector"][trust_claim]
+            assert expected_value == tc_value, f'mismatch for claim "{trust_claim}", for {key}'
 
-    if "ear.veraison.annotated-evidence" in expected_claims:
-        assert decoded["ear.veraison.annotated-evidence"] == \
-                expected_claims["ear.veraison.annotated-evidence"]
+        if "ear.veraison.annotated-evidence" in expected_claims:
+            assert decoded_claims["ear.veraison.annotated-evidence"] == \
+            expected_claims["ear.veraison.annotated-evidence"]
 
-    if "ear.veraison.policy-claims" in expected_claims:
-        assert decoded["ear.veraison.policy-claims"] == \
+        if "ear.veraison.policy-claims" in expected_claims:
+            assert decoded_claims["ear.veraison.policy-claims"] == \
                 expected_claims["ear.veraison.policy-claims"]
-
 
 def check_policy(response, active, name, rules_file):
     policy = _extract_policy(response.json())
@@ -88,7 +94,7 @@ def _check_within_period(dt, period):
     assert now > dt > (now - period)
 
 
-def _extract_appraisal(response, key_file):
+def _extract_submods(response, key_file):
     try:
         result = response.json()["result"]
     except KeyError:
@@ -99,11 +105,7 @@ def _extract_appraisal(response, key_file):
 
     decoded = jwt.decode(result, key=key, algorithms=['ES256'])
 
-    num_submods = len(decoded["submods"])
-    if num_submods != 1:
-        raise ValueError(f"Unexpected number of submods in result. Wanted 1, found {num_submods}.")
-
-    return decoded["submods"].popitem()[1]
+    return decoded["submods"]
 
 
 def _extract_policy(data):

@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jellydator/ttlcache/v3 v3.0.0
-	github.com/json-iterator/go v1.1.12
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lestrrat-go/jwx/v2 v2.0.11
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/mitchellh/mapstructure v1.5.0
@@ -29,7 +29,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.5.0
 	github.com/veraison/ccatoken v1.1.0
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.2
+	github.com/veraison/corim v1.1.3-0.20240615102753-72283bb916a0
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53

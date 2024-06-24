@@ -33,10 +33,10 @@ def generate_endorsements(test):
 
 def generate_artefacts_from_response(response, scheme, evidence, signing, keys, expected):
     generate_evidence_from_response(response, scheme, evidence, signing, keys)
-    generate_expecte_result_from_response(response, scheme, expected)
+    generate_expected_result_from_response(response, scheme, expected)
 
 
-def generate_expecte_result_from_response(response, scheme, expected):
+def generate_expected_result_from_response(response, scheme, expected):
     os.makedirs(f'{GENDIR}/expected', exist_ok=True)
 
     infile = f'data/results/{scheme}.{expected}.json'
@@ -46,13 +46,13 @@ def generate_expecte_result_from_response(response, scheme, expected):
     if scheme == 'psa' and nonce:
         update_json(
                 infile,
-                {'ear.veraison.annotated-evidence': {f'psa-nonce': nonce}},
+                {"PSA_IOT": {'ear.veraison.annotated-evidence': {f'psa-nonce': nonce}}},
                 outfile,
                 )
     elif scheme == 'cca' and nonce:
         update_json(
                 infile,
-                {'ear.veraison.annotated-evidence': {'realm': {f'cca-realm-challenge': nonce}}},
+                {"CCA_REALM": {'ear.veraison.annotated-evidence': {f'cca-realm-challenge': nonce}}},
                 outfile,
                 )
     else:

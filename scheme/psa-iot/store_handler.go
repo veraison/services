@@ -4,9 +4,9 @@
 package psa_iot
 
 import (
+	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
 )
 
@@ -28,7 +28,7 @@ func (s StoreHandler) SynthKeysFromRefValue(
 	tenantID string,
 	refValue *handler.Endorsement,
 ) ([]string, error) {
-	return arm.SynthKeysFromRefValue(SchemeName, tenantID, refValue)
+	return arm.SynthKeysForPlatform(SchemeName, tenantID, refValue)
 }
 
 func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
@@ -36,7 +36,15 @@ func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endo
 }
 
 func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
-	taID, err := arm.GetTrustAnchorID(SchemeName, token)
+	var psaToken psatoken.Evidence
+
+	err := psaToken.FromCOSE(token.Data)
+	if err != nil {
+		return []string{""}, handler.BadEvidence(err)
+	}
+	claims := psaToken.Claims
+
+	taID, err := arm.GetTrustAnchorID(SchemeName, token.TenantId, claims)
 	if err != nil {
 		return []string{""}, err
 	}
@@ -49,14 +57,5 @@ func (s StoreHandler) GetRefValueIDs(
 	trustAnchors []string,
 	claims map[string]interface{},
 ) ([]string, error) {
-	psaClaims, err := common.MapToClaims(claims)
-	if err != nil {
-		return nil, err
-	}
-
-	return []string{arm.RefValLookupKey(
-		SchemeName,
-		tenantID,
-		arm.MustImplIDString(psaClaims),
-	)}, nil
+	return arm.GetPlatformReferenceIDs(SchemeName, tenantID, claims)
 }

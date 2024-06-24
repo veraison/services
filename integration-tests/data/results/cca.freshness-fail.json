@@ -1,18 +1,19 @@
 {
-        "ear.appraisal-policy-id": "policy:CCA_SSD_PLATFORM",
-        "ear.status": "contraindicated",
-        "ear.trustworthiness-vector": {
-            "configuration": 99,
-            "executables": 99,
-            "file-system": 99,
-            "hardware": 99,
-            "instance-identity": 99,
-            "runtime-opaque": 99,
-            "sourced-data": 99,
-            "storage-opaque": 99
-        },
-        "ear.veraison.policy-claims": {
-            "problem": "integrity validation failed"
-        }
+  "ARM_CCA": {
+    "ear.appraisal-policy-id": "policy:ARM_CCA",
+    "ear.status": "contraindicated",
+    "ear.trustworthiness-vector": {
+      "configuration": 99,
+      "executables": 99,
+      "file-system": 99,
+      "hardware": 99,
+      "instance-identity": 99,
+      "runtime-opaque": 99,
+      "sourced-data": 99,
+      "storage-opaque": 99
+    },
+    "ear.veraison.policy-claims": {
+      "problem": "integrity validation failed"
+    }
+  }
 }
-
