@@ -12,6 +12,12 @@ schemes. Currently the following schemes are implemented:
 - `parsec-cca` : Parsec CCA based hardware-backed attestation, details
    [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 
+> [!NOTE]
+> When adding (or removing) a scheme, please update `../builtin/scheme.gen.go`
+> to include the appropriate entries. This can be done automatically using
+> `../scripts/gen-schemes` script (see `../buildin/Makefile`) or by manually
+> editing the file. The script takes a long time to execute, so unless multiple
+> schemes are being added/moved/deleted, manual editing may be easier.
 
 ## Implementing Attestation Scheme Support
 
