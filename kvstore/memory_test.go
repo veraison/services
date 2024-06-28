@@ -65,6 +65,30 @@ func TestMemory_Set_Get_ok(t *testing.T) {
 	assert.Equal(t, testKey, keys[0])
 }
 
+func TestMemory_GetMultiple(t *testing.T) {
+	s := Memory{}
+
+	err := s.Init(nil, log.Named("test"))
+	require.NoError(t, err)
+
+	s.Data = map[string][]string{
+		"key1": []string{"1", "2"},
+		"key2": []string{"3", "4"},
+	}
+
+	ret, err := s.GetMultiple([]string{"key1", "key2"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"1", "2", "3", "4"}, ret)
+
+	ret, err = s.GetMultiple([]string{"key2", "key1"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"3", "4", "1", "2"}, ret)
+
+	ret, err = s.GetMultiple([]string{"key1", "key2", "key3"})
+	assert.EqualError(t, err, `key not found: "key3"`)
+	assert.Equal(t, []string{"1", "2", "3", "4"}, ret)
+}
+
 func TestMemory_Get_empty_key(t *testing.T) {
 	s := Memory{}
 

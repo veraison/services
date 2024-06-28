@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -116,6 +116,43 @@ func TestSQL_Set_Get_Del_with_uninitialised_store(t *testing.T) {
 
 	_, err = s.Get(testKey)
 	assert.EqualError(t, err, expectedErr)
+}
+
+func TestSQL_GetMultiple(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	rows1 := sqlmock.NewRows([]string{"vals"}).AddRow("1").AddRow("2")
+	rows2 := sqlmock.NewRows([]string{"vals"}).AddRow("3").AddRow("4")
+	rows3 := sqlmock.NewRows([]string{"vals"}).AddRow("3").AddRow("4")
+	rows4 := sqlmock.NewRows([]string{"vals"}).AddRow("1").AddRow("2")
+	rows5 := sqlmock.NewRows([]string{"vals"}).AddRow("1").AddRow("2")
+	rows6 := sqlmock.NewRows([]string{"vals"}).AddRow("3").AddRow("4")
+	expErr := fmt.Errorf("%w: %q", ErrKeyNotFound, "key3")
+
+	queryText := "SELECT DISTINCT vals FROM endorsement WHERE key = ?"
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key1").WillReturnRows(rows1)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key2").WillReturnRows(rows2)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key2").WillReturnRows(rows3)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key1").WillReturnRows(rows4)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key1").WillReturnRows(rows5)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key2").WillReturnRows(rows6)
+	mock.ExpectQuery(regexp.QuoteMeta(queryText)).WithArgs("key3").WillReturnError(expErr)
+
+	s := SQL{TableName: "endorsement", DB: db}
+
+	ret, err := s.GetMultiple([]string{"key1", "key2"})
+	assert.NoError(t, err)
+	assert.EqualValues(t, []string{"1","2","3","4"}, ret)
+
+	ret, err = s.GetMultiple([]string{"key2", "key1"})
+	assert.NoError(t, err)
+	assert.EqualValues(t, []string{"3","4","1","2"}, ret)
+
+	ret, err = s.GetMultiple([]string{"key1", "key2", "key3"})
+	assert.Equal(t, expErr, err)
+	assert.EqualValues(t, []string{"1","2","3","4"}, ret)
 }
 
 func TestSQL_Get_empty_key(t *testing.T) {
