@@ -316,9 +316,9 @@ function help() {
 
 	            Output the contents of the VTS stores.
 
-            clear-stores
+      clear-stores
 
-                    Clear the contents of the VTS stores.
+              Clear the contents of the VTS stores.
 
 	    follow SERVICE
 
