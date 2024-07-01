@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: action/checkout@v3
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Generate a new tag and push it
