@@ -30,6 +30,29 @@ def generate_endorsements(test):
 
     generate_corim(corim_template, comid_templates, output_path)
 
+def generate_cca_end_to_end_endorsements(test):
+    os.makedirs(f'{GENDIR}/endorsements', exist_ok=True)
+
+    scheme = test.test_vars['scheme']
+    spec = test.test_vars['endorsements']
+    # first construct platform templates
+    corim_template_name = 'corim-{}-platform-{}.json'.format(scheme, spec)
+    corim_template = f'data/endorsements/{corim_template_name}'
+    tag = ["refval", "ta"]
+    comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
+                       for c in tag[0:]]
+    output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.cbor'
+    generate_corim(corim_template, comid_templates, output_path)
+
+    # next realm templates
+    corim_template_name = 'corim-{}-realm-{}.json'.format(scheme, spec)
+    corim_template = f'data/endorsements/{corim_template_name}'
+    tag = ["refval"]
+    comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
+                       for c in tag[0:]]
+    output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
+    generate_corim(corim_template, comid_templates, output_path)
+
 
 def generate_artefacts_from_response(response, scheme, evidence, signing, keys, expected):
     generate_evidence_from_response(response, scheme, evidence, signing, keys)

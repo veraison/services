@@ -1,0 +1,79 @@
+{
+  "lang": "en-GB",
+  "tag-identity": {
+    "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+    "version": 0
+  },
+  "entities": [
+    {
+      "name": "Workload Client Ltd.",
+      "regid": "https://workloadclient.example",
+      "roles": [
+        "tagCreator",
+        "creator",
+        "maintainer"
+      ]
+    }
+  ],
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "uuid",
+              "value": "CD1F0E55-26F9-460D-B9D8-F7FDE171787C"
+            },
+            "vendor": "Workload Client Ltd"
+          },
+          "instance": {
+            "type": "bytes",
+            "value": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+          }
+        },
+        "measurements": [
+          {
+            "value": {
+              "raw-value": {
+                "type": "bytes",
+                "value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA=="
+              },
+              "integrity-registers": {
+                "rim": {
+                  "key-type": "text",
+                  "value": [
+                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                  ]
+                },
+                "rem0": {
+                  "key-type": "text",
+                  "value": [
+                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                  ]
+                },
+                "rem1": {
+                  "key-type": "text",
+                  "value": [
+                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                  ]
+                },
+                "rem2": {
+                  "key-type": "text",
+                  "value": [
+                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                  ]
+                },
+                "rem3": {
+                  "key-type": "text",
+                  "value": [
+                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

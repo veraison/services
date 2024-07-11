@@ -1,4 +1,4 @@
-test_name: end-to-end
+test_name: cca-end-to-end
 
 marks:
   - parametrize:
@@ -12,7 +12,7 @@ marks:
         - profile
         # Which evidence description will be used to construct the evidence token.
         - evidence
-        # The name of the endorsements spec within common.yaml
+        # The name of the tag used to generate CCA endorsements
         - endorsements
         # Signing keys that will be used to construct the evidence. How this is
         # used is dependent on the scheme.
@@ -23,26 +23,31 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [psa, p1, good, full, ec.p256, good, nonce32]
-        - [psa, p1, good, mini, ec.p256, good, nonce32]
-        - [psa, p1, missingclaims, mini, ec.p256, noident, nonce32]
-        - [psa, p1, good, mini, bad, badcrypto, nonce32]
-        - [psa, p1, badinstance, full, ec.p256, badinstance, nonce32]
-        - [psa, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
-        - [enacttrust, _, good, mini, ec.p256.enacttrust, good, nonce32]
+        - [cca, _, good, full, ccakeys, good, nonce64]
 
 includes:
   - !include common.yaml
 
 stages:
-  - name: submit post request to the provisioning service successfully
+  - name: submit post request for CCA platform to the provisioning service successfully
     request:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: '{endorsements-content-type}' # set via hook
+        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1'
         authorization: '{authorization}' # set via hook
-      file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
+      file_body: __generated__/endorsements/corim-{scheme}-platform-{endorsements}.cbor
+    response:
+      status_code: 200
+
+  - name: submit post request for CCA Realm to the provisioning service successfully
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/realm/1'
+        authorization: '{authorization}' # set via hook
+      file_body: __generated__/endorsements/corim-{scheme}-realm-{endorsements}.cbor
     response:
       status_code: 200
 

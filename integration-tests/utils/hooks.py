@@ -61,6 +61,13 @@ def setup_cca_verify_challenge(test, variables):
     generate_endorsements(test)
     generate_evidence_from_test(test)
 
+def setup_cca_end_to_end(test, variables):
+    _set_content_types(test, variables)
+    _set_authorization(test, variables, 'provisioner')
+    _set_alt_authorization(test, variables, 'manager')
+    _set_nonce(test, variables)
+    generate_cca_end_to_end_endorsements(test)
+    generate_evidence_from_test(test)
 
 def setup_freshness_check_fail(test, variables):
     _set_content_types(test, variables)
