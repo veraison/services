@@ -9,6 +9,7 @@ marks:
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
         # as '_'.
+        - subschemes
         - profile
         # Which evidence description will be used to construct the evidence token.
         - evidence
@@ -23,7 +24,7 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [enacttrust, _, badnode, mini, ec.p256.enacttrust, badnode, nonce32]
+        - [enacttrust, _, _, badnode, mini, ec.p256.enacttrust, badnode, nonce32]
 
 includes:
   - !include common.yaml

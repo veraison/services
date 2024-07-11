@@ -14,21 +14,44 @@ def generate_endorsements(test):
     os.makedirs(f'{GENDIR}/endorsements', exist_ok=True)
 
     scheme = test.test_vars['scheme']
+    subschemes = test.test_vars['subschemes']
     spec = test.test_vars['endorsements']
 
+    if isinstance(subschemes, str) and subschemes == '_':
+        generate_scheme_endorsements(test, scheme, spec)
+    else: 
+        generate_subscheme_endorsements(test, scheme, subschemes, spec)
+
+def generate_scheme_endorsements(test, scheme, spec):
+    
     if isinstance(spec, str):
-        tag = spec
-        spec = test.common_vars['endorsements'][spec]
+      tag = spec
+      spec = test.common_vars['endorsements'][spec]
     else:
-        tag = spec[0]
+      tag = spec[0]
 
     corim_template_name = 'corim-{}-{}.json'.format(scheme, spec[0])
     corim_template = f'data/endorsements/{corim_template_name}'
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in spec[1:]]
     output_path = f'{GENDIR}/endorsements/corim-{scheme}-{tag}.cbor'
-
     generate_corim(corim_template, comid_templates, output_path)
+
+def generate_subscheme_endorsements(test, scheme, subschemes, tags):
+    for i, subscheme in enumerate(subschemes):
+      print(f"---YD value of i=---{subscheme}")
+
+      tag = tags[i]
+      spec = tag
+      var_list = test.common_vars['endorsements'][spec]
+      print(f"---YD value of spec =---{spec}")
+      
+      corim_template_name = 'corim-{}-{}-{}.json'.format(scheme, subscheme, var_list[0])
+      corim_template = f'data/endorsements/{corim_template_name}'
+      comid_templates = ['data/endorsements/comid-{}-{}-{}.json'.format(scheme,subscheme, c)
+          for c in var_list[1:]]
+      output_path = f'{GENDIR}/endorsements/corim-{scheme}-{subscheme}-{var_list[0]}.cbor'
+      generate_corim(corim_template, comid_templates, output_path)
 
 
 def generate_artefacts_from_response(response, scheme, evidence, signing, keys, expected):

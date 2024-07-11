@@ -72,10 +72,16 @@ def setup_freshness_check_fail(test, variables):
 
 def _set_content_types(test, variables):
     scheme = test.test_vars['scheme']
+    subschemes = test.test_vars['subschemes']
     profile = test.test_vars['profile']
     ends_content_types = test.common_vars['endorsements-content-types']
     ev_content_types = test.common_vars['evidence-content-types']
-    variables['endorsements-content-type'] = ends_content_types[f'{scheme}.{profile}']
+    if isinstance(subschemes, str) and subschemes == '_':
+        variables['endorsements-content-type'] = ends_content_types[f'{scheme}.{profile}']
+    else:
+        for subscheme in subschemes:
+            variables[f'{'endorsements-content-type'}.{subscheme}'] = ends_content_types[f'{scheme}.{profile}.{subscheme}']
+            print(f'{'endorsements-content-type'}.{subscheme}')
     variables['evidence-content-type'] = ev_content_types[f'{scheme}.{profile}']
 
 

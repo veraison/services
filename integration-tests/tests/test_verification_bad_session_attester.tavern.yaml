@@ -6,6 +6,7 @@ marks:
         #  Attestation scheme -- this is used to indicate how test cases should
         #  be constructed (e.g. how the evidence token will be compiled.
         - scheme
+        - subschemes
         # Which evidence description will be used to construct the evidence token.
         - evidence
         # The name of the endorsements spec within common.yaml
@@ -14,7 +15,7 @@ marks:
         # used is dependent on the scheme.
         - signing
       vals:
-        - [psa, good, full, ec.p256]
+        - [psa, _, good, full, ec.p256]
 
 includes:
   - !include common.yaml

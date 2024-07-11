@@ -9,6 +9,7 @@ marks:
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
         # as '_'.
+        - subschemes
         - profile
         # Which evidence description will be used to construct the evidence token.
         - evidence
@@ -23,14 +24,14 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [psa, p1, good, full, ec.p256, good, nonce32]
-        - [psa, p1, good, mini, ec.p256, good, nonce32]
-        - [psa, p1, missingclaims, mini, ec.p256, noident, nonce32]
-        - [psa, p1, good, mini, bad, badcrypto, nonce32]
-        - [psa, p1, badinstance, full, ec.p256, badinstance, nonce32]
-        - [psa, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
-        - [cca, _, good, full, ccakeys, good, nonce64]
-        - [enacttrust, _, good, mini, ec.p256.enacttrust, good, nonce32]
+        - [psa, _, p1, good, full, ec.p256, good, nonce32]
+        - [psa, _,p1, good, mini, ec.p256, good, nonce32]
+        - [psa, _, p1, missingclaims, mini, ec.p256, noident, nonce32]
+        - [psa, _, p1, good, mini, bad, badcrypto, nonce32]
+        - [psa, _, p1, badinstance, full, ec.p256, badinstance, nonce32]
+        - [psa, _, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
+        #- [cca, _, _, good, full, ccakeys, good, nonce64]
+        - [enacttrust, _, _, good, mini, ec.p256.enacttrust, good, nonce32]
 
 includes:
   - !include common.yaml

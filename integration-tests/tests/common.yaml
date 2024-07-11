@@ -18,7 +18,8 @@ variables:
   bad-nonce: Ppfdfe2JzZLOk=
   endorsements-content-types:
     psa.p1: application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1
-    cca._: application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1
+    cca._.platform: application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1
+    cca._.realm: application/corim-unsigned+cbor; profile=http://arm.com/cca/realm/1
     enacttrust._: application/corim-unsigned+cbor; profile=http://enacttrust.com/veraison/1.0.0
   evidence-content-types:
     psa.p1: application/psa-attestation-token
@@ -30,14 +31,15 @@ variables:
     ec.p256.enacttrust: ec.p256.enacttrust
     ccakeys: [ec.p256, ec.p384]
   endorsements:
-    # These are the mapping of the endrosements test case name used inside test
-    # vectors to the names of the CoMID and CoRIM specs that will be used
-    # asseble then provisioned CBOR (note: just the <name> part of the file
+    # These are the mapping of the endorsements test case name used inside test
+    # vectors to the names of the CoMID and CoRIM specs that will be used to
+    # assemble & then provisioned CBOR (note: just the <name> part of the file
     # name -- see the naming convention description inside
     # ../data/endorsements/README.md). The CoRIM name is the first one in the list.
     full: [full, ta, refval]
     mini: [mini, ta, refval]
     mini-bad: [mini, badta]
+    partial: [full, refval]
   oauth2:
     client-id: veraison-client
     client-secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z

@@ -4,8 +4,8 @@ that associate the endorsements with metadata about the device instance to
 which the endorsements pertain, and the endorsing entities.
 
 The CoMID's are not provisioned directly, but are packaged inside a CoRIM (Concise
-Reference Integrit Manifest). A single CoRIM can contain multiple CoMID's
-(possibly pertaining to multiple device instances) along with validity
+Reference Integrity Manifest). A single CoRIM can contain multiple CoMID's
+(possibly pertaining to multiple modules) along with validity
 constraints and metadata pertaining to the provisioning entity.
 
 For more information on CoMID and CoRIM see

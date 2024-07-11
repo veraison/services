@@ -6,6 +6,8 @@ marks:
         #  Attestation scheme -- this is used to indicate how test cases should
         #  be constructed (e.g. how the evidence token will be compiled.
         - scheme
+
+        - subschemes
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
         # as '_'.
@@ -16,7 +18,7 @@ marks:
         # used is dependent on the scheme.
         - signing
       vals:
-        - [enacttrust, _, mini-bad, ec.p256.enacttrust]
+        - [enacttrust,  _, _, mini-bad, ec.p256.enacttrust]
 
 includes:
   - !include common.yaml

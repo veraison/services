@@ -6,6 +6,7 @@ marks:
         #  Attestation scheme -- this is used to indicate how test cases should
         #  be constructed (e.g. how the evidence token will be compiled.
         - scheme
+        - subschemes
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
         # as '_'.
@@ -23,7 +24,7 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [psa, p1, multinonce, full, ec.p256, noident, nonce32]
+        - [psa, _, p1, multinonce, full, ec.p256, noident, nonce32]
 
 includes:
   - !include common.yaml

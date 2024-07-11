@@ -6,6 +6,9 @@ marks:
         #  Attestation scheme -- this is used to indicate how test cases should
         #  be constructed (e.g. how the evidence token will be compiled.
         - scheme
+        #  Attestation subschemes -- this is used to indicate how individual subattester
+        #  be constructed (e.g. how the endorsements will be compiled).
+        - subschemes
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
         # as '_'.
@@ -23,7 +26,7 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [cca, _, good, full, ccakeys, verify-challenge, nonce64]
+        - [cca, [platform, realm], _, good, [full, partial], ccakeys, verify-challenge, nonce64]
 
 includes:
   - !include common.yaml
@@ -34,9 +37,20 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: '{endorsements-content-type}' # set via hook
+        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1' # set via hook
         authorization: '{authorization}' # set via hook
-      file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
+      file_body: __generated__/endorsements/corim-{scheme}-{subschemes[0]}-{endorsements[0]}.cbor
+    response:
+      status_code: 200
+
+  - name: submit post request to the provisioning service successfully
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/submit
+      headers:
+        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/realm/1' # set via hook
+        authorization: '{authorization}' # set via hook
+      file_body: __generated__/endorsements/corim-{scheme}-{subschemes[1]}-{endorsements[0]}.cbor
     response:
       status_code: 200
 
