@@ -39,12 +39,9 @@ def generate_scheme_endorsements(test, scheme, spec):
 
 def generate_subscheme_endorsements(test, scheme, subschemes, tags):
     for i, subscheme in enumerate(subschemes):
-      print(f"---YD value of i=---{subscheme}")
-
       tag = tags[i]
       spec = tag
       var_list = test.common_vars['endorsements'][spec]
-      print(f"---YD value of spec =---{spec}")
       
       corim_template_name = 'corim-{}-{}-{}.json'.format(scheme, subscheme, var_list[0])
       corim_template = f'data/endorsements/{corim_template_name}'
