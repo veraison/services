@@ -1,6 +1,6 @@
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2023-2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-FROM python as veraison-test
+FROM python AS veraison-test
 
 # User identify that will be used to build the project. This should be
 # overriden at build time to match the host user running the tester who owns

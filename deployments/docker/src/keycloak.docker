@@ -1,4 +1,4 @@
-FROM quay.io/keycloak/keycloak:22.0.1 as keycloak-builder
+FROM quay.io/keycloak/keycloak:22.0.1 AS keycloak-builder
 
 WORKDIR /opt/keycloak
 # note: for development set up early; use proper certification in production.

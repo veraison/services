@@ -1,7 +1,7 @@
 # Verification service container.
 # The context for building this image is assumed to be the Veraison deployment
 # directory (/tmp/veraison is the default for make build).
-FROM debian as veraison-verification
+FROM debian AS veraison-verification
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
