@@ -2,7 +2,7 @@
 # within the project, it must be at least 1.19.
 ARG GO_VERSION=1.19
 
-FROM golang:${GO_VERSION} as veraison-builder
+FROM golang:${GO_VERSION} AS veraison-builder
 
 # User identity that will be used to build the project. This should be
 # overriden at build time to match the host user running the builder, who owns
