@@ -65,7 +65,7 @@ Before evidence can be attested, trust anchors and reference values need to
 provisioned. These are contained within
 `end-to-end/inputs/psa-endorsements.cbor` and can be provisioned with
 
-    end-to-end/end-to-end provision
+    ./end-to-end/end-to-end provision
 
 If this does not return an error, the values have been successfully
 provisioned. You can verify this by checking the contents of the Veraison
@@ -77,7 +77,7 @@ You should see a list of JSON structures of the provision values.
 
 You can now verify the evidence with
 
-    end-to-end/end-to-end verify rp
+    ./end-to-end/end-to-end verify rp
 
 This should output the [EAR](https://github.com/thomas-fossati/draft-ear)
 attestation result. The "rp" means you're verifying as the Relying Party; you
