@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -29,6 +29,16 @@ type IKVStore interface {
 	// values are in the order they were added, with the most recent value
 	// last.
 	Get(key string) ([]string, error)
+
+	// GetMultiple returns a []string of values for the specified keys. If
+	// any of the specified keys are not in the store, a ErrKeyNotFound
+	// is returned, listing all keys for which values could not be found
+	// (note that in this case, the returned slice will still contain
+	// values for other specified keys, if any). The order of the values
+	// matches the order of the keys; if there are multiple values for one
+	// key, they are in the order they were added, with the most recent
+	// value last.
+	GetMultiple(keys []string) ([]string, error)
 
 	// GetKeys returns a []string of keys currently set in the store.
 	GetKeys() ([]string, error)
