@@ -1,0 +1,20 @@
+ca_cert: ${VERAISON_ROOT}/certs/rootCA.crt
+api_server: https://${PROVISIONING_HOST}:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
+##############################################################################
+# Authentication is disabled in the native deployment by default. If you have
+# set up a Keycloak server, and enabled authentication in the services, you
+# will need to uncomment the config below.
+#
+# The values below assume you are running Keycloak on port 11111 and are using
+# the example Veraison realm. If that is not the case, you will have to adjust
+# the settings to match your setup.
+##############################################################################
+#auth: oauth2
+#username: veraison-provisioner
+#password: veraison
+#client_id: veraison-client
+#client_secret: YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z
+#token_url: https://localhost:11111/realms/veraison/protocol/openid-connect/token
+##############################################################################
+
+# vim: set ft=yaml:

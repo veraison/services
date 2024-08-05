@@ -94,7 +94,7 @@ function verify() {
 
 function help() {
 cat <<'EOF'
-Usage: ./end-to-end [command]
+Usage: ./end-to-end-docker [command]
 
 Command:
 

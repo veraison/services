@@ -1,0 +1,14 @@
+[Unit]
+Description=Veraison provisioning API server
+After=veraison-trusted.service
+
+[Service]
+Type=exec
+ExecStart=${VERAISON_ROOT}/bin/provisioning-service --config ${VERAISON_ROOT}/config/services/config.yaml
+Restart=always
+
+[Install]
+WantedBy=default.target
+Requires=veraison-trusted.service
+
+# vim: set ft=systemd:
