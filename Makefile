@@ -3,6 +3,8 @@
 
 export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
+SHELL = /bin/bash
+
 SUBDIR += builtin
 SUBDIR += config
 SUBDIR += handler
@@ -41,6 +43,8 @@ Available targets:
 	really-clean:  clean up deployment and integration-test related artefacts
 	docker-deploy: create and start the docker deployment (docker must be
 	               installed, and the user must be in the docker group)
+	bootstrap:     install required dependencies (only works on Arch and Ubuntu)
+	native-deploy: create and start the native deployment
 endef
 export __MAKEFILE_HELP
 
@@ -85,6 +89,7 @@ endif
 really-clean:
 	make -C integration-tests really-clean
 	make -C deployments/docker really-clean
+	make -C deployments/native really-clean
 
 ifeq ($(filter really-clean,$(MAKECMDGOALS)),really-clean)
 __NO_RECURSE = true
@@ -95,6 +100,48 @@ integ-test:
 	make -C integration-tests test
 
 ifeq ($(filter integ-test,$(MAKECMDGOALS)),integ-test)
+__NO_RECURSE = true
+endif
+
+.PHONY: bootstrap
+bootstrap:
+	make -C deployments/native bootstrap
+
+ifeq ($(filter bootstrap,$(MAKECMDGOALS)),bootstrap)
+__NO_RECURSE = true
+endif
+
+VERAISON_ROOT ?= $(HOME)/veraison-deployment
+export VERAISON_ROOT
+
+define __NATIVE_DEPLOY_MESSAGE
+
+=============================================================================
+Veraison has been deployed natively on the local system. If you're using
+bash, you can access to the frontend via the following command:
+
+	source ${VERAISON_ROOT}/env/env.bash
+
+(there is an equivalent env.zsh for zsh). You can then view frontend help via
+
+	veraison -h
+
+In addition to the veraison frontend, env.bash will also set up aliases for
+cocli, evcli, and polcli utilities.
+
+=============================================================================
+endef
+export __NATIVE_DEPLOY_MESSAGE
+
+.PHONY: native-deploy
+native-deploy:
+	make -C deployments/native quick-deploy
+	@if [[ "$(shell which systemctl 2> /dev/null)" != "" ]]; then \
+		$(VERAISON_ROOT)/bin/veraison start-systemd; \
+	fi
+	@echo "$$__NATIVE_DEPLOY_MESSAGE"
+
+ifeq ($(filter native-deploy,$(MAKECMDGOALS)),native-deploy)
 __NO_RECURSE = true
 endif
 

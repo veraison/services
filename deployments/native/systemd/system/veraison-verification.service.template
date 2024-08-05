@@ -1,0 +1,15 @@
+[Unit]
+Description=Veraison verification API server
+After=veraison-trusted.service
+
+[Service]
+Type=exec
+ExecStart=${VERAISON_ROOT}/bin/verification-service --config ${VERAISON_ROOT}/config/services/config.yaml
+Restart=always
+User=${VERAISON_USER}
+
+[Install]
+WantedBy=default.target
+Requires=veraison-trusted.service
+
+# vim: set ft=systemd:

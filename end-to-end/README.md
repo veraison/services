@@ -43,7 +43,7 @@ This populates the stores with the endorsements and trust anchors needed for
 verification later.
 
 ```sh
-./end-to-end provision
+./end-to-end-docker provision
 ```
 
 Optionally, you can verify that the store have been populated:
@@ -57,13 +57,13 @@ veraison check-stores
 As a relying party:
 
 ```sh
-./end-to-end verify rp
+./end-to-end-docker verify rp
 ```
 
 As an attester:
 
 ```sh
-./end-to-end verify attest
+./end-to-end-docker verify attest
 ```
 
 ## Clean up
@@ -80,4 +80,3 @@ You can clean up the deployment with
 ```sh
 make -C ../deployments/docker really-clean
 ```
-

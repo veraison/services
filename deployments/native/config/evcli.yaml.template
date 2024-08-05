@@ -1,0 +1,4 @@
+ca_cert: ${VERAISON_ROOT}/certs/rootCA.crt
+api_server: https://${VERIFICATION_HOST}:${VERIFICATION_PORT}/challenge-response/v1/newSession
+
+# vim: set ft=yaml:

@@ -1,0 +1,15 @@
+[Unit]
+Description=Veraison Trusted Services server
+After=network.target
+
+[Service]
+Type=exec
+ExecStart=${VERAISON_ROOT}/bin/vts-service --config ${VERAISON_ROOT}/config/services/config.yaml
+ExecStartPost=/usr/bin/sleep 0.5
+Restart=always
+User=${VERAISON_USER}
+
+[Install]
+WantedBy=default.target
+
+# vim: set ft=systemd:

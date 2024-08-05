@@ -1,0 +1,157 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+if [[ $VERAISON_ROOT == "" ]]; then
+	echo "ERROR: VERAISON_ROOT must be set."
+	exit 1
+fi
+
+COCLI=${VERAISON_ROOT}/bin/cocli
+if [[ ! -f $COCLI ]]; then
+	COCLI=$(which cocli)
+	if [[ $COCLI == "" ]]; then
+		echo "ERROR: cocli must be installed."
+		exit 1
+	fi
+fi
+
+EVCLI=${VERAISON_ROOT}/bin/evcli
+if [[ ! -f $EVCLI ]]; then
+	EVCLI=$(which evcli)
+	if [[ $EVCLI == "" ]]; then
+		echo "ERROR: cocli must be installed."
+		exit 1
+	fi
+fi
+
+SCHEME=${SCHEME:-psa}
+
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+function provision() {
+    case $SCHEME  in
+        psa)
+            local corim_file=$THIS_DIR/input/psa-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+            ;;
+        cca)
+            local corim_file=$THIS_DIR/input/cca-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1"
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    $COCLI corim submit --config="${VERAISON_ROOT}/config/cocli/config.yaml" \
+	    --corim-file="$corim_file" --media-type="$media_type"
+}
+
+function check() {
+    "${VERAISON_ROOT}/bin/veraison" stores
+}
+
+function verify_as_attester() {
+    case $SCHEME  in
+        psa)
+            local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
+            local key_args="--key=$THIS_DIR/input/ec-p256.jwk"
+            local nonce_args="--nonce-size=32"
+            ;;
+        cca)
+            local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
+            local key_args="--iak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
+            local nonce_args=""
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    $EVCLI $SCHEME verify-as attester --config="${VERAISON_ROOT}/config/evcli/config.yaml" \
+        --claims="$claims" $key_args $nonce_args
+}
+
+function verify_as_relying_party() {
+    case $SCHEME  in
+        psa)
+            local token=$THIS_DIR/input/psa-evidence.cbor
+            ;;
+        cca)
+            local token=$THIS_DIR/input/cca-evidence.cbor
+            ;;
+        *)
+            echo "ERROR: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    $EVCLI $SCHEME verify-as relying-party --config="${VERAISON_ROOT}/config/evcli/config.yaml" \
+        --token="$token"
+}
+
+function verify() {
+    as=$1
+
+    case $as in
+        attester | attest) verify_as_attester;;
+        rp | relying-party) verify_as_relying_party;;
+        *) echo "ERROR unexected \"as\": \"$as\"; should be either \"attester\" or \"rp\""
+    esac
+}
+
+
+function help() {
+cat <<'EOF'
+Usage: ./end-to-end-native [command]
+
+Command:
+
+  provision
+      Provision endorsements and trust anchors via the provisioning API.
+  check | check-stores
+      Check the contents of the endorsement and trust anchor stores.
+  verify [ attester | rp ]
+      Verify claims via verification API either as an attester or the relying party.
+
+EOF
+}
+
+function _check_scheme() {
+    case $SCHEME in
+        psa | cca)
+            ;;
+        *)
+            echo "ERROR: unknown SCHEME: '$SCHEME'; must be 'cca' or 'psa'"; exit 1
+            ;;
+    esac
+}
+
+set -- $(getopt "hs:" "$@")
+while [ ! -z "$1" ]
+do
+  case "$1" in
+    -h) help; exit;;
+    -s) SCHEME=$2; shift;;
+     *) break;;
+  esac
+
+  shift
+done
+shift
+
+_check_scheme
+
+command=$1
+case $command in
+    help) help;;
+    provision) provision;;
+    check | check-stores) check;;
+    verify) verify $2;;
+    *) echo "ERROR: unexpected command: \"$command\""; help;;
+esac
