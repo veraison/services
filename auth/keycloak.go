@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"github.com/setrofim/gin-keycloak/pkg/ginkeycloak"
+	"github.com/tbaehler/gin-keycloak/pkg/ginkeycloak"
 	"github.com/veraison/services/config"
 	"go.uber.org/zap"
 	"gopkg.in/go-jose/go-jose.v2/jwt"
