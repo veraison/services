@@ -1,0 +1,53 @@
+logging:
+  level: info  # valid levels: error, warning, info, debug
+  output-paths:
+    - stdout
+    - ${VERAISON_ROOT}/logs/{{ .service }}-stdout.log
+provisioning:
+  listen-addr: 0.0.0.0:${PROVISIONING_PORT}
+  protocol: https
+  cert: ${VERAISON_ROOT}/certs/provisioning.crt
+  cert-key: ${VERAISON_ROOT}/certs/provisioning.key
+verification:
+  listen-addr: 0.0.0.0:${VERIFICATION_PORT}
+  protocol: https
+  cert: ${VERAISON_ROOT}/certs/verification.crt
+  cert-key: ${VERAISON_ROOT}/certs/verification.key
+management:
+  listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
+  protocol: https
+  cert: ${VERAISON_ROOT}/certs/management.crt
+  cert-key: ${VERAISON_ROOT}/certs/management.key
+vts:
+  server-addr: ${VTS_HOST}:${VTS_PORT}
+  tls: true
+  cert: ${VERAISON_ROOT}/certs/vts.crt
+  cert-key: ${VERAISON_ROOT}/certs/vts.key
+  ca-certs: ${VERAISON_ROOT}/certs/rootCA.crt
+ear-signer:
+  alg: ES256
+  key: ${VERAISON_ROOT}/signing/skey.jwk
+plugin:
+  backend: go-plugin
+  go-plugin:
+    dir: ${VERAISON_ROOT}/plugins/
+ta-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: ${VERAISON_ROOT}/stores/ta-store.sql
+en-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: ${VERAISON_ROOT}/stores/en-store.sql
+po-store:
+  backend: sql
+  sql:
+    driver: sqlite3
+    datasource: ${VERAISON_ROOT}/stores/po-store.sql
+po-agent:
+    backend: opa
+auth:
+  backend: none
+# vim: set ft=yaml:

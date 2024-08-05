@@ -1,0 +1,853 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+# shellcheck disable=SC2155,SC2086
+set -e
+
+# NOTE: when this script is installed into a deployment, the definition below
+# will be replaced with a hard-coded path (based on the deployment).
+# shellcheck disable=SC2153
+_veraison_root=${VERAISON_ROOT}
+
+_bin_dir=${_veraison_root}/bin
+_config_dir=${_veraison_root}/config
+_certs_dir=${_veraison_root}/certs
+_signing_dir=${_veraison_root}/signing
+_stores_dir=${_veraison_root}/stores
+_systemd_dir=${_veraison_root}/systemd
+_logs_dir=${_veraison_root}/logs
+
+_services=(vts provisioning verification management)
+
+_sqlite="sqlite3 -init /dev/null -batch"
+
+function init_sqlite_stores() {
+	_check_installed sqlite3
+
+	for t in en ta po; do
+		echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+		    sqlite3 "${_stores_dir}/${t}-store.sql"
+	done
+}
+
+function generate_signing_key() {
+	_check_installed step
+
+	local force=$1
+	local path=$2
+
+	if [[ -f $path ]]; then
+		if [[ $force == false ]]; then
+			echo -e "$_error: signing key $path already exists; use -f t overwrite"
+
+			exit 1
+		fi
+	fi
+
+	step crypto jwk create --kty EC --crv P-256 --no-password --force --insecure \
+		/dev/null "$path"
+}
+
+function generate_certs() {
+	local save_intermediate=$1
+	local force=$2
+	local template=$3
+
+	if [[ "$4" != "" ]]; then
+		if [[ "$5" == "" ]]; then
+			echo -e "$_error: when specifying root cert, its key must also be specified."
+			exit 1
+		fi
+
+		local root_cert=$4
+		local root_cert_key=$5
+		local generated=false
+	else
+		local root_cert=/tmp/veraison-root-ca-cert.crt
+		local root_cert_key=/tmp/veraison-root-ca-cert.key
+		local generated=true
+
+		create_root_cert "$force" "$root_cert" "$root_cert_key"
+	fi
+
+	install_root_cert "$root_cert" "$force"
+	create_all_service_certs "$template" "$root_cert" "$root_cert_key" "$force"
+
+	if [[ $save_intermediate == false ]];  then
+		clean_intermediate_cert_artifacts
+	fi
+
+	if [[ $generated == true ]]; then
+		set +e
+		read -r -d '' message <<-EOF
+		Used generated root CA cert. The associated private key will NOT be
+		      preserved! Make sure to save the following key if you plan to
+		      sign other certs using the root cert:
+
+		           $root_cert_key
+		EOF
+		echo ""
+		echo -e "${_yell}NOTE:${_reset} $message"
+		echo ""
+		set -e
+	fi
+}
+
+function create_root_cert() {
+	local force=$1
+	local cert_path=$2
+	local key_path=$3
+	local subject=$4
+
+	if [[ -f "${cert_path}" || -f "${key_path}" ]]; then
+		if [[ $force == false ]]; then
+			echo -e "$_error: ${cert_path} or ${key_path} already exists; use -f to overwrite"
+			exit 1
+		fi
+	fi
+
+	_gen_root_cert "${cert_path}" "${key_path}" "${subject}"
+
+	echo "Created ${cert_path} and ${key_path}"
+}
+
+function install_root_cert() {
+	local cert_path=$1
+	local force=$2
+
+	# special case: trying to install an already installed cert is a no-op
+	if [[ "$cert_path" -ef "${_certs_dir}/rootCA.crt" ]]; then
+		return
+	fi
+
+	if [[ -f "${_certs_dir}/rootCA.crt" ]]; then
+		if [[ $force == false ]]; then
+			echo -e "$_error: root cert already exists; use -f to overwrite"
+			exit 1
+		fi
+	fi
+
+	cp "$cert_path" "${_certs_dir}/rootCA.crt"
+
+	echo "Installed ${_certs_dir}/rootCA.crt"
+}
+
+function create_service_cert() {
+	pushd "$_certs_dir" > /dev/null || exit 1
+
+	local service=$1
+	local template=$2
+	local root_cert=$3
+	local root_cert_key=$4
+	local force=$5
+
+	if [[ -f "${service}.crt" || -f "${service}.key" ]]; then
+		if [[ $force == false ]]; then
+			echo -e "$_error: artefact(s) for ${service} already exit(s); use -f to overwrite"
+			exit 1
+		fi
+	fi
+
+	_gen_service_cert "$service" "$template" "${root_cert}" "${root_cert_key}"
+
+	echo "Created ${_certs_dir}/${service}.crt"
+
+	popd > /dev/null || exit 1
+}
+
+function create_all_service_certs() {
+	local template=$1
+	local root_cert=$2
+	local root_cert_key=$3
+	local force=$4
+
+	if [[ $template == "" ]]; then
+		echo -e "$_error: no subject names specified (see -h output for help)."
+		exit 1
+	fi
+
+	for service in "${_services[@]}"; do
+		create_service_cert "$service" "$template" "$root_cert" "$root_cert_key" "$force"
+	done
+}
+
+function clean_intermediate_cert_artifacts() {
+	pushd "$_certs_dir" > /dev/null || exit 1
+
+	echo "rm -f -- *.csr *.srl"
+	rm -f -- *.csr *.srl
+
+	popd > /dev/null || exit 1
+}
+
+function create_tmux_session() {
+	_check_installed tmux
+
+	local session_name="${1:-veraison}"
+
+	tmux new-session -d -s $session_name -c $_veraison_root "$SHELL"
+	tmux rename-window -t $session_name:0 services
+
+	tmux split-window -t $session_name:0.0 -c $_veraison_root "$SHELL"
+	tmux split-window -h -t $session_name:0.1 -c $_veraison_root "$SHELL"
+	tmux split-window -h -t $session_name:0.0 -c $_veraison_root "$SHELL"
+
+	tmux send-keys -t $session_name:0.0 bin/vts-service Space\
+	    --config Space ${_config_dir}/services/config.yaml C-m
+
+	sleep 0.5 # wait for VTS to start before starting API frontends
+
+	tmux send-keys -t $session_name:0.1 bin/provisioning-service Space\
+	    --config Space ${_config_dir}/services/config.yaml C-m
+
+	tmux send-keys -t $session_name:0.2 bin/verification-service Space \
+	    --config Space ${_config_dir}/services/config.yaml C-m
+
+	tmux send-keys -t $session_name:0.3 bin/management-service Space \
+	    --config Space ${_config_dir}/services/config.yaml C-m
+
+}
+
+function attach_tmux_session() {
+	_check_installed tmux
+	_check_installed grep
+
+	local session_name="${1:-veraison}"
+
+	if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" == "" ]]; then
+		create_tmux_session
+	fi
+
+	# shellcheck disable=SC1007
+        TMUX= tmux attach -t $session_name
+}
+
+function kill_tmux_session() {
+	_check_installed tmux
+	_check_installed grep
+
+	local session_name="${1:-veraison}"
+
+	if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" != "" ]]; then
+		tmux kill-session -t $session_name
+	fi
+}
+
+function run_services_in_terminals() {
+	local term=$(_get_terminal)
+	if [[ "$term" == "" ]]; then
+		echo -e "$_error: could not find suitable terminal executable (TERM: $TERM)"
+		exit 1
+	fi
+
+	$term -- ${_bin_dir}/vts-service --config ${_config_dir}/services/config.yaml &
+
+	sleep 0.5 # wait for VTS to start before starting API frontends
+
+	$term -- ${_bin_dir}/provisioning-service --config ${_config_dir}/services/config.yaml &
+	$term -- ${_bin_dir}/verification-service --config ${_config_dir}/services/config.yaml &
+	$term -- ${_bin_dir}/management-service --config ${_config_dir}/services/config.yaml &
+}
+
+function show_stores() {
+	_check_installed sqlite3
+	_check_installed jq
+
+	local query=${1:-.}
+
+	echo "TRUST ANCHORS:"
+	echo "--------------"
+	$_sqlite "${_stores_dir}/ta-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+
+	echo ""
+
+	echo "ENDORSEMENTS:"
+	echo "-------------"
+	$_sqlite "${_stores_dir}/en-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+
+	echo ""
+
+	echo "POLICIES:"
+	echo "-------------"
+	$_sqlite "${_stores_dir}/po-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+
+	echo ""
+}
+
+function clear_stores() {
+	_check_installed sqlite3
+
+	$_sqlite "${_stores_dir}/en-store.sql" 'DELETE FROM kvstore'
+	$_sqlite "${_stores_dir}/po-store.sql" 'DELETE FROM kvstore'
+	$_sqlite "${_stores_dir}/ta-store.sql" 'DELETE FROM kvstore'
+}
+
+function enable_systemd_services() {
+	_check_systemd
+
+	local mode=$1
+
+	if [[ $mode == "user" ]]; then
+		for service in "${_services[@]}"; do
+			systemctl --user enable ${_systemd_dir}/user/veraison-${service}.service
+		done
+	elif [[ $mode == "system" ]]; then
+		for service in "${_services[@]}"; do
+			systemctl enable ${_systemd_dir}/system/veraison-${service}.service
+		done
+	else
+		echo -e "$_error: unexpected systemd mode \"$mode\"."
+		exit 1
+	fi
+}
+
+function disable_systemd_services() {
+	_check_systemd
+
+	local mode=$1
+
+	if [[ $mode == "user" ]]; then
+		local opts="--user"
+	elif [[ $mode == "system" ]]; then
+		local opts=""
+	else
+		echo -e "$_error: unexpected systemd mode \"$mode\"."
+		exit 1
+	fi
+
+	for service in $(printf '%s\n' "${_services[@]}" | tac | tr '\n' ' '; echo); do
+		systemctl $opts disable veraison-${service}.service
+	done
+}
+
+function start_systemd_services() {
+	local mode=$1
+
+	for service in "${_services[@]}"; do
+		control_systemd_service $mode start $service
+	done
+}
+
+function stop_systemd_services() {
+	local mode=$1
+
+	for service in "${_services[@]}"; do
+		control_systemd_service $mode stop $service
+	done
+}
+
+function control_systemd_service() {
+	_check_systemd
+
+	local mode=$1
+	local op=$2
+	local service=$(_canonize_service_name $3)
+
+	if [[ $service == "" ]]; then
+		echo -e "$_error: unknown service \"${3}\"."
+		exit 1
+	fi
+
+	if [[ $mode == "user" ]]; then
+		local opts="--user"
+	elif [[ $mode == "system" ]]; then
+		local opts=""
+	else
+		echo -e "$_error: unexpected systemd mode \"$mode\"."
+		exit 1
+	fi
+
+	systemctl $opts $op veraison-${service}.service
+}
+
+function follow_systemd_service() {
+	_check_systemd
+
+	local mode=$1
+	local service=$(_canonize_service_name $2)
+
+	if [[ $service == "" ]]; then
+		echo -e "$_error: unknown service \"${2}\"."
+		exit 1
+	fi
+
+	if [[ $mode == "user" ]]; then
+		local opts="--user"
+	elif [[ $mode == "system" ]]; then
+		local opts=""
+	else
+		echo -e "$_error: unexpected systemd mode \"$mode\"."
+		exit 1
+	fi
+
+	journalctl $opts --follow --output=cat --unit veraison-${service}.service
+}
+
+function show_systemd_service_status() {
+	_check_systemd
+
+	local mode=$1
+
+	if [[ $mode == "user" ]]; then
+		local opts="--user"
+	elif [[ $mode == "system" ]]; then
+		local opts=""
+	else
+		echo -e "$_error: unexpected systemd mode \"$mode\"."
+		exit 1
+	fi
+
+	systemctl $opts list-units -q veraison-vts.service veraison-provisioning.service \
+		veraison-verification.service veraison-management.service
+}
+
+function clear_logs() {
+    # shellcheck disable=SC2045
+    for f in $(ls $_logs_dir); do
+        echo "" > $_logs_dir/$f
+    done
+}
+
+function cocli() {
+	if [[ ! -f ${_bin_dir}/cocli ]]; then
+		echo -e "$_error: cocli no in deployment;"
+		exit 1
+	fi
+
+	${_bin_dir}/cocli --config ${_config_dir}/cocli/config.yaml "$@"
+}
+
+function evcli() {
+	if [[ ! -f ${_bin_dir}/evcli ]]; then
+		echo -e "$_error: evcli no in deployment;"
+		exit 1
+	fi
+
+	${_bin_dir}/evcli --config ${_config_dir}/evcli/config.yaml "$@"
+}
+
+function pocli() {
+	if [[ ! -f ${_bin_dir}/pocli ]]; then
+		echo -e "$_error: pocli no in deployment;"
+		exit 1
+	fi
+
+	${_bin_dir}/pocli --config ${_config_dir}/pocli/config.yaml "$@"
+}
+
+function help() {
+	set +e
+	read -r -d '' usage <<-EOF
+	Usage: veraison [OPTIONS] COMMAND [ARGS]
+
+	This is the command line front-end for Veraison services deployment under
+
+	    ${_veraison_root}
+
+
+	OPTIONS:
+
+	Please note that options MUST be listed before the command and arguments.
+
+	  -h show this message and exit
+	  -C disable color output
+	  -f force overwriting of existing files
+	  -i save intermediate artifacts
+
+	Some options only apply to certain commands; if an option is applicable to a
+	command, it will be listed for that command alongside its name and arguments.
+
+
+	GENERAL COMMANDS:
+
+	help
+	    Show this message and exit. The same as -h option.
+
+
+	IN-TERMINAL EXECUTION COMMANDS:
+
+	start-term
+	    Start veraison services, each in its own terminal window. To identify the
+	    terminal executable, the command will first try TERM environment variable,
+	    falling back on trying a short list of common terminals.
+
+	There is no corresponding "stop" command for in-terminal execution. To stop the
+	services, close the terminal windows.
+
+
+	TMUX EXECUTION COMMANDS:
+
+	(note: tmux must be installed on the system)
+
+	start-tmux [SESSION_NAME]
+	    Creates a new tmux sessin with name SESSION_NAME (defaults to "veraison" if not
+	    specified) start Veraison services in different panes within the session.
+
+	tmux | attach-tmux [SESSION_NAME]
+	   Attach to tmux session SESSION_NAME (defaults to "veraison" if not specified). If
+	   the session does not exist, it will be created (as with start-tmux command above).
+
+	stop-tmux | kill-tmux [SESSION_NAME]
+	   Stop tmux session with name SESSION_NAME (defaults to "veraison" if not specified).
+	   Note that, unlike in the docker deployment, the services actually run within the
+	   session's virtual terminal panes, so stopping the session with stop Veraison services
+	   as well.
+
+
+	SYSTEMD EXECUTION COMMANDS:
+
+	(note: these commands will only work on OS's that use systemd for service management.
+	       Currently only user services, i.e. via systemctl --user, are supported.)
+
+	enable-systemd
+	    Enable the systemd units for veraison services for the current use. This merely
+	    adds veraison services to the (current user's) systemd services; this does not
+	    start them.
+
+	disable-systemd
+	    Disable the previously-enabled systemd units for Veraison services.
+
+	start | start-systemd [SERVICE]
+	    Start Veraison service specified by SERVICE via (user) systemd. If SERVICE is not
+	    specified, start all Veraison services. This also enables Veraison services (as
+	    with enable-systemd command above) if they have not already been enabled.
+
+	stop | stop-systemd [SERVICE]
+	    Stop Veraison service specified by SERVICE via (user) systemd. If SERVICE is not
+	    specified, stop all Veraison services.
+
+	status | status-systemd [SERVICE]
+	    Show the status of the systemd unit specified by SERVICE (similar to running
+	    "systemctl --user status"). If SERVICE is not specified, show summary
+	    one line status for each services' units.
+
+	follow | follow-systemd SERVICE
+	    Follow STDOUT of the specified (user) systemd SERVICE (similar to running
+	    "journalctl --user --follow").
+
+	Note: As all execution methods utilize the deployment's config (such as ports), only
+	      one method can be use used to run the services at a time (i.e. its not possible
+	      to run both in-terminal and as systemd units at the same time).
+
+
+	INITIALIZATION COMMANDS:
+
+	These commands can be used to (re-)initialize deployment-specific artifacts.
+
+	[-f] [-i] gen-service-certs NAME_TEMPLATE ROOT_CERT ROOT_CERT_KEY
+	    Generate x509 certificates that will be used by the services. The
+	    certificates will be signed by a root certificate specified by
+	    ROOT_CERT (and the corresponding key by ROOT_CERT_KEY).
+
+	    NAME_TEMPLATE is a string of comma-separated (no spaces) names used to
+	    populate the Common Name field an Subject Alternative Name extension with
+	    the certificates. Each name may contain "@@" as the placeholder that will
+	    be replaced with the name of the service when generating a certificate for
+	    that service. The first name of the list will used to populate the Common
+	    Name.
+
+	    For example, the NAME_TEMPLATE
+
+	        @@-service,localhost
+
+	    will result in verification service certificate with the Common Name
+	    "verification-service", and the Subject Alternative Name extension of
+	    "DNS:verification-service, DNS:localhost".
+
+	    This command will not overwrite any existing certificates unless -f option
+	    is specified.
+
+	[-f] gen-root-cert [SUBJECT]
+	    Generate a self-signed certificate that may then be used for signing service
+	    certificates (see gen-service-certs command above). If SUBJECT is not specified,
+	    "/O=Veraison" will be used by default. The certificate will be written to
+	    ${_certs_dir}/rootCA.crt
+	    (with the corresponding key written to
+	    ${_certs_dir}/rootCA.key).
+
+	[-f] gen-signing-key
+	    Generate the signing key that will be used by the verification service to
+	    sign attestation results. The key will be written to
+	    ${_signing_dir}/skey.jwk.
+
+	init-sqlite-stores
+	    Initialize the sqlite3 stores for the endorsements, trust anchors, and
+	    policies. If the stores have already been initialized, this is a no-op,
+	    the existing data in the stores will not be touched.
+
+	STATE MANAGEMENT COMMANDS:
+
+	stores | show-stores | check-stores [QUERY]
+	    Dumps the output of the deployment's sqlite3 stores in JSON format. The output
+	    optionally be filtered by providing a QUERY. Please see documentation for jq
+	    ("man jq") for the query syntax.
+
+	clear-stores
+	    Clears the deployment's sqlite3 stores, removing any previously-provisioned
+	    endorsements, trust anchors, and policies.
+
+	clear-logs
+	    Clears the deployments logs.
+
+	CLIENT COMMANDS:
+
+	The following commands are wrappers around corresponding CLI clients, configured
+	to work with this deployment.
+
+	cocli ARGS...
+	evcli ARGS...
+	pocli ARGS...
+
+	Please see individual tools' documentation for which arguments are supported.
+
+	Note: for commands that contain dashes (e.g. init-stores), underscores may also
+	      be used (e.g. init_stores).
+	EOF
+
+	echo "$usage"
+	set -e
+}
+
+function _check_installed() {
+	local what=$1
+
+	if [[ "$(which $what 2>/dev/null)" == "" ]]; then
+		echo -e "$_error: $what executable must be installed to use this command."
+		exit 1
+	fi
+}
+
+function _check_systemd() {
+	if [[ "$(which systemctl 2>/dev/null)" == "" ]]; then
+		echo -e "$_error: This OS does not appear to use systemd."
+		exit 1
+	fi
+}
+
+function _gen_common_name() {
+	local service=$1
+	local name=${2%%,*}
+
+	echo ${name//@@/${service}}
+}
+
+function _gen_subject_alt_names() {
+	local service=$1
+	local template_string=$2
+	local i=0
+	local dns=()
+
+	IFS=',' read -ra templates <<< "$template_string"
+	for t in "${templates[@]}"; do
+		dns[i]="DNS:${t//@@/${service}}"
+		i=$((i+1))
+	done
+
+	IFS=','; echo "${dns[*]}"; IFS=$' \t\n'
+}
+
+function _gen_root_cert() {
+	_check_installed openssl
+
+	local cert_path=$1
+	local key_path=$2
+	local subject=$3
+
+	if [[ "$subject" == "" ]]; then
+		subject="/O=Veraison"
+	fi
+
+	openssl ecparam -name prime256v1 -genkey -noout -out "$key_path"
+	openssl req -x509 -new -nodes -key "$key_path" -sha256 -days 3650 \
+		-subj "$subject" -out "$cert_path"
+}
+
+function _gen_service_cert() {
+	_check_installed openssl
+
+	local service=$1
+	local template=$2
+	local ca_cert=$3
+	local ca_cert_key=$4
+
+	openssl ecparam -name prime256v1 -genkey -noout -out "${service}.key"
+	openssl req -new -key "${service}.key" -out "${service}.csr" \
+		-subj "/CN=$(_gen_common_name $service $template)"
+	openssl x509 -req -in "${service}.csr" -CA ${ca_cert} -CAkey ${ca_cert_key} \
+		-CAcreateserial -out "${service}.crt" -days 3650 -sha256 \
+		-extfile <(echo "subjectAltName = $(_gen_subject_alt_names $service $template)")
+}
+
+function _canonize_service_name() {
+	local service=$1
+
+	service=${service%.service}
+	service=${service%-service}  # for consistency with docker deploment
+	service=${service#veraison-}
+
+	if [[ " ${_services[*]} " =~ [[:space:]]${service}[[:space:]] ]]; then
+		echo  $service
+	else
+		echo ""
+	fi
+}
+
+function _get_terminal() {
+	local candidates=("$TERM" xterm urxvt gnome-terminal konsole kitty)
+
+	for candidate in "${candidates[@]}"; do
+		if [[ ! "$(which $candidate 2>/dev/null)" == "" ]]; then
+			echo $candidate
+			exit
+		fi
+	done
+}
+
+_force=false
+_color=true
+_save_intermediate=false
+
+_purp=''
+_red=''
+_reset=''
+_yell=''
+_green=''
+_blue=''
+_magen=''
+_white=''
+
+_error="${_red}ERROR${_reset}"
+
+function _reset_colors() {
+    if [[ $_color == true ]]; then
+        _purp='\033[1;34m'
+        _red='\033[0;31m'
+        _reset='\033[0m'
+        _yell='\033[0;33m'
+        _green='\033[0;32m'
+        _blue='\033[0;34m'
+        _magen='\033[0;35m'
+        _white='\033[0;37m'
+    else
+        _purp=''
+        _red=''
+        _reset=''
+        _yell=''
+        _green=''
+        _blue=''
+        _magen=''
+        _white=''
+    fi
+    _error="${_red}ERROR${_reset}"
+}
+
+OPTIND=1
+
+while getopts "hCif" opt; do
+	case "$opt" in
+		h) help; exit 0;;
+		C) _color=false;;
+		i) _save_intermediate=true;;
+		f) _force=true;;
+		*) break;;
+	esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+_reset_colors
+
+command=$1; shift
+command=$(echo $command | tr -- _ -)
+case $command in
+	help)
+		help
+		exit 0
+		;;
+	gen-service-certs)
+		generate_certs "$_save_intermediate" "$_force" "$1" "$2" "$3"
+		;;
+	gen-root-cert)
+		create_root_cert "$_force" "$_certs_dir/rootCA.crt" "$_certs_dir/rootCA.key" "$1"
+		;;
+	start-term)
+		run_services_in_terminals
+		;;
+	gen-signing-key)
+		generate_signing_key "$_force" "$_signing_dir/skey.jwk"
+		;;
+	init-sqlite-stores)
+		init_sqlite_stores
+		;;
+	start-tmux)
+		create_tmux_session "$1"
+		;;
+	tmux | attach-tmux)
+		attach_tmux_session "$1"
+		;;
+	stop-tmux | kill-tmux)
+		kill_tmux_session "$1"
+		;;
+	enable-systemd)
+		enable_systemd_services user
+		;;
+	disable-systemd)
+		disable_systemd_services user
+		;;
+	start | start-systemd)
+		_what=$1
+
+		enable_systemd_services user
+
+		if  [[ $_what == "" ]]; then
+			start_systemd_services user
+		else
+			control_systemd_service user start $_what
+		fi
+		;;
+	stop | stop-systemd)
+		_what=$1
+
+		if  [[ $_what == "" ]]; then
+			stop_systemd_services user
+		else
+			control_systemd_service user stop $_what
+		fi
+		;;
+	status | status-systemd)
+		_what=$1
+
+		if  [[ $_what == "" ]]; then
+			show_systemd_service_status user
+		else
+			control_systemd_service user status $_what
+		fi
+		;;
+	follow | follow-systemd)
+		_what=$1
+
+		follow_systemd_service user $_what
+		;;
+	stores | show-stores | check-stores)
+		show_stores "$1"
+		;;
+	clear-stores)
+		clear_stores
+		;;
+	clear-logs)
+		clear_logs
+		;;
+	cocli)
+		cocli "$@"
+		;;
+	evcli)
+		evcli "$@"
+		;;
+	pocli)
+		pocli "$@"
+		;;
+	*)
+		echo -e "$_error: unexpected command: \"$command\" (use -h for help)"
+		;;
+esac

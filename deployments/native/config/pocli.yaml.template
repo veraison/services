@@ -1,0 +1,3 @@
+host: ${MANAGEMENT_HOST}
+port: ${MANAGEMENT_PORT}
+# vim: set ft=yaml:

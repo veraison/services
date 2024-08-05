@@ -1,0 +1,3 @@
+ca_cert: ${VERAISON_ROOT}/certs/rootCA.crt
+api_server: https://${PROVISIONING_HOST}:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
+# vim: set ft=yaml:
