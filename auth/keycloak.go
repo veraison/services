@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -34,6 +35,7 @@ func (o *KeycloakAuthorizer) Init(v *viper.Viper, logger *zap.SugaredLogger) err
 	o.logger = logger
 
 	// This prevents glog--the logging package used by ginkeycloak--from complaining.
+	os.Args = []string{os.Args[0]}
 	flag.Parse()
 
 	cfg := keycloakCfg{
