@@ -19,8 +19,7 @@ all: protogen
 
 # ensure that the user go install location is in path as protoc will be
 # looking for plugins in there
-PATH ::= $(shell go env GOPATH)/bin:$(PATH)
-export PATH
+export PATH ::= $(shell go env GOPATH)/bin:$(PATH)
 
 protogen: $(PROTOSRCS)
 	protoc --go_out=. --go_opt=paths=source_relative --proto_path=. \
