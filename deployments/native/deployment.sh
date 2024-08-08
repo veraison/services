@@ -23,6 +23,7 @@ SRC_CONFIG_DIR=${_THIS_DIR}/config
 SRC_ENV_DIR=${_THIS_DIR}/env
 SRC_SIGNING_DIR=${_THIS_DIR}/example/signing
 SRC_SYSTEMD_DIR=${_THIS_DIR}/systemd
+SRC_LAUNCHD_DIR=${_THIS_DIR}/launchd
 
 DEPLOYMENT_BIN_DIR=${VERAISON_ROOT}/bin
 DEPLOYMENT_PLUGINS_DIR=${VERAISON_ROOT}/plugins
@@ -33,6 +34,7 @@ DEPLOYMENT_CONFIG_DIR=${VERAISON_ROOT}/config
 DEPLOYMENT_ENV_DIR=${VERAISON_ROOT}/env
 DEPLOYMENT_SIGNING_DIR=${VERAISON_ROOT}/signing
 DEPLOYMENT_SYSTEMD_DIR=${VERAISON_ROOT}/systemd
+DEPLOYMENT_LAUNCHD_DIR=${VERAISON_ROOT}/launchd
 
 function check_requirements() {
 	set +e
@@ -119,17 +121,34 @@ function check_requirements() {
 }
 
 function bootstrap() {
-	# shellcheck disable=SC2002
-	local distrib_id=$(cat /etc/lsb-release 2>/dev/null | head -n 1 | cut -f2 -d= | tr -d \")
+	case $( uname -s ) in
+	Linux)
+		# shellcheck disable=SC2002
+		local distrib_id=$(cat /etc/lsb-release 2>/dev/null | head -n 1 | cut -f2 -d= | tr -d \")
 
-	case $distrib_id in
+		case $distrib_id in
 		Arch) ${BOOTSTRAP_DIR}/arch.sh;;
 		Ubuntu) ${BOOTSTRAP_DIR}/ubuntu.sh;;
 		*)
 			echo -e "$_ERROR: Boostrapping is currently only supported for Arch and Ubuntu. For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
 			exit
 			;;
+		esac
+		;;
+	Darwin)
+		if ! type brew > /dev/null; then
+			echo -e "$_ERROR: homebrew (https://brew.sh) must be installed."
+			exit 1
+		fi
+		${BOOTSTRAP_DIR}/macosx-brew.sh
+		;;
+	*)
+		echo -e "$_ERROR: Boostrapping is currently only supported for Linux Arch and Ubuntu, and on MacOSX using homebrew."
+		echo -e "For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
+		exit
+		;;
 	esac
+
 }
 
 function build() {
@@ -154,6 +173,8 @@ function create_deployment() {
 	_deploy_env
 
 	_deploy_systemd_units
+
+	_deploy_launchd_units
 }
 
 function create_root_cert() {
@@ -353,6 +374,7 @@ function _init_deployment_dir() {
 	mkdir -p ${DEPLOYMENT_SIGNING_DIR}
 	mkdir -p ${DEPLOYMENT_STORES_DIR}
 	mkdir -p ${DEPLOYMENT_SYSTEMD_DIR}
+	mkdir -p ${DEPLOYMENT_LAUNCHD_DIR}
 }
 
 function _deploy_systemd_units() {
@@ -367,6 +389,16 @@ function _deploy_systemd_units() {
 			${DEPLOYMENT_SYSTEMD_DIR}/system/veraison-${service}.service
 	done
 }
+
+function _deploy_launchd_units() {
+	mkdir -p ${DEPLOYMENT_LAUNCHD_DIR}
+
+	for service in "${_SERVICES[@]}"; do
+		cat ${SRC_LAUNCHD_DIR}/com.veraison-project.${service}.plist.template | envsubst > \
+			${DEPLOYMENT_LAUNCHD_DIR}/com.veraison-project.${service}.plist
+	done
+}
+
 
 function _deploy_certs() {
 	for service in "${_SERVICES[@]}"; do

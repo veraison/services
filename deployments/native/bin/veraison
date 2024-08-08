@@ -4,6 +4,8 @@
 # shellcheck disable=SC2155,SC2086
 set -e
 
+_os=$(uname)
+
 # NOTE: when this script is installed into a deployment, the definition below
 # will be replaced with a hard-coded path (based on the deployment).
 # shellcheck disable=SC2153
@@ -15,11 +17,14 @@ _certs_dir=${_veraison_root}/certs
 _signing_dir=${_veraison_root}/signing
 _stores_dir=${_veraison_root}/stores
 _systemd_dir=${_veraison_root}/systemd
+_launchd_dir=${_veraison_root}/launchd
 _logs_dir=${_veraison_root}/logs
 
 _services=(vts provisioning verification management)
 
 _sqlite="sqlite3 -init /dev/null -batch"
+
+_launchd_ns="com.veraison-project"
 
 function init_sqlite_stores() {
 	_check_installed sqlite3
@@ -282,6 +287,75 @@ function clear_stores() {
 	$_sqlite "${_stores_dir}/ta-store.sql" 'DELETE FROM kvstore'
 }
 
+function enable_launchd_services() {
+	_check_launchd
+
+	for service in "${_services[@]}"; do
+		launchctl load ${_launchd_dir}/${_launchd_ns}.${service}.plist
+	done
+}
+
+function disable_launchd_services() {
+	_check_launchd
+
+	for service in $(printf '%s\n' "${_services[@]}" | tac | tr '\n' ' '; echo); do
+		launchctl unload ${_launchd_dir}/${_launchd_ns}.${service}.plist
+	done
+}
+
+function start_launchd_services() {
+	for service in "${_services[@]}"; do
+		control_launchd_service start ${service}
+	done
+}
+
+function stop_launchd_services() {
+	for service in "${_services[@]}"; do
+		control_launchd_service stop ${service}
+	done
+}
+
+# $1 start or stop
+# $2 service name
+function control_launchd_service() {
+	_check_launchd
+
+	local op=$1
+	local service=$2
+
+	if [ "$op" != "start" -a "$op" != "stop" ]; then
+		echo -e "$_error: \"$op\" unsupported.  Only start and stop are allowed."
+		exit 1
+	fi
+
+	launchctl ${op} ${_launchd_ns}.${service}
+}
+
+# $1: service name
+function follow_launchd_service() {
+	_check_launchd
+
+	local service=${1:-"*"}
+
+	tail -F ${_logs_dir}/${service}-stdout.log
+}
+
+# $1: service name
+function show_launchd_service_status() {
+	_check_launchd
+
+	local service=$1
+	local domain_target="gui/$(id -u)"
+
+	if [ -n  "$service" ]; then
+		launchctl print ${domain_target}/${_launchd_ns}.${service}
+	else
+		for service in $(printf '%s\n' "${_services[@]}" | tac | tr '\n' ' '; echo); do
+			launchctl print ${domain_target}/${_launchd_ns}.${service}
+		done
+	fi
+}
+
 function enable_systemd_services() {
 	_check_systemd
 
@@ -494,34 +568,39 @@ function help() {
 	   as well.
 
 
-	SYSTEMD EXECUTION COMMANDS:
+	SYSTEMD/LAUNCHD EXECUTION COMMANDS:
 
-	(note: these commands will only work on OS's that use systemd for service management.
-	       Currently only user services, i.e. via systemctl --user, are supported.)
+	(note: these commands will only work on OS's that use systemd or launchd for
+	service management.
+	       Currently only user services, i.e. via systemctl --user and non-root
+	       invocations of launchd, are supported.)
 
-	enable-systemd
-	    Enable the systemd units for veraison services for the current use. This merely
-	    adds veraison services to the (current user's) systemd services; this does not
-	    start them.
+	enable-services
+	    Enable the systemd/launchd units for veraison services for the current
+	    use. This merely adds veraison services to the (current user's) systemd
+	    services; this does not start them.
 
-	disable-systemd
-	    Disable the previously-enabled systemd units for Veraison services.
+	disable-services
+	    Disable the previously-enabled systemd/launchd units for Veraison services.
 
-	start | start-systemd [SERVICE]
-	    Start Veraison service specified by SERVICE via (user) systemd. If SERVICE is not
-	    specified, start all Veraison services. This also enables Veraison services (as
-	    with enable-systemd command above) if they have not already been enabled.
+	start [SERVICE]
+	    Start Veraison service specified by SERVICE via (user) systemd/launchd. If
+	    SERVICE is not specified, start all Veraison services. This also enables
+	    Veraison services (as with enable-services command above) if they have not
+	    already been enabled.
 
-	stop | stop-systemd [SERVICE]
-	    Stop Veraison service specified by SERVICE via (user) systemd. If SERVICE is not
-	    specified, stop all Veraison services.
+	stop [SERVICE]
+	    Stop Veraison service specified by SERVICE via (user) systemd/launchd. If
+	    SERVICE is not specified, stop all Veraison services.
 
-	status | status-systemd [SERVICE]
-	    Show the status of the systemd unit specified by SERVICE (similar to running
-	    "systemctl --user status"). If SERVICE is not specified, show summary
-	    one line status for each services' units.
+	status [SERVICE]
+	    Show the status of the systemd/launchd unit specified by SERVICE (similar
+	    to running "systemctl --user status" or "launchctl print
+	    <service-target>"). If SERVICE is not specified, show summary one line
+	    status for each services' units (systemd), or the details for each service
+	    (launchd).
 
-	follow | follow-systemd SERVICE
+	follow SERVICE
 	    Follow STDOUT of the specified (user) systemd SERVICE (similar to running
 	    "journalctl --user --follow").
 
@@ -613,6 +692,13 @@ function _check_installed() {
 
 	if [[ "$(which $what 2>/dev/null)" == "" ]]; then
 		echo -e "$_error: $what executable must be installed to use this command."
+		exit 1
+	fi
+}
+
+function _check_launchd() {
+	if [[ "$(type -p launchctl)" == "" ]]; then
+		echo -e "$_error: This OS does not appear to use launchd."
 		exit 1
 	fi
 }
@@ -758,6 +844,11 @@ shift $((OPTIND-1))
 
 _reset_colors
 
+if [ "$_os" != "Linux" -a "$_os" != "Darwin" ]; then
+	echo -e "$_error: $_os is not a supported.  Supported OSes are Linux and Darwin."
+	exit 1
+fi
+
 command=$1; shift
 command=$(echo $command | tr -- _ -)
 case $command in
@@ -789,45 +880,97 @@ case $command in
 	stop-tmux | kill-tmux)
 		kill_tmux_session "$1"
 		;;
-	enable-systemd)
-		enable_systemd_services user
+	enable-services)
+		case $_os in
+			Darwin)
+				enable_launchd_services
+				;;
+			Linux)
+				enable_systemd_services user
+				;;
+		esac
 		;;
-	disable-systemd)
-		disable_systemd_services user
+	disable-services)
+		case $_os in
+			Darwin)
+				disable_launchd_services
+				;;
+			Linux)
+				disable_systemd_services user
+				;;
+		esac
 		;;
-	start | start-systemd)
+	start)
 		_what=$1
 
-		enable_systemd_services user
+		case $_os in
+			Darwin)
+				enable_launchd_services
 
-		if  [[ $_what == "" ]]; then
-			start_systemd_services user
-		else
-			control_systemd_service user start $_what
-		fi
+				if [[ $_what == "" ]]; then
+					start_launchd_services
+				else
+					control_launchd_service start $_what
+				fi
+				;;
+			Linux)
+				enable_systemd_services user
+
+				if [[ $_what == "" ]]; then
+					start_systemd_services user
+				else
+					control_systemd_service user start $_what
+				fi
+				;;
+		esac
 		;;
-	stop | stop-systemd)
+	stop)
 		_what=$1
 
-		if  [[ $_what == "" ]]; then
-			stop_systemd_services user
-		else
-			control_systemd_service user stop $_what
-		fi
+		case $_os in
+			Darwin)
+				if [[ $_what == "" ]]; then
+					stop_launchd_services
+				else
+					control_launchd_service stop $_what
+				fi
+				;;
+			Linux)
+				if [[ $_what == "" ]]; then
+					stop_systemd_services user
+				else
+					control_systemd_service user stop $_what
+				fi
+				;;
+		esac
 		;;
-	status | status-systemd)
+	status)
 		_what=$1
 
-		if  [[ $_what == "" ]]; then
-			show_systemd_service_status user
-		else
-			control_systemd_service user status $_what
-		fi
+		case $_os in
+			Darwin)
+				show_launchd_service_status $_what
+				;;
+			Linux)
+				if [[ $_what == "" ]]; then
+					show_systemd_service_status user
+				else
+					control_systemd_service user status $_what
+				fi
+				;;
+		esac
 		;;
-	follow | follow-systemd)
+	follow)
 		_what=$1
 
-		follow_systemd_service user $_what
+		case $_os in
+			Darwin)
+				follow_launchd_service $_what
+				;;
+			Linux)
+				follow_systemd_service user $_what
+				;;
+		esac
 		;;
 	stores | show-stores | check-stores)
 		show_stores "$1"
