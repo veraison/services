@@ -43,7 +43,8 @@ Available targets:
 	really-clean:  clean up deployment and integration-test related artefacts
 	docker-deploy: create and start the docker deployment (docker must be
 	               installed, and the user must be in the docker group)
-	bootstrap:     install required dependencies (only works on Arch and Ubuntu)
+	bootstrap:     install required dependencies (only works on Arch, Ubuntu,
+	               and MacOSX using homebrew)
 	native-deploy: create and start the native deployment
 endef
 export __MAKEFILE_HELP
@@ -136,8 +137,9 @@ export __NATIVE_DEPLOY_MESSAGE
 .PHONY: native-deploy
 native-deploy:
 	make -C deployments/native quick-deploy
-	@if [[ "$(shell which systemctl 2> /dev/null)" != "" ]]; then \
-		$(VERAISON_ROOT)/bin/veraison start-systemd; \
+	@if [[ "$(shell type -p systemctl)" != "" && \
+		"$(shell type -p powershell.exe)" == "" ]]; then \
+		$(VERAISON_ROOT)/bin/veraison start-services; \
 	fi
 	@echo "$$__NATIVE_DEPLOY_MESSAGE"
 
