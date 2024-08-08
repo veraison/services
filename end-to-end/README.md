@@ -1,5 +1,10 @@
 This directory contains a quick-and-dirty example of performing provisioning
 and verification using command line tools that come with a Veraison deployment.
+All the instructions on this page refer to the Docker-based deployment. To use
+the native deployment, just substitute "docker" with "native" in all the
+commands given below.  For example, `make native-deploy` instead of `make
+docker-deploy`, and `./end-to-end-native provision` instead of `./end-to-end-docker
+provision`
 
 ## Prerequisites
 
