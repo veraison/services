@@ -23,7 +23,7 @@ quick-deploy:
 
 .PHONY: really-clean
 really-clean:
-	$(VERAISON_ROOT)/bin/veraison stop-systemd 2>/dev/null || /bin/true
-	$(VERAISON_ROOT)/bin/veraison disable-systemd 2>/dev/null || /bin/true
-	$(VERAISON_ROOT)/bin/veraison kill-tmux 2>/dev/null || /bin/true
+	$(VERAISON_ROOT)/bin/veraison stop-services 2>/dev/null || true
+	$(VERAISON_ROOT)/bin/veraison disable-services 2>/dev/null || true
+	$(VERAISON_ROOT)/bin/veraison kill-tmux 2>/dev/null || true
 	rm -rf $(VERAISON_ROOT)
