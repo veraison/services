@@ -63,8 +63,8 @@ Clone and cd into the repo:
 
 Please see the [native deployment
 README](deployments/native/README.md#dependencies) for the full description of
-dependencies. We have bootstrap scripts for Ubuntu and Arch that ensure that
-the required dependencies are installed.
+dependencies. We have bootstrap scripts for Ubuntu, Arch, and MacOSX that
+ensure that the required dependencies are installed.
 
     make bootstrap
 
@@ -95,14 +95,22 @@ source an env file from the deployment:
 
 (there is an equivalent `env.zsh` for `zsh`).
 
-If you are on a Linux distribution with systemd, Veraison services should be
-running as user systemd units. Otherwise, you can the services inside virtual
-terminals with
+If you are on a Linux distribution with systemd or on MacOSX, Veraison services
+should be running as user systemd units/launchd user agents. Otherwise, you can
+run the services inside virtual terminals with
 
     veraison start-term
 
 (If you have tmux installed, and would prefer to use a tmux session rather than
 multiple terminals, you can use `veraison start-tmux` instead.)
+
+> [!IMPORTANT]
+> **Windows Subsystem for Linux (WSL) users:** WSL does not support  user
+> `systemd` services or spawning virtual terminals, so Veraison will not be
+> running after `make native-deploy`, and `veraison start-term` command will
+> not work (it will say "no suitable terminal found"). So the only option for
+> running veraison under WSL is using `veraison start-tmux` (or by manually
+> launching service executables).
 
 You can interact with the deployment via the frontend script. Please see the
 script help for details:
