@@ -3,8 +3,15 @@ native deployment of Veraison on the system.
 
 ## Dependencies
 
-To build Veraison services, you will need a Go toolchain, at least v1.19. You
-will also need the protobuf compiler, `protoc`, with plugins for Go. The
+To build Veraison services, you will need a Go toolchain, at least v1.22.
+If Go is already installed, you can check the version:
+```sh
+go version
+```
+If not, the instructions for downloading and installing Go on your platform can
+be found [here](https://go.dev/dl/).
+
+You will also need the protobuf compiler, `protoc`, with plugins for Go. The
 plugins may be installed via `go install`:
 
 ```bash
@@ -13,19 +20,25 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 go install github.com/mitchellh/protoc-gen-go-json@latest
 ```
 
-You will need `make` to drive the build process.
+You will need GNU `make` (at least version 3.81) to drive the build process.
 
 The deployment script is written for `bash` shell, and relies on `envsubst`
 utility (which comes as part of `gettext` package on most systems), as well as
-some common Linux utilities that are often  already present on a system but may
+some common Linux utilities that are often already present on a system but may
 sometimes need to be installed: `which`, `find`, `grep`, `sed`.
+
+> **MacOSX users:** To enable `envsubst` and force it to link properly:
+> ```sh
+> brew install gettext
+> brew link --force gettext
+> ```
 
 For a full deployment, the following tools will also be needed:
 
 - `sqlite3` to initialize and manipulate the stores
-- `jq` to display the stores contents
-- `openssl` to generate the TLS certificates (not needed if you plan to use the
-  included example certs).
+- `jq` to display the stores' contents
+- `openssl` (at least version 3.0) to generate the TLS certificates (not needed
+  if you plan to use the included example certs).
 - `step` to generate the signing key (not needed if you plan to use the included
   example key.
 - `tmux` can optionally be used to run the deployment (not required).
@@ -37,7 +50,8 @@ documentation](https://smallstep.com/docs/step-cli/installation/).
 ### Bootstrap scripts
 
 To simplify dependency installation, we have bootstrap scripts available for
-Arch and Ubuntu (see `bootstrap/` subdirectory). Running
+Linux Arch and Ubuntu, as well as MacOSX (using [homebrew](https://brew.sh))
+(see `bootstrap/` subdirectory). Running
 
 ```bash
 make bootstrap
@@ -64,8 +78,8 @@ To get Veraison running quickly you can run
 make quick-deploy
 ```
 
-in the deployment directory, or `make native-deploy` in the repo's top-level
-directory.
+in the `deployments/native` directory, or `make native-deploy` in the repo's
+top-level directory.
 
 This will create a deployment under `~/veraison-deployment` using the included
 example key and certificates.
@@ -113,13 +127,13 @@ Finally
 
 ```bash
 # option 3
-veraison start-systemd
+veraison start
 ```
 
-will install and start systemd services for the current user.
+will install and start systemd/launchd services for the current user.
 
 (Note: if you've deployed by running `make native-deploy` at top level, that will
-automatically try to start services via systemd on systems that use it.)
+automatically try to start services via systemd/launchd on systems that use it.)
 
 ### testing the deployment
 
@@ -343,7 +357,8 @@ structure
 ├── plugins
 ├── signing
 ├── stores
-└── systemd
+├── systemd
+└── launchd
 ```
 
 #### `bin`
@@ -395,3 +410,7 @@ This directory contains systemd unit files for the Veraison services. It is
 split into two sub-directories: `system` and `user`. The latter contains units
 meant to be installed into the user-specific service manager (i.e. using
 `systemctl --user`).
+
+#### `launchd`
+
+This directory contains launchd user agent files for the Veraison services.
