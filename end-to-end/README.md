@@ -1,5 +1,10 @@
 This directory contains a quick-and-dirty example of performing provisioning
 and verification using command line tools that come with a Veraison deployment.
+All the instructions on this page refer to the Docker-based deployment. To use
+the native deployment, just substitute "docker" with "native" in all the
+commands given below.  For example, `make native-deploy` instead of `make
+docker-deploy`, and `./end-to-end-native provision` instead of `./end-to-end-docker
+provision`
 
 ## Prerequisites
 
@@ -43,7 +48,7 @@ This populates the stores with the endorsements and trust anchors needed for
 verification later.
 
 ```sh
-./end-to-end provision
+./end-to-end-docker provision
 ```
 
 Optionally, you can verify that the store have been populated:
@@ -57,13 +62,13 @@ veraison check-stores
 As a relying party:
 
 ```sh
-./end-to-end verify rp
+./end-to-end-docker verify rp
 ```
 
 As an attester:
 
 ```sh
-./end-to-end verify attest
+./end-to-end-docker verify attest
 ```
 
 ## Clean up
@@ -80,4 +85,3 @@ You can clean up the deployment with
 ```sh
 make -C ../deployments/docker really-clean
 ```
-

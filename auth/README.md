@@ -70,6 +70,10 @@ auth:
 - `realm` (optional): the Keycloak realm used by Veraison. A realm contains the
   configuration for clients, users, roles, etc. It is roughly analogous to a
   "tenant id". Defaults to `veraison`.
+- `ca-cert`: the path to a PEM-encoded x509 cert that will be added to CA certs
+  when establishing connection to the Keycloak server. This should be specified
+  if the server has HTTPS enabled and the root CA for its cert is not installed
+  in the system.
 
 For example:
 
