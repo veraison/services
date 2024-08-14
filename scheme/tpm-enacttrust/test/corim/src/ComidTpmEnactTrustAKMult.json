@@ -1,0 +1,38 @@
+{
+  "tag-identity": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  },
+  "entities": [
+    {
+      "name": "EnactTrust",
+      "regid": "https://enacttrust.com",
+      "roles": [
+        "tagCreator",
+        "creator",
+        "maintainer"
+      ]
+    }
+  ],
+  "triples": {
+    "attester-verification-keys": [
+      {
+        "environment": {
+          "instance": {
+            "type": "uuid",
+            "value": "DD6661F0-0928-4401-966B-589EA74E3272"
+          }
+        },
+        "verification-keys": [
+          {
+            "type": "pkix-base64-key",
+            "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Vwqe7hy3O8Ypa+BUETLUjBNU3rEXVUyt9XHR7HJWLG7XTKQd9i1kVRXeBPDLFnfYru1/euxRnJM7H9UoFDLdA==\n-----END PUBLIC KEY-----"
+          },
+          {
+            "type": "pkix-base64-key",
+            "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Vwqe7hy3O8Ypa+BUETLUjBNU3rEXVUyt9XHR7HJWLG7XTKQd9i1kVRXeBPDLFnfYru1/euxRnJM7H9UoFDLdA==\n-----END PUBLIC KEY-----"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+# This script constructs a CBOR CoRIM for use in test vectors, using supplied
+# comid and corim json template and saves them in a file
+# $1 directory into which the CoRIM should be generated; it must contain "src/"
+#    subdirectory with the templates specifie dby th use case.
+# $2 file name for comid json template, example one of COMID_TEMPLATES
+# $3 file name for corim json template, example CORIM_TEMPLATE
+# $4 a qualifier for each cbor test vector name
+
+TEST_DIR=$1
+COMID=$2
+CORIM=$3
+QUALIFIER=$4
+
+echo "generating test vector using $COMID $CORIM"
+cocli comid create -t "$TEST_DIR/src/$COMID.json" -o "$TEST_DIR"
+cocli corim create -m "$TEST_DIR/$COMID.cbor" -t "$TEST_DIR/src/$CORIM.json" \
+	-o "$TEST_DIR/$QUALIFIER${CORIM^}${COMID^}.cbor"
+rm "$TEST_DIR/$COMID.cbor"

@@ -18,7 +18,7 @@ import (
 // well as extraction from the "global" CoRIM context.
 // See also https://github.com/veraison/services/issues/70
 type IExtractor interface {
-	RefValExtractor(comid.ReferenceValue) ([]*handler.Endorsement, error)
-	TaExtractor(comid.AttestVerifKey) (*handler.Endorsement, error)
+	RefValExtractor(comid.ValueTriples) ([]*handler.Endorsement, error)
+	TaExtractor(comid.KeyTriple) (*handler.Endorsement, error)
 	SetProfile(string)
 }

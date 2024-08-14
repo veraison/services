@@ -1,6 +1,4 @@
 {
   "corim-id": "5c57e8f4-46cd-421b-91c9-08cf93e13cfc",
-  "profiles": [
-      "http://enacttrust.com/veraison/1.0.0"
-  ]
+  "profile": "http://enacttrust.com/veraison/1.0.0"
 }

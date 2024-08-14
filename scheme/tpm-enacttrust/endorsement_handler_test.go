@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package tpm_enacttrust
 
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/veraison/corim/comid"
 )
 
 func TestDecoder_GetAttestationScheme(t *testing.T) {
@@ -54,7 +53,7 @@ func TestDecoder_Decode_empty_data(t *testing.T) {
 }
 
 func TestDecoder_Decode_OK(t *testing.T) {
-	tvs := []string{
+	tvs := [][]byte{
 		unsignedCorimComidTpmEnactTrustAKOne,
 		unsignedCorimComidTpmEnactTrustGoldenOne,
 	}
@@ -62,8 +61,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv)
-		_, err := d.Decode(data)
+		_, err := d.Decode(tv)
 		assert.NoError(t, err)
 	}
 }
@@ -71,7 +69,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 func TestDecoder_Decode_negative_tests(t *testing.T) {
 	tvs := []struct {
 		desc        string
-		input       string
+		input       []byte
 		expectedErr string
 	}{
 		{
@@ -111,9 +109,10 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		}}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv.input)
-		d := &EndorsementHandler{}
-		_, err := d.Decode(data)
-		assert.EqualError(t, err, tv.expectedErr)
+		t.Run(tv.desc, func(t *testing.T) {
+			d := &EndorsementHandler{}
+			_, err := d.Decode(tv.input)
+			assert.EqualError(t, err, tv.expectedErr)
+		})
 	}
 }

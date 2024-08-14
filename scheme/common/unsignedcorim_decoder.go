@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
@@ -30,18 +29,8 @@ func UnsignedCorimDecoder(
 		return nil, fmt.Errorf("invalid unsigned corim: %w", err)
 	}
 
-	if uc.Profiles != nil {
-		// get the profile
-		if len(*uc.Profiles) > 1 {
-			var profiles []string
-			for _, p := range *uc.Profiles {
-				name, _ := p.Get()
-				profiles = append(profiles, name)
-			}
-			return nil, fmt.Errorf("found multiple profiles (expected exactly one): %s", strings.Join(profiles, ", "))
-		}
-		p := (*uc.Profiles)[0]
-		profile, err := p.Get()
+	if uc.Profile != nil {
+		profile, err := uc.Profile.Get()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get the profile information: %w", err)
 		}
@@ -78,15 +67,17 @@ func UnsignedCorimDecoder(
 		}
 
 		if c.Triples.ReferenceValues != nil {
-			for _, rv := range *c.Triples.ReferenceValues {
-				refVals, err := xtr.RefValExtractor(rv)
-				if err != nil {
-					return nil, fmt.Errorf("bad software component in CoMID at index %d: %w", i, err)
-				}
+			refVals, err := xtr.RefValExtractor(*c.Triples.ReferenceValues)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"bad software component in CoMID at index %d: %w",
+					i,
+					err,
+				)
+			}
 
-				for _, refVal := range refVals {
-					rsp.ReferenceValues = append(rsp.ReferenceValues, *refVal)
-				}
+			for _, refVal := range refVals {
+				rsp.ReferenceValues = append(rsp.ReferenceValues, *refVal)
 			}
 		}
 
@@ -94,7 +85,11 @@ func UnsignedCorimDecoder(
 			for _, avk := range *c.Triples.AttestVerifKeys {
 				k, err := xtr.TaExtractor(avk)
 				if err != nil {
-					return nil, fmt.Errorf("bad key in CoMID at index %d: %w", i, err)
+					return nil, fmt.Errorf(
+						"bad key in CoMID at index %d: %w",
+						i,
+						err,
+					)
 				}
 
 				rsp.TrustAnchors = append(rsp.TrustAnchors, *k)
