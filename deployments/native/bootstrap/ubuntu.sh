@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 sudo apt update
 sudo apt install --yes git protobuf-compiler golang-1.20 make gettext sqlite3 openssl jq
 
