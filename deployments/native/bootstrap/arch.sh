@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 sudo pacman -Syy bash findutils grep sed openssl protobuf go make gettext sqlite3 step-cli jq
 sudo ln -s /usr/bin/step-cli /usr/local/bin/step
 
