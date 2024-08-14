@@ -14,15 +14,17 @@ type ParsecCcaExtractor struct {
 	Profile string
 }
 
-func (o ParsecCcaExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
+func (o ParsecCcaExtractor) RefValExtractor(
+	rvs comid.ValueTriples,
+) ([]*handler.Endorsement, error) {
 	if o.Profile != "tag:github.com/parallaxsecond,2023-03-03:cca" {
 		return nil, fmt.Errorf("invalid profile: %s for scheme PARSEC_CCA", o.Profile)
 	}
 	subScheme := &platform.CcaSsdExtractor{}
-	return subScheme.RefValExtractor(rv)
+	return subScheme.RefValExtractor(rvs)
 }
 
-func (o ParsecCcaExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
+func (o ParsecCcaExtractor) TaExtractor(avk comid.KeyTriple) (*handler.Endorsement, error) {
 	if o.Profile != "tag:github.com/parallaxsecond,2023-03-03:cca" {
 		return nil, fmt.Errorf("invalid profile: %s for scheme PARSEC_CCA", o.Profile)
 	}

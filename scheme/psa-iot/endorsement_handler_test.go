@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/veraison/corim/comid"
 )
 
 func TestDecoder_GetAttestationScheme(t *testing.T) {
@@ -66,7 +65,7 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 }
 
 func TestDecoder_Decode_OK(t *testing.T) {
-	tvs := []string{
+	tvs := [][]byte{
 		unsignedCorimComidPsaIakPubOne,
 		unsignedCorimComidPsaIakPubTwo,
 		unsignedCorimComidPsaRefValOne,
@@ -77,8 +76,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv)
-		_, err := d.Decode(data)
+		_, err := d.Decode(tv)
 		assert.NoError(t, err)
 	}
 }
@@ -86,7 +84,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 func TestDecoder_Decode_negative_tests(t *testing.T) {
 	tvs := []struct {
 		desc        string
-		input       string
+		input       []byte
 		expectedErr string
 	}{
 		{
@@ -102,7 +100,7 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		{
 			desc:        "missing measurement identifier",
 			input:       unsignedCorimComidPsaRefValNoMkey,
-			expectedErr: `decoding failed for CoMID at index 0: error unmarshalling field "Triples": error unmarshalling field "ReferenceValues": error unmarshalling field "Flags": expected map (CBOR Major Type 5), found Major Type 0`,
+			expectedErr: `bad software component in CoMID at index 0: measurement key is not present`,
 		},
 		{
 			desc:        "no implementation id specified in the measurement",
@@ -121,9 +119,10 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		}}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv.input)
-		d := &EndorsementHandler{}
-		_, err := d.Decode(data)
-		assert.EqualError(t, err, tv.expectedErr)
+		t.Run(tv.desc, func(t *testing.T) {
+			d := &EndorsementHandler{}
+			_, err := d.Decode(tv.input)
+			assert.EqualError(t, err, tv.expectedErr)
+		})
 	}
 }

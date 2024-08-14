@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/veraison/corim/comid"
 )
 
 func TestDecoder_Decode_OK(t *testing.T) {
-	tvs := []string{
+	tvs := [][]byte{
 		unsignedCorimComidParsecTpmKeyGood,
 		unsignedCorimComidParsecTpmPcrsGood,
 	}
@@ -18,8 +17,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv)
-		_, err := d.Decode(data)
+		_, err := d.Decode(tv)
 		assert.NoError(t, err)
 	}
 }
@@ -27,7 +25,7 @@ func TestDecoder_Decode_OK(t *testing.T) {
 func TestDecoder_Decode_negative_tests(t *testing.T) {
 	tvs := []struct {
 		desc        string
-		input       string
+		input       []byte
 		expectedErr string
 	}{
 		{
@@ -83,10 +81,11 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 	}
 
 	for _, tv := range tvs {
-		data := comid.MustHexDecode(t, tv.input)
-		d := &EndorsementHandler{}
-		_, err := d.Decode(data)
-		assert.EqualError(t, err, tv.expectedErr)
+		t.Run(tv.desc, func(t *testing.T) {
+			d := &EndorsementHandler{}
+			_, err := d.Decode(tv.input)
+			assert.EqualError(t, err, tv.expectedErr)
+		})
 	}
 }
 

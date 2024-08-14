@@ -1,6 +1,6 @@
 module github.com/veraison/services
 
-go 1.19
+go 1.22
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -30,7 +30,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.1.0
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.3-0.20240615102753-72283bb916a0
+	github.com/veraison/corim v1.1.3-0.20240814105452-be7ec4829479
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53

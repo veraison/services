@@ -16,23 +16,26 @@ import (
 type CorimExtractor struct{ Profile string }
 
 func (o CorimExtractor) RefValExtractor(
-	rv comid.ReferenceValue,
+	rvs comid.ValueTriples,
 ) ([]*handler.Endorsement, error) {
-	var id ID
+	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
 
-	if err := id.FromEnvironment(rv.Environment); err != nil {
-		return nil, fmt.Errorf("could not extract id from ref-val environment: %w", err)
-	}
+	for i, rv := range rvs.Values {
+		var id ID
 
-	rvs := make([]*handler.Endorsement, 0, len(rv.Measurements))
+		if err := id.FromEnvironment(rv.Environment); err != nil {
+			return nil, fmt.Errorf(
+				"could not extract id from ref-val environment: %w",
+				err,
+			)
+		}
 
-	for i, m := range rv.Measurements {
-		pcr, err := extractPCR(m)
+		pcr, err := extractPCR(rv.Measurement)
 		if err != nil {
 			return nil, fmt.Errorf("could not extract PCR: %w", err)
 		}
 
-		digests, err := extractDigests(m)
+		digests, err := extractDigests(rv.Measurement)
 		if err != nil {
 			return nil, fmt.Errorf("measurement[%d]: %w", i, err)
 		}
@@ -49,19 +52,19 @@ func (o CorimExtractor) RefValExtractor(
 				Attributes: attrs,
 			}
 
-			rvs = append(rvs, rv)
+			refVals = append(refVals, rv)
 		}
 	}
 
-	if len(rvs) == 0 {
+	if len(refVals) == 0 {
 		return nil, fmt.Errorf("no measurements found")
 	}
 
-	return rvs, nil
+	return refVals, nil
 }
 
 func (o CorimExtractor) TaExtractor(
-	avk comid.AttestVerifKey,
+	avk comid.KeyTriple,
 ) (*handler.Endorsement, error) {
 	var id ID
 
