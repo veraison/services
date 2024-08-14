@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
+      CI_PIPELINE: true
     steps:
     - uses: actions/setup-go@v3
       with:
