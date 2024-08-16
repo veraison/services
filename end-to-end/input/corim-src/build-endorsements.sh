@@ -8,7 +8,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 mkdir -p $TEMP_DIR
 
-for scheme in psa cca; do
+for scheme in psa cca cca-realm; do
     cocli comid create --template ${SCRIPT_DIR}/comid-${scheme}-ta.json \
                        --template ${SCRIPT_DIR}/comid-${scheme}-refval.json \
                        --output-dir $TEMP_DIR
