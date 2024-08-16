@@ -58,7 +58,7 @@ function deploy() {
     echo "initializing stores"
     for t in en ta po
     do
-        echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+        echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
             sqlite3 $DEPLOY_DIR/stores/$t-store.sql
     done
 }

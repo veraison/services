@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Contributors to the Veraison project.
+// Copyright 2021-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -11,6 +11,12 @@ import (
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"go.uber.org/zap"
+	sq "github.com/Masterminds/squirrel"
+
+
+	// drivers
+	_ "github.com/go-sql-driver/mysql" // mysql
+	_ "github.com/jackc/pgx/v5/stdlib" // pgx
 )
 
 var (
@@ -43,6 +49,7 @@ func (o *sqlConfig) Validate() error {
 type SQL struct {
 	TableName string
 	DB        *sql.DB
+	Placeholder sq.PlaceholderFormat
 
 	logger *zap.SugaredLogger
 }
@@ -75,6 +82,13 @@ func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 		return err
 	}
 
+	switch cfg.DriverName {
+	case "pgx", "pgx/v5":
+		o.Placeholder = sq.Dollar
+	default:
+		o.Placeholder = sq.Question
+	}
+
 	o.DB = db
 	o.logger.Infow("store opened", "driver", cfg.DriverName,
 		"datasource", cfg.DataSourceName, "table", o.TableName)
@@ -94,7 +108,7 @@ func (o SQL) Setup() error {
 	// nolint:gosec
 	// o.TableName has been checked by isSafeTblName on init
 	o.logger.Debugw("create table", "table", o.TableName)
-	q := fmt.Sprintf("CREATE TABLE %s (key text NOT NULL, vals text NOT NULL)", o.TableName)
+	q := fmt.Sprintf("CREATE TABLE %s (kv_key text NOT NULL, kv_val text NOT NULL)", o.TableName)
 	_, err := o.DB.Exec(q)
 
 	return err
@@ -109,18 +123,24 @@ func (o SQL) Get(key string) ([]string, error) {
 		return nil, err
 	}
 
-	// nolint:gosec
-	// o.TableName has been checked by isSafeTblName on init
-	q := fmt.Sprintf("SELECT DISTINCT vals FROM %s WHERE key = ?", o.TableName)
+	query := sq.Select("kv_val").Distinct().
+		From(o.TableName).
+		Where(sq.Eq{"kv_key": key}).
+		PlaceholderFormat(o.Placeholder)
 
-	rows, err := o.DB.Query(q, key)
+	queryText, args, err := query.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	rows, err := o.DB.Query(queryText, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	var vals []string
+	var kvVal []string
 
 	count := 0
 	for rows.Next() {
@@ -135,14 +155,14 @@ func (o SQL) Get(key string) ([]string, error) {
 			panic("broken invariant: found val with null string")
 		}
 
-		vals = append(vals, s.String)
+		kvVal = append(kvVal, s.String)
 	}
 
 	if count == 0 {
 		return nil, fmt.Errorf("%w: %q", ErrKeyNotFound, key)
 	}
 
-	return vals, nil
+	return kvVal, nil
 }
 
 func (o SQL) GetKeys() ([]string, error) {
@@ -150,11 +170,13 @@ func (o SQL) GetKeys() ([]string, error) {
 		return nil, errors.New("SQL store uninitialized")
 	}
 
-	// nolint:gosec
-	// o.TableName has been checked by isSafeTblName on init
-	q := fmt.Sprintf("SELECT DISTINCT key FROM %s", o.TableName)
+	query := sq.Select("kv_key").Distinct().From(o.TableName).PlaceholderFormat(o.Placeholder)
+	queryText, args, err := query.ToSql()
+	if err != nil {
+		panic(err)
+	}
 
-	rows, err := o.DB.Query(q)
+	rows, err := o.DB.Query(queryText, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -189,11 +211,15 @@ func (o SQL) Add(key string, val string) error {
 		return err
 	}
 
-	// nolint:gosec
-	// o.TableName has been checked by isSafeTblName on init
-	q := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
+	query := sq.Insert(o.TableName).Columns("kv_key", "kv_val").
+			Values(key, val).PlaceholderFormat(o.Placeholder)
 
-	_, err := o.DB.Exec(q, key, val)
+	queryText, args, err := query.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = o.DB.Exec(queryText, args...)
 	if err != nil {
 		return err
 	}
@@ -217,19 +243,29 @@ func (o SQL) Set(key string, val string) error {
 
 	defer func() { _ = txn.Rollback() }()
 
-	// nolint:gosec
-	// o.TableName has been checked by isSafeTblName on init
-	delQ := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
+	delQuery := sq.Delete(o.TableName).
+			Where(sq.Eq{"kv_key": key}).
+			PlaceholderFormat(o.Placeholder)
 
-	if _, err = o.DB.Exec(delQ, key); err != nil {
+	queryText, args, err := delQuery.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	if _, err = o.DB.Exec(queryText, args...); err != nil {
 		return err
 	}
 
-	// o.TableName has been checked by isSafeTblName on init
-	// nolint:gosec
-	insQ := fmt.Sprintf("INSERT INTO %s(key, vals) VALUES(?, ?)", o.TableName)
+	insQuery := sq.Insert(o.TableName).Columns("kv_key", "kv_val").
+			Values(key, val).
+			PlaceholderFormat(o.Placeholder)
 
-	if _, err = o.DB.Exec(insQ, key, val); err != nil {
+	queryText, args, err = insQuery.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	if _, err = o.DB.Exec(queryText, args...); err != nil {
 		return err
 	}
 
@@ -245,11 +281,16 @@ func (o SQL) Del(key string) error {
 		return err
 	}
 
-	// nolint:gosec
-	// o.TableName has been checked by isSafeTblName on init
-	q := fmt.Sprintf("DELETE FROM %s WHERE key = ?", o.TableName)
+	query := sq.Delete(o.TableName).
+			Where(sq.Eq{"kv_key": key}).
+			PlaceholderFormat(o.Placeholder)
 
-	res, err := o.DB.Exec(q, key)
+	queryText, args, err := query.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	res, err := o.DB.Exec(queryText, args...)
 	if err != nil {
 		return err
 	}
