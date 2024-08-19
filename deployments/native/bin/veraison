@@ -246,19 +246,19 @@ function show_stores() {
 
 	echo "TRUST ANCHORS:"
 	echo "--------------"
-	$_sqlite "${_stores_dir}/ta-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+	$_sqlite "${_stores_dir}/ta-store.sql" 'SELECT DISTINCT kv_val FROM kvstore' | jq "$query"
 
 	echo ""
 
 	echo "ENDORSEMENTS:"
 	echo "-------------"
-	$_sqlite "${_stores_dir}/en-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+	$_sqlite "${_stores_dir}/en-store.sql" 'SELECT DISTINCT kv_val FROM kvstore' | jq "$query"
 
 	echo ""
 
 	echo "POLICIES:"
 	echo "-------------"
-	$_sqlite "${_stores_dir}/po-store.sql" 'SELECT DISTINCT vals FROM kvstore' | jq "$query"
+	$_sqlite "${_stores_dir}/po-store.sql" 'SELECT DISTINCT kv_val FROM kvstore' | jq "$query"
 
 	echo ""
 }
