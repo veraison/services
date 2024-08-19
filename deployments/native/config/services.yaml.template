@@ -31,21 +31,59 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ${VERAISON_ROOT}/plugins/
+##############################################################################
+# The {ta,en,po}-store entries below configure the key-value stores for trust
+# anchors, and policies. They are configured to use the "sql" backend with
+# "sqlite3" driver by default. sqlite3 databases for these stores would have
+# been configured as part of the deployment.
+# Following each driver config are commented out configs for alternate drivers.
+# In order to use these drivers, the corresponding DBMS must first be set up
+# and initialized for Veraison use. If that is the case, you can comment out
+# the sqlite3 config, and uncomment config for the driver you want to use.
+# The datasource entry may also need to be updated to match the connection
+# settings for the running DBMS. Existing values assume that the DBMS is running
+# on localhost on its default port, the user is "veraison" with password
+# "password", and the relevant database is "veraison".
+##############################################################################
 ta-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/ta-store.sql
+
+    #driver: pgx
+    #datasource: postgres://veraison:password@localhost:5432/veraison
+    #tablename: trust_anchors
+
+    #driver: mysql
+    #datasource: veraison:password@tcp(localhost:3306)/veraison
+    #tablename: trust_anchors
 en-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/en-store.sql
+
+    #driver: pgx
+    #datasource: postgres://veraison:password@localhost:5432/veraison
+    #tablename: endorsements
+
+    #driver: mysql
+    #datasource: veraison:password@tcp(localhost:3306)/veraison
+    #tablename: endorsements
 po-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/po-store.sql
+
+    #driver: pgx
+    #datasource: postgres://veraison:password@localhost:5432/veraison
+    #tablename: policies
+
+    #driver: mysql
+    #datasource: veraison:password@tcp(localhost:3306)/veraison
+    #tablename: policies
 po-agent:
     backend: opa
 auth:

@@ -1,18 +1,29 @@
 # KV Store
 
-The key-values (KV) store is Veraison storage layer.  It is used for both endorsements and trust anchors.
+The key-values (KV) store is Veraison storage layer.  It is used for both
+endorsements and trust anchors.
 
-It is intentionally "dumb": we assume that the filtering smarts are provided by the plugins.
+It is intentionally "dumb": we assume that the filtering smarts are provided by
+the plugins.
 
-The key is a string synthesised deterministically from a structured endorsement / trustanchor "identifier".  It is formatted according to a custom URI format -- [see below](#uri-format)).
+The key is a string synthesised deterministically from a structured endorsement
+/ trust anchor "identifier".  It is formatted according to a custom URI format
+-- [see below](#uri-format)).
 
-The value is an array of JSON strings each containing an endorsement or trust anchor data associated with that key.  The data is opaque to the KV store and varies depending on the attestation format.  The only invariant enforced by the KV store is that it is valid JSON.
+The value is an array of JSON strings each containing an endorsement or trust
+anchor data associated with that key.  The data is opaque to the KV store and
+varies depending on the attestation format.  The only invariant enforced by the
+KV store is that it is valid JSON.
 
-The `IKVStore` interface defines the required methods for storing, fetching and deleting KV objects.  Note that (for the moment) there is no method for patching data in place.  Interface methods for initialising and orderly terminating the underlying DB are also exposed.
+The `IKVStore` interface defines the required methods for storing, fetching and
+deleting KV objects.  Note that (for the moment) there is no method for
+patching data in place.  Interface methods for initialising and orderly
+terminating the underlying DB are also exposed.
 
 This package contains two implementations of the `IKVStore`:
 
-1. `SQL`, supporting different SQL engines (e.g., SQLite, PostgreSQL, etc. -- [see below](#sql-drivers)),
+1. `SQL`, supporting different SQL engines (e.g., SQLite, PostgreSQL, etc. --
+   [see below](#sql-drivers)),
 1. `Memory`, a thread-safe in-memory associative array intended for testing.
 
 A `New` method can be used to create either of these from a `Config` object.
@@ -49,16 +60,24 @@ Currently, `memory` backend does not support any configuration.
 > **Note**: `sqlite3`, the default driver for the backend, is unsuitable for
 > production or performance testing.
 
-`driver`: The name of the golang SQL driver to use ([see here](https://github.com/golang/go/wiki/SQLDrivers))
-- `datasource`: Data source name to use. The format of the name depends on the
-  driver (e.g. a file path for SQLite or server dial string for PostgreSQL).
+- `driver`: The name of the golang SQL driver. Veraison currently includes the
+  following drivers: `sqlite3`, `mysql` (MySQL and MariaDB), and `pgx`
+  (Postgres).
+- `datasource`: This points to the database the driver will access. The format
+  is driver-dependent.
+  - `sqlite3`: the path to the sqlite3 database file
+  - `pgx`: a URL in the form `postgresql://<user>:<passwd>@<host>:<port>/<database>`
+  - `mysql`: string in the form `<user>:<password>@<protocol>(<address>)/<database>`
+  (Please see the drivers' documentation for more details.)
 - `tablename` (optional): the name of the table within the SQL database that will
 - be used by the store. If this is not specified, it will default to
   `"kvstore"`.
 
-## SQL drivers
+## Alternative SQL drivers
 
-To use a SQL backend the calling code needs to (anonymously) import the supporting driver.
+To use another SQL driver ([see here](https://go.dev/wiki/SQLDrivers)) in your
+code that uses `IKVStore`, the calling code needs to (anonymously) import the
+supporting driver.
 
 For example, to use PostgreSQL:
 ```go
@@ -72,14 +91,19 @@ import _ "github.com/mattn/go-sqlite3"
 ## SQL schemas
 
 ```sql
-CREATE TABLE endorsement (
-  key text NOT NULL,
-  vals text NOT NULL
+CREATE TABLE endorsements (
+  kv_key text NOT NULL,
+  kv_val text NOT NULL
 );
 
-CREATE TABLE trustanchor (
-  key text NOT NULL,
-  vals text NOT NULL
+CREATE TABLE trust_anchors (
+  kv_key text NOT NULL,
+  kv_val text NOT NULL
+);
+
+CREATE TABLE policies (
+  kv_key text NOT NULL,
+  kv_val text NOT NULL
 );
 ```
 

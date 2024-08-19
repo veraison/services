@@ -504,15 +504,20 @@ function _symlink_bins() {
 		"${ROOT_DIR}/vts/cmd/vts-service/vts-service"
 	)
 
+	local _f=""
+	if [[ $_force == true ]]; then
+		_f="-f"
+	fi
+
 	for path in "${exes[@]}"; do
 		chmod +x "$path"
-		ln -s "$path" "${DEPLOYMENT_BIN_DIR}/$(basename $path)"
+		ln -s $_f "$path" "${DEPLOYMENT_BIN_DIR}/$(basename $path)"
 	done
 
 	find "${ROOT_DIR}/scheme/bin/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		chmod +x "$path"
-		ln -s "$path" "${DEPLOYMENT_PLUGINS_DIR}/$(basename $path)"
+		ln -s $_f "$path" "${DEPLOYMENT_PLUGINS_DIR}/$(basename $path)"
 	    done
 }
 

@@ -14,13 +14,13 @@ function stores() {
 
     echo "TRUST ANCHORS:"
     echo "--------------"
-    sqlite3 $_stores_dir/ta-store.sql 'select distinct vals from kvstore' | jq $query
+    sqlite3 $_stores_dir/ta-store.sql 'select distinct kv_val from kvstore' | jq $query
 
     echo ""
 
     echo "ENDORSEMENTS:"
     echo "-------------"
-    sqlite3 $_stores_dir/en-store.sql 'select distinct vals from kvstore' | jq $query
+    sqlite3 $_stores_dir/en-store.sql 'select distinct kv_val from kvstore' | jq $query
 
     echo ""
 }

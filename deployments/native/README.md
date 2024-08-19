@@ -509,3 +509,20 @@ Finally, enable authentication in the config files for services, cocli, and
 pocli inside the deployment. This just means uncommenting the relevant config.
 If you have set up a new veraison realm instead of using the example one, the
 config values will also need to be updated.
+
+## Using an alternative DBMS
+
+By default, the deployment will use `sqlite3` databases located under
+`${VERAISON_ROOT}/stores/` for key-value stores. It is possible to use either
+MySQL/MariaDB or Postgres instead.
+
+1. Ensure the relevant DBMS is installed and running. Please refer to the DBMS'
+   and/or your OS' documentation for instructions on how to set that up.
+2. Create a user and a database for the deployment, and initialize k-v store
+   tables for endorsements, trust anchors, and policies. Subdirectory
+   [kvstore-backends](kvstore-backends) contains scripts to automate this step.
+3. Edit `*-store` entires inside `${VERAISON_ROOT}/config/services/config.yaml`
+   to comment out the `sqlite3` config, and uncommenting config for the
+   relevant driver (`pgx` for Postgres, and `mysql` for MySQL/MariaDB). You may
+   also need to edit the uncommented settings to match your set up in the
+   previous steps.

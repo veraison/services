@@ -30,7 +30,7 @@ function init_sqlite_stores() {
 	_check_installed sqlite3
 
 	for t in en ta po; do
-		echo "CREATE TABLE IF NOT EXISTS kvstore ( key text NOT NULL, vals text NOT NULL );" | \
+		echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
 		    $_sqlite "${_stores_dir}/${t}-store.sql"
 	done
 }
