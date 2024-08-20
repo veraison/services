@@ -55,6 +55,9 @@ Arch, Ubuntu, and MacOSX (using [homebrew](https://brew.sh)) (see `bootstrap/`
 subdirectory). Running
 
 ```bash
+git clone https://github.com/veraison/services.git
+cd services/deployments/native
+
 make bootstrap
 ```
 

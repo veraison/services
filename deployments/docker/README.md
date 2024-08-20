@@ -1,37 +1,92 @@
 This directory contains the [Docker](https://www.docker.com/) source for the
-deployment of Veraison. In order to build it, you need to have Docker
-installed, and current user must be in the docker group.
+deployment of Veraison.
 
-> **Warning** for `Ubuntu` users:
-> Make sure you have docker installed natively (via `sudo apt
+## Dependencies
+
+You will need to make sure you have `make`, `git`, `docker` (and its builder),
+and `jq` installed on your system. Optionally, `tmux` can be used to
+conveniently monitor output from running services. The CLI front-end relies on
+`bash` shell, which should already be installed on most systems, but if not, it
+would also need to be installed.
+
+```sh
+# on Ubuntu
+sudo apt install bash make git docker.io docker-buildx jq tmux
+
+# on Arch
+sudo pacman -S bash make git docker docker-buildx jq tmux
+
+# On MacOSX with Homebrew
+brew install step coreutils gettext openssl sqlite3 protobuf jq
+brew link --force gettext
+```
+
+> [!IMPORTANT]
+> **Ubuntu users**: Make sure you have docker installed natively (via `sudo apt
 > install docker.io`), and _not_ via `snap`, as the later won't have access to
 > the default build contexts under `/tmp`. You could, of course, change those
 > locations via the config, however we cannot guarantee that there won't be
 > other issues -- if you decide to stick with `snap`, you're on your own.
 
-Once you have the pre-requisites, you can create the deployment on your local
-system simply by running
+### Docker set up
 
-    make
+If you're not already set up to use Docker on your system, you will need to
+make sure that it is enabled and running, and that you can access it by adding
+your account to the `docker` group:
+
+```sh
+sudo systemctl enable --now docker
+sudo usrmod -a -G docker $USER
+```
+
+The user group modification won't take effect until you log out and log back
+in, or, alternatively, you can force in a specific shell with
+
+```sh
+newgrp docker
+```
+
+## Creating the Deployment
+
+Once you have the pre-requisites, you can create the deployment on your local
+system 
+
+```sh
+git clone https://github.com/veraison/services.git
+cd services/deployments/docker
+
+make
+```
 
 Once the deployment is created, you can set up the front end by executing
 
-    source env.bash
+```sh
+source env.bash
+```
 
-Inside a bash shell. There is an equivalent `env.zsh` for zsh (other shells are
+inside a bash shell. There is an equivalent `env.zsh` for zsh (other shells are
 currently not supported). You can interact with the deployment via the
 `veraison` command. E.g.:
 
-    $ veraison status
-             vts: stopped
-    provisioning: stopped
-    verification: stopped
-      management: stopped
-        keycloak: stopped
+```sh
+veraison status
+```
+
+You should see output similar to
+
+```
+         vts: stopped
+provisioning: stopped
+verification: stopped
+  management: stopped
+    keycloak: stopped
+```
 
 To start Veraison services run:
 
-    veraison start
+```sh
+veraison start
+```
 
 The provisioning service is now listening on port 8888, and verification
 service on port 8080 (these can be changed via configuration -- see below).
@@ -69,11 +124,12 @@ The deployment may be configured by changing the settings inside
 [deployment.cfg](./deployment.cfg). See the comments inside that file for the
 explanation of the individual configuration values.
 
-> **Note**: The individual services rely on configuration inside
-> `config.yaml.template`. This currently uses the `sqlite3` driver for the
-> store backend, which limits request throughput and makes the deployment
-> unsuitable for production or performance testing (for the latter, one can
-> modify the template to use `memory` backend for the stores).
+> [!NOTE]
+> The individual services rely on configuration inside `config.yaml.template`.
+> This currently uses the `sqlite3` driver for the store backend, which limits
+> request throughput and makes the deployment unsuitable for production or
+> performance testing (for the latter, one can modify the template to use
+> `memory` backend for the stores).
 
 ### `make` Options
 
@@ -116,14 +172,18 @@ First, assuming you have frontend set up, and the services running, (if not,
 you can do so with `source env.bash; veraison start`), you will need to stop
 the "production" VTS service with:
 
-    veraison stop vts
+```sh
+veraison stop vts
+```
 
 this will stop `vts-service` but should leave the other services running (you
 can verify that by running `veraison status`).
 
 Next, enter the debug shell:
 
-    make DEBUG_HOST=vts-service debug
+```sh
+make DEBUG_HOST=vts-service debug
+```
 
 this will pop open a `bash` shell inside the builder. The `DEBUG_HOST` argument
 will set the hostname of the builder container. Here, we're setting it to the
@@ -139,9 +199,11 @@ Next, navigate to the location of the VTS service executable (keeping in mind
 that the root of the repo is mapped to `/veraison/build` inside the container),
 and start the debugger:
 
-    # inside the debug shell:
-    cd /veraison/build/vts/cmd/vts-service
-    debug
+```sh
+# inside the debug shell:
+cd /veraison/build/vts/cmd/vts-service
+debug
+```
 
 The `debug` command is an alias for `dlv debug` that will make sure that the
 debug executable will be built with evidence handling plugins compiled in (same
@@ -158,6 +220,8 @@ that, so you don't need to worry about it. However, if you want to run the
 service executable directly, then you must remember to specify the appropriate
 config, e.g.
 
-    # inside the debug shell:
-    cd /veraison/build/vts/cmd/vts-service
-    ./veraison-service --config config-docker.yaml
+```sh
+# inside the debug shell:
+cd /veraison/build/vts/cmd/vts-service
+./vts-service --config config-docker.yaml
+```
