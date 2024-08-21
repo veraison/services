@@ -1,22 +1,29 @@
 #!/bin/bash
 # Copyright 2023-2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
+set -eo pipefail
 
 function status() {
     _check_installed jq
 
-    local vts=$(_get_container_state vts-service)
-    local prov=$(_get_container_state provisioning-service)
-    local verif=$(_get_container_state verification-service)
-    local manage=$(_get_container_state management-service)
-    local keycloak=$(_get_container_state keycloak-service)
+    local vts
+    local prov
+    local verif
+    local manage
+    local keycloak
+
+    vts=$(_get_container_state vts-service)
+    prov=$(_get_container_state provisioning-service)
+    verif=$(_get_container_state verification-service)
+    manage=$(_get_container_state management-service)
+    keycloak=$(_get_container_state keycloak-service)
 
     if [[ $_quiet == true ]]; then
-        local vts=$(_strip_color $vts)
-        local prov=$(_strip_color $prov)
-        local verif=$(_strip_color $verif)
-        local manage=$(_strip_color $manage)
-        local keycloak=$(_strip_color $keycloak)
+        vts=$(_strip_color "$vts")
+        prov=$(_strip_color "$prov")
+        verif=$(_strip_color "$verif")
+        manage=$(_strip_color "$manage")
+        keycloak=$(_strip_color "$keycloak")
 
         local status="${_yell}stopped${_reset}"
 
@@ -43,7 +50,7 @@ function status() {
 function start() {
     local what=$1
 
-    if [[ "x$what" == "x" ]]; then
+    if [[ "$what" == "" ]]; then
         start_keycloak
         start_vts
         sleep 0.5 # wait for vts to start before starting the services that depend on it.
@@ -69,7 +76,7 @@ function start() {
 function stop() {
     local what=$1
 
-    if [[ "x$what" == "x" ]]; then
+    if [[ "$what" == "" ]]; then
         stop_management
         stop_verification
         stop_provisioning
@@ -177,7 +184,7 @@ function manager() {
             -v ${LOGS_VOLUME}:/opt/veraison/logs \
             -v /:/opt/veraison/hostroot \
             -v "$PWD:$PWD" -w "$PWD" \
-            veraison/manager $@
+            veraison/manager "$@"
 }
 
 function manager_debug() {
@@ -192,11 +199,11 @@ function manager_debug() {
 }
 
 function stores() {
-    manager check-stores $@
+    manager check-stores "$@"
 }
 
 function clear_stores() {
-    manager clear-stores $@
+    manager clear-stores "$@"
 }
 
 function logs() {
@@ -214,7 +221,7 @@ function logs() {
 }
 
 function clear_logs() {
-    manager clear-logs $@
+    manager clear-logs "$@"
 }
 
 function create_tmux_session() {
@@ -222,21 +229,21 @@ function create_tmux_session() {
 
     local session_name="${1:-veraison}"
 
-    tmux new-session -d -s $session_name -c $_this_dir "$SHELL"
-    tmux send-keys -t $session_name:0.0 source Space ./env.bash C-m
-    tmux send-keys -t $session_name:0.0 veraison Space follow Space vts C-m
+    tmux new-session -d -s "$session_name" -c "$_this_dir" "$SHELL"
+    tmux send-keys -t "$session_name:0.0" source Space ./env.bash C-m
+    tmux send-keys -t "$session_name:0.0" veraison Space follow Space vts C-m
 
-    tmux split-window -t $session_name:0.0 -c $_this_dir "$SHELL"
-    tmux send-keys -t $session_name:0.1 source Space ./env.bash C-m
-    tmux send-keys -t $session_name:0.1 veraison Space follow Space provisioning C-m
+    tmux split-window -t "$session_name:0.0" -c "$_this_dir" "$SHELL"
+    tmux send-keys -t "$session_name:0.1" source Space ./env.bash C-m
+    tmux send-keys -t "$session_name:0.1" veraison Space follow Space provisioning C-m
 
-    tmux split-window -t $session_name:0.1 -c $_this_dir "$SHELL"
-    tmux send-keys -t $session_name:0.2 source Space ./env.bash C-m
-    tmux send-keys -t $session_name:0.2 veraison Space follow Space verification C-m
+    tmux split-window -t "$session_name:0.1" -c "$_this_dir" "$SHELL"
+    tmux send-keys -t "$session_name:0.2" source Space ./env.bash C-m
+    tmux send-keys -t "$session_name:0.2" veraison Space follow Space verification C-m
 
-    tmux rename-window -t $session_name:0 services
-    tmux resize-pane -t $session_name:0.0 -y 33%
-    tmux resize-pane -t $session_name:0.1 -y 33%
+    tmux rename-window -t "$session_name:0" services
+    tmux resize-pane -t "$session_name:0.0" -y 33%
+    tmux resize-pane -t "$session_name:0.1" -y 33%
 }
 
 function attach_tmux_session() {
@@ -244,10 +251,11 @@ function attach_tmux_session() {
 
     local session_name="${1:-veraison}"
 
-    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" == "" ]]; then
+    if [[ "$(tmux list-sessions | cut -f1 -d: | grep "$session_name")" == "" ]]; then
         create_tmux_session
     fi
-        TMUX= tmux attach -t $session_name
+
+    TMUX="" tmux attach -t "$session_name"
 }
 
 function kill_tmux_session() {
@@ -255,24 +263,27 @@ function kill_tmux_session() {
 
     local session_name="${1:-veraison}"
 
-    if [[ "$(tmux list-sessions | cut -f1 -d: | grep $session_name)" != "" ]]; then
-        tmux kill-session -t $session_name
+    if [[ "$(tmux list-sessions | cut -f1 -d: | grep "$session_name")" != "" ]]; then
+        tmux kill-session -t "$session_name"
     fi
 }
 
 function cocli() {
-    local translated_args=$(_translate_host_paths "$@")
-    manager cocli $translated_args
+    local -r -a args=$(printf '"%s" ' "$@")
+    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    manager cocli "${translated_args[@]}"
 }
 
 function evcli() {
-    local translated_args=$(_translate_host_paths "$@")
-    manager evcli $translated_args
+    local -r -a args=$(printf '"%s" ' "$@")
+    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    manager evcli "${translated_args[@]}"
 }
 
 function pocli() {
-    local translated_args=$(_translate_host_paths "$@")
-    manager pocli $translated_args
+    local -r -a args=$(printf '"%s" ' "$@")
+    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    manager pocli "${translated_args[@]}"
 }
 
 function help() {
@@ -349,9 +360,9 @@ function help() {
 
 function _get_container_state() {
     local container=$1
-    local status=$(docker container inspect $container 2>/dev/null| jq .[0].State.Status)
+    local -r status=$(docker container inspect "$container" 2>/dev/null| jq .[0].State.Status)
 
-    if [[ "x$status" == "xnull" ]]; then
+    if [[ "$status" == "null" ]]; then
         echo "${_red}not created${_reset}"
     elif [[ "$status" == '"running"' ]]; then
         echo "${_green}running${_reset}"
@@ -362,7 +373,7 @@ function _get_container_state() {
 
 function _check_installed() {
     local what=$1
-    if [[ "x$(which $what 2>/dev/null)" == "x" ]]; then
+    if [[ "$(which "$what" 2>/dev/null)" == "" ]]; then
         echo -e "$_error: $what executable must be installed to use this command."
         exit
     fi
@@ -374,12 +385,11 @@ function _strip_color() {
 }
 
 function _translate_host_paths() {
-    local split_args=$(echo "$@" | sed 's/=\// \//g')
-    local ammened=()
+    local -r split_args=$(echo "$@" | sed 's/=\// \//g')
 
     for part in $split_args; do
        if [[  $part == /* ]]; then
-            local realpart=$(realpath -q $part)
+            local -r realpart=$(realpath -q "$part")
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 # Terrible, horrible, no good, very bad CLUDGE for MocOS X:
                 # On MacOS, all top-level locations in the file system are in
@@ -440,31 +450,31 @@ function _reset_colors() {
 }
 
 set -a
-source $_this_dir/deployment.cfg
+source "$_this_dir/deployment.cfg"
 set +a
 
-set -- $(getopt "hqC" "$@")
-while [ ! -z "$1" ]
-do
-  case "$1" in
-    -h) help; exit;;
-    -C) _color=false;;
-    -q) _quiet=true;;
-     *) break;;
-  esac
+OPTIND=1
 
-  shift
+while getopts "hqC" opt; do
+	case "$opt" in
+            h) help; exit;;
+            C) _color=false;;
+            q) _quiet=true;;
+            *) break;;
+	esac
 done
-shift
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
 
 _reset_colors
 
 command=$1
 case $command in
     help) help;;
-    start) start $2;;
-    stop) stop $2;;
-    follow) follow $2;;
+    start) start "$2";;
+    stop) stop "$2";;
+    follow) follow "$2";;
     start-vts) start_vts;;
     stop-vts) stop_vts;;
     follow-vts) follow_vts;;
@@ -476,16 +486,18 @@ case $command in
     follow-verification) follow_verification;;
     status) status;;
     short-status) _color=false _reset_colors; _quiet=true status;;
-    stores | check-stores) stores $2;;
-    clear-stores) clear_stores $2;;
-    logs | get-logs) logs $2;;
-    clear-logs) clear_logs $2;;
-    start-tmux) create_tmux_session $2;;
-    tmux | attach-tmux) attach_tmux_session $2;;
-    stop-tmux | kill-tmux) kill_tmux_session $2;;
-    cocli) shift; cocli $@;;
-    evcli) shift; evcli $@;;
-    pocli) shift; pocli $@;;
-    debug) manager_debug $@;;
+    stores | check-stores) stores "$2";;
+    clear-stores) clear_stores "$2";;
+    logs | get-logs) logs "$2";;
+    clear-logs) clear_logs "$2";;
+    start-tmux) create_tmux_session "$2";;
+    tmux | attach-tmux) attach_tmux_session "$2";;
+    stop-tmux | kill-tmux) kill_tmux_session "$2";;
+    cocli) shift; cocli "$@";;
+    evcli) shift; evcli "$@";;
+    pocli) shift; pocli "$@";;
+    debug) manager_debug "$@";;
     *) echo -e "$_error: unexpected command: \"$command\" (use -h for help)";;
 esac
+
+# vim: set et sts=4 sw=4:

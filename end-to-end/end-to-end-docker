@@ -5,10 +5,9 @@
 SCHEME=${SCHEME:-psa}
 
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-DEPLOY_BIN=$THIS_DIR/../deployments/docker/.bin
-VERAISON=$THIS_DIR/../deployments/docker/veraison
+VERAISON="$THIS_DIR/../deployments/docker/veraison"
 
-source $THIS_DIR/../deployments/docker/env.bash
+source "$THIS_DIR/../deployments/docker/env.bash"
 
 function provision() {
     case $SCHEME  in
@@ -27,9 +26,7 @@ function provision() {
     esac
 
     set -x
-    $VERAISON -- cocli corim submit --corim-file=$corim_file \
-	    --api-server="https://provisioning-service:8888/endorsement-provisioning/v1/submit" \
-	    --media-type="'$media_type'"
+    $VERAISON -- cocli corim submit --corim-file "$corim_file" --media-type "$media_type"
 }
 
 function check() {
@@ -40,13 +37,13 @@ function verify_as_attester() {
     case $SCHEME  in
         psa)
             local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
-            local key_args="--key=$THIS_DIR/input/ec-p256.jwk"
-            local nonce_args="--nonce-size=32"
+            local -a key_args=(--key "$THIS_DIR/input/ec-p256.jwk")
+            local -a nonce_args=(--nonce-size=32)
             ;;
         cca)
             local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
-            local key_args="--iak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
-            local nonce_args=""
+            local -a key_args=(--iak "$THIS_DIR/input/ec256.json" --rak "$THIS_DIR/input/ec384.json")
+            local -a nonce_args=()
             ;;
         *)
             echo "ERROR: bad SCHEME: $SCHEME"
@@ -55,19 +52,16 @@ function verify_as_attester() {
     esac
 
     set -x
-    $VERAISON -- evcli $SCHEME verify-as attester \
-        --api-server=https://verification-service.${VERAISON_NETWORK}:8080/challenge-response/v1/newSession \
-        --claims=$claims \
-        $key_args $nonce_args
+    $VERAISON -- evcli "$SCHEME" verify-as attester --claims "$claims"  "${key_args[@]}" "${nonce_args[@]}"
 }
 
 function verify_as_relying_party() {
     case $SCHEME  in
         psa)
-            local token=$THIS_DIR/input/psa-evidence.cbor
+            local token="$THIS_DIR/input/psa-evidence.cbor"
             ;;
         cca)
-            local token=$THIS_DIR/input/cca-evidence.cbor
+            local token="$THIS_DIR/input/cca-evidence.cbor"
             ;;
         *)
             echo "ERROR: bad SCHEME: $SCHEME"
@@ -76,9 +70,7 @@ function verify_as_relying_party() {
     esac
 
     set -x
-    $VERAISON -- evcli $SCHEME verify-as relying-party \
-        --api-server=https://verification-service.${VERAISON_NETWORK}:8080/challenge-response/v1/newSession \
-        --token=$token
+    $VERAISON -- evcli "$SCHEME" verify-as relying-party --token "$token"
 }
 
 function verify() {
@@ -118,8 +110,9 @@ function _check_scheme() {
     esac
 }
 
+# shellcheck disable=2046
 set -- $(getopt "hs:" "$@")
-while [ ! -z "$1" ]
+while [ -n "$1" ]
 do
   case "$1" in
     -h) help; exit;;
@@ -138,6 +131,6 @@ case $command in
     help) help;;
     provision) provision;;
     check | check-stores) check;;
-    verify) verify $2;;
+    verify) verify "$2";;
     *) echo "ERROR: unexpected command: \"$command\""; help;;
 esac

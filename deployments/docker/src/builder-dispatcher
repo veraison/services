@@ -53,11 +53,11 @@ function deploy() {
     cat $BUILD_DIR/deployments/docker/src/config.yaml.template | envsubst > $DEPLOY_DIR/config.yaml
     cat $BUILD_DIR/deployments/docker/src/keycloak.conf.template | envsubst > $DEPLOY_DIR/keycloak.conf
     cat $BUILD_DIR/deployments/docker/src/cocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/cocli-config.yaml
+    cat $BUILD_DIR/deployments/docker/src/evcli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/evcli-config.yaml
     cat $BUILD_DIR/deployments/docker/src/pocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/pocli-config.yaml
 
     echo "initializing stores"
-    for t in en ta po
-    do
+    for t in en ta po; do
         echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
             sqlite3 $DEPLOY_DIR/stores/$t-store.sql
     done

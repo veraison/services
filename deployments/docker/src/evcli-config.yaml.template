@@ -1,0 +1,2 @@
+api_server: https://verification-service:${VERIFICATION_PORT}/challenge-response/v1/newSession
+# vim: set ft=yaml:
