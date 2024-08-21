@@ -1,4 +1,4 @@
-api_server: http://provisioning-service:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
+api_server: https://provisioning-service:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
 auth: oauth2
 username: veraison-provisioner
 password: veraison

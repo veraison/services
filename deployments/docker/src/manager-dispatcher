@@ -1,7 +1,8 @@
 #!/bin/bash
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2023-2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # This script is the entry point for the builder docker container.
+shopt -s nullglob
 
 _error='\e[0;31mERROR\e[0m'
 _utils_dir=/opt/veraison/utils
@@ -14,13 +15,13 @@ function stores() {
 
     echo "TRUST ANCHORS:"
     echo "--------------"
-    sqlite3 $_stores_dir/ta-store.sql 'select distinct kv_val from kvstore' | jq $query
+    sqlite3 $_stores_dir/ta-store.sql 'select distinct kv_val from kvstore' | jq "$query"
 
     echo ""
 
     echo "ENDORSEMENTS:"
     echo "-------------"
-    sqlite3 $_stores_dir/en-store.sql 'select distinct kv_val from kvstore' | jq $query
+    sqlite3 $_stores_dir/en-store.sql 'select distinct kv_val from kvstore' | jq "$query"
 
     echo ""
 }
@@ -32,41 +33,41 @@ function clear_stores() {
 }
 
 function logs() {
-    local dest="$@"
+    local dest="$*"
     if [[ -f $dest ]]; then
         echo -e "$_error: '$dest' is a file; must specify a directory."
     fi
 
-    mkdir -p $dest
-    cp $_logs_dir/* $dest/
+    mkdir -p "$dest"
+    cp $_logs_dir/* "$dest/"
 }
 
 function clear_logs() {
-    for f in $(ls $_logs_dir); do
-        echo "" > $_logs_dir/$f
+    for f in "$_logs_dir"/*; do
+        echo "" > "$_logs_dir/$f"
     done
 }
 
 function cocli() {
-    local cmd="$_utils_dir/cocli $@"
+    local cmd="$_utils_dir/cocli $*"
     /bin/bash -c "$cmd"
 }
 
 function evcli() {
-    local cmd="$_utils_dir/evcli $@"
+    local cmd="$_utils_dir/evcli $*"
     /bin/bash -c "$cmd"
 }
 
 function pocli() {
-    local cmd="$_utils_dir/pocli $@"
+    local cmd="$_utils_dir/pocli $*"
     /bin/bash -c "$cmd"
 }
 
 function _check_is_mount_point() {
     local -a expected=$1
-    local mounts=$(df | tail -n +2 | tr -s ' '  | cut -d' ' -f6)
+    local -r mounts=$(df | tail -n +2 | tr -s ' '  | cut -d' ' -f6)
 
-    if [[ "$(echo $mounts | grep $expected)" == "" ]]; then
+    if [[ "$(echo "$mounts" | grep "$expected")" == "" ]]; then
         echo -e "$_error: '$expected' must be mounted from the host (-v missing from docker run invocation?)."
         exit 1
     fi
