@@ -17,10 +17,9 @@ configuration:
 There are two config files in this directory:
 
 - `config.yaml` is designed to be used when running `vts-service` directly form
-  this directory. It assumes that stores have been initialized under `/tmp`
-  (running vis `run-vts` script, also in this directory, ensures that). Since
-  `config.yaml` is the name the service looks for when loading config, there is
-  no need to explicitly specify this file when running from this directory.
+  this directory. This is no longer supported (use the [native
+  deployment](../../../deployments/native/README.md) instead). It is kept for
+  illustrative purposes only.
 - `config-docker.yaml` this is the file that is designed to be used when running
   inside the debug docker container. See [debugging docker
   deployment](/deployments/docker/README.md#Debugging). The `debug` command
