@@ -9,7 +9,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: "application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"'
     response:
       status_code: 401
 

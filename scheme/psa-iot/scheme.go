@@ -3,15 +3,16 @@
 package psa_iot
 
 const (
-	SchemeName              = "PSA_IOT"
-	CCAEndorsementMediaType = "application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1"
+	SchemeName = "PSA_IOT"
 )
 
 var EndorsementMediaTypes = []string{
-	"application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1",
+	`application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"`,
 }
 
 var EvidenceMediaTypes = []string{
 	"application/psa-attestation-token",
-	"application/eat-cwt; profile=http://arm.com/psa/2.0.0",
+	`application/eat-cwt; profile="http://arm.com/psa/2.0.0"`,
+	`application/eat+cwt; eat_profile="tag:psacertified.org,2023:psa#tfm"`,
+	`application/eat+cwt; eat_profile="tag:psacertified.org,2019:psa#legacy"`,
 }

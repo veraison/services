@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/services/api"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/trustedservices"
@@ -39,9 +40,9 @@ func (o NoConnectionError) Unwrap() error {
 }
 
 type GRPC struct {
-	ServerAddress     string
-	Credentials       credentials.TransportCredentials
-	Connection        *grpc.ClientConn
+	ServerAddress string
+	Credentials   credentials.TransportCredentials
+	Connection    *grpc.ClientConn
 }
 
 // NewGRPC instantiate a new gRPC VTS client with default settings
@@ -117,7 +118,12 @@ func (o *GRPC) GetSupportedVerificationMediaTypes(
 		return nil, ErrNoClient
 	}
 
-	return c.GetSupportedVerificationMediaTypes(ctx, in, opts...)
+	mts, err := c.GetSupportedVerificationMediaTypes(ctx, in, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return normalizeMediaTypeList(mts), nil
 }
 
 func (o *GRPC) GetSupportedProvisioningMediaTypes(
@@ -132,14 +138,19 @@ func (o *GRPC) GetSupportedProvisioningMediaTypes(
 		return nil, ErrNoClient
 	}
 
-	return c.GetSupportedProvisioningMediaTypes(ctx, in, opts...)
+	mts, err := c.GetSupportedProvisioningMediaTypes(ctx, in, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return normalizeMediaTypeList(mts), nil
 }
 
 func (o *GRPC) SubmitEndorsements(
 	ctx context.Context, in *proto.SubmitEndorsementsRequest, opts ...grpc.CallOption,
 ) (*proto.SubmitEndorsementsResponse, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, NewNoConnectionError("GetSupportedVerificationMediaTypes", err)
+		return nil, NewNoConnectionError("SubmitEndorsements", err)
 	}
 	c := o.GetProvisionerClient()
 	if c == nil {
@@ -182,4 +193,19 @@ func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, op
 	}
 
 	return c.GetEARSigningPublicKey(ctx, in, opts...)
+}
+
+func normalizeMediaTypeList(mts *proto.MediaTypeList) *proto.MediaTypeList {
+	var nmts []string // nolint:prealloc
+
+	for _, mt := range mts.GetMediaTypes() {
+		nmt, err := api.NormalizeMediaType(mt)
+		if err != nil {
+			// skip invalid media type
+			continue
+		}
+		nmts = append(nmts, nmt)
+	}
+
+	return &proto.MediaTypeList{MediaTypes: nmts}
 }
