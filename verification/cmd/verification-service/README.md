@@ -26,7 +26,10 @@ The verifier currently doesn't support any configuration.
 There are two config files in this directory:
 
 - `config.yaml` is designed to be used when running `verification-service`
-  directly from this directory on the build host (i.e. outside docker).
+  directly from this directory on the build host (i.e. outside docker). This is
+  no longer supported (use the [native
+  deployment](../../../deployments/native/README.md) instead). It is kept for
+  illustrative purposes only.
 - `config-docker.yaml` this is the file that is designed to be used when running
   inside the debug docker container. See [debugging docker
   deployment](/deployments/docker/README.md#Debugging). The `debug` command
