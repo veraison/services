@@ -34,7 +34,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/ssd/1'
+        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"'
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-platform-{endorsements}.cbor
     response:
@@ -45,7 +45,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile=http://arm.com/cca/realm/1'
+        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/realm/1"'
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-realm-{endorsements}.cbor
     response:

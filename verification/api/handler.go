@@ -342,10 +342,12 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 
 	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
 	if err != nil {
-		ReportProblem(c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("could not check media type with verifier: %v", err),
-		)
+		status := http.StatusInternalServerError
+		if errors.Unwrap(err) == verifier.ErrInputParam {
+			status = http.StatusBadRequest
+		}
+
+		ReportProblem(c, status, fmt.Sprintf("could not check media type with verifier: %v", err))
 		return
 	}
 

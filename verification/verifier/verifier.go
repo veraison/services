@@ -4,12 +4,17 @@ package verifier
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/services/api"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vtsclient"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+var ErrInputParam = errors.New("invalid input parameter")
 
 type Verifier struct {
 	VTSClient vtsclient.IVTSClient
@@ -26,6 +31,11 @@ func (o *Verifier) GetVTSState() (*proto.ServiceState, error) {
 }
 
 func (o *Verifier) IsSupportedMediaType(mt string) (bool, error) {
+	mt, err := api.NormalizeMediaType(mt)
+	if err != nil {
+		return false, fmt.Errorf("%w: validation failed for %s (%v)", ErrInputParam, mt, err)
+	}
+
 	mts, err := o.VTSClient.GetSupportedVerificationMediaTypes(
 		context.Background(),
 		&emptypb.Empty{},

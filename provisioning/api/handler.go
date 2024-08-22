@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/provisioning/provisioner"
+	"github.com/veraison/services/verification/verifier"
 	"go.uber.org/zap"
 )
 
@@ -68,10 +69,12 @@ func (o *Handler) Submit(c *gin.Context) {
 
 	isSupported, err := o.Provisioner.IsSupportedMediaType(mediaType)
 	if err != nil {
-		ReportProblem(c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("could not check media type with verifier: %v", err),
-		)
+		status := http.StatusInternalServerError
+		if errors.Unwrap(err) == verifier.ErrInputParam {
+			status = http.StatusBadRequest
+		}
+
+		ReportProblem(c, status, fmt.Sprintf("could not check media type with verifier: %v", err))
 		return
 	}
 
