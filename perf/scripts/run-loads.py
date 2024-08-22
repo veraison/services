@@ -38,7 +38,7 @@ class ProvisioningUser(HttpUser):
         self.client.post(
             "/endorsement-provisioning/v1/submit",
             headers={
-                'Content-Type': 'application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1',
+                'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
             },
             data=self.provisioning_data,
         )
@@ -63,7 +63,7 @@ class VerificationUser(HttpUser):
         requests.post(
             ProvisioningUser.host + "/endorsement-provisioning/v1/submit",
             headers={
-                'Content-Type': 'application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1',
+                'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
             },
             data=provisioning_data,
         )
