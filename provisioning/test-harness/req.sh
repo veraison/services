@@ -13,10 +13,10 @@ CORIM_FILE=corim-${T}-${B}.cbor
 
 if [ "${T}" == "psa" ]
 then
-	CONTENT_TYPE="Content-Type: application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1"
+	CONTENT_TYPE='Content-Type: application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"'
 elif [ "${T}" == "tpm-enacttrust" ];
 then
-	CONTENT_TYPE="Content-Type: application/corim-unsigned+cbor; profile=http://enacttrust.com/veraison/1.0.0"
+	CONTENT_TYPE='Content-Type: application/corim-unsigned+cbor; profile="http://enacttrust.com/veraison/1.0.0"'
 elif [ "${T}" == "parsec-tpm" ]
 then
 	CONTENT_TYPE='Content-Type: application/corim-unsigned+cbor; profile="tag:github.com/parallaxsecond,2023-03-03:tpm"'
@@ -26,8 +26,9 @@ else
 fi
 
 curl --include \
+	--insecure \
 	--data-binary "@${CORIM_FILE}" \
 	--header "${CONTENT_TYPE}" \
 	--header "Accept: application/vnd.veraison.provisioning-session+json" \
 	--request POST \
-	http://localhost:8888/endorsement-provisioning/v1/submit 
+	https://localhost:8888/endorsement-provisioning/v1/submit

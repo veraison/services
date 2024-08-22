@@ -378,7 +378,7 @@ The CoRIM file can be submitted to Veraison using the following command:
 cocli corim submit \
      --corim-file=tmp/psa-corim.cbor \
      --api-server=http://provisioning-service:8888/endorsement-provisioning/v1/submit \
-     "--media-type='application/corim-unsigned+cbor; profile=http://arm.com/psa/iot/1'"
+     --media-type='application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"'
 ~~~
 
 By dumping the Veraison database with the "veraison stores" command we can see the correctly entered entries:
@@ -587,8 +587,8 @@ The result may be something like this:
     "y": "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4"
   },
   "media-types": [
-    "application/eat-collection; profile=http://arm.com/CCA-SSD/1.0.0",
-    "application/eat-cwt; profile=http://arm.com/psa/2.0.0",
+    "application/eat-collection; profile=\"http://arm.com/CCA-SSD/1.0.0\"",
+    "application/eat-cwt; profile=\"http://arm.com/psa/2.0.0\"",
     "application/pem-certificate-chain",
     "application/vnd.enacttrust.tpm-evidence",
     "application/vnd.parallaxsecond.key-attestation.cca",
