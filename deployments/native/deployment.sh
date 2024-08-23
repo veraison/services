@@ -212,7 +212,7 @@ function init_sqlite_stores() {
 
 function init_clients() {
 	_init_client evcli github.com/veraison/evcli/v2@40dfa3d3
-	_init_client cocli github.com/veraison/corim/cocli@2583a736
+	_init_client cocli github.com/veraison/corim/cocli@be7ec482
 	_init_client pocli github.com/veraison/pocli@2fa24ea3
 }
 
