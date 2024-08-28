@@ -182,8 +182,17 @@ func MatchPlatformConfig(scheme string, evidence psatoken.IClaims, endorsements 
 	if err != nil {
 		return false
 	}
-	if len(endorsements) > 1 {
-		log.Errorf("got %d CCA configuration endorsements, want 1", len(endorsements))
+
+	endorsementsLen := len(endorsements)
+
+	switch endorsementsLen {
+	case 0:
+		log.Debugf("got no CCA configuration endorsement, accepting unconditionally")
+		return true
+	case 1:
+		break
+	default:
+		log.Errorf("got %d CCA configuration endorsements, want 1", endorsementsLen)
 		return false
 	}
 
