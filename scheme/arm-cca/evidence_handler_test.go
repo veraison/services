@@ -102,10 +102,9 @@ func Test_AppraiseEvidence_Realm(t *testing.T) { // nolint: dupl
 		{
 			desc:           "No realm endorsements",
 			input:          "test/realm/no-realm-endorsements.json",
-			expectedStatus: ear.TrustTierWarning,
-			expectedExec:   ear.UnrecognizedRuntimeClaim,
+			expectedStatus: ear.TrustTierNone,
+			expectedExec:   ear.NoClaim,
 		},
-
 		{
 			desc:           "No matching rim measurements",
 			input:          "test/realm/rim-mismatch-endorsements.json",

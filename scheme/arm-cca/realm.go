@@ -35,10 +35,16 @@ func realmAppraisal(
 	// If crypto verification (including chaining) completes correctly,
 	// we can safely assume the Realm instance to be trustworthy
 	trustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
-	trustVector.Executables = ear.UnrecognizedRuntimeClaim
+	// By default, make no claims with regard to realm executables (i.e., RIM,
+	// PV and REMs).  This is to support a platform-only CCA verifier.
+	// If we have been provisioned with realm executable reference values, they
+	// will be checked in the loop below and the trust vector updated accordingly.
+	trustVector.Executables = ear.NoClaim
 
+	partial := true
 	for _, endorsement := range realmEndorsements {
 		if matchRim(claims, &endorsement) {
+			partial = false
 			err := matchRpv(claims, &endorsement)
 			switch err {
 			// Note, If an Endorser does not use RPV it indicates, one Realm per RIM, which is a match
@@ -74,6 +80,11 @@ func realmAppraisal(
 	}
 
 	appraisal.UpdateStatusFromTrustVector()
+	// This is a kludge to work around EAR inability to express "partial" verification semantics.
+	if *appraisal.Status == ear.TrustTierAffirming && partial {
+		noClaimStatus := ear.TrustTierNone
+		appraisal.Status = &noClaimStatus
+	}
 	appraisal.VeraisonAnnotatedEvidence = &claimsMap
 
 	return &appraisal, nil
