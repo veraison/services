@@ -6,8 +6,8 @@ package arm_cca
 import (
 	"fmt"
 
+	"github.com/veraison/ccatoken/platform"
 	"github.com/veraison/ear"
-	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/scheme/common/arm"
@@ -17,7 +17,7 @@ func platformAppraisal(
 	claimsMap map[string]interface{},
 	endorsements []handler.Endorsement,
 ) (*ear.Appraisal, error) {
-	claims, err := common.MapToClaims(claimsMap)
+	claims, err := common.MapToCCAPlatformClaims(claimsMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get claims from platform claims map: %w", err)
 	}
@@ -31,9 +31,9 @@ func platformAppraisal(
 		return nil, handler.BadEvidence(err)
 	}
 
-	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)
-	if lifeCycle == psatoken.CcaStateSecured ||
-		lifeCycle == psatoken.CcaStateNonCcaPlatformDebug {
+	lifeCycle := platform.LifeCycleToState(rawLifeCycle)
+	if lifeCycle == platform.StateSecured ||
+		lifeCycle == platform.StateNonCCAPlatformDebug {
 		trustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 		trustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
 		trustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim

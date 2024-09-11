@@ -10,15 +10,41 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/veraison/ccatoken/platform"
+	"github.com/veraison/ccatoken/realm"
 	"github.com/veraison/psatoken"
 )
 
+type CcaPlatformWrapper struct {
+	C platform.IClaims
+}
+
+func (o CcaPlatformWrapper) MarshalJSON() ([]byte, error) {
+	return platform.ValidateAndEncodeClaimsToJSON(o.C)
+}
+
+type CcaRealmWrapper struct {
+	C realm.IClaims
+}
+
+func (o CcaRealmWrapper) MarshalJSON() ([]byte, error) {
+	return realm.ValidateAndEncodeClaimsToJSON(o.C)
+}
+
+type PsaPlatformWrapper struct {
+	C psatoken.IClaims
+}
+
+func (o PsaPlatformWrapper) MarshalJSON() ([]byte, error) {
+	return psatoken.ValidateAndEncodeClaimsToJSON(o.C)
+}
+
 type ClaimMapper interface {
-	ToJSON() ([]byte, error)
+	MarshalJSON() ([]byte, error)
 }
 
 func ClaimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
-	data, err := mapper.ToJSON()
+	data, err := mapper.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -29,13 +55,22 @@ func ClaimsToMap(mapper ClaimMapper) (map[string]interface{}, error) {
 	return out, err
 }
 
-func MapToClaims(in map[string]interface{}) (psatoken.IClaims, error) {
+func MapToPSAClaims(in map[string]interface{}) (psatoken.IClaims, error) {
 	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
 
-	return psatoken.DecodeJSONClaims(data)
+	return psatoken.DecodeAndValidateClaimsFromJSON(data)
+}
+
+func MapToCCAPlatformClaims(in map[string]interface{}) (platform.IClaims, error) {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	return platform.DecodeAndValidateClaimsFromJSON(data)
 }
 
 func GetImplID(scheme string, attr json.RawMessage) (string, error) {

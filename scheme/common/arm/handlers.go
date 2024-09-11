@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/veraison/ccatoken/platform"
 	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
@@ -63,7 +64,9 @@ func GetPlatformReferenceIDs(
 	tenantID string,
 	claims map[string]interface{},
 ) ([]string, error) {
-	platformClaims, err := common.MapToClaims(claims)
+	// Using the PSA specialisation here is ok because Implementation ID is
+	// mandatory and shared by both PSA and CCA platform.
+	platformClaims, err := common.MapToPSAClaims(claims)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +108,21 @@ func GetTrustAnchorID(scheme string, tenantID string, claims psatoken.IClaims) (
 func MatchSoftware(scheme string, evidence psatoken.IClaims, endorsements []handler.Endorsement) bool {
 	var attr SwAttr
 
-	evidenceComponents := make(map[string]psatoken.SwComponent)
+	evidenceComponents := make(map[string]psatoken.ISwComponent)
 	swComps, err := evidence.GetSoftwareComponents()
 	if err != nil {
 		return false
 	}
 	for _, c := range swComps {
-		key := base64.StdEncoding.EncodeToString(*c.MeasurementValue) + (*c.MeasurementType)
+		mval, err := c.GetMeasurementValue()
+		if err != nil {
+			return false
+		}
+		mtyp, err := c.GetMeasurementType()
+		if err != nil {
+			return false
+		}
+		key := base64.StdEncoding.EncodeToString(mval) + mtyp
 		evidenceComponents[key] = c
 	}
 	matched := false
@@ -131,10 +142,14 @@ func MatchSoftware(scheme string, evidence psatoken.IClaims, endorsements []hand
 			break
 		}
 
-		log.Debugf("MeasurementType Evidence: %s, Endorsement: %s", *evComp.MeasurementType, attr.MeasurementType)
-		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == *evComp.MeasurementType
-		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, *evComp.SignerID)
-		versionMatched := attr.Version == "" || attr.Version == *evComp.Version
+		evCompMeasurementType, _ := evComp.GetMeasurementType()
+		evCompSignerID, _ := evComp.GetSignerID()
+		evCompVersion, _ := evComp.GetVersion()
+
+		log.Debugf("MeasurementType Evidence: %s, Endorsement: %s", evCompMeasurementType, attr.MeasurementType)
+		typeMatched := attr.MeasurementType == "" || attr.MeasurementType == evCompMeasurementType
+		sigMatched := attr.SignerID == nil || bytes.Equal(attr.SignerID, evCompSignerID)
+		versionMatched := attr.Version == "" || attr.Version == evCompVersion
 
 		if !(typeMatched && sigMatched && versionMatched) {
 			matched = false
@@ -176,7 +191,7 @@ func GetPublicKeyFromTA(scheme string, trustAnchor string) (crypto.PublicKey, er
 	return pk, nil
 }
 
-func MatchPlatformConfig(scheme string, evidence psatoken.IClaims, endorsements []handler.Endorsement) bool {
+func MatchPlatformConfig(scheme string, evidence platform.IClaims, endorsements []handler.Endorsement) bool {
 	var attr CcaPlatformCfg
 	pfConfig, err := evidence.GetConfig()
 	if err != nil {
