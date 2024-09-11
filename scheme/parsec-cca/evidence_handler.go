@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
+	cca_platform "github.com/veraison/ccatoken/platform"
 	"github.com/veraison/ear"
 	"github.com/veraison/go-cose"
 	parsec_cca "github.com/veraison/parsec/cca"
-	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/proto"
@@ -61,12 +61,13 @@ func (s EvidenceHandler) ExtractClaims(
 	kat["akpub"] = base64.StdEncoding.EncodeToString(ck)
 
 	claimsSet["kat"] = kat
-	pmap, err := common.ClaimsToMap(evidence.Pat.PlatformClaims)
+
+	pmap, err := common.ClaimsToMap(common.CcaPlatformWrapper{evidence.Pat.PlatformClaims}) // nolint:govet
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 	claimsSet["cca.platform"] = pmap
-	rmap, err := common.ClaimsToMap(evidence.Pat.RealmClaims)
+	rmap, err := common.ClaimsToMap(common.CcaRealmWrapper{evidence.Pat.RealmClaims}) // nolint:govet
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
@@ -162,7 +163,7 @@ func populateAttestationResult(
 		return handler.BadEvidence(errors.New("no cca platform in the evidence"))
 	}
 	pmap := cp.(map[string]interface{})
-	claims, err := common.MapToClaims(pmap)
+	claims, err := common.MapToCCAPlatformClaims(pmap)
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
@@ -172,9 +173,9 @@ func populateAttestationResult(
 		return handler.BadEvidence(err)
 	}
 
-	lifeCycle := psatoken.CcaLifeCycleToState(rawLifeCycle)
-	if lifeCycle == psatoken.CcaStateSecured ||
-		lifeCycle == psatoken.CcaStateNonCcaPlatformDebug {
+	lifeCycle := cca_platform.LifeCycleToState(rawLifeCycle)
+	if lifeCycle == cca_platform.StateSecured ||
+		lifeCycle == cca_platform.StateNonCCAPlatformDebug {
 		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
 		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim

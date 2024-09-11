@@ -35,13 +35,13 @@ func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
 ) (map[string]interface{}, error) {
-	var psaToken psatoken.Evidence
+	psaToken, err := psatoken.DecodeAndValidateEvidenceFromCOSE(token.Data)
 
-	if err := psaToken.FromCOSE(token.Data); err != nil {
+	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	claimsSet, err := common.ClaimsToMap(psaToken.Claims)
+	claimsSet, err := common.ClaimsToMap(common.PsaPlatformWrapper{psaToken.Claims}) // nolint:govet
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
@@ -54,11 +54,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	trustAnchors []string,
 	endorsementsStrings []string,
 ) error {
-	var (
-		psaToken psatoken.Evidence
-	)
-
-	if err := psaToken.FromCOSE(token.Data); err != nil {
+	psaToken, err := psatoken.DecodeAndValidateEvidenceFromCOSE(token.Data)
+	if err != nil {
 		return handler.BadEvidence(err)
 	}
 
@@ -113,7 +110,7 @@ func populateAttestationResult(
 	evidence map[string]interface{},
 	endorsements []handler.Endorsement,
 ) error {
-	claims, err := common.MapToClaims(evidence)
+	claims, err := common.MapToPSAClaims(evidence)
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
@@ -129,8 +126,8 @@ func populateAttestationResult(
 		return handler.BadEvidence(err)
 	}
 
-	lifeCycle := psatoken.PsaLifeCycleToState(rawLifeCycle)
-	if lifeCycle == psatoken.PsaStateSecured || lifeCycle == psatoken.PsaStateNonPsaRotDebug {
+	lifeCycle := psatoken.LifeCycleToState(rawLifeCycle)
+	if lifeCycle == psatoken.StateSecured || lifeCycle == psatoken.StateNonPSAROTDebug {
 		appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 		appraisal.TrustVector.RuntimeOpaque = ear.ApprovedRuntimeClaim
 		appraisal.TrustVector.StorageOpaque = ear.HwKeysEncryptedSecretsClaim

@@ -31,14 +31,14 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tbaehler/gin-keycloak v1.6.1
-	github.com/veraison/ccatoken v1.1.0
+	github.com/veraison/ccatoken v1.3.1
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.3-0.20240814105452-be7ec4829479
+	github.com/veraison/corim v1.1.3-0.20240911154934-4f141ee6d1e7
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
-	github.com/veraison/parsec v0.1.1-0.20230915122508-f31e6c9be40e
-	github.com/veraison/psatoken v1.2.0
+	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
+	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.64.0
@@ -101,7 +101,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.6 // indirect
-	github.com/veraison/go-cose v1.1.1-0.20230825153510-da0f9a62ade7
+	github.com/veraison/go-cose v1.3.0-rc.1
 	github.com/veraison/swid v1.1.1-0.20230911094910-8ffdd07a22ca
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

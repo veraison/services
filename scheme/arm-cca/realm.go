@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/veraison/ccatoken"
+	ccatokenrealm "github.com/veraison/ccatoken/realm"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
@@ -79,7 +79,7 @@ func realmAppraisal(
 	return &appraisal, nil
 }
 
-func matchRim(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
+func matchRim(claims ccatokenrealm.IClaims, endorsement *handler.Endorsement) bool {
 	// get RIM Claim from Evidence Claims
 	rimClaim, err := claims.GetInitialMeasurement()
 	if err != nil {
@@ -104,7 +104,7 @@ func matchRim(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
 	return true
 }
 
-func matchRpv(claims ccatoken.IClaims, endorsement *handler.Endorsement) error {
+func matchRpv(claims ccatokenrealm.IClaims, endorsement *handler.Endorsement) error {
 	pvClaim, err := claims.GetPersonalizationValue()
 	if err != nil {
 		return fmt.Errorf("matchRpv failed: %w", err)
@@ -122,7 +122,7 @@ func matchRpv(claims ccatoken.IClaims, endorsement *handler.Endorsement) error {
 	return nil
 }
 
-func matchREMs(claims ccatoken.IClaims, endorsement *handler.Endorsement) bool {
+func matchREMs(claims ccatokenrealm.IClaims, endorsement *handler.Endorsement) bool {
 	remMatch := false
 	remsClaim, err := claims.GetExtensibleMeasurements()
 	if err != nil {

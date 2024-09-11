@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/veraison/ccatoken"
+	"github.com/veraison/ccatoken/realm"
 	"github.com/veraison/services/log"
 )
 
@@ -72,15 +72,17 @@ func GetREMs(attr json.RawMessage) ([][]byte, error) {
 	return rems, nil
 }
 
-func MapToRealmClaims(in map[string]interface{}) (ccatoken.IClaims, error) {
-	realmClaims := &ccatoken.RealmClaims{}
+func MapToRealmClaims(in map[string]interface{}) (realm.IClaims, error) {
 	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	if err := realmClaims.FromJSON(data); err != nil {
+
+	realmClaims, err := realm.DecodeClaimsFromJSON(data)
+	if err != nil {
 		return nil, err
 	}
+
 	return realmClaims, nil
 }
 

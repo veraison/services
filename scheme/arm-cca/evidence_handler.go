@@ -36,20 +36,18 @@ func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
 ) (map[string]interface{}, error) {
-
-	var ccaToken ccatoken.Evidence
-
-	if err := ccaToken.FromCBOR(token.Data); err != nil {
+	ccaToken, err := ccatoken.DecodeAndValidateEvidenceFromCBOR(token.Data)
+	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	platformClaimsSet, err := common.ClaimsToMap(ccaToken.PlatformClaims)
+	platformClaimsSet, err := common.ClaimsToMap(common.CcaPlatformWrapper{ccaToken.PlatformClaims}) // nolint:govet
 	if err != nil {
 		return nil, handler.BadEvidence(fmt.Errorf(
 			"could not convert platform claims: %w", err))
 	}
 
-	realmClaimsSet, err := common.ClaimsToMap(ccaToken.RealmClaims)
+	realmClaimsSet, err := common.ClaimsToMap(common.CcaRealmWrapper{ccaToken.RealmClaims}) // nolint:govet
 	if err != nil {
 		return nil, handler.BadEvidence(fmt.Errorf(
 			"could not convert realm claims: %w", err))
@@ -72,11 +70,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	trustAnchors []string,
 	endorsementsStrings []string,
 ) error {
-	var (
-		ccaToken ccatoken.Evidence
-	)
-
-	if err := ccaToken.FromCBOR(token.Data); err != nil {
+	ccaToken, err := ccatoken.DecodeAndValidateEvidenceFromCBOR(token.Data)
+	if err != nil {
 		return handler.BadEvidence(err)
 	}
 
