@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# VERAISON_BUILD_VERSION, if set, overrides version from Git
+if [[ "$VERAISON_BUILD_VERSION" != "" ]]; then
+	echo "$VERAISON_BUILD_VERSION"
+	exit
+fi
+
+# We want to be able to build Veraison from traballs of the source, so lack of
+# git should not prevent the build. If we cannot obtain the version from the
+# build, simply report it as uknown.
+if [[ "$(type -p git)" == "" ]]; then
+	echo "0.0.0-unknown"
+	exit
+fi
+
+git_version_tag=$(git tag | grep -E '^v[[:digit:]]' | tail -n1)
+git_commit="$(git rev-parse --revs-only --short HEAD)"
+
+echo "${git_version_tag#v}+${git_commit}"
