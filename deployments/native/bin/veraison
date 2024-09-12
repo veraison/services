@@ -13,8 +13,8 @@ _veraison_root=${VERAISON_ROOT}
 
 _bin_dir=${_veraison_root}/bin
 _config_dir=${_veraison_root}/config
-_certs_dir=${_veraison_root}/certs
-_signing_dir=${_veraison_root}/signing
+_certs_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/certs
+_signing_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/signing
 _stores_dir=${_veraison_root}/stores
 _systemd_dir=${_veraison_root}/systemd
 _launchd_dir=${_veraison_root}/launchd
@@ -29,9 +29,11 @@ _launchd_ns="com.veraison-project"
 function init_sqlite_stores() {
 	_check_installed sqlite3
 
+	local stores_dir=${1:-${_stores_dir}}
+
 	for t in en ta po; do
 		echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
-		    $_sqlite "${_stores_dir}/${t}-store.sql"
+		    $_sqlite "${stores_dir}/${t}-store.sql"
 	done
 }
 
@@ -632,10 +634,13 @@ function help() {
 	    sign attestation results. The key will be written to
 	    ${_signing_dir}/skey.jwk.
 
-	init-sqlite-stores
+	init-sqlite-stores [STORES_DIR]
 	    Initialize the sqlite3 stores for the endorsements, trust anchors, and
 	    policies. If the stores have already been initialized, this is a no-op,
-	    the existing data in the stores will not be touched.
+	    the existing data in the stores will not be touched. Stores will be
+	    initialized within the deployment's stores directory, however, an
+	    alternative location may be specified with STORES_DIR (note: this
+	    will not be used by the deployment).
 
 	STATE MANAGEMENT COMMANDS:
 
@@ -852,7 +857,7 @@ case $command in
 		generate_signing_key "$_force" "$_signing_dir/skey.jwk"
 		;;
 	init-sqlite-stores)
-		init_sqlite_stores
+		init_sqlite_stores "$1"
 		;;
 	start-tmux)
 		create_tmux_session "$1"
