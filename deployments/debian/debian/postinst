@@ -1,0 +1,26 @@
+#!/bin/sh
+
+if [ "$1" = "configure" ]; then
+	[ -z "$VERAISON_USER" ] && VERAISON_USER=veraison
+	[ -z "$VERAISON_GROUP" ] && VERAISON_GROUP=veraison
+
+	if [ ! "$(getent group "$VERAISON_GROUP")" ]; then
+		groupadd --system "$VERAISON_GROUP"
+	else
+		echo "Group $VERAISON_GROUP already exists."
+	fi
+
+	if [ ! "$(getent passwd setrofim)" ]; then
+		useradd --system --gid "$VERAISON_GROUP" --no-create-home \
+			--shell /bin/false "$VERAISON_USER"
+	else
+		echo "User $VERAISON_USER already exists."
+	fi
+
+	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/logs
+	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/signing
+	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/certs
+	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/stores
+
+	/opt/veraison/bin/veraison -s start-services
+fi

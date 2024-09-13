@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ "$1" = "remove" ]; then
+	[ -z "$VERAISON_USER" ] && VERAISON_USER=veraison
+	[ -z "$VERAISON_GROUP" ] && VERAISON_GROUP=veraison
+
+	/opt/veraison/bin/veraison -s stop-services
+	/opt/veraison/bin/veraison -s disable-services
+
+	rm -rf /opt/veraison/logs/*
+
+	userdel "$VERAISON_USER"
+
+	if [ "$(getent group "$VERAISON_GROUP")" ]; then
+		groupdel "$VERAISON_GROUP"
+	fi
+fi
