@@ -6,7 +6,7 @@ if [[ "$VERAISON_BUILD_VERSION" != "" ]]; then
 	exit
 fi
 
-# We want to be able to build Veraison from traballs of the source, so lack of
+# We want to be able to build Veraison from tarballs of the source, so lack of
 # git should not prevent the build. If we cannot obtain the version from the
 # build, simply report it as uknown.
 if [[ "$(type -p git)" == "" ]]; then

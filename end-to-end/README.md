@@ -4,7 +4,12 @@ All the instructions on this page refer to the Docker-based deployment. To use
 the native deployment, just substitute "docker" with "native" in all the
 commands given below.  For example, `make native-deploy` instead of `make
 docker-deploy`, and `./end-to-end-native provision` instead of `./end-to-end-docker
-provision`
+provision`.
+
+`./end-to-end-aws` can be used with `aws` deployment in a similar manner --
+just modify the suffix to "-aws" in the end-to-end script calls below. For the
+initial steps of creating the deployment, please refer to [`aws` deployment
+README](../deployments/aws/README.md)
 
 ## Prerequisites
 

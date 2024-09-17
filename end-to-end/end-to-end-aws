@@ -1,0 +1,152 @@
+#!/bin/bash
+# Copyright 2024 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+
+SCHEME=${SCHEME:-psa}
+CONFIG_DIR=/tmp/veraison-aws-client-configs
+
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+source "${THIS_DIR}/../deployments/aws/env/env.bash"
+
+veraison --quiet --deployment-name "${VERAISON_AWS_DEPLOYMENT}" \
+        create-client-config --output-dir "$CONFIG_DIR"
+
+function provision() {
+    case $SCHEME in
+        psa)
+            local corim_file=$THIS_DIR/input/psa-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=\"http://arm.com/psa/iot/1\""
+            ;;
+        cca)
+            local corim_file=$THIS_DIR/input/cca-endorsements.cbor
+            local media_type="application/corim-unsigned+cbor; profile=\"http://arm.com/cca/ssd/1\""
+            ;;
+        *)
+            echo "${_error}: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    cocli corim submit --config="${CONFIG_DIR}/cocli/config.yaml" \
+	    --corim-file="$corim_file" --media-type="$media_type"
+}
+
+function check() {
+    veraison --deployment-name "${VERAISON_AWS_DEPLOYMENT}" stores
+}
+
+function verify_as_attester() {
+    case $SCHEME in
+        psa)
+            local claims="$THIS_DIR/input/psa-claims-profile-2-without-nonce.json"
+            local key_args="--key=$THIS_DIR/input/ec-p256.jwk"
+            local nonce_args="--nonce-size=32"
+            ;;
+        cca)
+            local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
+            local key_args="--iak=$THIS_DIR/input/ec256.json --rak=$THIS_DIR/input/ec384.json"
+            local nonce_args=""
+            ;;
+        *)
+            echo "${_error}: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    evcli "$SCHEME" verify-as attester --config="${CONFIG_DIR}/evcli/config.yaml" \
+        --claims="$claims" $key_args $nonce_args
+}
+
+function verify_as_relying_party() {
+    case $SCHEME  in
+        psa)
+            local token=$THIS_DIR/input/psa-evidence.cbor
+            ;;
+        cca)
+            local token=$THIS_DIR/input/cca-evidence.cbor
+            ;;
+        *)
+            echo "${_error}: bad SCHEME: $SCHEME"
+            exit 1
+            ;;
+    esac
+
+    set -x
+    evcli "$SCHEME" verify-as relying-party --config="${CONFIG_DIR}/evcli/config.yaml" \
+        --token="$token"
+}
+
+function verify() {
+    as=$1
+
+    case $as in
+        attester | attest) verify_as_attester;;
+        rp | relying-party) verify_as_relying_party;;
+        *) echo "ERROR unexected \"as\": \"$as\"; should be either \"attester\" or \"rp\""
+    esac
+}
+
+function help() {
+cat <<'EOF'
+Usage: ./end-to-end-native [command]
+
+Command:
+
+  provision
+      Provision endorsements and trust anchors via the provisioning API.
+  check | check-stores
+      Check the contents of the endorsement and trust anchor stores.
+  verify [ attester | rp ]
+      Verify claims via verification API either as an attester or the relying party.
+
+EOF
+}
+
+function _check_scheme() {
+    case $SCHEME in
+        psa | cca)
+            ;;
+        *)
+            echo "${_error}: unknown SCHEME: '$SCHEME'; must be 'cca' or 'psa'"; exit 1
+            ;;
+    esac
+}
+
+function _check_installed() {
+    local what=$1
+
+    if [[ "$(type -p "$what")" == "" ]]; then
+            echo -e "$_error: $what executable must be installed to use this command."
+            exit 1
+    fi
+}
+
+_error='\e[0;31mERROR\e[0m'
+
+while getopts "hs:" opt; do
+    case "$opt" in
+        h) help; exit 0;;
+        s) SCHEME="$OPTARG";;
+        *) break;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+_check_scheme
+_check_installed cocli
+_check_installed evcli
+
+command=$1
+case $command in
+    help) help;;
+    provision) provision;;
+    check | check-stores) check;;
+    verify) verify "$2";;
+    *) echo "${_error}: unexpected command: \"$command\""; help;;
+esac
+# vim: set et sts=4 sw=4:

@@ -22,5 +22,7 @@ if [ "$1" = "configure" ]; then
 	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/certs
 	chown -R "$VERAISON_USER":"$VERAISON_GROUP" /opt/veraison/stores
 
+	chmod 0500 /opt/veraison/certs/*.key
+
 	/opt/veraison/bin/veraison -s start-services
 fi

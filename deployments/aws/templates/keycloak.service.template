@@ -1,0 +1,16 @@
+[Unit]
+Description=Keycloak Authentication server
+After=network.target
+
+[Service]
+Type=exec
+Environment="KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}" "KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}"
+WorkingDirectory=/opt/keycloak
+ExecStart=/opt/keycloak/bin/kc.sh start --optimized --import-realm --verbose 
+Restart=always
+User=keycloak
+
+[Install]
+WantedBy=default.target
+
+# vim: set ft=systemd:
