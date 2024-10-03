@@ -62,7 +62,7 @@ RUN go mod download &&\
     go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
     go install github.com/veraison/corim/cocli@be7ec482 &&\
     go install github.com/veraison/evcli/v2@86d12893 &&\
-    go install github.com/veraison/pocli@2fa24ea3 &&\
+    go install github.com/veraison/pocli@v0.2.0 &&\
     go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 
 ADD --chown=builder:builder builder-dispatcher .
