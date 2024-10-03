@@ -189,7 +189,7 @@ docker-clean:
 	@# ubuntu uses an older version of docker without -f option for network; hence the || : cludge
 	docker network rm $(VERAISON_NETWORK) || :
 	docker image rm -f veraison/builder veraison/keycloak veraison/vts veraison/provisioning \
-		veraison/verification veraison/manager
+		veraison/verification veraison/management veraison/manager
 	rm -rf  .built
 
 .PHONY: host-clean
@@ -241,6 +241,9 @@ typically don't need to be invoked directly:
 	                    create the above.
 	verification:       create the verification-service container.
 	verification-image: create the veraison/verification image used to
+	                    create the above.
+	management:         create the management-service container.
+	management-image:   create the veraison/management image used to
 	                    create the above.
 	prune:              prune intermediate docker images.
 endef
