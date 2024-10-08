@@ -29,18 +29,20 @@
             "model": "RoadRunner"
           }
         },
-        "measurement": {
-          "key": {
-            "type": "cca.platform-config-id",
-            "value": "any-label"
-          },
-          "value": {
-            "raw-value": {
-              "type": "bytes",
-              "value": "cmF3dmFsdWUKcmF3dmFsdWUK"
+        "measurements": [
+          {
+            "key": {
+              "type": "cca.platform-config-id",
+              "value": "any-label"
+            },
+            "value": {
+              "raw-value": {
+                "type": "bytes",
+                "value": "cmF3dmFsdWUKcmF3dmFsdWUK"
+              }
             }
           }
-        }
+        ]
       }
     ]
   }
