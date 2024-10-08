@@ -20,7 +20,7 @@ type CcaSsdExtractor struct {
 func (o CcaSsdExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorsement, error) {
 	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
 
-	for i, rv := range rvs.Values {
+	for _, rv := range rvs.Values {
 		var classAttrs platform.ClassAttributes
 		var refVal *handler.Endorsement
 		var err error
@@ -28,49 +28,50 @@ func (o CcaSsdExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.End
 		if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
 			return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 		}
+		for i, m := range rv.Measurements.Values {
+			if m.Key == nil {
+				return nil, fmt.Errorf("measurement key is not set at index %d ", i)
+			}
 
-		if rv.Measurement.Key == nil {
-			return nil, fmt.Errorf("measurement key is not present")
-		}
+			if !m.Key.IsSet() {
+				return nil, fmt.Errorf("measurement key is not set")
+			}
 
-		if !rv.Measurement.Key.IsSet() {
-			return nil, fmt.Errorf("measurement key is not set")
-		}
+			// Check which MKey is present and then decide which extractor to invoke
+			switch m.Key.Type() {
+			case comid.PSARefValIDType:
+				var swCompAttrs platform.SwCompAttributes
 
-		// Check which MKey is present and then decide which extractor to invoke
-		switch rv.Measurement.Key.Type() {
-		case comid.PSARefValIDType:
-			var swCompAttrs platform.SwCompAttributes
-
-			refVal, err = o.extractMeasurement(
-				&swCompAttrs,
-				rv.Measurement,
-				classAttrs,
-			)
-			if err != nil {
+				refVal, err = o.extractMeasurement(
+					&swCompAttrs,
+					m,
+					classAttrs,
+				)
+				if err != nil {
+					return nil, fmt.Errorf(
+						"unable to extract measurement at index %d, %w",
+						i,
+						err,
+					)
+				}
+			case comid.CCAPlatformConfigIDType:
+				var ccaPlatformConfigID CCAPlatformConfigID
+				refVal, err = o.extractMeasurement(
+					&ccaPlatformConfigID,
+					m,
+					classAttrs,
+				)
+				if err != nil {
+					return nil, fmt.Errorf("unable to extract measurement: %w", err)
+				}
+			default:
 				return nil, fmt.Errorf(
-					"unable to extract measurement at index %d, %w",
-					i,
-					err,
+					"unknown measurement key: %T",
+					reflect.TypeOf(m.Key),
 				)
 			}
-		case comid.CCAPlatformConfigIDType:
-			var ccaPlatformConfigID CCAPlatformConfigID
-			refVal, err = o.extractMeasurement(
-				&ccaPlatformConfigID,
-				rv.Measurement,
-				classAttrs,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("unable to extract measurement: %w", err)
-			}
-		default:
-			return nil, fmt.Errorf(
-				"unknown measurement key: %T",
-				reflect.TypeOf(rv.Measurement.Key),
-			)
+			refVals = append(refVals, refVal)
 		}
-		refVals = append(refVals, refVal)
 	}
 
 	if len(refVals) == 0 {

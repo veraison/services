@@ -22,28 +22,22 @@
             "value": "DD6661F0-0928-4401-966B-589EA74E3272"
           }
         },
-        "measurement": {
-          "value": {
-            "digests": [
-              "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
-            ]
+        "measurements": [
+	        {
+            "value": {
+              "digests": [
+                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+              ]
+            }
+          },
+          {
+            "value": {
+              "digests": [
+                "sha-256:AmOCmYm2/ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8="
+              ]
+            }
           }
-        }
-      },
-      {
-        "environment": {
-          "instance": {
-            "type": "uuid",
-            "value": "DD6661F0-0928-4401-966B-589EA74E3272"
-          }
-        },
-        "measurement": {
-          "value": {
-            "digests": [
-              "sha-256:AmOCmYm2/ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8="
-            ]
-          }
-        }
+        ]
       }
     ]
   }

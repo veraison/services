@@ -26,13 +26,15 @@
             "model": "RoadRunner"
           }
         },
-        "measurement": {
-          "value": {
-            "digests": [
-              "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
-            ]
+        "measurements": [
+          {
+            "value": {
+              "digests": [
+                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+              ]
+            }
           }
-        }
+        ]
       }
     ]
   }
