@@ -34,4 +34,4 @@ stages:
       status_code: 200
       json:
         status: failed
-        failure-reason: 'submit endorsement returned error: submit endorsements failed: RPC server returned error: plugin "unsigned-corim (TPM EnactTrust profile)" returned error: decoding failed for CoMID at index 0: error unmarshalling field "Triples": error unmarshalling field "AttestVerifKeys": cbor: cannot unmarshal map into Go struct field comid.KeyTriple.verification-keys of type comid.ICryptoKeyValue'
+        failure-reason: 'submit endorsement returned error: submit endorsements failed: RPC server returned error: plugin "unsigned-corim (TPM EnactTrust profile)" returned error: decoding failed for CoMID at index 0: error unmarshalling field "Triples": error unmarshalling field "AttestVerifKeys": cbor: cannot unmarshal map into Go struct field comid.AttestVerifKey.verification-keys of type comid.ICryptoKeyValue'

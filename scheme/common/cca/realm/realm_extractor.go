@@ -14,40 +14,31 @@ type RealmExtractor struct {
 	Scheme string
 }
 
-func (o RealmExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorsement, error) {
+func (o RealmExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
+	var classAttrs RealmClassAttributes
+	var instAttrs RealmInstanceAttributes
+
+	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
+		return nil, fmt.Errorf("could not extract Realm class attributes: %w", err)
+	}
+
+	if err := instAttrs.FromEnvironment(rv.Environment); err != nil {
+		return nil, fmt.Errorf("could not extract Realm instance attributes: %w", err)
+	}
+
 	// Measurements are encoded in a measurement-map of a CoMID
 	// reference-triple-record. For a Realm Instance, all the measurements
 	// which comprise both the "RIM" & "REM" measurements are carried in an
 	// integrity register
-	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
+	refVals := make([]*handler.Endorsement, 0, len(rv.Measurements))
 
-	for _, rv := range rvs.Values {
-		var classAttrs RealmClassAttributes
-		var instAttrs RealmInstanceAttributes
-		var refVal *handler.Endorsement
+	var refVal *handler.Endorsement
+	for _, m := range rv.Measurements {
 		var rAttr RealmAttributes
-
-		if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
-			return nil, fmt.Errorf(
-				"could not extract Realm class attributes: %w",
-				err,
-			)
+		if err := rAttr.FromMeasurement(m); err != nil {
+			return nil, fmt.Errorf("unable to extract realm reference attributes from measurement: %w", err)
 		}
-
-		if err := instAttrs.FromEnvironment(rv.Environment); err != nil {
-			return nil, fmt.Errorf(
-				"could not extract Realm instance attributes: %w",
-				err,
-			)
-		}
-
-		if err := rAttr.FromMeasurement(rv.Measurement); err != nil {
-			return nil, fmt.Errorf(
-				"unable to extract realm reference attributes from measurement: %w",
-				err,
-			)
-		}
-		refAttrs, err := makeRefValAttrs(&classAttrs, &rAttr)
+		refAttrs, err := makeRefValAttrs(&classAttrs, &instAttrs, &rAttr)
 		if err != nil {
 			return nil, fmt.Errorf("unable to make reference attributes: %w", err)
 		}
@@ -67,10 +58,9 @@ func (o RealmExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endo
 	return refVals, nil
 }
 
-func makeRefValAttrs(
-	cAttr *RealmClassAttributes,
-	rAttr *RealmAttributes,
-) (json.RawMessage, error) {
+func makeRefValAttrs(cAttr *RealmClassAttributes,
+	iAttr *RealmInstanceAttributes,
+	rAttr *RealmAttributes) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
 		"realm-initial-measurement": *rAttr.RIM,

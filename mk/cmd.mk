@@ -17,7 +17,7 @@ endif
 
 SCHEME_LOADER ?= plugins
 
-_MIN_GO_VERSION = 1.22
+_MIN_GO_VERSION = 1.19
 _GO_VERSION = $(shell go version | sed 's/^[^0-9]*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
 
 .PHONY: _check_version

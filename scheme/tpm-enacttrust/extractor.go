@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package tpm_enacttrust
 
@@ -19,23 +19,21 @@ func (o *Extractor) SetProfile(p string) {
 	o.Profile = p
 }
 
-func (o Extractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorsement, error) {
-	if len(rvs.Values) != 1 {
-		return nil, fmt.Errorf("expecting one measurement only")
-	}
-
-	rv := rvs.Values[0]
+func (o Extractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(rv.Environment); err != nil {
 		return nil, fmt.Errorf("could not extract instance attributes: %w", err)
 	}
 
+	if len(rv.Measurements) != 1 {
+		return nil, fmt.Errorf("expecting one measurement only")
+	}
 
 	var (
 		swComponents []*handler.Endorsement
 		swCompAttrs  SwCompAttributes
-		measurement  comid.Measurement = rv.Measurement
+		measurement  comid.Measurement = rv.Measurements[0]
 	)
 
 	if err := swCompAttrs.FromMeasurement(measurement); err != nil {
@@ -76,7 +74,7 @@ func makeSwAttrs(i InstanceAttributes, s SwCompAttributes) (json.RawMessage, err
 	return msg, nil
 }
 
-func (o Extractor) TaExtractor(avk comid.KeyTriple) (*handler.Endorsement, error) {
+func (o Extractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	var instanceAttrs InstanceAttributes
 
 	if err := instanceAttrs.FromEnvironment(avk.Environment); err != nil {

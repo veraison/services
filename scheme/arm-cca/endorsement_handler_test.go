@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/corim/comid"
 )
 
 func TestDecoder_GetAttestationScheme(t *testing.T) {
@@ -65,15 +66,16 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 }
 
 func TestDecoder_Decode_CcaSsdRefVal_OK(t *testing.T) {
-	tvs := [][]byte{
-		unsignedCorimCcaComidCcaRefValOne,
-		unsignedCorimCcaComidCcaRefValFour,
+	tvs := []string{
+		unsignedcorimCcacomidCcaRefValOne,
+		unsignedcorimCcacomidCcaRefValFour,
 	}
 
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		_, err := d.Decode(tv)
+		data := comid.MustHexDecode(t, tv)
+		_, err := d.Decode(data)
 		assert.NoError(t, err)
 	}
 }
@@ -81,38 +83,40 @@ func TestDecoder_Decode_CcaSsdRefVal_OK(t *testing.T) {
 func TestDecoder_Decode_CCaSsdRefVal_NOK(t *testing.T) {
 	tvs := []struct {
 		desc        string
-		input       []byte
+		input       string
 		expectedErr string
 	}{
 		{
 			desc:        "missing profile inside corim containing one CCA platform config measurement",
-			input:       unsignedCorimCcaNoProfileComidCcaRefValOne,
+			input:       unsignedcorimCcaNoProfilecomidCcaRefValOne,
 			expectedErr: "no profile information set in CoRIM",
 		},
 		{
 			desc:        "missing profile inside corim containing multiple reference value measurements",
-			input:       unsignedCorimCcaNoProfileComidCcaRefValFour,
+			input:       unsignedcorimCcaNoProfilecomidCcaRefValFour,
 			expectedErr: "no profile information set in CoRIM",
 		},
 	}
 
 	for _, tv := range tvs {
+		data := comid.MustHexDecode(t, tv.input)
 		d := &EndorsementHandler{}
-		_, err := d.Decode(tv.input)
+		_, err := d.Decode(data)
 		assert.EqualError(t, err, tv.expectedErr)
 	}
 }
 
 func TestDecoder_DecodeCcaRealm_OK(t *testing.T) {
-	tvs := [][]byte{
-		unsignedCorimCcaRealmComidCcaRealm,
-		unsignedCorimCcaRealmComidCcaRealmNoClass,
+	tvs := []string{
+		unsignedcorimCcaRealmcomidCcaRealm,
+		unsignedcorimCcaRealmcomidCcaRealmNoClass,
 	}
 
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		_, err := d.Decode(tv)
+		data := comid.MustHexDecode(t, tv)
+		_, err := d.Decode(data)
 		assert.NoError(t, err)
 	}
 }
@@ -120,31 +124,30 @@ func TestDecoder_DecodeCcaRealm_OK(t *testing.T) {
 func TestDecoder_DecodeCcaRealm_negative_tests(t *testing.T) {
 	tvs := []struct {
 		desc        string
-		input       []byte
+		input       string
 		expectedErr string
 	}{
 		{
 			desc:        "no realm instance identity in corim",
-			input:       unsignedCorimCcaRealmComidCcaRealmNoInstance,
+			input:       unsignedcorimCcaRealmcomidCcaRealmNoInstance,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm instance attributes: expecting instance in environment",
 		},
 		{
 			desc:        "invalid instance identity in corim",
-			input:       unsignedCorimCcaRealmComidCcaRealmInvalidInstance,
+			input:       unsignedcorimCcaRealmcomidCcaRealmInvalidInstance,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm instance attributes: expecting instance as bytes for CCA Realm",
 		},
 		{
 			desc:        "invalid class identity in corim",
-			input:       unsignedCorimCcaRealmComidCcaRealmInvalidClass,
+			input:       unsignedcorimCcaRealmcomidCcaRealmInvalidClass,
 			expectedErr: "bad software component in CoMID at index 0: could not extract Realm class attributes: could not extract uuid from class-id: class-id type is: *comid.TaggedImplID",
 		},
 	}
 
 	for _, tv := range tvs {
-		t.Run(tv.desc, func (t *testing.T) {
-			d := &EndorsementHandler{}
-			_, err := d.Decode(tv.input)
-			assert.EqualError(t, err, tv.expectedErr)
-		})
+		data := comid.MustHexDecode(t, tv.input)
+		d := &EndorsementHandler{}
+		_, err := d.Decode(data)
+		assert.EqualError(t, err, tv.expectedErr)
 	}
 }

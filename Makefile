@@ -34,22 +34,6 @@ IGNORE_COVERAGE += github.com/veraison/services/plugin/test
 # There is protobuf-generated stuff here, which skews coverage.
 IGNORE_COVERAGE += github.com/veraison/services/handler
 
-# Go 1.22 started reporting subpackages without any tests as having 0.0%
-# coverage. Previous version of go ignored them.
-#  See: https://go-review.googlesource.com/c/go/+/495447
-IGNORE_COVERAGE += github.com/veraison/services/builtin
-IGNORE_COVERAGE += github.com/veraison/services/management/api
-IGNORE_COVERAGE += github.com/veraison/services/management/cmd/management-service
-IGNORE_COVERAGE += github.com/veraison/services/provisioning/cmd/provisioning-service
-IGNORE_COVERAGE += github.com/veraison/services/provisioning/provisioner
-IGNORE_COVERAGE += github.com/veraison/services/scheme/common
-IGNORE_COVERAGE += github.com/veraison/services/scheme/common/arm
-IGNORE_COVERAGE += github.com/veraison/services/verification/cmd/verification-service
-IGNORE_COVERAGE += github.com/veraison/services/verification/verifier
-IGNORE_COVERAGE += github.com/veraison/services/vts/cmd/vts-service
-IGNORE_COVERAGE += github.com/veraison/services/vts/trustedservices
-IGNORE_COVERAGE += github.com/veraison/services/vtsclient
-
 include mk/cover.mk
 
 define __MAKEFILE_HELP

@@ -1,33 +1,50 @@
 #!/bin/bash
-# Copyright 2022-2024 Contributors to the Veraison project.
+# Copyright 2022-2023 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
 set -o pipefail
 
-THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-GEN_CORIM="$THIS_DIR/../../../common/scripts/gen-corim"
+# function generate_go_test_vector constructs CBOR test vector using
+# supplied comid and corim json template and saves them in a file
+# $1 file name for comid json template, example one of COMID_TEMPLATES
+# $2 file name for corim json template, example CORIM_CCA_TEMPLATE
+# $3 a qualifier for each cbor test vector name
+# $4 name of the file where the generated CBOR test vectors are aggregated
+generate_go_test_vector () {
+	echo "generating test vector using $1 $2"
+	cocli comid create -t $1.json
+	cocli corim create -m $1.cbor -t $2 -o corim$1.cbor
+	echo "// automatically generated from:" >> $4
+	echo "// $1.json and $2" >> $4
+	echo "var $3$1 = "'`' >> $4
+	cat corim$1.cbor | xxd -p >> $4
+	echo '`' >> $4
+}
 
-CORIM_TEMPLATE=corimMini
+CORIM_TEMPLATE="corimMini.json"
 
-COMID_TEMPLATES=(
-	ComidParsecTpmKeyGood
-	ComidParsecTpmKeyNoClass
-	ComidParsecTpmKeyNoClassId
-	ComidParsecTpmKeyNoInstance
-	ComidParsecTpmKeyUnknownClassIdType
-	ComidParsecTpmKeyUnknownInstanceType
-	ComidParsecTpmKeyManyKeys
-	ComidParsecTpmPcrsGood
-	ComidParsecTpmPcrsNoClass
-	ComidParsecTpmPcrsNoPCR
-	ComidParsecTpmPcrsUnknownPCRType
-	ComidParsecTpmPcrsNoDigests
-)
+COMID_TEMPLATES=
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyGood"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyNoClass"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyNoClassId"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyNoInstance"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyUnknownClassIdType"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyUnknownInstanceType"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmKeyManyKeys"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmPcrsGood"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmPcrsNoClass"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmPcrsNoPCR"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmPcrsUnknownPCRType"
+COMID_TEMPLATES="${COMID_TEMPLATES} ComidParsecTpmPcrsNoDigests"
 
-for comid in "${COMID_TEMPLATES[@]}"
+TV_DOT_GO=${TV_DOT_GO?must be set in the environment.}
+
+printf "package parsec_tpm\n\n" > ${TV_DOT_GO}
+
+for t in ${COMID_TEMPLATES}
 do
-	"$GEN_CORIM" "$THIS_DIR" "$comid" "$CORIM_TEMPLATE" "unsigned"
+	generate_go_test_vector $t $CORIM_TEMPLATE "unsignedCorim" $TV_DOT_GO
 done
 
-echo "done"
+gofmt -w $TV_DOT_GO

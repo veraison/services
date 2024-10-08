@@ -17,58 +17,48 @@ type CcaSsdExtractor struct {
 	Scheme string
 }
 
-func (o CcaSsdExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorsement, error) {
-	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
+func (o CcaSsdExtractor) RefValExtractor(rv comid.ReferenceValue) ([]*handler.Endorsement, error) {
+	var classAttrs platform.ClassAttributes
 
-	for i, rv := range rvs.Values {
-		var classAttrs platform.ClassAttributes
-		var refVal *handler.Endorsement
-		var err error
+	if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
+		return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
+	}
 
-		if err := classAttrs.FromEnvironment(rv.Environment); err != nil {
-			return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
-		}
-
-		if rv.Measurement.Key == nil {
+	// Each measurement is encoded in a measurement-map of a CoMID
+	// reference-triple-record.  Since a measurement-map can encode one or more
+	// measurements, a single reference-triple-record can carry as many
+	// measurements as needed, provided they belong to the same PSA RoT
+	// identified in the subject of the "reference value" triple.  A single
+	// reference-triple-record SHALL completely describe the updatable PSA RoT.
+	refVals := make([]*handler.Endorsement, 0, len(rv.Measurements))
+	var refVal *handler.Endorsement
+	var err error
+	for i, m := range rv.Measurements {
+		if m.Key == nil {
 			return nil, fmt.Errorf("measurement key is not present")
 		}
 
-		if !rv.Measurement.Key.IsSet() {
+		if !m.Key.IsSet() {
 			return nil, fmt.Errorf("measurement key is not set")
 		}
 
 		// Check which MKey is present and then decide which extractor to invoke
-		switch rv.Measurement.Key.Type() {
+		switch m.Key.Type() {
 		case comid.PSARefValIDType:
 			var swCompAttrs platform.SwCompAttributes
 
-			refVal, err = o.extractMeasurement(
-				&swCompAttrs,
-				rv.Measurement,
-				classAttrs,
-			)
+			refVal, err = o.extractMeasurement(&swCompAttrs, m, classAttrs)
 			if err != nil {
-				return nil, fmt.Errorf(
-					"unable to extract measurement at index %d, %w",
-					i,
-					err,
-				)
+				return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 			}
 		case comid.CCAPlatformConfigIDType:
 			var ccaPlatformConfigID CCAPlatformConfigID
-			refVal, err = o.extractMeasurement(
-				&ccaPlatformConfigID,
-				rv.Measurement,
-				classAttrs,
-			)
+			refVal, err = o.extractMeasurement(&ccaPlatformConfigID, m, classAttrs)
 			if err != nil {
 				return nil, fmt.Errorf("unable to extract measurement: %w", err)
 			}
 		default:
-			return nil, fmt.Errorf(
-				"unknown measurement key: %T",
-				reflect.TypeOf(rv.Measurement.Key),
-			)
+			return nil, fmt.Errorf("unknown measurement key: %T", reflect.TypeOf(m.Key))
 		}
 		refVals = append(refVals, refVal)
 	}
@@ -102,7 +92,7 @@ func (o CcaSsdExtractor) extractMeasurement(
 	return &refVal, nil
 }
 
-func (o CcaSsdExtractor) TaExtractor(avk comid.KeyTriple) (*handler.Endorsement, error) {
+func (o CcaSsdExtractor) TaExtractor(avk comid.AttestVerifKey) (*handler.Endorsement, error) {
 	// extract implementation ID
 	var classAttrs platform.ClassAttributes
 	if err := classAttrs.FromEnvironment(avk.Environment); err != nil {

@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/corim/comid"
 )
 
 func TestDecoder_Decode_OK(t *testing.T) {
-	tvs := [][]byte{
+	tvs := []string{
 		unsignedCorimComidParsecCcaRefValOne,
 		unsignedCorimComidParsecCcaMultRefVal,
 	}
@@ -17,7 +18,8 @@ func TestDecoder_Decode_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		_, err := d.Decode(tv)
+		data := comid.MustHexDecode(t, tv)
+		_, err := d.Decode(data)
 		assert.NoError(t, err)
 	}
 }
