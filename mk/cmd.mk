@@ -36,7 +36,7 @@ _check_scheme_loader:
 	fi
 
 $(CMD): $(SRCS) $(CMD_DEPS) _check_scheme_loader _check_version
-	go build -o $(CMD) -ldflags \
+	CGO_ENABLED=1 go build -o $(CMD) -ldflags \
 	"-X 'github.com/veraison/services/config.Version=$(VERSION_FROM_GIT)' \
 	 -X 'github.com/veraison/services/config.SchemeLoader=$(SCHEME_LOADER)'"
 
