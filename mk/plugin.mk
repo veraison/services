@@ -22,7 +22,7 @@ else
   DFLAGS :=
 endif
 
-$(PLUGIN): $(SRCS) ; go build $(DFLAGS) -o $(PLUGIN)
+$(PLUGIN): $(SRCS) ; CGO_ENABLED=1 go build $(DFLAGS) -o $(PLUGIN)
 
 .PHONY: all
 all: all-hook-pre realall
