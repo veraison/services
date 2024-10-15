@@ -67,6 +67,7 @@ build: .built/build
 
 .built/build: .built/builder
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build veraison/builder build
 	@mkdir -p .built && touch .built/build
 
@@ -79,6 +80,7 @@ deploy: .built/deploy
 		mkdir -p $(DEPLOY_DEST); \
 	fi
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build -v $(DEPLOY_DEST):/veraison/deploy \
 		veraison/builder deploy
 	@mkdir -p .built && touch .built/deploy
@@ -86,6 +88,7 @@ deploy: .built/deploy
 .PHONY: debug
 debug: .built/builder .built/network
 	docker container run --rm \
+		--security-opt label=disable \
 		--network $(VERAISON_NETWORK) \
 		-v $(STORES_VOLUME):/veraison/stores -v $(LOGS_VOLUME):/veraison/logs \
 		-v $(THIS_DIR)../..:/veraison/build -v $(DEPLOY_DEST):/veraison/deploy \
@@ -182,6 +185,7 @@ prune:
 clean:
 	if [[ "x$(shell docker image ls | grep veraison/builder)" != "x" ]]; then \
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build veraison/builder clean; \
 		rm -f .built/build; \
 	fi
