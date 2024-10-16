@@ -33,7 +33,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.1
 	github.com/veraison/cmw v0.1.0
-	github.com/veraison/corim v1.1.3-0.20240911154934-4f141ee6d1e7
+	github.com/veraison/corim v1.1.3-0.20241003171039-fe09de9f3764
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53

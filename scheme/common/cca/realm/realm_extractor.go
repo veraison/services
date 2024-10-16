@@ -40,24 +40,25 @@ func (o RealmExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endo
 				err,
 			)
 		}
-
-		if err := rAttr.FromMeasurement(rv.Measurement); err != nil {
-			return nil, fmt.Errorf(
-				"unable to extract realm reference attributes from measurement: %w",
-				err,
-			)
+		for _, m := range rv.Measurements.Values {
+			if err := rAttr.FromMeasurement(m); err != nil {
+				return nil, fmt.Errorf(
+					"unable to extract realm reference attributes from measurement: %w",
+					err,
+				)
+			}
+			refAttrs, err := makeRefValAttrs(&classAttrs, &rAttr)
+			if err != nil {
+				return nil, fmt.Errorf("unable to make reference attributes: %w", err)
+			}
+			refVal = &handler.Endorsement{
+				Scheme:     o.Scheme,
+				Type:       handler.EndorsementType_REFERENCE_VALUE,
+				SubType:    rAttr.GetRefValType(),
+				Attributes: refAttrs,
+			}
+			refVals = append(refVals, refVal)
 		}
-		refAttrs, err := makeRefValAttrs(&classAttrs, &rAttr)
-		if err != nil {
-			return nil, fmt.Errorf("unable to make reference attributes: %w", err)
-		}
-		refVal = &handler.Endorsement{
-			Scheme:     o.Scheme,
-			Type:       handler.EndorsementType_REFERENCE_VALUE,
-			SubType:    rAttr.GetRefValType(),
-			Attributes: refAttrs,
-		}
-		refVals = append(refVals, refVal)
 	}
 
 	if len(refVals) == 0 {

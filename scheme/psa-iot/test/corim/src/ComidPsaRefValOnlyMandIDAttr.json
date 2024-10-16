@@ -28,19 +28,21 @@
             "model": "RoadRunner"
           }
         },
-        "measurement": {
-          "key": {
-            "type": "psa.refval-id",
+        "measurements": [
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs="
+              }
+            },
             "value": {
-              "signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs="
+              "digests": [
+                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+              ]
             }
-          },
-          "value": {
-            "digests": [
-              "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
-            ]
           }
-        }
+        ]
       }
     ]
   }

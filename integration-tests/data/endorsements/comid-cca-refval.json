@@ -28,126 +28,80 @@
             "model": "RoadRunner"
           }
         },
-        "measurement": {
-          "key": {
-            "type": "psa.refval-id",
-            "value": {
-              "label": "BL",
-              "version": "3.4.2",
-              "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-            }
-          },
-          "value": {
-            "digests": [
-              "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-            ]
-          }
-        }
-      },
-      {
-        "environment": {
-          "class": {
-            "id": {
-              "type": "psa.impl-id",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        "measurements": [
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "BL",
+                "version": "3.4.2",
+                "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              }
             },
-            "vendor": "ACME",
-            "model": "RoadRunner"
-          }
-        },
-        "measurement": {
-          "key": {
-            "type": "psa.refval-id",
             "value": {
-              "label": "M1",
-              "version": "1.2.0",
-              "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              "digests": [
+                "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              ]
             }
           },
-          "value": {
-            "digests": [
-              "sha-256:CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-            ]
-          }
-        }
-      },
-      {
-        "environment": {
-          "class": {
-            "id": {
-              "type": "psa.impl-id",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "M1",
+                "version": "1.2.0",
+                "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              }
             },
-            "vendor": "ACME",
-            "model": "RoadRunner"
-          }
-        },
-        "measurement": {
-          "key": {
-            "type": "psa.refval-id",
             "value": {
-              "label": "M2",
-              "version": "1.2.3",
-              "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              "digests": [
+                "sha-256:CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              ]
             }
           },
-          "value": {
-            "digests": [
-              "sha-256:DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-            ]
-          }
-        }
-      },
-      {
-        "environment": {
-          "class": {
-            "id": {
-              "type": "psa.impl-id",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "M2",
+                "version": "1.2.3",
+                "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              }
             },
-            "vendor": "ACME",
-            "model": "RoadRunner"
-          }
-        },
-        "measurement": {
-          "key": {
-            "type": "psa.refval-id",
             "value": {
-              "label": "M3",
-              "version": "1.0.0",
-              "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              "digests": [
+                "sha-256:DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              ]
             }
           },
-          "value": {
-            "digests": [
-              "sha-256:EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
-            ]
-          }
-        }
-      },
-      {
-        "environment": {
-          "class": {
-            "id": {
-              "type": "psa.impl-id",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "M3",
+                "version": "1.0.0",
+                "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              }
             },
-            "vendor": "ACME",
-            "model": "RoadRunner"
-          }
-        },
-        "measurement": {
-          "key": {
-            "type": "cca.platform-config-id",
-            "value": "cfg v1.0.0"
+            "value": {
+              "digests": [
+                "sha-256:EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+              ]
+            }
           },
-          "value": {
-            "raw-value": {
-              "type": "bytes",
-              "value": "AQID"
+          {
+            "key": {
+              "type": "cca.platform-config-id",
+              "value": "cfg v1.0.0"
+            },
+            "value": {
+              "raw-value": {
+                "type": "bytes",
+                "value": "AQID"
+              }
             }
           }
-        }
+        ]
       }
     ]
   }

@@ -24,15 +24,17 @@
             }
           }
         },
-        "measurement": {
-          "key": {
-            "type": "uint",
-            "value": 0
-          },
-          "value": {
-            "serial-number": "1234"
+        "measurements": [
+         {
+            "key": {
+              "type": "uint",
+              "value": 0
+            },
+            "value": {
+              "serial-number": "1234"
+            }
           }
-        }
+        ]
       }
     ]
   }
