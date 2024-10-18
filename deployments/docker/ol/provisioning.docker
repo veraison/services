@@ -20,7 +20,7 @@ USER veraison
 
 WORKDIR /opt/veraison
 
-RUN mkdir logs
+RUN mkdir -p --mode=0775 logs/logs
 
 ADD --chown=veraison:nobody plugins plugins
 ADD --chown=veraison:nobody config.yaml provisioning-service service-entrypoint \

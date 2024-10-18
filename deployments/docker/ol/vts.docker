@@ -33,6 +33,8 @@ WORKDIR /opt/veraison
 # the volume.
 RUN mkdir -p --mode=0775 stores/vts
 
+RUN mkdir -p --mode=0775 logs/logs
+
 ADD --chown=veraison:nobody plugins plugins
 ADD --chown=veraison:veraison --chmod=0660 stores/* stores/vts
 ADD --chown=veraison:nobody config.yaml skey.jwk vts-service service-entrypoint \
