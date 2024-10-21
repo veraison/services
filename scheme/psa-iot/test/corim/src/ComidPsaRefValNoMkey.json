@@ -28,21 +28,23 @@
               "model": "RoadRunner"
             }
           },
-          "measurement": {
-            "value": {
-              "op-flags": [
-                "notSecure",
-                "debug"
-              ],
-              "digests": [
-                "sha-256:RKozavTLFKh5Qy5T3WVxx/qbzK+3X0iCWSYtbqOk2Rs="
-              ],
-              "svn": {
-                "type": "exact-value",
-                "value": 10
-              }
+          "measurements": [
+          {
+                "value": {
+                  "op-flags": [
+                    "notSecure",
+                    "debug"
+                  ],
+                  "digests": [
+                    "sha-256:RKozavTLFKh5Qy5T3WVxx/qbzK+3X0iCWSYtbqOk2Rs="
+                  ],
+                  "svn": {
+                    "type": "exact-value",
+                    "value": 10
+                  }
+                }
             }
-          }
+          ]
         }
       ]
     }

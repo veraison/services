@@ -19,40 +19,39 @@ func (o CorimExtractor) RefValExtractor(
 	rvs comid.ValueTriples,
 ) ([]*handler.Endorsement, error) {
 	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
-
-	for i, rv := range rvs.Values {
+	for _, rv := range rvs.Values {
 		var id ID
-
 		if err := id.FromEnvironment(rv.Environment); err != nil {
 			return nil, fmt.Errorf(
 				"could not extract id from ref-val environment: %w",
 				err,
 			)
 		}
-
-		pcr, err := extractPCR(rv.Measurement)
-		if err != nil {
-			return nil, fmt.Errorf("could not extract PCR: %w", err)
-		}
-
-		digests, err := extractDigests(rv.Measurement)
-		if err != nil {
-			return nil, fmt.Errorf("measurement[%d]: %w", i, err)
-		}
-
-		for j, digest := range digests {
-			attrs, err := makeRefValAttrs(id.class, pcr, digest)
+		for i, m := range rv.Measurements.Values {
+			var refval *handler.Endorsement
+			pcr, err := extractPCR(m)
 			if err != nil {
-				return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
+				return nil, fmt.Errorf("could not extract PCR: %w", err)
 			}
 
-			rv := &handler.Endorsement{
-				Scheme:     SchemeName,
-				Type:       handler.EndorsementType_REFERENCE_VALUE,
-				Attributes: attrs,
+			digests, err := extractDigests(m)
+			if err != nil {
+				return nil, fmt.Errorf("measurement[%d]: %w", i, err)
 			}
 
-			refVals = append(refVals, rv)
+			for j, digest := range digests {
+				attrs, err := makeRefValAttrs(id.class, pcr, digest)
+				if err != nil {
+					return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
+				}
+
+				refval = &handler.Endorsement{
+					Scheme:     SchemeName,
+					Type:       handler.EndorsementType_REFERENCE_VALUE,
+					Attributes: attrs,
+				}
+			}
+			refVals = append(refVals, refval)
 		}
 	}
 

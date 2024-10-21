@@ -20,7 +20,7 @@ type CorimExtractor struct {
 func (o CorimExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorsement, error) {
 	refVals := make([]*handler.Endorsement, 0, len(rvs.Values))
 
-	for i, rv := range rvs.Values {
+	for _, rv := range rvs.Values {
 		var classAttrs platform.ClassAttributes
 		var refVal *handler.Endorsement
 		var err error
@@ -36,33 +36,34 @@ func (o CorimExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endo
 			return nil, fmt.Errorf("could not extract PSA class attributes: %w", err)
 		}
 
-		if rv.Measurement.Key == nil {
-			return nil, fmt.Errorf("measurement key is not present")
-		}
-
-		if !rv.Measurement.Key.IsSet() {
-			return nil, fmt.Errorf("measurement key is not set")
-		}
-
-		// Check which MKey is present and then decide which extractor to invoke
-		switch rv.Measurement.Key.Type() {
-		case comid.PSARefValIDType:
-			var swCompAttrs platform.SwCompAttributes
-			refVal, err = o.extractMeas(&swCompAttrs, rv.Measurement, classAttrs)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"unable to extract measurement at index %d, %w",
-					i,
-					err,
-				)
+		// Each measurement is encoded in a measurement-map of a CoMID
+		// reference-triple-record. Since a measurement-map can encode one or more
+		// measurements, a single reference-triple-record can carry as many
+		// measurements as needed, provided they belong to the same PSA RoT
+		// identified in the subject of the "reference value" triple.  A single
+		// reference-triple-record SHALL completely describe the updatable PSA RoT.
+		for i, m := range rv.Measurements.Values {
+			if m.Key == nil {
+				return nil, fmt.Errorf("measurement key is not present")
 			}
-		default:
-			return nil, fmt.Errorf(
-				"unknown measurement key: %T",
-				reflect.TypeOf(rv.Measurement.Key),
-			)
+
+			if !m.Key.IsSet() {
+				return nil, fmt.Errorf("measurement key is not set at index %d ", i)
+			}
+
+			// Check which MKey is present and then decide which extractor to invoke
+			switch m.Key.Type() {
+			case comid.PSARefValIDType:
+				var swCompAttrs platform.SwCompAttributes
+				refVal, err = o.extractMeas(&swCompAttrs, m, classAttrs)
+				if err != nil {
+					return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
+				}
+			default:
+				return nil, fmt.Errorf("unknown measurement key: %T", reflect.TypeOf(m.Key))
+			}
+			refVals = append(refVals, refVal)
 		}
-		refVals = append(refVals, refVal)
 	}
 
 	if len(refVals) == 0 {

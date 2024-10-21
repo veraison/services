@@ -31,46 +31,48 @@
               "value": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
             }
           },
-          "measurement": {
-            "value": {
-              "raw-value": {
-                "type": "bytes",
-                "value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA=="
-              },
-              "integrity-registers": {
-                "rim": {
-                  "key-type": "text",
-                  "value": [
-                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
-                  ]
+          "measurements": [
+            {
+              "value": {
+                "raw-value": {
+                  "type": "bytes",
+                  "value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA=="
                 },
-                "rem0": {
-                  "key-type": "text",
-                  "value": [
-                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
-                  ]
-                },
-                "rem1": {
-                  "key-type": "text",
-                  "value": [
-                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
-                  ]
-                },
-                "rem2": {
-                  "key-type": "text",
-                  "value": [
-                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
-                  ]
-                },
-                "rem3": {
-                  "key-type": "text",
-                  "value": [
-                    "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
-                  ]
+                "integrity-registers": {
+                  "rim": {
+                    "key-type": "text",
+                    "value": [
+                      "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                    ]
+                  },
+                  "rem0": {
+                    "key-type": "text",
+                    "value": [
+                      "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                    ]
+                  },
+                  "rem1": {
+                    "key-type": "text",
+                    "value": [
+                      "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                    ]
+                  },
+                  "rem2": {
+                    "key-type": "text",
+                    "value": [
+                      "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                    ]
+                  },
+                  "rem3": {
+                    "key-type": "text",
+                    "value": [
+                      "sha-512;Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="
+                    ]
+                  }
                 }
               }
             }
-          }
+          ]
         }
       ]
     }

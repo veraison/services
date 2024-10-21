@@ -31,11 +31,14 @@ func (o Extractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endorseme
 		return nil, fmt.Errorf("could not extract instance attributes: %w", err)
 	}
 
+	if len(rv.Measurements.Values) != 1 {
+		return nil, fmt.Errorf("expecting one measurement only")
+	}
 
 	var (
 		swComponents []*handler.Endorsement
 		swCompAttrs  SwCompAttributes
-		measurement  comid.Measurement = rv.Measurement
+		measurement  comid.Measurement = rv.Measurements.Values[0]
 	)
 
 	if err := swCompAttrs.FromMeasurement(measurement); err != nil {
