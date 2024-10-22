@@ -179,6 +179,7 @@ function follow_keycloak() {
 
 function manager() {
     docker container run --rm -t \
+	    --security-opt label=disable \
 	    --network veraison-net \
             -v ${STORES_VOLUME}:/opt/veraison/stores \
             -v ${LOGS_VOLUME}:/opt/veraison/logs \
@@ -189,6 +190,7 @@ function manager() {
 
 function manager_debug() {
     docker container run --rm -t -i\
+	    --security-opt label=disable \
 	    --network veraison-net \
             -v ${STORES_VOLUME}:/opt/veraison/stores \
             -v ${LOGS_VOLUME}:/opt/veraison/logs \

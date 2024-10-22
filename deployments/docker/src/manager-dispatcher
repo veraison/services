@@ -39,7 +39,7 @@ function logs() {
     fi
 
     mkdir -p "$dest"
-    cp $_logs_dir/* "$dest/"
+    cp -r $_logs_dir/* "$dest/"
 }
 
 function clear_logs() {
