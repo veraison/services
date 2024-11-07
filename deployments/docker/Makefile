@@ -34,13 +34,23 @@ ifneq ($(DEBUG_PORT),)
 DEBUG_PORT_FLAG := -p $(DEBUG_PORT):$(DEBUG_PORT)
 endif
 
+# Determine OS distribution
+DISTRO := $(shell cat /etc/os-release | grep -w ID | cut -d '=' -f2 | cut -d '"' -f2)
+
+# Fallback to Ubuntu build
+ifneq ($(DISTRO), ol)
+DISTRO = ubuntu
+endif
+
+DISTRO_DIR := $(THIS_DIR)$(DISTRO)/
+
 .PHONY: all
 all: builder build deploy deployment prune
 
 .PHONY: builder
 builder: .built/builder
 
-.built/builder: $(SRC_DIR)builder.docker $(SRC_DIR)builder-dispatcher $(SRC_DIR)builder-bashrc \
+.built/builder: $(DISTRO_DIR)builder.docker $(SRC_DIR)builder-dispatcher $(SRC_DIR)builder-bashrc \
 	        $(SRC_DIR)certs/rootCA.crt $(THIS_DIR)../../go.mod
 	mkdir -p $(BUILDER_CONTEXT)
 	cp $(SRC_DIR)builder-dispatcher $(BUILDER_CONTEXT)/
@@ -48,7 +58,7 @@ builder: .built/builder
 	cp $(SRC_DIR)certs/rootCA.crt $(BUILDER_CONTEXT)/
 	cp $(THIS_DIR)../../go.{mod,sum} $(BUILDER_CONTEXT)/
 	docker build $(DOCKER_BUILD_FLAGS) \
-		-t veraison/builder $(BUILDER_CONTEXT) -f $(SRC_DIR)builder.docker \
+		-t veraison/builder $(BUILDER_CONTEXT) -f $(DISTRO_DIR)builder.docker \
 		--build-arg BUILDER_UID=$(shell id -u) --build-arg BUILDER_GID=$(shell id -g)
 	@mkdir -p .built && touch .built/builder
 
@@ -57,6 +67,7 @@ build: .built/build
 
 .built/build: .built/builder
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build veraison/builder build
 	@mkdir -p .built && touch .built/build
 
@@ -69,6 +80,7 @@ deploy: .built/deploy
 		mkdir -p $(DEPLOY_DEST); \
 	fi
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build -v $(DEPLOY_DEST):/veraison/deploy \
 		veraison/builder deploy
 	@mkdir -p .built && touch .built/deploy
@@ -76,6 +88,7 @@ deploy: .built/deploy
 .PHONY: debug
 debug: .built/builder .built/network
 	docker container run --rm \
+		--security-opt label=disable \
 		--network $(VERAISON_NETWORK) \
 		-v $(STORES_VOLUME):/veraison/stores -v $(LOGS_VOLUME):/veraison/logs \
 		-v $(THIS_DIR)../..:/veraison/build -v $(DEPLOY_DEST):/veraison/deploy \
@@ -126,14 +139,14 @@ keycloak-image: deploy .built/keycloak-image
 .PHONY: network
 network: .built/network
 
-.built/%-image: $(SRC_DIR)%.docker $(DEPLOY_DEST)/*
+.built/%-image: $(DISTRO_DIR)%.docker $(DEPLOY_DEST)/*
 	@# Before rebuilding the image, remove any containers that were based
 	@# on the previous version.
 	@# The "nil" ensures the command doesn't fail due to an empty argument list.
 	docker rm -f $(shell docker ps -a -q --filter "ancestor=veraison/$*") nil 2>/dev/null
 	@
 	DOCKER_BUILDKIT=1 docker build $(DOCKER_BUILD_FLAGS) \
-		-t veraison/$* $(DEPLOY_DEST) -f $(SRC_DIR)$*.docker
+		-t veraison/$* $(DEPLOY_DEST) -f $(DISTRO_DIR)$*.docker
 	@mkdir -p .built && touch .built/$*-image
 
 .built/%-container: .built/%-image .built/network
@@ -150,11 +163,11 @@ network: .built/network
 .PHONY: manager
 manager: .built/manager
 
-.built/manager: $(SRC_DIR)manager.docker $(SRC_DIR)manager-dispatcher
+.built/manager: $(DISTRO_DIR)manager.docker $(SRC_DIR)manager-dispatcher
 	mkdir -p $(BUILDER_CONTEXT)
 	cp $(SRC_DIR)manager-dispatcher $(DEPLOY_DEST)/
 	docker build $(DOCKER_BUILD_FLAGS) \
-		-t veraison/manager $(DEPLOY_DEST) -f $(SRC_DIR)manager.docker \
+		-t veraison/manager $(DEPLOY_DEST) -f $(DISTRO_DIR)manager.docker \
 		 --build-arg MANAGER_UID=$(shell id -u) --build-arg MANAGER_GID=$(shell id -g)
 	@mkdir -p .built && touch .built/manager
 
@@ -172,6 +185,7 @@ prune:
 clean:
 	if [[ "x$(shell docker image ls | grep veraison/builder)" != "x" ]]; then \
 	docker container run --rm \
+		--security-opt label=disable \
 		-v $(THIS_DIR)../..:/veraison/build veraison/builder clean; \
 		rm -f .built/build; \
 	fi

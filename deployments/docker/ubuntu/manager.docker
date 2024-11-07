@@ -36,6 +36,8 @@ USER manager
 
 WORKDIR /opt/veraison
 
+RUN mkdir -p --mode=0775 logs/logs
+
 RUN mkdir -p /home/manager/.config/pocli && \
     mkdir -p /home/manager/.config/cocli
 
