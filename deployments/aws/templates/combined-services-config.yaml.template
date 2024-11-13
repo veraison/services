@@ -1,0 +1,60 @@
+logging:
+  level: info  # valid levels: error, warning, info, debug
+  output-paths:
+    - stdout
+    - /opt/veraison/logs/{{ .service }}-stdout.log
+provisioning:
+  listen-addr: 0.0.0.0:${PROVISIONING_PORT}
+  protocol: https
+  cert: /opt/veraison/certs/provisioning.crt
+  cert-key: /opt/veraison/certs/provisioning.key
+verification:
+  listen-addr: 0.0.0.0:${VERIFICATION_PORT}
+  protocol: https
+  cert: /opt/veraison/certs/verification.crt
+  cert-key: /opt/veraison/certs/verification.key
+management:
+  listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
+  protocol: https
+  cert: /opt/veraison/certs/management.crt
+  cert-key: /opt/veraison/certs/management.key
+vts:
+  server-addr: localhost:${VTS_PORT}
+  tls: true
+  cert: /opt/veraison/certs/vts.crt
+  cert-key: /opt/veraison/certs/vts.key
+  ca-certs: /opt/veraison/certs/rootCA.crt
+ear-signer:
+  alg: ES256
+  key: /opt/veraison/signing/skey.jwk
+plugin:
+  backend: go-plugin
+  go-plugin:
+    dir: /opt/veraison/plugins/
+ta-store:
+  backend: sql
+  sql:
+    driver: pgx
+    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
+    tablename: trust_anchors
+en-store:
+  backend: sql
+  sql:
+    driver: pgx
+    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
+    tablename: endorsements
+po-store:
+  backend: sql
+  sql:
+    driver: pgx
+    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
+    tablename: policies
+po-agent:
+    backend: opa
+auth:
+   backend: keycloak
+   host: ${KEYCLOAK_HOST}
+   port: ${KEYCLOAK_PORT}
+   ca-cert: /opt/veraison/certs/rootCA.crt
+
+# vim: set ft=yaml:

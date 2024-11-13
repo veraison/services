@@ -1,0 +1,7 @@
+# See https://www.keycloak.org/server/all-config for all alvailable configuration.
+http-enabled=false
+hostname-strict=false
+https-port=${KEYCLOAK_PORT}
+https-certificate-file=/opt/keycloak/certs/keycloak.crt
+https-certificate-key-file=/opt/keycloak/certs/keycloak.key
+

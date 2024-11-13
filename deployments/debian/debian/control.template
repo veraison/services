@@ -1,0 +1,6 @@
+Package: veraison
+Version: ${_VERAISON_VERSION}
+Maintainer: Veraison Project <veraison-project@confidentialcomputing.io>
+Architecture: amd64
+Homepage: https://github.com/veraison
+Description: Attestation verification services

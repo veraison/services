@@ -1,0 +1,76 @@
+# Veraison stack
+AWSTemplateFormatVersion: 2010-09-09
+Description: Veraison attestation verfication services
+
+Parameters:
+  # mandatory parameters (no defaults):
+  DeploymentName:
+    Type: String
+    Description: |
+      The name of this deployment.
+  VpcId:
+    Description: ID for the VPC into which Veraison will be deployed
+    Type: AWS::EC2::VPC::Id
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: |
+      The name of an EC2 key pair that will be used to provide access to the
+      instance.
+  InstanceImage:
+    Type: String
+    Description: ID of the AMI image to be used for the instance.
+  AdminCidr:
+    Type: String
+    Description: CIDR to used to configure remote access
+  SubnetId:
+    Type: String
+    Description: ID of the subnet to be used for veraison deployment
+
+  # optional parameters (have a default if are not specfied):
+  InstanceType:
+    Description: An EC2 instance type that will be used to run EC2 Instances
+    Type: String
+    Default: t2.micro
+    
+
+Resources:
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: veraison-test
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref InstanceImage
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+        - Key: deployment-instance-name
+          Value: debug
+
+  IpAddress:
+    Type: AWS::EC2::EIP
+    DependsOn: Instance
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Instance
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName

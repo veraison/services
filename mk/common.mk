@@ -7,6 +7,6 @@ SHELL := /bin/bash
 export GO111MODULE := on
 
 # Used to set the ServerVersion reported by  services
-VERSION_FROM_GIT := $(shell git describe --tags --exact-match 2>/dev/null || echo -n "commit-$(shell git rev-parse --revs-only --short HEAD)")
+VERSION_FROM_GIT := $(shell $(TOPDIR)/scripts/get-veraison-version)
 
 install:

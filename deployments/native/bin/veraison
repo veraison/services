@@ -13,8 +13,8 @@ _veraison_root=${VERAISON_ROOT}
 
 _bin_dir=${_veraison_root}/bin
 _config_dir=${_veraison_root}/config
-_certs_dir=${_veraison_root}/certs
-_signing_dir=${_veraison_root}/signing
+_certs_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/certs
+_signing_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/signing
 _stores_dir=${_veraison_root}/stores
 _systemd_dir=${_veraison_root}/systemd
 _launchd_dir=${_veraison_root}/launchd
@@ -29,9 +29,11 @@ _launchd_ns="com.veraison-project"
 function init_sqlite_stores() {
 	_check_installed sqlite3
 
+	local stores_dir=${1:-${_stores_dir}}
+
 	for t in en ta po; do
 		echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
-		    $_sqlite "${_stores_dir}/${t}-store.sql"
+		    $_sqlite "${stores_dir}/${t}-store.sql"
 	done
 }
 
@@ -511,6 +513,8 @@ function help() {
 	  -C disable color output
 	  -f force overwriting of existing files
 	  -i save intermediate artifacts
+	  -s install service units into the system, rather than user, service manager.
+	     (on Linux only; on MacOSX, services will always be installed for the user.)
 
 	Some options only apply to certain commands; if an option is applicable to a
 	command, it will be listed for that command alongside its name and arguments.
@@ -555,37 +559,39 @@ function help() {
 	SYSTEMD/LAUNCHD EXECUTION COMMANDS:
 
 	(note: these commands will only work on OS's that use systemd or launchd for
-	service management. Currently only user services, i.e. via systemctl --user and
-	non-root invocations of launchd, are supported.)
+	service management. By default, user services, i.e. via systemctl --user and
+	non-root invocations of launchd, will be created. For systemd (on Linux distros),
+        -s option may be used to create system services instead. Only user services are
+	currently supported for launchd (MacOSX).)
 
-	enable-services
+	[-s] enable-services
 	    Enable the systemd/launchd units for veraison services for the current
-	    use. This merely adds veraison services to the (current user's) systemd
-	    services; this does not start them.
+	    use. This merely adds veraison services to the (current user's, or with -s,
+	    system's) systemd services; this does not start them.
 
-	disable-services
+	[-s] disable-services
 	    Disable the previously-enabled systemd/launchd units for Veraison services.
 
-	start [SERVICE]
-	    Start Veraison service specified by SERVICE via (user) systemd/launchd. If
-	    SERVICE is not specified, start all Veraison services. This also enables
-	    Veraison services (as with enable-services command above) if they have not
-	    already been enabled.
+	[-s] start [SERVICE]
+	    Start Veraison service specified by SERVICE via systemd/launchd. If SERVICE
+	    is not specified, start all Veraison services. This also enables Veraison
+	    services (as with enable-services command above) if they have not already been
+	    enabled.
 
-	stop [SERVICE]
-	    Stop Veraison service specified by SERVICE via (user) systemd/launchd. If
-	    SERVICE is not specified, stop all Veraison services.
+	[-s] stop [SERVICE]
+	    Stop Veraison service specified by SERVICE via systemd/launchd. If SERVICE is
+	    not specified, stop all Veraison services.
 
-	status [SERVICE]
+	[-s] status [SERVICE]
 	    Show the status of the systemd/launchd unit specified by SERVICE (similar
 	    to running "systemctl --user status" or "launchctl print
 	    <service-target>"). If SERVICE is not specified, show summary one line
 	    status for each services' units (systemd), or the details for each service
 	    (launchd).
 
-	follow SERVICE
-	    Follow STDOUT of the specified (user) systemd SERVICE (similar to running
-	    "journalctl --user --follow").
+	[-s] follow SERVICE
+	    Follow STDOUT of the specified systemd SERVICE (similar to running
+	    "journalctl [--user] --follow").
 
 	Note: As all execution methods utilize the deployment's config (such as ports), only
 	      one method can be use used to run the services at a time (i.e. its not possible
@@ -632,10 +638,13 @@ function help() {
 	    sign attestation results. The key will be written to
 	    ${_signing_dir}/skey.jwk.
 
-	init-sqlite-stores
+	init-sqlite-stores [STORES_DIR]
 	    Initialize the sqlite3 stores for the endorsements, trust anchors, and
 	    policies. If the stores have already been initialized, this is a no-op,
-	    the existing data in the stores will not be touched.
+	    the existing data in the stores will not be touched. Stores will be
+	    initialized within the deployment's stores directory, however, an
+	    alternative location may be specified with STORES_DIR (note: this
+	    will not be used by the deployment).
 
 	STATE MANAGEMENT COMMANDS:
 
@@ -775,6 +784,7 @@ function _get_terminal() {
 _force=false
 _color=true
 _save_intermediate=false
+_system=false
 
 _purp=''
 _red=''
@@ -812,12 +822,13 @@ function _reset_colors() {
 
 OPTIND=1
 
-while getopts "hCif" opt; do
+while getopts "hCifs" opt; do
 	case "$opt" in
 		h) help; exit 0;;
 		C) _color=false;;
 		i) _save_intermediate=true;;
 		f) _force=true;;
+		s) _system=true;;
 		*) break;;
 	esac
 done
@@ -852,7 +863,7 @@ case $command in
 		generate_signing_key "$_force" "$_signing_dir/skey.jwk"
 		;;
 	init-sqlite-stores)
-		init_sqlite_stores
+		init_sqlite_stores "$1"
 		;;
 	start-tmux)
 		create_tmux_session "$1"
@@ -864,19 +875,34 @@ case $command in
 		kill_tmux_session "$1"
 		;;
 	enable-services)
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
+
 		case $_os in
 			Darwin) enable_launchd_services;;
-			Linux) enable_systemd_services user;;
+			Linux) enable_systemd_services $_mode;;
 		esac
 		;;
 	disable-services)
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
+
 		case $_os in
 			Darwin) disable_launchd_services;;
-			Linux) disable_systemd_services user;;
+			Linux) disable_systemd_services $_mode;;
 		esac
 		;;
 	start-services | start)
 		_what=$1
+
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
 
 		case $_os in
 			Darwin)
@@ -889,18 +915,23 @@ case $command in
 				fi
 				;;
 			Linux)
-				enable_systemd_services user
+				enable_systemd_services $_mode
 
 				if [[ $_what == "" ]]; then
-					start_systemd_services user
+					start_systemd_services $_mode
 				else
-					control_systemd_service user start $_what
+					control_systemd_service $_mode start $_what
 				fi
 				;;
 		esac
 		;;
 	stop-services | stop)
 		_what=$1
+
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
 
 		case $_os in
 			Darwin)
@@ -912,9 +943,9 @@ case $command in
 				;;
 			Linux)
 				if [[ $_what == "" ]]; then
-					stop_systemd_services user
+					stop_systemd_services $_mode
 				else
-					control_systemd_service user stop $_what
+					control_systemd_service $_mode stop $_what
 				fi
 				;;
 		esac
@@ -922,15 +953,20 @@ case $command in
 	status)
 		_what=$1
 
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
+
 		case $_os in
 			Darwin)
 				show_launchd_service_status $_what
 				;;
 			Linux)
 				if [[ $_what == "" ]]; then
-					show_systemd_service_status user
+					show_systemd_service_status $_mode
 				else
-					control_systemd_service user status $_what
+					control_systemd_service $_mode status $_what
 				fi
 				;;
 		esac
@@ -938,9 +974,14 @@ case $command in
 	follow)
 		_what=$1
 
+		_mode=user
+		if [[ $_system == true ]]; then
+			_mode=system
+		fi
+
 		case $_os in
 			Darwin) follow_launchd_service $_what;;
-			Linux) follow_systemd_service user $_what;;
+			Linux) follow_systemd_service $_mode $_what;;
 		esac
 		;;
 	stores | show-stores | check-stores)

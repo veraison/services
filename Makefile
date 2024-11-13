@@ -67,6 +67,7 @@ Available targets:
 	bootstrap:     install required dependencies (only works on Arch, Ubuntu,
 	               and MacOSX using homebrew)
 	native-deploy: create and start the native deployment
+	deb:           create .deb package for installation on Debian or Ubuntu
 endef
 export __MAKEFILE_HELP
 
@@ -110,6 +111,7 @@ endif
 .PHONY: really-clean
 really-clean:
 	make -C integration-tests really-clean
+	make -C deployments/debian really-clean
 	make -C deployments/docker really-clean
 	make -C deployments/native really-clean
 
@@ -165,6 +167,14 @@ native-deploy:
 	@echo "$$__NATIVE_DEPLOY_MESSAGE"
 
 ifeq ($(filter native-deploy,$(MAKECMDGOALS)),native-deploy)
+__NO_RECURSE = true
+endif
+
+.PHONY: deb
+deb:
+	make -C deployments/debian deb
+
+ifeq ($(filter deb,$(MAKECMDGOALS)),deb)
 __NO_RECURSE = true
 endif
 
