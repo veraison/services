@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # pyright: reportOptionalMemberAccess=false
 # pyright: reportOptionalSubscript=false
+# pyright: reportOperatorIssue=false
 import argparse
 import asyncio
 import getpass
 import inspect
-import json
 import logging
 import os
 import pprint
@@ -18,21 +18,16 @@ import string
 import sys
 import time
 from asyncio.subprocess import Process, PIPE
+from collections import defaultdict
 from copy import copy
-from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 import boto3
 import fabric
-import psycopg2
 import requests
 import xdg.BaseDirectory
 import yaml
 from botocore.exceptions import ClientError
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.x509.oid import NameOID
 from envsubst import envsubst
 from sqlitedict import SqliteDict
 
@@ -48,62 +43,26 @@ COLOR_RESET = '\x1b[0m'
 ']]]]]]]]'  # "close" the brackets above to fix nvim's auto-indent
 
 
-PGSQL_SETUP = '''
-CREATE TABLE IF NOT EXISTS endorsements (
-   kv_key TEXT NOT NULL,
-   kv_val TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS trust_anchors (
-    kv_key TEXT NOT NULL,
-    kv_val TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS policies (
-    kv_key TEXT NOT NULL,
-    kv_val TEXT NOT NULL
-);
-
-CREATE INDEX ON endorsements(kv_key);
-CREATE INDEX ON trust_anchors(kv_key);
-CREATE INDEX ON policies(kv_key);
-'''
-
-
 class Aws:
 
-    @property
-    def ec2(self):
-        if self._ec2 is None:
-            self._ec2 = self.session.client('ec2')
-        return self._ec2
-
-    @property
-    def cf(self):
-        if self._cf is None:
-            self._cf = self.session.client('cloudformation')
-        return self._cf
-
-    @property
-    def rds(self):
-        if self._rds is None:
-            self._rds = self.session.client('rds')
-        return self._rds
+    client_name_map = {
+        'cf': 'cloudformation',
+    }
 
     def __init__(self, **kwargs):
         self.session = boto3.Session(**kwargs)
-        self._ec2 = None
-        self._cf = None
-        self._rds = None
+        self.clients = {}
 
     def close(self):
-        if self._ec2 is not None:
-            self._ec2.close()
-            self._ec2 = None
-        if self._cf is not None:
-            self._cf.close()
-            self._cf = None
-        if self._rds is not None:
-            self._rds.close()
-            self._rds = None
+        for client in self.clients.values():
+            client.close()
+        self.clients = {}
+
+    def __getattr__(self, name):
+        client_name = self.client_name_map.get(name, name)
+        if client_name not in self.clients:
+            self.clients[client_name] = self.session.client(client_name)
+        return self.clients[client_name]
 
     def __del__(self):
         self.close()
@@ -114,6 +73,23 @@ def randomword(n=32, use_punctuation=False):
     if use_punctuation:
         alphabet += string.punctuation
     return ''.join(random.choice(alphabet) for _ in range(n))
+
+
+def camel_to_kebab(name: str):
+    words = []
+    current = ''
+    for char in name:
+        if char.isupper():
+            if current:
+                words.append(current)
+            current = char.lower()
+        else:
+            current += char
+
+    if current:
+        words.append(current)
+
+    return '-'.join(words)
 
 
 def get_public_ip_address():
@@ -174,9 +150,7 @@ def revoke_security_group_rules_by_tag(aws, group_id, tag):
 
 
 def command_create_packer_security_group(cmd, deployment_name):
-    vpc_id = cmd.cache.get('vpc-id')
-    if not vpc_id:
-        cmd.fail('vpc-id has not been configured')
+    vpc_id = command_get(cmd, 'vpc.vpc-id', 'VPC stack been created')
 
     cmd.logger.debug('creating Packer security group...')
     resp = cmd.aws.ec2.create_security_group(
@@ -226,14 +200,19 @@ def command_delete_packer_security_group(cmd, deployment_name):
         cmd.aws.ec2.delete_security_group(GroupId=group_id)
 
 
-def command_update_dynamic_address_rules(cmd, deployment_name, tag, ports):
+def command_update_dynamic_address_rules(cmd, deployment_name, group_names, tag, ports):
     resp = aws.ec2.describe_security_groups(
-        Filters=[{
-            'Name': 'tag:veraison-deployment',
-            'Values': [deployment_name],
-        }]
+        Filters=[
+            {
+                'Name': 'tag:veraison-deployment',
+                'Values': [deployment_name],
+            },
+            {
+                'Name': 'group-name',
+                'Values': group_names,
+            },
+        ]
     )
-
 
     group_ids = [sgr['GroupId'] for sgr in resp['SecurityGroups']]
     if not group_ids:
@@ -246,6 +225,16 @@ def command_update_dynamic_address_rules(cmd, deployment_name, tag, ports):
         authorize_ports_for_address(
                 cmd.aws, group_id, my_addr, ports, tag,
                 deployment_tags=[{'Key': 'veraison-deployment', 'Value': deployment_name}])
+
+
+def command_get_hosted_zone(cmd, dns_name):
+    cmd.logger.debug(f'looking up hosted zone of {dns_name}...')
+    resp = cmd.aws.route53.list_hosted_zones()
+    for hz in resp['HostedZones']:
+        if hz['Name'] == f'{dns_name}.':
+            return hz['Id'].strip('/hostedzone/')
+    else:
+        cmd.fail(f'Could not find hosted zone for {dns_name}')
 
 
 def get_stack_instances_info(aws, stack_name):
@@ -363,12 +352,22 @@ def command_get_config(cmd, name):
         cmd.fail(f'could not get {name} from cache; has configure command been run?')
 
 
-def command_instantiate_template(cmd, deployment_name, src_path):
+def command_get(cmd, path, precondition=None):
+    val = cmd.cache.get(path)
+    if val is None:
+        if precondition:
+            cmd.fail(f'could not get {path} from cache; has {precondition}?')
+        else:
+            cmd.fail(f'could not get {path} from cache')
+    return val
+
+
+def command_instantiate_template(cmd, deployment_name, src_path, out_dir='/tmp'):
     with open(src_path) as fh:
         instantiated_template_body = envsubst(fh.read())
 
     basename = os.path.basename(src_path).removesuffix('.template')
-    out_path = f'/tmp/{deployment_name}-{basename}'
+    out_path = os.path.join(out_dir, f'{deployment_name}-{basename}')
     cmd.logger.debug(f'writing {out_path}')
     with open(out_path, 'w') as wfh:
         wfh.write(instantiated_template_body)
@@ -398,9 +397,9 @@ def command_create_image(cmd, args, name, packer_params=None):
             cmd.aws.ec2.deregister_image(ImageId=existing_id)
 
         cmd.logger.info('building using packer...')
-        vpc_id = command_get_config(cmd, 'vpc-id')
-        subnet_id = command_get_config(cmd, 'subnet-id')
         region = command_get_config(cmd, 'region')
+        vpc_id = command_get(cmd, 'vpc.vpc-id', 'VPC stack been created')
+        subnet_id = command_get(cmd, 'vpc.public-subnet-a-id', 'VPC stack been created')
 
         params_dict = {
             'ami_name': full_name,
@@ -437,6 +436,7 @@ def command_create_image(cmd, args, name, packer_params=None):
 def command_create_stack(
         cmd, deployment_name, stack_name, template_path, extra_params, wait_period=60):
     cmd.logger.info(f'creating stack {stack_name}...')
+    stack_full_name = f'{deployment_name}-{stack_name}'
 
     # doing this to be compatible with AWS CLI which specifies the template path as
     # file://path/to/template.
@@ -445,21 +445,14 @@ def command_create_stack(
     with open(url.path) as fh:
         template = fh.read()
 
-    vpc_id = command_get_config(cmd, 'vpc-id')
-    subnet_id = command_get_config(cmd, 'subnet-id')
-    admin_cidr = command_get_config(cmd, 'admin-cidr')
-
     params = [
         {'ParameterKey': 'DeploymentName', 'ParameterValue': deployment_name},
-        {'ParameterKey': 'VpcId', 'ParameterValue': vpc_id},
-        {'ParameterKey': 'SubnetId', 'ParameterValue': subnet_id},
-        {'ParameterKey': 'AdminCidr', 'ParameterValue': admin_cidr},
     ]
     params.extend(extra_params)
 
     cmd.logger.debug(f'using params {params}')
     resp = cmd.aws.cf.create_stack(
-        StackName=stack_name,
+        StackName=stack_full_name,
         TemplateBody=template,
         Parameters=params,
         OnFailure='DELETE',
@@ -467,63 +460,49 @@ def command_create_stack(
     cmd.logger.debug(f'stack ID: {resp["StackId"]}')
 
     cmd.logger.info('waiting for the stack creation to complete...')
-    resp = cmd.aws.cf.describe_stacks(StackName=stack_name)
+    resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
     while resp['Stacks'][0]['StackStatus'] == 'CREATE_IN_PROGRESS':
         time.sleep(wait_period)
-        resp = cmd.aws.cf.describe_stacks(StackName=stack_name)
+        resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
 
     stack_status = resp['Stacks'][0]['StackStatus']
     if stack_status == 'CREATE_COMPLETE':
-        instances = cmd.cache.get('instances', {})
+        outputs = {}
+        for o in resp['Stacks'][0].get('Outputs', []):
+            outputs[camel_to_kebab(o['OutputKey'])] = o['OutputValue']
+        cmd.cache[stack_name] = outputs
 
-        cmd.logger.debug(f'getting info for {stack_name}...')
-        stack_instance_info = get_stack_instances_info(cmd.aws, stack_name)
-
-        cmd.logger.info('instances:')
-        for name, instance in stack_instance_info.items():
-            suffix = instance.get('ip_address', '')
-            if not suffix:
-                port = instance.get('port')
-                if port:
-                    suffix = f'port {port}'
-
-            cmd.logger.info(f'    {name}: {instance['dns_name']} ({suffix})')
-            instances[name] = instance
-
-        cmd.cache['instances'] = instances
+        if outputs:
+            cmd.logger.debug('outputs:')
+            for k, v in outputs.items():
+                cmd.logger.debug(f'    {k}: {v}')
 
         cmd.logger.info('done.')
     else: # stack_status != 'CREATE_COMPLETE'
         cmd.logger.error(f'creation failed: {stack_status}')
-        resp = cmd.aws.cf.describe_stack_events(StackName=stack_name)
+        resp = cmd.aws.cf.describe_stack_events(StackName=stack_full_name)
 
         for event in resp['StackEvents']:
-            if event['ResourceStatus'] == 'CREATE_IN_PROGRESS':
-                break
+            if event['ResourceStatus'] != 'CREATE_FAILED':
+                continue
             status = event['ResourceStatus']
             reason = event.get("ResourceStatusReason", '')
             cmd.logger.error(f'{status} {reason}')
 
         cmd.logger.info('waiting for the rollback to complete...')
-        resp = cmd.aws.cf.describe_stacks(StackName=stack_name)
+        resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
         while resp['Stacks'][0]['StackStatus'] == 'DELETE_IN_PROGRESS':
             time.sleep(wait_period)
-            resp = cmd.aws.cf.describe_stacks(StackName=stack_name)
+            resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
 
         cmd.fail(f'could not create stack {stack_name}')
 
 
-def command_connect(cmd, instance_name, user='ubuntu'):
-    instance = cmd.cache.get('instances', {}).get(instance_name)
-    if instance is None:
-        cmd.fail(f'could not find instance {instance_name} in cache')
-
-    key_path = cmd.cache.get('key', {}).get('path')
-    if not key_path:
-        cmd.fail('couild not find key in cache')
-
+def command_connect_sentinel(cmd, user='ubuntu'):
+    host = command_get(cmd, 'rds.sentinel-dns-name', 'RDS stack been created')
+    key_path = command_get(cmd, 'key.path', 'a key pair been created')
     return fabric.Connection(
-        instance['dns_name'],
+        host,
         user=user,
         connect_kwargs={
             'key_filename': key_path,
@@ -531,125 +510,12 @@ def command_connect(cmd, instance_name, user='ubuntu'):
     )
 
 
-def con_transfer_file(con, src, dest, owner=None, preserve_mode=True):
-    temp_dest = randomword(32) + os.path.basename(dest)
-    con.put(src, remote=temp_dest, preserve_mode=preserve_mode)
-    con.sudo(f'mv ~/{temp_dest} {dest}')
-    if owner:
-        con.sudo(f'chown -R {owner} {dest}')
-
-
-def create_ec_key(key_path):
-    key = ec.generate_private_key(curve=ec.SECP256R1())
-
-    with open(key_path, 'wb') as wfh:
-        wfh.write(key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        ))
-
-    os.chmod(key_path, stat.S_IRUSR | stat.S_IWUSR)
-
-    return key
-
-
-def create_ca_cert(cert_path, key_path):
-    key = create_ec_key(key_path)
-
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Veraison'),
-    ])
-    now = datetime.now(timezone.utc)
-
-    cert = (
-        x509.CertificateBuilder(public_key=key.public_key())
-            .subject_name(subject)
-            .issuer_name(issuer)
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(now)
-            .not_valid_after(now + timedelta(days=3650))
-            .add_extension(
-                x509.BasicConstraints(ca=True, path_length=None),
-                critical=True,
-            )
-            .add_extension(
-                x509.KeyUsage(
-                    digital_signature=True,
-                    content_commitment=False,
-                    key_encipherment=False,
-                    data_encipherment=False,
-                    key_agreement=False,
-                    key_cert_sign=True,
-                    crl_sign=True,
-                    encipher_only=False,
-                    decipher_only=False,
-                ),
-                critical=True,
-            )
-            .add_extension(
-                x509.SubjectKeyIdentifier.from_public_key(key.public_key()),
-                critical=False,
-            )
-    ).sign(key, hashes.SHA256())
-
-    with open(cert_path, 'wb') as wfh:
-        wfh.write(cert.public_bytes(serialization.Encoding.PEM))
-
-    return cert, key
-
-
-def create_service_cert(service_name, service_host, dest_path, ca_cert, ca_key):
-    cert_path = os.path.join(dest_path, f'{service_name}.crt')
-    key_path = os.path.join(dest_path, f'{service_name}.key')
-
-    key = create_ec_key(key_path)
-
-    subject = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, service_host),
-    ])
-    now = datetime.now(timezone.utc)
-
-    cert = (
-        x509.CertificateBuilder(public_key=key.public_key())
-            .subject_name(subject)
-            .issuer_name(ca_cert.subject)
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(now)
-            .not_valid_after(now + timedelta(days=3650))
-            .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName(service_host),
-                    x509.DNSName('localhost'),
-                ]),
-                critical=False,
-            )
-            .add_extension(
-                x509.BasicConstraints(ca=False, path_length=None),
-                critical=True,
-            )
-            .add_extension(
-                x509.ExtendedKeyUsage([
-                    x509.ExtendedKeyUsageOID.CLIENT_AUTH,  # pyright: ignore
-                    x509.ExtendedKeyUsageOID.SERVER_AUTH,  # pyright: ignore
-                ]),
-                critical=False,
-            ).add_extension(
-                x509.SubjectKeyIdentifier.from_public_key(key.public_key()),
-                critical=False,
-            )
-            .add_extension(
-                x509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(
-                    ca_cert.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value,
-                ),
-                critical=False,
-            )
-    ).sign(ca_key, hashes.SHA256())
-
-    with open(cert_path, 'wb') as wfh:
-        wfh.write(cert.public_bytes(serialization.Encoding.PEM))
-
-    return cert_path, key_path
+def command_sentinel(cmd, what, verbose=False, **kwargs):
+        flags = ''
+        if verbose:
+            flags += ' --verbose'
+        with command_connect_sentinel(cmd) as con:
+            return con.run(f'veraison{flags} {what}', **kwargs)
 
 
 class DeploymentCache:
@@ -685,7 +551,17 @@ class DeploymentCache:
         self.default_user_tag = f'{socket.gethostname()}-{getpass.getuser()}'
 
     def get(self, key, default=None):
-        return self.db.get(key, default)
+        parts = key.split('.')
+        entry = self.db
+        path = ''
+
+        try:
+            for part in parts[:len(parts)-1]:
+                entry = self._access_member(entry, part, path)
+                path = path + '.' + part
+            return self._access_member(entry, parts.pop(), path)
+        except (KeyError, IndexError):
+            return default
 
     def as_dict(self):
         return {k: v for k, v in self.db.items()}
@@ -693,12 +569,33 @@ class DeploymentCache:
     def close(self):
         self.db.close()
 
-    def __getitem__(self, key):
-        return self.db[key]
+    def _access_member(self, entry, part, path):
+        try: # if part is an int, assume list entry
+            idx = int(part)
+            if (len(entry)-1) > idx:  # pyright: ignore[reportArgumentType]
+                if path:
+                    raise IndexError(f'{path}.{idx}')
+                else:
+                    raise IndexError(f'{idx}')
+            return entry[idx]
+        except ValueError:  # part not an int, assume dict entry
+            try:
+                return entry[part]
+            except KeyError as e:
+                if path:
+                    raise KeyError(f'{path}.{part}')
+                else:
+                    raise e
+
+    def __contains__(self, key):
+        return key in self.db
 
     def __setitem__(self, key, value):
         self.db[key] = value
         self.db.commit()
+
+    def __getitem__(self, key):
+        return self.db[key]
 
     def __delitem__(self, key):
         try:
@@ -764,61 +661,133 @@ class BaseCommand:
         raise NotImplementedError()
 
 
-class CreateCombinedStackCommand(BaseCommand):
+class CreateRdsStackCommand(BaseCommand):
 
-    name = 'create-combined-stack'
-    desc = 'create deployment\'s cloudformation stack running services on one instance'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-k', '--key-name')
+    name = 'create-rds-stack'
+    desc = 'create deployment\'s cloudformation stack running RDS instance'
 
     def run(self, args):
-        stack_name = f'{args.deployment_name}-combined'
         template_path = os.path.abspath(os.path.join(
             os.path.dirname(__file__),
-            '../templates/stack-combined.yaml',
+            '../templates/stack-rds.yaml',
         ))
 
-        rds_subnets = command_get_config(self, 'rds-subnet-ids')
-
-        key_name = self._get_key_name(args)
-
-        combined_image = self.cache.get('images', {}).get('combined')
-        if not combined_image:
-            self.fail('could not find combined image in cache; '
-                      'please run create-combined-image command')
-
-        keycloak_image = self.cache.get('images', {}).get('keycloak')
-        if not keycloak_image:
-            self.fail('could not find keycloak image in cache; '
-                      'please run create-keycloak-image command')
-
-        self.logger.debug('looking up subnet CIDR...')
-        subnet_id = command_get_config(cmd, 'subnet-id')
-        resp = self.aws.ec2.describe_subnets(SubnetIds=[subnet_id])
-        subnet_cidr = resp['Subnets'][0]['CidrBlock']
-
-        extra_params = [
-            {'ParameterKey': 'KeyName', 'ParameterValue': key_name},
-            {'ParameterKey': 'CombinedImage', 'ParameterValue': combined_image},
-            {'ParameterKey': 'KeycloakImage', 'ParameterValue': keycloak_image},
-            {'ParameterKey': 'SubnetCidr', 'ParameterValue': subnet_cidr},
-            {'ParameterKey': 'RdsSubnets', 'ParameterValue': ','.join(rds_subnets)},  # pyright: ignore
+        vpc_cidr = command_get_config(self, 'vpc-cidr')
+        admin_cidr = command_get_config(self, 'admin-cidr')
+        key_name = command_get(self, 'key.name', 'a key pair been created')
+        vpc_id = command_get(self, 'vpc.vpc-id', 'VPC stack been created')
+        dns_name = command_get_config(self, 'dns-name')
+        hz_id = command_get_hosted_zone(self, dns_name)
+        sentinel_image = command_get(self, 'images.sentinel', 'sentinel image been created')
+        public_subnet = command_get(self, 'vpc.public-subnet-a-id', 'VPC stack been created')
+        rds_subnets = [
+            self.cache.get('vpc.private-subnet-a-id'),
+            self.cache.get('vpc.private-subnet-b-id'),
         ]
 
-        command_create_stack(cmd, args.deployment_name, stack_name,
+
+        self.logger.debug('generating admin password for Postgres and writing into cache...')
+        # note: not using punctuation in the initial password, as it will be passed through
+        # multiple shells, environments, and tools, and we don't want to
+        # warry about correctrly escaping everything at every stage. Using a longer string
+        # to compensate.
+        password = randomword(40)
+        self.cache['postgres_admin_password'] = password
+
+        extra_params = [
+            {'ParameterKey': 'VpcId', 'ParameterValue': vpc_id},
+            {'ParameterKey': 'KeyName', 'ParameterValue': key_name},
+            {'ParameterKey': 'SubnetCidr', 'ParameterValue': vpc_cidr},
+            {'ParameterKey': 'RdsSubnets', 'ParameterValue': ','.join(rds_subnets)},  # pyright: ignore
+            {'ParameterKey': 'RdsPassword', 'ParameterValue': password},  # pyright: ignore
+            {'ParameterKey': 'KeyName', 'ParameterValue': key_name},
+            {'ParameterKey': 'PublicSubnet', 'ParameterValue': public_subnet},
+            {'ParameterKey': 'ParentDomain', 'ParameterValue': dns_name},
+            {'ParameterKey': 'HostedZoneId', 'ParameterValue': hz_id},
+            {'ParameterKey': 'SentinelImage', 'ParameterValue': sentinel_image},
+            {'ParameterKey': 'AdminCidr', 'ParameterValue': admin_cidr},
+        ]
+
+        command_create_stack(cmd, args.deployment_name, 'rds',
                              template_path, extra_params, args.wait_period)
 
-    def _get_key_name(self, args):
-        if args.key_name:
-            return args.key_name
 
-        key_info = self.cache.get('key')
-        if key_info:
-            return key_info['name']
+class CreateServicesStackCommand(BaseCommand):
 
-        self.fail('could not find key name (specify with --key-name or run '
-                  'create-key-pair command)')
+    name = 'create-services-stack'
+    desc = '''create deployment\'s CloudFormation stack running Veraison services
+           on auto-scaled instances'''
+
+    def run(self, args):
+        template_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__),
+            '../templates/stack-services.yaml',
+        ))
+
+        region = command_get_config(self, 'region')
+        dns_name = command_get_config(self, 'dns-name')
+        ports = command_get_config(self, 'ports')
+        scaling = command_get_config(self, 'scaling')
+        hz_id = command_get_hosted_zone(self, dns_name)
+        admin_cidr = command_get_config(self, 'admin-cidr')
+        key_name = command_get(self, 'key.name', 'a key pair been created')
+        services_image = command_get(self, 'images.services', 'services image been created')
+        keycloak_image = command_get(self, 'images.keycloak', 'keycloak image been created')
+        vpc_id = command_get(self, 'vpc.vpc-id', 'VPC stack been created')
+        pub_subnet_a_id = command_get(self, 'vpc.public-subnet-a-id', 'VPC stack been created')
+        pub_subnet_b_id = command_get(self, 'vpc.public-subnet-b-id', 'VPC stack been created')
+        pub_subnet_a_cidr = command_get(self, 'vpc.public-subnet-a-cidr',
+                                        'VPC stack been created')
+        pub_subnet_b_cidr = command_get(self, 'vpc.public-subnet-b-cidr',
+                                        'VPC stack been created')
+        priv_subnet_a_id = command_get(self, 'vpc.private-subnet-a-id', 'VPC stack been created')
+        priv_subnet_b_id = command_get(self, 'vpc.private-subnet-b-id', 'VPC stack been created')
+
+        self.logger.debug(f'looking up certificate for {dns_name}...')
+        cert_arn = None
+        resp = self.aws.acm.list_certificates(CertificateStatuses=['ISSUED'])
+        for cert_summary in resp['CertificateSummaryList']:
+            if cert_summary['DomainName'] == dns_name:
+                cert_arn = cert_summary['CertificateArn']
+                break
+        else:
+            self.fail(f'Could not find certificate for {dns_name}')
+
+        extra_params = [
+            {'ParameterKey': 'VpcId', 'ParameterValue': vpc_id},
+            {'ParameterKey': 'AdminCidr', 'ParameterValue': admin_cidr},
+            {'ParameterKey': 'KeyName', 'ParameterValue': key_name},
+            {'ParameterKey': 'CombinedImage', 'ParameterValue': services_image},
+            {'ParameterKey': 'PublicSubnetA', 'ParameterValue': pub_subnet_a_id},
+            {'ParameterKey': 'PublicSubnetB', 'ParameterValue': pub_subnet_b_id},
+            {'ParameterKey': 'PublicSubnetACidr', 'ParameterValue': pub_subnet_a_cidr},
+            {'ParameterKey': 'PublicSubnetBCidr', 'ParameterValue': pub_subnet_b_cidr},
+            {'ParameterKey': 'PrivateSubnetA', 'ParameterValue': priv_subnet_a_id},
+            {'ParameterKey': 'PrivateSubnetB', 'ParameterValue': priv_subnet_b_id},
+
+            {'ParameterKey': 'ServiceCidr', 'ParameterValue': admin_cidr},
+            {'ParameterKey': 'Region', 'ParameterValue': region},
+
+            {'ParameterKey': 'ParentDomain', 'ParameterValue': dns_name},
+            {'ParameterKey': 'HostedZoneId', 'ParameterValue': hz_id},
+            {'ParameterKey': 'CertificateArn', 'ParameterValue': cert_arn},
+            {'ParameterKey': 'KeycloakImage', 'ParameterValue': keycloak_image},
+
+            {'ParameterKey': 'ProvisioningPort', 'ParameterValue': str(ports['provisioning'])},
+            {'ParameterKey': 'VerificationPort', 'ParameterValue': str(ports['verification'])},
+            {'ParameterKey': 'ManagementPort', 'ParameterValue': str(ports['management'])},
+            {'ParameterKey': 'KeycloakPort', 'ParameterValue': str(ports['keycloak'])},
+
+            {'ParameterKey': 'ScalingMinSize', 'ParameterValue': str(scaling['min-size'])},
+            {'ParameterKey': 'ScalingMaxSize', 'ParameterValue': str(scaling['max-size'])},
+            {'ParameterKey': 'ScalingCpuUtilTarget',
+             'ParameterValue': str(scaling['cpu-util-target'])},
+            {'ParameterKey': 'ScalingRequestCountTarget',
+             'ParameterValue': str(scaling['request-count-target'])},
+        ]
+
+        command_create_stack(cmd, args.deployment_name, 'services',
+                             template_path, extra_params, args.wait_period)
 
 
 class DeleteStackCommand(BaseCommand):
@@ -830,56 +799,22 @@ class DeleteStackCommand(BaseCommand):
         parser.add_argument('name')
 
     def run(self, args):
-        stack_name = f'{args.deployment_name}-{args.name}'
-        self.logger.info(f'deleting stack {stack_name}...')
+        stack_full_name = f'{args.deployment_name}-{args.name}'
+        self.logger.info(f'deleting stack {stack_full_name}...')
 
-        self.logger.debug(f'getting {stack_name} instances...')
-        stack_instances = get_stack_instances_info(self.aws, stack_name)
-
-        self.aws.cf.delete_stack(StackName=stack_name)
+        self.aws.cf.delete_stack(StackName=stack_full_name)
         try:
             self.logger.debug('waiting for the stack deletion to complete...')
-            resp = self.aws.cf.describe_stacks(StackName=stack_name)
+            resp = self.aws.cf.describe_stacks(StackName=stack_full_name)
             while resp['Stacks'][0]['StackStatus'] == 'DELETE_IN_PROGRESS':
                 time.sleep(args.wait_period)
-                resp = self.aws.cf.describe_stacks(StackName=stack_name)
+                resp = self.aws.cf.describe_stacks(StackName=stack_full_name)
         except ClientError as e:
             if 'does not exist' not in str(e):
                 raise e
 
-        self.logger.debug('updating instances in cache...')
-        instances = self.cache.get('instances', {})
-        for instance_name in stack_instances:
-            try:
-                del instances[instance_name]
-            except KeyError:
-                pass
-        self.cache['instances'] = instances
+        del self.cache[args.name]
 
-        self.logger.debug('removing RDS settings from cache...')
-        del self.cache['rds']
-        del self.cache['client_config']
-
-        self.logger.info('done.')
-
-
-class DeleteCertsCommand(BaseCommand):
-
-    name = 'delete-certs'
-    desc = 'delete  previously created service certs'
-
-    def run(self, args):
-        self.logger.info('deleting service certificates...')
-        certs = self.cache.get('certs', {})
-        if not certs:
-            self.logger.debug('no service certs found in cache')
-
-        for cname, cpaths in certs.items():
-            self.logger.debug(f'deleting {cname}...')
-            os.remove(cpaths['cert'])
-            os.remove(cpaths['key'])
-
-        self.cache['certs'] = {}
         self.logger.info('done.')
 
 
@@ -895,27 +830,38 @@ class UpdateSecurityGroupsCommand(BaseCommand):
     def run(self, args):
         self.logger.info('updating deployment security groups with IP address for this host...')
 
+        names = [
+            f'{args.deployment_name}-sentinel-intance-sg'
+        ]
+
         try:
             command_update_dynamic_address_rules(
-                    self, args.deployment_name, self.cache.user_tag, args.ports)
+                    self, args.deployment_name, names, self.cache.user_tag, args.ports)
         except Exception as e:
             self.fail(e)
 
         self.logger.info('done.')
 
 
-class CreateCombinedImageCommand(BaseCommand):
+class CreateServicesImageCommand(BaseCommand):
 
-    name = 'create-combined-image'
-    desc = 'create IMA image for the Veraison services EC2 instance'
+    name = 'create-services-image'
+    desc = 'create IMA image for the Veraison services EC2 instances'
 
     def update_arguments(self, parser):
         parser.add_argument('-D', '--deb')
         parser.add_argument(
+                '-c', '--services-config-template',
+            default=os.path.abspath(os.path.join(
+                os.path.dirname(__file__),
+                '../templates/services-config.yaml.template',
+            )),
+        )
+        parser.add_argument(
             '-t', '--template',
             default=os.path.abspath(os.path.join(
                 os.path.dirname(__file__),
-                '../templates/image-combined.pkr.hcl',
+                '../templates/image-services.pkr.hcl',
             )),
         )
         parser.add_argument('-T', '--instance-type')
@@ -926,7 +872,48 @@ class CreateCombinedImageCommand(BaseCommand):
             self.fail(f'{deb_path} does not exist')
         self.cache['deb'] = deb_path
 
-        command_create_image(self, args, 'combined', {'deb': deb_path})
+        ports = command_get_config(self, 'ports')
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        os.environ['RDS_HOST'] = rds['host']
+        os.environ['RDS_PORT'] = rds['port']
+        os.environ['RDS_DBNAME'] = 'veraison'
+        os.environ['RDS_USER'] = 'veraison'
+        os.environ['RDS_PASSWORD'] = password # pyright: ignore
+        os.environ['VTS_PORT'] = str(ports['vts'])
+        os.environ['PROVISIONING_PORT'] = str(ports['provisioning'])
+        os.environ['VERIFICATION_PORT'] = str(ports['verification'])
+        os.environ['MANAGEMENT_PORT'] = str(ports['management'])
+        os.environ['VTS_PORT'] = str(ports['vts'])
+        os.environ['KEYCLOAK_PORT'] = str(ports['keycloak'])
+
+        config_path = command_instantiate_template(
+                self, args.deployment_name, args.services_config_template,
+                self.cache.dir)
+        self.cache['services_config_file'] = config_path
+
+        command_create_image(self, args, 'services',
+                             {
+                                 'deb': deb_path,
+                                 'config_path': config_path,
+                             })
+
+
+class RegisterDomainCommand(BaseCommand):
+
+    name = 'register-domain'
+    desc = 'delete a previously created stack'
+
+    def update_arguments(self, parser):
+        parser.add_argument('domain', help='domain to be registred')
+        parser.add_argument('-a', '--autorenew', action='store_true',
+                            help='domain will autorenew upon expiration if this is specified')
+        parser.add_argument('-d' '--duration-in-years', type=int, default=1,
+                            help='duration of the registration in years')
+
+    def run(self, args):
+        stack_name = f'{args.deployment_name}-{args.name}'
+        self.logger.info(f'deleting stack {stack_name}...')
 
 
 class ConfigureCommand(BaseCommand):
@@ -940,33 +927,81 @@ class ConfigureCommand(BaseCommand):
     default_management_password = 'veraison'
     default_client_id = 'veraison-client'
     default_client_secret = 'YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z'
+    default_scaling_min_size = 1
+    default_scaling_max_size = 3
+    default_scaling_cpu_util_target = 60
+    default_scaling_request_count_target = 10
 
     def update_arguments(self, parser):
-        parser.add_argument('-a', '--admin-cidr')
         parser.add_argument('-i', '--init', action='store_true',
-                            help='initialize config not explicitly specified')
-        parser.add_argument('-r', '--region')
-        parser.add_argument('-s', '--subnet-id')
-        parser.add_argument('-v', '--vpc-id')
+                            help='indiates that this is an initial configuration for a '
+                            'deployment; if a parameter is not specified, its default value '
+                            'will be configured, if it has one, or an error will be raised '
+                            'otherwise')
 
-        parser.add_argument('-R', '--rds-subnet-ids', action='append')
+        parser.add_argument('-a', '--admin-cidr',
+                            help='CIDR for IP address that will be allowed access to the '
+                                 'sentinel instance')
+        parser.add_argument('-c', '--vpc-cidr',
+                            help='CIDR used for the VPC; this should be large ennough to '
+                                 'accommodate four subnets (recommended at least /16).')
+        parser.add_argument('-d', '--dns-name',
+                            help='parent domain that will be used for the deployment; it must '
+                                 'be registered in Route53')
+        parser.add_argument('-r', '--region',
+                            help='AWS region inside which the deployment will be created')
 
-        parser.add_argument('-p', '--provisioning-user' , default=None)
-        parser.add_argument('-P', '--provisioning-password' , default=None)
-        parser.add_argument('-m', '--management-user' , default=None)
-        parser.add_argument('-M', '--management-password' , default=None)
-        parser.add_argument('-C', '--client-id' , default=None)
-        parser.add_argument('-S', '--client-secret' , default=None)
+        parser.add_argument('-P', '--provisioning-port' , type=Port,
+                            help='port that will be used for the provisioning service')
+        parser.add_argument('-V', '--verification-port' , type=Port,
+                            help='port that will be used for the verification service')
+        parser.add_argument('-M', '--management-port' , type=Port,
+                            help='port that will be used for the management service')
+        parser.add_argument('-K', '--keycloak-port' , type=Port,
+                            help='port that will be used for Keycloak')
+        parser.add_argument('-X', '--vts-port' , type=Port,
+                            help='port that will be used for the VTS service (note: '
+                                 'currently, VTS runs on the same instance as a front-end '
+                                 'service so this is largely irrelevant)')
+
+        parser.add_argument('-p', '--provisioning-user',
+                            help='the name of provisioning user; must match Keycloak realm')
+        parser.add_argument('-R', '--provisioning-password',
+                            help='the password of provisioning user; must match Keycloak realm')
+        parser.add_argument('-m', '--management-user',
+                            help='the name of management user; must match Keycloak realm')
+        parser.add_argument('-Q', '--management-password',
+                            help='the password of management user; must match Keycloak realm')
+        parser.add_argument('-C', '--client-id',
+                            help='client ID used to connect to Keycloak API')
+        parser.add_argument('-S', '--client-secret',
+                            help='client SECRET used to connect to Keycloak API')
+
+        parser.add_argument('-A', '--keycloak-admin',
+                            help='the name of Keycloak instance admin account')
+        parser.add_argument('-U', '--keycloak-version',
+                            help='verision of Keycloak that will be used in the deployment')
+
+        parser.add_argument('-I', '--scaling-min-size', type=int,
+                            help='minimum number of instances inside an auto-scaling group')
+        parser.add_argument('-J', '--scaling-max-size', type=int,
+                            help='maximum number of instances inside an auto-scaling group')
+        parser.add_argument('-D', '--scaling-cpu-util-target', type=Percent,
+                            help='CPU utilization that will be targed by auto-scaling policies')
+        parser.add_argument('-E', '--scaling-request-count-target', type=int,
+                            help='request count that will be targed by auto-scaling policies')
 
     def run(self, args):
-        self._configure_vpc_id(args)
-        self._configure_subnet_id(args)
         self._configure_region(args)
-        self._conifigure_admin_cidr(args)
-        self._conifigure_client_settings(args)
-        self._conifigure_rds_subnet_ids(args)
+        self._configure_admin_cidr(args)
+        self._configure_vpc_cidr(args)
+        self._configure_client_settings(args)
+        self._configure_dns_name(args)
+        self._configure_ports(args)
+        self._configure_keycloak(args)
+        self._configure_scaling(args)
 
-    def _conifigure_admin_cidr(self, args):
+    def _configure_admin_cidr(self, args):
         if args.admin_cidr:
             self.cache['admin-cidr'] = args.admin_cidr
         elif args.init:
@@ -974,7 +1009,15 @@ class ConfigureCommand(BaseCommand):
                                 're-run with --admin-cidr option')
             self.cache['admin-cidr'] = '0.0.0.0/0'
 
-    def _conifigure_client_settings(self, args):
+    def _configure_vpc_cidr(self, args):
+        if args.vpc_cidr:
+            self.cache['vpc-cidr'] = args.vpc_cidr
+        elif args.init:
+            self.logger.info('defaulting VPC CIDR to 10.0.0.0/16 '
+                             '(re-run with --vpc-cidr to change)')
+            self.cache['admin-cidr'] = '10.0.0.0/16'
+
+    def _configure_client_settings(self, args):
         attrs =  [
             'provisioning_user',
             'provisioning_password',
@@ -998,55 +1041,12 @@ class ConfigureCommand(BaseCommand):
 
         self.cache['client_config'] = client_config
 
-    def _configure_vpc_id(self, args):
-        if args.vpc_id:
-            self.logger.debug(f'writing {args.vpc_id} to cache')
-            self.cache['vpc-id'] = args.vpc_id
-            return
-        elif not args.init and self.cache.get('vpc-id'):
-            return  # already set and not re-initializing
-
-        self.logger.debug('no VPC ID specified; trying to identify from account...')
-        resp = self.aws.ec2.describe_vpcs(
-            Filters=[{
-                'Name': 'state',
-                'Values': ['available'],
-            }]
-        )
-        if len(resp['Vpcs']) == 1:
-            vpc_id = resp['Vpcs'][0]['VpcId']
-            self.cache['vpc-id'] = vpc_id
-        elif len(resp['Vpcs']) > 1:
-            vpc_ids = ', '.join(vpc['VpcId'] for vpc in resp['Vpcs'])
-            self.fail(f'multiple VPCs found: {vpc_ids};  use --vpc-id to specify '
-                       'which one should be used')
-        else:
-            self.fail('no VPCs found in the account')
-
-    def _configure_subnet_id(self, args):
-        if args.subnet_id:
-            self.logger.debug(f'writing {args.subnet_id} to cache')
-            self.cache['subnet-id'] = args.subnet_id
-            return
-        elif not args.init and self.cache.get('subnet-id'):
-            return  # already set and not re-initializing
-
-        self.logger.debug('no subnet ID specified; trying to identify from account...')
-        resp = self.aws.ec2.describe_subnets(
-            Filters=[{
-                'Name': 'state',
-                'Values': ['available'],
-            }]
-        )
-        if len(resp['Subnets']) == 1:
-            subnet_id = resp['Subnets'][0]['SubnetId']
-            self.cache['subnet-id'] = subnet_id
-        elif len(resp['Subnets']) > 1:
-            subnet_ids = ', '.join(subnet['SubnetId'] for subnet in resp['Subnets'])
-            self.fail(f'multiple subnets found: {subnet_ids};  use --subnet-id to specify '
-                       'which one should be used')
-        else:
-            self.fail('no subnets found in the account')
+    def _configure_dns_name(self, args):
+        if args.dns_name:
+            self.logger.debug(f'writing {args.dns_name} to cache')
+            self.cache['dns-name'] = args.dns_name
+        elif args.init:
+            raise ValueError('--dns-name not specified; it must be configured')
 
     def _configure_region(self, args):
         if args.region:
@@ -1066,16 +1066,60 @@ class ConfigureCommand(BaseCommand):
 
         self.cache['region'] = region
 
-    def _conifigure_rds_subnet_ids(self, args):
-        if args.init and not args.rds_subnet_ids:
-            self.fail('-R/--rds-subnet-ids must be specified')
+    def _configure_ports(self, args):
+        names = ['vts', 'keycloak', 'provisioning', 'verification', 'management']
+        ports = self.cache.get('ports', {})
 
-        subnet_ids = []
-        for entry in args.rds_subnet_ids:
-            subnet_ids.extend(entry.split(','))
+        for name in names:
+            val = getattr(args, f'{name}_port', None)
+            if val is not None:
+                ports[name] = int(val)
+            elif args.init:
+                raise ValueError(f'--{name}-port not specified; it must be configured')
 
-        if subnet_ids:
-            self.cache['rds-subnet-ids'] = subnet_ids
+        self.logger.debug('writing ports to cache...')
+        self.cache['ports'] = ports
+
+    def _configure_keycloak(self, args):
+        if args.keycloak_version:
+            self.cache['keycloak-version'] = args.keycloak_version
+        elif args.init:
+            self.logger.info('setting keycloak version to 25.0.5; '
+                             'use --keycloak-version to change')
+            self.cache['keycloak-version'] = '25.0.5'
+
+        if args.keycloak_admin:
+            self.cache['keycloak-admin'] = args.keycloak_admin
+        elif args.init:
+            self.logger.info('setting keycloak admin account name to "admin"; '
+                             'use --keycloak-admin to change')
+            self.cache['keycloak-admin'] = 'admin'
+
+    def _configure_scaling(self, args):
+        arg_names = [
+            'scaling-min-size',
+            'scaling-max-size',
+            'scaling-cpu-util-target',
+            'scaling-request-count-target',
+        ]
+        scaling = self.cache.get('scaling', {})
+
+        for name in arg_names:
+            attr = name.replace('-', '_')
+            val = getattr(args, attr)
+            if val:
+                scaling[name.replace('scaling-', '')] = val
+            elif args.init:
+                default = getattr(self, f'default_{attr}', None)
+                if default:
+                    self.logger.info(f'setting {name.replace('-', ' ')} to {default}; '
+                                     f'use --{name} to change')
+                    scaling[name.replace('scaling-', '')] = default
+                else:
+                    self.fail(f'--{name} must be specified')
+
+        self.logger.debug('writing scaling config...')
+        self.cache['scaling'] = scaling
 
 
 class CreateKeycloakImageCommand(BaseCommand):
@@ -1085,7 +1129,7 @@ class CreateKeycloakImageCommand(BaseCommand):
 
     def update_arguments(self, parser):
         parser.add_argument(
-                '-c', '--keycloak-config-template',
+                '-c', '--keycloak-conf-template',
             default=os.path.abspath(os.path.join(
                 os.path.dirname(__file__),
                 '../templates/keycloak.conf.template',
@@ -1105,25 +1149,76 @@ class CreateKeycloakImageCommand(BaseCommand):
                 '../templates/image-keycloak.pkr.hcl',
             )),
         )
+        parser.add_argument(
+            '-r', '--realm-file',
+            default=os.path.abspath(os.path.join(
+                os.path.dirname(__file__),
+                '../misc/veraison-realm.json',
+            )),
+        )
         parser.add_argument('-T', '--instance-type')
 
     def run(self, args):
-        if not os.environ.get('KEYCLOAK_ADMIN_PASSWORD'):
-            self.logger.debug('generating admin password for Keycloak and writing into cache...')
-            # note: not using punctuation in the initial password, as it will be passed through
-            # multiple shells, environments, and tools, and we don't want to
-            # warry about correctrly escaping everything at every stage. Using a longer string
-            # to compensate.
-            password = randomword(40)
-            os.environ['KEYCLOAK_ADMIN_PASSWORD'] = password
-            self.cache['kc_password'] = password
+        if not os.path.isfile(args.realm_file):
+            self.fail(f'realm file {args.realm_file} does not exist')
+
+        self.logger.debug('generating admin password for Keycloak and writing into cache...')
+        # note: not using punctuation in the initial password, as it will be passed through
+        # multiple shells, environments, and tools, and we don't want to
+        # warry about correctrly escaping everything at every stage. Using a longer string
+        # to compensate.
+        password = randomword(40)
+        os.environ['KEYCLOAK_ADMIN_PASSWORD'] = password
+        self.cache['keycloak_admin_password'] = password
+
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+
+        os.environ['RDS_HOST'] = rds['host']
+        os.environ['RDS_PORT'] = rds['port']
+        os.environ['RDS_USER'] = 'veraison'
+        os.environ['RDS_PASSWORD'] = password  # pyright: ignore
 
         conf_path = command_instantiate_template(
-                self, args.deployment_name, args.keycloak_config_template)
+                self, args.deployment_name, args.keycloak_conf_template)
         service_path = command_instantiate_template(
                 self, args.deployment_name, args.keycloak_service_template)
+
         command_create_image(self, args, 'keycloak',
-                             {'conf_path': conf_path, 'service_path': service_path})
+                             {
+                                 'conf_path': conf_path,
+                                 'service_path': service_path,
+                                 'realm_path': args.realm_file,
+                             })
+
+
+class CreateSentinelImageCommand(BaseCommand):
+
+    name = 'create-sentinel-image'
+    desc = 'create IMA image for the sentinel EC2 instance'
+
+    def update_arguments(self, parser):
+        parser.add_argument(
+            '-t', '--template',
+            default=os.path.abspath(os.path.join(
+                os.path.dirname(__file__),
+                '../templates/image-sentinel.pkr.hcl',
+            )),
+        )
+        parser.add_argument(
+            '-d', '--dispatcher',
+            default=os.path.abspath(os.path.join(
+                os.path.dirname(__file__),
+                '../misc/sentinel-commands',
+            )),
+        )
+        parser.add_argument('-T', '--instance-type')
+
+    def run(self, args):
+        command_create_image(self, args, 'sentinel',
+                             {
+                                 'command_dispatcher_path': args.dispatcher,
+                             })
 
 
 class DeleteImageCommand(BaseCommand):
@@ -1323,121 +1418,55 @@ class DeleteDebCommand(BaseCommand):
         self.logger.info('done.')
 
 
-class CreateDebugStack(BaseCommand):
-    name = 'create-debug-stack'
-    desc = 'create a stack with a single instance that can be used for testing'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-k', '--key-name')
-        parser.add_argument('-i', '--image-id', default='ami-02c6977f57c0816de')
+class CreateVpcStack(BaseCommand):
+    name = 'create-vpc-stack'
+    desc = 'create stack setting up the VPC, subnets and associated routing for Veraison services'
 
     def run(self, args):
-        stack_name = f'{args.deployment_name}-debug'
+        region = self.cache.get('region')
+        if not region:
+            self.fail('region has not been configured')
+
+        cidr_block = self.cache.get('vpc-cidr')
+        if not cidr_block:
+            self.fail('VPC CIDR block has not been configured')
+
         template_path = os.path.abspath(os.path.join(
             os.path.dirname(__file__),
-            '../templates/stack-debug.yaml',
+            '../templates/stack-vpc.yaml',
         ))
-        key_name = self._get_key_name(args)
+
         extra_params = [
-            {'ParameterKey': 'KeyName', 'ParameterValue': key_name},
-            {'ParameterKey': 'InstanceImage', 'ParameterValue': args.image_id},
+            {'ParameterKey': 'Region', 'ParameterValue': region},
+            {'ParameterKey': 'VpcCidrBlock', 'ParameterValue': cidr_block},
         ]
 
-        command_create_stack(cmd, args.deployment_name, stack_name,
+        command_create_stack(cmd, args.deployment_name, 'vpc',
                              template_path, extra_params, args.wait_period)
-
-    def _get_key_name(self, args):
-        if args.key_name:
-            return args.key_name
-
-        key_info = self.cache.get('key')
-        if key_info:
-            return key_info['name']
-
-        self.fail('could not find key name (specify with --key-name or run '
-                  'create-key-pair command)')
 
 
 class ShellCommand(BaseCommand):
 
     name = 'shell'
-    desc = 'start a shell on a deployment instance'
+    desc = 'start a shell on the sentinel instance'
 
     def update_arguments(self, parser):
-        parser.add_argument('instance', choices=['combined', 'keycloak', 'test'])
-        parser.add_argument('-k', '--ssh-key')
-        parser.add_argument('-u', '--user', default='ubuntu')
         parser.add_argument('-s', '--server-alive-interval', type=int, default=60)
 
     def run(self, args):
         if not shutil.which('ssh'):
             self.fail('ssh does not appear to be installed on the system')
 
-        instance = self.cache.get('instances', {}).get(args.instance)
-        if not instance:
-            self.fail(f'{instance} instance not in cache; has the correct stack been created?')
+        host = command_get(self, 'rds.sentinel-dns-name', 'RDS stack been created')
+        key = command_get(self, 'key.path', 'a key pair been created')
 
-        if args.ssh_key:
-            key = args.ssh_key
-        else:
-            key = self.cache.get('key', {}).get('path')
-
-        if not key:
-            self.fail(f'key not found in cache specify with --ssh-key')
-
-        ssh_opts = '-o StrictHostKeyChecking=no'
+        ssh_opts = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
         if args.server_alive_interval:
             ssh_opts += f' -o ServerAliveInterval={args.server_alive_interval}'
 
-        ssh_cmd = f'ssh {ssh_opts} -i {key} ubuntu@{instance['dns_name']}'
+        ssh_cmd = f'ssh {ssh_opts} -i {key} ubuntu@{host}'
         self.logger.debug(ssh_cmd)
         os.system(ssh_cmd)
-
-
-class SetupRdsCommand(BaseCommand):
-
-    name = 'setup-rds'
-    desc = 'setup the RDS instance for use as a K-V store for the services'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-d', '--dbname', default='veraison')
-        parser.add_argument('-U', '--user', default='veraison')
-        parser.add_argument('-p', '--password', default='veraison')
-
-    def run(self, args):
-        if not shutil.which('psql'):
-            self.fail('psql must be installed on the system')
-
-        rds = self.cache.get('instances', {}).get('rds')
-        if not rds:
-            self.fail('could not not find RDS instance in cache; '
-                      'has the associated stack been created?')
-
-        self.logger.info('connecting to RDS instance...')
-        con_line = (f'host={rds['dns_name']} port={rds['port']} dbname={args.dbname} '
-                    f'user={args.user} password={args.password}')
-
-        self.logger.debug(f'connection settings: {con_line}')
-        with psycopg2.connect(con_line) as con:
-            with con.cursor() as cur:
-                self.logger.info('setting up K-V store...')
-                for sql_statement in PGSQL_SETUP.split(';'):
-                    sql_statement = sql_statement.strip()
-                    if not sql_statement:
-                        continue
-                    self.logger.debug(sql_statement)
-                    cur.execute(sql_statement)
-
-        self.logger.debug('updating cache with DB connection settings...')
-        self.cache['rds'] = {
-            'RDS_HOST': rds['dns_name'],
-            'RDS_PORT': rds['port'],
-            'RDS_DBNAME': args.dbname,
-            'RDS_USER': args.user,
-            'RDS_PASSWORD': args.user,
-        }
-
-        self.logger.info('done.')
 
 
 class DbShellCommand(BaseCommand):
@@ -1446,75 +1475,27 @@ class DbShellCommand(BaseCommand):
     desc = 'start a database shell on a deployment\'s RDS instance'
 
     def update_arguments(self, parser):
-        parser.add_argument('-d', '--dbname', default='veraison')
-        parser.add_argument('-U', '--user', default='veraison')
+        parser.add_argument('-s', '--server-alive-interval', type=int, default=60)
 
     def run(self, args):
-        if not shutil.which('psql'):
-            self.fail('psql must be installed on the system')
+        if not shutil.which('ssh'):
+            self.fail('ssh does not appear to be installed on the system')
 
-        rds = self.cache.get('instances', {}).get('rds')
-        if not rds:
-            self.fail('could not not find RDS instance in cache; '
-                      'has the associated stack been created?')
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        pgpass = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        psql_cmd = f'PGPASSWORD={pgpass} psql -h {rds['host']} -p {rds['port']} '\
+                   f'-U veraison -d veraison'
 
-        opts = {
-            '--host': rds['dns_name'],
-            '--port': rds['port'],
-            '--user': args.user,
-            '--dbname': args.dbname,
-        }
+        host = command_get(self, 'rds.sentinel-dns-name', 'RDS stack been created')
+        key = command_get(self, 'key.path', 'a key pair been created')
 
-        opt_string = ' '.join(f'{k}={v}' for k, v in opts.items())
-        psql_cmd = f'psql {opt_string}'
-        self.logger.debug(psql_cmd)
-        os.system(psql_cmd)
+        ssh_opts = '-t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        if args.server_alive_interval:
+            ssh_opts += f' -o ServerAliveInterval={args.server_alive_interval}'
 
-
-class PushCommand(BaseCommand):
-
-    name = 'push'
-    desc = 'copy a file/directory from the host to a deployment instance'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-i', '--instance' , default='combined',
-                            choices=['combined', 'keycloak'])
-        parser.add_argument('-P', '--no-preserve-mode', action='store_true')
-        parser.add_argument('-s', '--sudo', action='store_true')
-        parser.add_argument('-o', '--owner', help='implies --sudo')
-        parser.add_argument('src')
-        parser.add_argument('dest')
-
-    def run(self, args):
-        if args.owner:
-            args.sudo = True
-
-        with command_connect(self, args.instance) as con:
-            if args.sudo:
-                con_transfer_file(
-                        args.src, args.dest,
-                        args.owner, preserve_mode=(not args.no_preserve_mode))
-            else:
-                con.put(args.src, remote=args.dest, preserve_mode=(not args.no_preserve_mode))
-
-
-class PullCommand(BaseCommand):
-
-    name = 'pull'
-    desc = 'copy a file/directory from a deployment instance to the host'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-i', '--instance' , default='combined',
-                            choices=['combined', 'keycloak'])
-        parser.add_argument('-P', '--no-preserve-mode', action='store_true')
-        parser.add_argument('src')
-        parser.add_argument('dest')
-
-    def run(self, args):
-        self.logger.debug(f'copying {args.src} on the host to {args.dest} '
-                          f'on {args.instance} instance')
-        with command_connect(self, args.instance) as con:
-            con.get(args.src, local=args.dest, preserve_mode=(not args.no_preserve_mode))
+        ssh_cmd = f'ssh {ssh_opts} -i {key} ubuntu@{host} "{psql_cmd}"'
+        self.logger.debug(ssh_cmd)
+        os.system(ssh_cmd)
 
 
 class CreateClientConfigCommand(BaseCommand):
@@ -1532,46 +1513,45 @@ class CreateClientConfigCommand(BaseCommand):
 
     def run(self, args):
         self.logger.info('creating Veraison client config(s)...')
-        if not os.path.isfile(self.cache.ca_cert_path):
-            self.fail('could not find ca-cert in cache; has create-certs been called?')
-
         client_config = self.cache.get('client_config')
-        if  not client_config:
+        if not client_config:
             self.fail('client config not found; run configure command with appropriate options')
 
-        with command_connect(self, 'combined') as con:
+        dns_name = self.cache.get('dns-name')
+        if not dns_name:
+            self.fail('DNS name not found; run configure command ensuring VERAISON_AWS_DNS_NAME '
+                      'environment variable is set (and exported)')
+        host = f'services.{dns_name}'
 
-            self.logger.debug(f'getting services config from {con.host}...')
-            res = con.run(
-                'cat /opt/veraison/config/services/config.yaml',
-                echo=False, hide=True,
+        services_config_path = self.cache.get('services_config_file')
+        if not services_config_path:
+            self.fail('services config not found; re-create the services image')
+
+        with open(services_config_path, 'r') as fh:
+            srv_cfg = yaml.safe_load(fh)
+
+        kc_host = srv_cfg.get('auth', {}).get('host')
+        kc_port = srv_cfg.get('auth', {}).get('port')
+        if not (kc_host and kc_port):
+            self.fail('keycloak host/port not found in services config; '
+                      'has auth been configured?')
+
+        clients = args.clients or self.all_clients
+        for client in clients:
+            self.logger.info(f'generating {client} config...')
+            outdir = os.path.join(args.output_dir, client)
+            if not os.path.isdir(outdir):
+                self.logger.debug(f'creating {outdir}')
+                os.makedirs(outdir)
+
+            config = getattr(self, f'get_{client}_config')(
+                srv_cfg, client_config, host, kc_host, kc_port,
             )
-            if res.exited != 0:
-                self.fail(f'could not read services config; got {res.exited}: {res.stderr}')
-            srv_cfg = yaml.safe_load(res.stdout)
 
-            kc_host = srv_cfg.get('auth', {}).get('host')
-            kc_port = srv_cfg.get('auth', {}).get('port')
-            if not (kc_host and kc_port):
-                self.fail('keycloak host/port not found in services config; '
-                          'has auth been configured?')
-
-            clients = args.clients or self.all_clients
-            for client in clients:
-                self.logger.info(f'generating {client} config...')
-                outdir = os.path.join(args.output_dir, client)
-                if not os.path.isdir(outdir):
-                    self.logger.debug(f'creating {outdir}')
-                    os.makedirs(outdir)
-
-                config = getattr(self, f'get_{client}_config')(
-                    srv_cfg, client_config, con.host, kc_host, kc_port,
-                )
-
-                outfile = os.path.join(outdir, 'config.yaml')
-                self.logger.debug(f'writing {outfile}')
-                with open(outfile, 'w') as wfh:
-                    yaml.dump(config, wfh)
+            outfile = os.path.join(outdir, 'config.yaml')
+            self.logger.debug(f'writing {outfile}')
+            with open(outfile, 'w') as wfh:
+                yaml.dump(config, wfh)
 
             self.cache['client_config_dir'] = args.output_dir
             self.logger.info('done.')
@@ -1579,7 +1559,6 @@ class CreateClientConfigCommand(BaseCommand):
     def get_cocli_config(self, srv_cfg, cli_cfg, host, kc_host, kc_port):
         port = int(srv_cfg['provisioning']['listen-addr'].split(':')[1])
         return {
-            'ca_cert': self.cache.ca_cert_path,
             'api_server': f'https://{host}:{port}/endorsement-provisioning/v1/submit',
             'auth': 'oauth2',
             'username': cli_cfg['provisioning_user'],
@@ -1593,14 +1572,12 @@ class CreateClientConfigCommand(BaseCommand):
     def get_evcli_config(self, srv_cfg, cli_cfg, host, kc_host, kc_port):
         port = int(srv_cfg['verification']['listen-addr'].split(':')[1])
         return {
-            'ca_cert': self.cache.ca_cert_path,
             'api_server': f'https://{host}:{port}/challenge-response/v1/newSession',
         }
 
     def get_pocli_config(self, srv_cfg, cli_cfg, host, kc_host, kc_port):
         port = int(srv_cfg['management']['listen-addr'].split(':')[1])
         return {
-            'ca_cert': self.cache.ca_cert_path,
             'tls': True,
             'host': host,
             'port': port,
@@ -1624,35 +1601,36 @@ class CacheCommand(BaseCommand):
                             help='a dot-separated path for the entry the value of which is '
                                  'to be displayed; if not specified, the entrie cache will be '
                                  'shown')
+        parser.add_argument('-d', '--delete',
+                            help='the key to be deleted (note: dot-spearated paths not supported')
 
     def run(self, args):
         if args.query:
-            parts = args.query.split('.')
-            entry = self.cache
-            path = ''
-
-            for part in parts[:len(parts)-1]:
-                entry = self._access_member(entry, part, path)
-                path = path + '.' + part
-
-            val = self._access_member(entry, parts.pop(), path)
+            val = self.cache.get(args.query)
             if val is not None:
                 sys.stdout.write(val)
+        elif args.delete:
+            del self.cache[args.delete]
         else:
             print(f'deployment: {args.deployment_name}')
             pprint.pp(self.cache.as_dict())
 
-    def _access_member(self, entry, part, path):
-        try: # if part is an int, assume list entry
-            idx = int(part)
-            if (len(entry)-1) > idx:  # pyright: ignore[reportArgumentType]
-                if path:
-                    self.fail(f'index {idx} does not exist for cache entry "{path}"')
-                else:
-                    self.fail(f'index {idx} does not exist in cache')
-            return entry[idx]
-        except ValueError:  # part not an int, assume dict entry
-            return entry[part]
+
+class SetupRdsCommand(BaseCommand):
+
+    name = 'setup-rds'
+    desc = 'setup the RDS instance for use as a K-V store for the services'
+
+    def run(self, args):
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        res = command_sentinel(
+            self,
+            f'setup-rds {rds['host']} {rds['port']} {password}',
+            verbose=args.verbose, echo=False, hide=False, pty=True,
+        )
+        if res.exited != 0:
+            self.fail(f'could not set up stores; got {res.exited}: {res.stdout}')
 
 
 class CheckStoresCommand(BaseCommand):
@@ -1662,39 +1640,31 @@ class CheckStoresCommand(BaseCommand):
     aliases = ['stores']
 
     def run(self, args):
-        rds_settings = self.cache.get('rds')
-        if not rds_settings:
-            self.fail('could not find RDS settings in cache; run setup-rds command')
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        res = command_sentinel(
+            self,
+            f'check-stores {rds['host']} {rds['port']} {password}',
+            verbose=args.verbose, echo=False, hide=False, pty=True,
+        )
+        if res.exited != 0:
+            self.fail(f'could not check stores; got {res.exited}: {res.stdout}')
 
-        con_line = (f'host={rds_settings['RDS_HOST']} port={rds_settings['RDS_PORT']} '
-                    f'dbname={rds_settings['RDS_DBNAME']} '
-                    f'user={rds_settings['RDS_USER']} password={rds_settings['RDS_PASSWORD']}')
 
-        self.logger.debug(f'RDS connection settings: {con_line}')
-        with psycopg2.connect(con_line) as con:
-            with con.cursor() as cur:
-                print(f'{COLOR_GREEN}TRUST ANCHORS:\n--------------{COLOR_RESET}')
-                cur.execute('SELECT * FROM trust_anchors')
-                for key, value in cur.fetchall():
-                    print(key)
-                    parsed = json.loads(value)
-                    print(json.dumps(parsed, indent=4, sort_keys=True))
-                    print()
+class ClearStoresCommand(BaseCommand):
+    name = 'clear-stores'
+    desc = 'clear the contents of deployment\'s sqlite3 stores'
 
-                print(f'{COLOR_GREEN}ENDORSEMENTS:\n-------------{COLOR_RESET}')
-                cur.execute('SELECT * FROM endorsements')
-                for key, value in cur.fetchall():
-                    print(key)
-                    parsed = json.loads(value)
-                    print(json.dumps(parsed, indent=4, sort_keys=True))
-                    print()
-
-                print(f'{COLOR_GREEN}POLICIES:\n---------{COLOR_RESET}')
-                cur.execute('SELECT * FROM policies')
-                for key, value in cur.fetchall():
-                    print(key)
-                    print(f'----\n{value}----\n')
-                    print()
+    def run(self, args):
+        rds = command_get(self, 'rds', 'RDS stack has been created')
+        password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        res = command_sentinel(
+            self,
+            f'clear-stores {rds['host']} {rds['port']} {password}',
+            verbose=args.verbose, echo=False, hide=False, pty=True,
+        )
+        if res.exited != 0:
+            self.fail(f'could not clear stores; got {res.exited}: {res.stdout}')
 
 
 class StatusCommand(BaseCommand):
@@ -1704,239 +1674,93 @@ class StatusCommand(BaseCommand):
 
     def run(self, args):
         print(f'deployment: {args.deployment_name}')
-        vpc_id = self.cache.get('vpc-id', f'{COLOR_DARK_GREY}none{COLOR_RESET}')
-        print(f'       vpc: {vpc_id}')
-        subnet_id = self.cache.get('subnet-id', f'{COLOR_DARK_GREY}none{COLOR_RESET}')
-        print(f'    subnet: {subnet_id}')
+        print()
 
-        instance = self.cache.get('instances', {}).get('combined')
-        if not instance:
-            print(f'  instance: {COLOR_DARK_GREY}not created{COLOR_RESET}')
-            return
-
-        host = instance['dns_name']
-        addr = instance['ip_address']
-
-        try:
-            with command_connect(self, 'combined') as con:
-                res = con.run('/opt/veraison/bin/veraison -s status', echo=False, hide=True)
-                print(f'  instance: {host} ({addr}) {COLOR_GREEN}up{COLOR_RESET}')
-                print(f'  services:')
-                print(res.stdout.rstrip('\n'))
-        except Exception as e:
-            self.logger.debug(f'error connecting to instance: {e}')
-            print(f'  instance: {host} ({addr}) {COLOR_RED}down{COLOR_RESET}')
-
-
-class ClearStoresCommand(BaseCommand):
-    name = 'clear-stores'
-    desc = 'clear the contents of deployment\'s sqlite3 stores'
-
-    def run(self, args):
-        with command_connect(self, 'combined') as con:
-            res = con.sudo('/opt/veraison/bin/veraison clear-stores',
-                          user='veraison', echo=False, hide=True, pty=True)
-            if res.exited != 0:
-                self.fail(f'could not clear stores; got {res.exited}: {res.stdout}')
-
-
-class CreateCertsCommand(BaseCommand):
-
-    name = 'create-certs'
-    desc = 'generate certificates for the deployment'
-
-    all_services = ['vts', 'provisioning', 'verification', 'management', 'keycloak']
-
-    def update_arguments(self, parser):
-        parser.add_argument('-c', '--ca-cert',
-                            help='PEM-encoded CA cert that will be used to sign the service '
-                                 'cert(s)')
-        parser.add_argument('-k', '--ca-cert-key',
-                            help='PEM-encoded signing key associated with the CA cert')
-        parser.add_argument('-s', '--service',
-                            action='append', dest='services', choices=self.all_services,
-                            help='name of the service for which a certificate will be generated. '
-                                 'May be specified multiple times. If not specified, a cert will '
-                                 'be generated for all valid services.',
-                            )
-
-    def run(self, args):
-        self.logger.info('creating service certificates...')
-        if (not args.ca_cert) != (not args.ca_cert_key):
-            self.fail('if one of -c/--ca-cert and -k/--ca-cert-key is specified, '
-                      'the other must be as well')
-
-        combined_host = self.cache.get('instances', {}).get('combined', {}).get('dns_name')
-        if not combined_host:
-            self.fail('did not find DNS name for combined instance in cache; '
-                      'has create-stack been called?')
-
-        keycloak_host = self.cache.get('instances', {}).get('keycloak', {}).get('dns_name')
-        if not keycloak_host:
-            self.fail('did not find DNS name for keycloak instance in cache; '
-                      'has create-stack been called?')
-
-        if not os.path.isdir(self.cache.certs_dir):
-            self.logger.debug(f'creating {self.cache.certs_dir}')
-            os.makedirs(self.cache.certs_dir)
-
-        if args.ca_cert:
-            self.logger.debug('copying CA cert to cache')
-            shutil.copyfile(args.ca_cert, self.cache.ca_cert_path)
-            shutil.copyfile(args.ca_cert_key, self.cache.ca_key_path)
-            os.chmod(self.cache.ca_key_path, stat.S_IRUSR | stat.S_IWUSR)
-
-            with open(self.cache.ca_key_path, 'rb') as fh:
-                ca_key = serialization.load_pem_private_key(fh.read(), None)
-            with open(self.cache.ca_cert_path, 'rb') as fh:
-                ca_cert = x509.load_pem_x509_certificate(fh.read())
+        print('images:')
+        images = self.cache.get('images', {})
+        if 'keycloak' in images:
+            print(f'  keycloak: {images['keycloak']}')
         else:
-            if os.path.isfile(self.cache.ca_cert_path) and not args.force:
-                self.logger.debug('using existing CA cert')
-                with open(self.cache.ca_key_path, 'rb') as fh:
-                    ca_key = serialization.load_pem_private_key(fh.read(), None)
-                with open(self.cache.ca_cert_path, 'rb') as fh:
-                    ca_cert = x509.load_pem_x509_certificate(fh.read())
-            else:
-                self.logger.debug('creating CA cert')
-                ca_cert, ca_key = create_ca_cert(self.cache.ca_cert_path, self.cache.ca_key_path)
+            print(f'  keycloak: {COLOR_GREY}not created{COLOR_RESET}')
+        if 'services' in images:
+            print(f'  services: {images['services']}')
+        else:
+            print(f'  services: {COLOR_GREY}not created{COLOR_RESET}')
+        if 'sentinel' in images:
+            print(f'  sentinel: {images['sentinel']}')
+        else:
+            print(f'  sentinel: {COLOR_GREY}not created{COLOR_RESET}')
+        print()
 
-        cache_entries = self.cache.get('certs', {})
-        services = args.services or self.all_services
-        for service in services:
-            self.logger.debug(f'creating cert for {service}')
-            service_host = keycloak_host if service == 'keycloak' else combined_host
 
-            cert_path = os.path.join(self.cache.certs_dir, f'{service}.crt')
-            if os.path.isfile(cert_path) and not args.force:
-                self.fail(f'cert for {service} already exists; use --force to overwrite')
+        print('stacks:')
+        if 'vpc' in self.cache:
+            print(f'       vpc stack: {COLOR_GREEN}created{COLOR_RESET}')
+        else:
+            print(f'       vpc stack: {COLOR_GREY}not created{COLOR_RESET}')
 
-            cert_path, key_path = create_service_cert(
-                    service, service_host, self.cache.certs_dir, ca_cert, ca_key,
+        if 'rds' in self.cache:
+            print(f'       rds stack: {COLOR_GREEN}created{COLOR_RESET}')
+        else:
+            print(f'       rds stack: {COLOR_GREY}not created{COLOR_RESET}')
+
+        if 'services' in self.cache:
+            print(f'  services stack: {COLOR_GREEN}created{COLOR_RESET}')
+        else:
+            print(f'  services stack: {COLOR_GREY}not created{COLOR_RESET}')
+        print()
+
+        if 'rds' in self.cache:
+            rds = self.cache['rds']
+            print(f'RDS instance:\n  {rds['host']}:{rds['port']}')
+            print()
+
+        if 'services' in self.cache:
+            resp = self.aws.ec2.describe_instances(
+                Filters=[
+                    {
+                        'Name': 'tag:veraison-deployment',
+                        'Values': [
+                            args.deployment_name,
+                        ],
+                    },
+                ],
+                MaxResults=64,
             )
-            cache_entries[service] = {'cert': cert_path, 'key': key_path}
 
-        self.cache['certs'] = cache_entries
-        self.logger.info('done.')
+            instances = defaultdict(list)
+            for reservation in resp['Reservations']:
+                for instance in reservation['Instances']:
+                    for tag in instance['Tags']:
+                        if (tag['Key'] == 'deployment-instance-name' and
+                                instance['PrivateDnsName']):
+                            instances[tag['Value']].append(instance['PrivateDnsName'])
+                            break
 
+            if instances:
+                print('EC2 instances:')
+                for instance_type, hosts in instances.items():
+                    for host in hosts:
+                        print(f'  {host}\t({instance_type})')
 
-class SetupServicesCommand(BaseCommand):
-
-    name = 'setup-services'
-    desc = 'set up the services instance, updating certs and configuration'
-
-    def update_arguments(self, parser):
-        parser.add_argument(
-                '-c', '--services-config-template',
-            default=os.path.abspath(os.path.join(
-                os.path.dirname(__file__),
-                '../templates/combined-services-config.yaml.template',
-            )),
-            help='CloudFormation template file for the services stack',
-        )
-
-    def run(self, args):
-        self.logger.info('setting up services on the combined instance...')
-
-        certs = self.cache.get('certs')
-        if not certs:
-            self.fail('certificates have not been created; run create-certificates command')
-
-        kc_host = self.cache.get('instances', {}).get('keycloak', {}).get('dns_name')
-        if not kc_host:
-            self.fail('could not find Keycloak host; run create-combined-stack command')
-        os.environ['KEYCLOAK_HOST'] = kc_host
-
-        rds_settings = self.cache.get('rds')
-        if not rds_settings:
-            self.fail('could not find RDS settings in cache; run setup-rds command')
-        for k, v in rds_settings.items():
-            os.environ[k] = str(v)
-
-        config_path = command_instantiate_template(
-                self, args.deployment_name, args.services_config_template)
-
-        self.logger.debug('connecting to combined instance...')
-        with command_connect(self, 'combined') as con:
-            self.logger.debug('tranfering updated config...')
-            con_transfer_file(con,
-                config_path, f'/opt/veraison/config/services/config.yaml',
-                owner='veraison:veraison')
-
-            self.logger.debug('tranfering CA cert...')
-            con_transfer_file(con,
-                self.cache.ca_cert_path, '/opt/veraison/certs/rootCA.crt',
-                owner='veraison:veraison')
-            # delete any previous root key as it will no longer match the
-            # provision rootCA.crt (and is not needed on the services node).
-            con.sudo('rm -f /opt/veraison/certs/rootCA.key')
-
-            for cname, cpaths in certs.items():
-                if cname == 'keycloak':
-                    continue
-                self.logger.debug(f'transfering {cname} cert and key...')
-                con_transfer_file(con,
-                    cpaths['cert'], f'/opt/veraison/certs/{cname}.crt',
-                    owner='veraison:veraison')
-                con_transfer_file(con,
-                    cpaths['key'], f'/opt/veraison/certs/{cname}.key',
-                    owner='veraison:veraison')
-
-            self.logger.debug('restating veraison services...')
-            con.sudo('/opt/veraison/bin/veraison -s stop-services',
-                     echo=False, hide=True, pty=True)
-            con.sudo('/opt/veraison/bin/veraison -s start-services',
-                     echo=False, hide=True, pty=True)
-
-        self.logger.info('done.')
-
-
-class SetupKeycloakCommand(BaseCommand):
-
-    name = 'setup-keycloak'
-    desc = 'set up the keycloak instance, updating certs and starting the service'
-
-    def update_arguments(self, parser):
-        parser.add_argument('-r', '--realm-file',
-                            help='path to JSON realm description to be loaded by Keyloak '
-                                 'on startup')
-
-    def run(self, args):
-        self.logger.info('setting up keycloak instance...')
-
-        cpaths = self.cache.get('certs', {}).get('keycloak')
-        if not cpaths:
-            self.fail('certificates have not been created; run create-certificates command')
-
-        self.logger.debug('connecting to keycloak instance...')
-        with command_connect(self, 'keycloak') as con:
-            self.logger.debug('transfering keycloak cert and key...')
-            con_transfer_file(con,
-                cpaths['cert'], '/opt/keycloak/certs/keycloak.crt',
-                owner='keycloak:keycloak')
-            con_transfer_file(con,
-                cpaths['key'], '/opt/keycloak/certs/keycloak.key',
-                owner='keycloak:keycloak')
-
-            if args.realm_file:
-                self.logger.debug(f'transfering keycloak {args.realm_file}...')
-                filename = os.path.basename(args.realm_file)
-                con_transfer_file(con,
-                    args.realm_file, f'/opt/keycloak/data/import/{filename}',
-                    owner='keycloak:keycloak')
-
-            self.logger.debug('stopping keycloak...')
-            con.sudo('systemctl stop keycloak')
-
-            self.logger.debug('rebuilding keycloak...')
-            con.sudo('/opt/keycloak/bin/kc.sh build', hide=True)
-
-            self.logger.debug('starting keycloak...')
-            con.sudo('systemctl start keycloak')
-
-        self.logger.info('done.')
 
 # }}} commands
+
+
+class Port(int):
+    def __init__(self, val):
+        val = int(val)
+        if val < 1 or val > 65535:
+            raise ValueError(f'must in range [1-65535]')
+        self = val
+
+
+class Percent(int):
+    def __init__(self, val):
+        val = int(val)
+        if val < 0 or val > 100:
+            raise ValueError(f'must in range [0-100]')
+        self = val
 
 
 class StoreIntList(argparse.Action):

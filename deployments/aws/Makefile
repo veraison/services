@@ -14,14 +14,9 @@ deploy:
 		echo "ERROR: please define AWS_ACCOUNT_CFG (see README)"; \
 		exit 1; \
 	fi
-	source $(THIS_DIR)/env/env.bash && source $(AWS_ACCOUNT_CFG) && $(SCRIPT) bringup
+	source $(THIS_DIR)/env/env.bash $(AWS_ACCOUNT_CFG) && $(SCRIPT) bringup
 
 .PHONY: really-clean
 really-clean:
 	source $(THIS_DIR)/env/env.bash
 	$(SCRIPT) -N teardown
-
-.PHONY: redeploy-stack
-redeploy-stack:
-	source $(THIS_DIR)/env/env.bash
-	$(SCRIPT) redeploy-stack

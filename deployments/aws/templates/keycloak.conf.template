@@ -1,7 +1,10 @@
 # See https://www.keycloak.org/server/all-config for all alvailable configuration.
-http-enabled=false
+http-enabled=true
+http-port=${KEYCLOAK_PORT}
 hostname-strict=false
-https-port=${KEYCLOAK_PORT}
-https-certificate-file=/opt/keycloak/certs/keycloak.crt
-https-certificate-key-file=/opt/keycloak/certs/keycloak.key
-
+proxy-headers=xforwarded
+db=postgres
+db-username=${RDS_USER}
+db-password=${RDS_PASSWORD}
+db-url-host=${RDS_HOST}
+db-url-port=${RDS_PORT}

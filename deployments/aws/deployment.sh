@@ -41,10 +41,6 @@ function help() {
 	bringup
 	    Create a full Veraison deployment using configuration inside deployment.cfg.
 
-	redeploy-stack
-	    Delete and re-create the cloudformation stack using existing artifacts (DEB
-	    package, AMI images, etc).
-
 	teardown
 	    Delete the existing deployment stack and all associated artificats (DEB package,
 	    AMI images, etc).
@@ -66,10 +62,10 @@ function bootstrap() {
 				     cut -f2 -d= | tr -d \")
 
 			case $distrib_id in
-			arch) sudo pacman -Syy packer ssh openssl;;
-			ubuntu)
+			arch) sudo pacman -Syy packer ssh;;
+			Ubuntu)
 				sudo apt update
-				sudo apt --yes install curl openssl postgresql
+				sudo apt --yes install curl postgresql
 
 				curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 				sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
@@ -114,50 +110,55 @@ function bootstrap() {
 }
 
 function bringup() {
-	_check_installed openssl
 	_check_installed packer
 
+	# shellcheck disable=SC2153
 	veraison configure --init \
-		--vpc-id "${VERAISON_AWS_VPC_ID}" \
-		--subnet-id "${VERAISON_AWS_SUBNET_ID}" \
-		--rds-subnet-ids "${VERAISON_AWS_RDS_SUBNET_IDS}" \
 		--admin-cidr "${VERAISON_AWS_ADMIN_CIDR}" \
-		--region "${VERAISON_AWS_REGION}"
+		--vpc-cidr "${VERAISON_AWS_VPC_CIDR}" \
+		--region "${VERAISON_AWS_REGION}" \
+		--dns-name "${VERAISON_AWS_DNS_NAME}" \
+		--vts-port "${VTS_PORT}" \
+		--provisioning-port "${PROVISIONING_PORT}" \
+		--verification-port "${VERIFICATION_PORT}" \
+		--management-port "${MANAGEMENT_PORT}" \
+		--keycloak-port "${KEYCLOAK_PORT}" \
+		--keycloak-version "${KEYCLOAK_VERSION}" \
+		--keycloak-admin "${KEYCLOAK_ADMIN}" \
+		--scaling-min-size "${SCALING_MIN_SIZE}" \
+		--scaling-max-size "${SCALING_MAX_SIZE}" \
+		--scaling-cpu-util-target "${SCALING_CPU_UTIL_TARGET}" \
+		--scaling-request-count-target "${SCALING_REQUEST_COUNT_TARGET}"
 
 	veraison create-deb
 	veraison create-key-pair
-	veraison create-combined-image
+
+	veraison create-vpc-stack
+
+	veraison create-sentinel-image
+	veraison create-rds-stack
+	veraison update-security-groups # need to access sentinel to set up RDS
+	veraison setup-rds
+
+	veraison create-services-image
 	veraison create-keycloak-image
-	veraison create-combined-stack
 
-	veraison update-security-groups
-	veraison create-certs
-	veraison setup-rds
-	veraison setup-keycloak --realm-file "${_this_dir}/misc/veraison-realm.json"
-	veraison setup-services
-}
-
-function redeploy_stack() {
-	_check_installed openssl
-
-	veraison delete-stack combined
-	veraison delete-certs
-
-	veraison create-combined-stack
-	veraison update-security-groups
-	veraison create-certs
-	veraison setup-rds
-	veraison setup-keycloak --realm-file "${_this_dir}/misc/veraison-realm.json"
-	veraison setup-services
+	veraison create-services-stack
 }
 
 function teardown() {
-	veraison delete-stack combined
-	veraison delete-certs
+	set +e
+	veraison delete-stack services
+	veraison delete-stack rds
+	veraison delete-stack vpc
+
 	veraison delete-image keycloak
-	veraison delete-image combined
+	veraison delete-image services
+	veraison delete-image sentinel
+
 	veraison delete-key-pair
 	veraison delete-deb
+	set -e
 }
 
 function veraison() {
@@ -209,7 +210,6 @@ case $_command in
 	help) help;;
         bootstrap) bootstrap;;
 	bringup) bringup;;
-	redeploy-stack) redeploy_stack;;
 	teardown) teardown;;
 	*) echo -e "$_error: unexpected command: \"$_command\"";;
 esac

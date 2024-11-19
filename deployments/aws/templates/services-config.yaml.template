@@ -5,25 +5,16 @@ logging:
     - /opt/veraison/logs/{{ .service }}-stdout.log
 provisioning:
   listen-addr: 0.0.0.0:${PROVISIONING_PORT}
-  protocol: https
-  cert: /opt/veraison/certs/provisioning.crt
-  cert-key: /opt/veraison/certs/provisioning.key
+  protocol: http
 verification:
   listen-addr: 0.0.0.0:${VERIFICATION_PORT}
-  protocol: https
-  cert: /opt/veraison/certs/verification.crt
-  cert-key: /opt/veraison/certs/verification.key
+  protocol: http
 management:
   listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
-  protocol: https
-  cert: /opt/veraison/certs/management.crt
-  cert-key: /opt/veraison/certs/management.key
+  protocol: http
 vts:
   server-addr: localhost:${VTS_PORT}
-  tls: true
-  cert: /opt/veraison/certs/vts.crt
-  cert-key: /opt/veraison/certs/vts.key
-  ca-certs: /opt/veraison/certs/rootCA.crt
+  tls: false
 ear-signer:
   alg: ES256
   key: /opt/veraison/signing/skey.jwk
@@ -53,8 +44,6 @@ po-agent:
     backend: opa
 auth:
    backend: keycloak
-   host: ${KEYCLOAK_HOST}
+   host: keycloak.${VERAISON_AWS_DNS_NAME}
    port: ${KEYCLOAK_PORT}
-   ca-cert: /opt/veraison/certs/rootCA.crt
-
 # vim: set ft=yaml:

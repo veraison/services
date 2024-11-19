@@ -7,7 +7,8 @@ CONFIG_DIR=/tmp/veraison-aws-client-configs
 
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-source "${THIS_DIR}/../deployments/aws/env/env.bash"
+# note the -- indicates no additional config
+source "${THIS_DIR}/../deployments/aws/env/env.bash" --
 
 veraison --quiet --deployment-name "${VERAISON_AWS_DEPLOYMENT}" \
         create-client-config --output-dir "$CONFIG_DIR"
