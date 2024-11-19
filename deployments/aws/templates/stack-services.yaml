@@ -1,0 +1,641 @@
+# Veraison VPC stack
+AWSTemplateFormatVersion: 2010-09-09
+Description: Veraison attestation verfication services
+
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: |
+      The name of this deployment. Defaults to the Cloudformation stack name
+  Region:
+    Type: String
+    Description: |
+      AWS Region into which Veraison will be deployed
+  ProvisioningPort:
+    Type: Number
+    Description: TCP port on which the provisioning service is listening
+  VerificationPort:
+    Type: Number
+    Description: TCP port on which the verification service is listening
+  ManagementPort:
+    Type: Number
+    Description: TCP port on which the management service is listening
+  ScalingMaxSize:
+    Type: Number
+    Description: |
+      The maximum number of instances that will be created by auto-scaling groups.
+  ScalingMinSize:
+    Type: Number
+    Description: |
+      The minimum number of instances that will be created by auto-scaling groups.
+  ScalingCpuUtilTarget:
+    Type: Number
+    Description: |
+      The target average CPU utilization used for auto scaling
+  ScalingRequestCountTarget:
+    Type: Number
+    Description: |
+      The target request count used for auto scaling
+  ServiceCidr:
+    Type: String
+    Description: CIDR from which the services can be accessed
+  AdminCidr:
+    Type: String
+    Description: CIDR to used to configure remote access
+  CombinedImage:
+    Type: String
+    Description: ID of the AMI image to be used for the instance.
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: Type of the EC2 instance that will be used for combined nodes
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: |
+      The name of an EC2 key pair that will be used to provide access to the
+      instance.
+  VpcId:
+    Description: ID for the VPC into which Veraison will be deployed
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetA:
+    Description: ID for the first public subnet into which Veraison will be deployed
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnetB:
+    Description: ID for the second public subnet into which Veraison will be deployed
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnetACidr:
+    Type: String
+    Description: CIDR of PublicSubnetA
+  PublicSubnetBCidr:
+    Type: String
+    Description: CIDR of PublicSubnetB
+  PrivateSubnetA:
+    Description: ID for the first private subnet into which Veraison will be deployed
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetB:
+    Description: ID for the second private subnet into which Veraison will be deployed
+    Type: AWS::EC2::Subnet::Id
+  ParentDomain:
+    Type: String
+    Description: |
+      DNS name of the parent domain. A subdomain will be created under this domain.
+  HostedZoneId:
+    Type: String
+    Description: |
+      ID of the Route53 public hosted zone associated with ParentDomain
+  SubdomainName:
+    Type: String
+    Description: |
+      The name of the subdomain that will be created under ParentDomain for the service
+    Default: services
+  CertificateArn:
+    Type: String
+    Description: ARN of the certificate to be used for the deployment.
+  KeycloakImage:
+    Type: String
+    Description: ID of the AMI image to be used for the instance.
+  KeycloakPort:
+    Type: Number
+    Description: TCP port on which the management service is listening
+  KeycloakInstanceType:
+    Description: An EC2 instance type that will be used to run EC2 Instances
+    Type: String
+    Default: t2.micro
+  KeycloakSubdomainName:
+    Type: String
+    Description: |
+      The name of the subdomain that will be created under ParentDomain for the service
+    Default: keycloak
+
+Resources:
+  ServicesLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: "veraison-load-balancer"
+      Scheme: "internet-facing"
+      Type: "application"
+      Subnets: 
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      SecurityGroups: 
+        - !Ref ServicesLoadBalancerSecurityGroup
+      IpAddressType: "ipv4"
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ServicesLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: veraison-services-elb
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ProvisioningPort
+          ToPort: !Ref ProvisioningPort
+          CidrIp: !Ref AdminCidr
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: !Ref VerificationPort
+          ToPort: !Ref VerificationPort
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: !Ref ManagementPort
+          ToPort: !Ref ManagementPort
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ServicesDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Join [ ".", [ !Ref SubdomainName , !Ref ParentDomain ] ]
+      ResourceRecords: 
+        - !GetAtt ServicesLoadBalancer.DNSName
+      TTL: 900
+      Type: CNAME
+
+  ProvisioningListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: ProvisioningTargetGroup
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ProvisioningTargetGroup
+      LoadBalancerArn: !Ref ServicesLoadBalancer
+      Port: !Ref ProvisioningPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+
+  VerificationListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: VerificationTargetGroup
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref VerificationTargetGroup
+      LoadBalancerArn: !Ref ServicesLoadBalancer
+      Port: !Ref VerificationPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+
+  ManagementListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: ManagementTargetGroup
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ManagementTargetGroup
+      LoadBalancerArn: !Ref ServicesLoadBalancer
+      Port: !Ref ManagementPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+
+  ProvisioningTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ServicesLoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '401'
+      Name: !Sub ${DeploymentName}-prov-tg
+      Port: !Ref ProvisioningPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VpcId
+
+  VerificationTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ServicesLoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '401'
+      Name: !Sub ${DeploymentName}-verif-tg
+      Port: !Ref VerificationPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VpcId
+
+  ManagementTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ServicesLoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '401'
+      Name: !Sub ${DeploymentName}-manage-tg
+      Port: !Ref ManagementPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VpcId
+
+  ManagementSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-manage-sg
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref ManagementPort
+          ToPort: !Ref ManagementPort
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref ManagementPort
+          ToPort: !Ref ManagementPort
+          CidrIp: !Ref PublicSubnetBCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ProvisioningSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-prov-sg
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref ProvisioningPort
+          ToPort: !Ref ProvisioningPort
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref ProvisioningPort
+          ToPort: !Ref ProvisioningPort
+          CidrIp: !Ref PublicSubnetBCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  VerificationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-verif-sg
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref VerificationPort
+          ToPort: !Ref VerificationPort
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref VerificationPort
+          ToPort: !Ref VerificationPort
+          CidrIp: !Ref PublicSubnetBCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ManagementLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${DeploymentName}-manage-lt
+      LaunchTemplateData:
+        ImageId: !Ref CombinedImage
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref ManagementSecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            systemctl restart veraison-vts
+            systemctl disable --now veraison-provisioning
+            systemctl disable --now veraison-verification
+            systemctl restart veraison-management
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: veraison-deployment
+                Value: !Ref DeploymentName
+              - Key: deployment-instance-name
+                Value: management
+
+  ProvisioningLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${DeploymentName}-prov-lt
+      LaunchTemplateData:
+        ImageId: !Ref CombinedImage
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref ProvisioningSecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            systemctl restart veraison-vts
+            systemctl restart veraison-provisioning
+            systemctl disable --now veraison-verification
+            systemctl disable --now veraison-management
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: veraison-deployment
+                Value: !Ref DeploymentName
+              - Key: deployment-instance-name
+                Value: provisioning
+
+  VerificationLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${DeploymentName}-verif-lt
+      LaunchTemplateData:
+        ImageId: !Ref CombinedImage
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref VerificationSecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            systemctl restart veraison-vts
+            systemctl disable --now veraison-provisioning
+            systemctl restart veraison-verification
+            systemctl disable --now veraison-management
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: veraison-deployment
+                Value: !Ref DeploymentName
+              - Key: deployment-instance-name
+                Value: verification
+
+  ManagementAutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ManagementLaunchTemplate
+        Version: !GetAtt ManagementLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref ScalingMaxSize
+      MinSize: !Ref ScalingMinSize
+      TargetGroupARNs:
+        - !Ref ManagementTargetGroup
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  ManagementCpuPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ManagementAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScalingCpuUtilTarget
+
+  ManagementRequestCountPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    DependsOn: ManagementListener
+    Properties:
+      AutoScalingGroupName: !Ref ManagementAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel: !Join 
+            - '/' 
+            - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
+              - !GetAtt ManagementTargetGroup.TargetGroupFullName
+        TargetValue: !Ref ScalingRequestCountTarget
+
+  ProvisioningAutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ProvisioningLaunchTemplate
+        Version: !GetAtt ProvisioningLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref ScalingMaxSize
+      MinSize: !Ref ScalingMinSize
+      TargetGroupARNs:
+        - !Ref ProvisioningTargetGroup
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  ProvisioningCpuPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ProvisioningAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScalingCpuUtilTarget
+
+  ProvisioningRequestCountPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    DependsOn: ProvisioningListener
+    Properties:
+      AutoScalingGroupName: !Ref ProvisioningAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel: !Join 
+            - '/' 
+            - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
+              - !GetAtt ProvisioningTargetGroup.TargetGroupFullName
+        TargetValue: !Ref ScalingRequestCountTarget
+
+  VerificationAutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: VerificationListener
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref VerificationLaunchTemplate
+        Version: !GetAtt VerificationLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref ScalingMaxSize
+      MinSize: !Ref ScalingMinSize
+      TargetGroupARNs:
+        - !Ref VerificationTargetGroup
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  VerificationCpuPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref VerificationAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScalingCpuUtilTarget
+
+  VerificationRequestCountPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    DependsOn: ProvisioningListener
+    Properties:
+      AutoScalingGroupName: !Ref VerificationAutoscalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel: !Join 
+            - '/' 
+            - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
+              - !GetAtt VerificationTargetGroup.TargetGroupFullName
+        TargetValue: !Ref ScalingRequestCountTarget
+
+  KeycloakBalancerDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Join [ ".", [ !Ref KeycloakSubdomainName , !Ref ParentDomain ] ]
+      ResourceRecords: 
+        - !GetAtt KeycloakLoadBalancer.DNSName
+      TTL: 900
+      Type: CNAME
+        
+  KeycloakLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: "veraison-keycloak-load-balancer"
+      Scheme: "internet-facing"
+      Type: "application"
+      Subnets: 
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      SecurityGroups: 
+        - !Ref KeycloakLoadBalancerSecurityGroup
+      IpAddressType: "ipv4"
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  KeycloakLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-kc-lb-sg
+      GroupDescription: Veraison services access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref KeycloakPort
+          ToPort: !Ref KeycloakPort
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  KeycloakInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-kc-intance-sg
+      GroupDescription: Keycloak access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminCidr
+        - IpProtocol: tcp
+          FromPort: !Ref KeycloakPort
+          ToPort: !Ref KeycloakPort
+          CidrIp: !Ref AdminCidr
+        - IpProtocol: tcp
+          FromPort: !Ref KeycloakPort
+          ToPort: !Ref KeycloakPort
+          CidrIp: !Ref PublicSubnetACidr
+        - IpProtocol: tcp
+          FromPort: !Ref KeycloakPort
+          ToPort: !Ref KeycloakPort
+          CidrIp: !Ref PublicSubnetBCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  KeycloakInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      InstanceType: !Ref KeycloakInstanceType
+      ImageId: !Ref KeycloakImage
+      SubnetId: !Ref PrivateSubnetA
+      SecurityGroupIds:
+        - !GetAtt KeycloakInstanceSecurityGroup.GroupId
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+        - Key: deployment-instance-name
+          Value: keycloak
+
+  KeycloakTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '302'
+      Name: !Sub ${DeploymentName}-kc-tg
+      Port: !Ref KeycloakPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VpcId
+      Targets:
+        - Id: !Ref KeycloakInstance
+          Port: !Ref KeycloakPort
+
+  KeycloakListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref KeycloakTargetGroup
+      LoadBalancerArn: !Ref KeycloakLoadBalancer
+      Port: !Ref KeycloakPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+
+Outputs:
+  ServicesDnsName:
+    Description: DNS name of the services load balancer
+    Value: !Join [ ".", [ !Ref SubdomainName , !Ref ParentDomain ] ]
+  KeycloakDnsName:
+    Description: DNS name of the keycloak load balancer
+    Value: !Join [ ".", [ !Ref KeycloakSubdomainName , !Ref ParentDomain ] ]
+  ProvisioningPort:
+    Description: port for the provisioning service
+    Value: !Ref ProvisioningPort
+  VerificationPort:
+    Description: port for the verification service
+    Value: !Ref VerificationPort
+  ManagementPort:
+    Description: port for the management service
+    Value: !Ref ManagementPort
+  KeycloakPort:
+    Description: port for the keycloak service
+    Value: !Ref KeycloakPort

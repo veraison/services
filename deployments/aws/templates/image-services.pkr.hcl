@@ -33,21 +33,16 @@ variable "subnet_id" {
   type = string
 }
 
-variable "keycloak_version" {
-  type = string
-  default = "25.0.5"
-}
-
-variable "conf_path" {
+variable "deb" {
   type = string
 }
 
-variable "service_path" {
+variable "config_path" {
   type = string
 }
 
-variable "realm_path" {
-  type = string
+locals {
+    dest_deb = "/tmp/${basename(var.deb)}"
 }
 
 source "amazon-ebs" "ubuntu" {
@@ -79,47 +74,34 @@ source "amazon-ebs" "ubuntu" {
 }
 
 build {
-  name = "veraison-keycloak"
+  name = "veraison-combined-elb"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
 
   provisioner "file" {
-    source = "${var.conf_path}"
-    destination = "keycloak.conf"
+    source = "${var.deb}"
+    destination = "${local.dest_deb}"
   }
 
   provisioner "file" {
-    source = "${var.service_path}"
-    destination = "keycloak.service"
-  }
-
-  provisioner "file" {
-    source = "${var.realm_path}"
-    destination = "veraison-realm.json"
+    source = "${var.config_path}"
+    destination = "combined-services-config.yaml"
   }
 
   provisioner "shell" {
     inline = [
+      "sudo dpkg -i ${local.dest_deb} 2>&1",
       "sudo apt-get update",
-      "sudo apt-get update", # doing it twice as once doesn't seem to be enough ....
-      "sudo apt-get install -f --yes openjdk-21-jdk  2>&1",
+      "sudo apt-get install --yes sqlite3 jq  2>&1",
+      "echo \"\nsource /opt/veraison/env/env.bash\" >> ~/.bashrc ",
 
-      "sudo groupadd --system keycloak",
-      "sudo useradd --system --gid keycloak --no-create-home --shell /bin/false keycloak",
-
-      "wget https://github.com/keycloak/keycloak/releases/download/${var.keycloak_version}/keycloak-${var.keycloak_version}.tar.gz",
-      "tar xf keycloak-${var.keycloak_version}.tar.gz",
-      "rm keycloak-${var.keycloak_version}.tar.gz",
-      "sudo mv keycloak-${var.keycloak_version} /opt/keycloak",
-      "sudo mv keycloak.conf /opt/keycloak/conf/keycloak.conf",
-      "sudo mv keycloak.service /opt/keycloak",
-      "sudo mkdir -p /opt/keycloak/data/import",
-      "sudo mv veraison-realm.json /opt/keycloak/data/import",
-
-      "sudo chown -R keycloak:keycloak /opt/keycloak",
-      "sudo -u keycloak /opt/keycloak/bin/kc.sh build",
-      "sudo systemctl enable /opt/keycloak/keycloak.service",
+      "sudo mv combined-services-config.yaml /opt/veraison/config/services/config.yaml",
+      "sudo chown ubuntu:1001 /opt/veraison/config/services/config.yaml",
+      "sudo systemctl restart veraison-vts",
+      "sudo systemctl restart veraison-provisioning",
+      "sudo systemctl restart veraison-verification",
+      "sudo systemctl restart veraison-management"
     ]
   }
 }

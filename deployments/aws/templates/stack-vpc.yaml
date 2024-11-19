@@ -1,0 +1,223 @@
+# Veraison VPC stack
+AWSTemplateFormatVersion: 2010-09-09
+Description: Veraison attestation verfication services
+
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: |
+      The name of this deployment. Defaults to the Cloudformation stack name
+  Region:
+    Type: String
+    Description: |
+      AWS Region into which Veraison will be deployed
+  VpcCidrBlock:
+    Type: String
+    Description: |
+      CIDR block that will be reserved for the VPC. It must be big enough to
+      accommodate all of the VPC's subnets. A /16 block is recommended.
+
+Resources:
+  VeraisonVpc:
+    Type: AWS::EC2::VPC
+    DependsOn: VeraisonInternetGateway
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  VeraisonInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref VeraisonInternetGateway
+      VpcId: !Ref VeraisonVpc
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      CidrBlock: !Select [ 0, !Cidr [ !GetAtt VeraisonVpc.CidrBlock, 1, 8 ] ]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select
+          - 0
+          - !GetAZs
+            Ref: Region
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      CidrBlock: !Select [ 1, !Cidr [ !GetAtt VeraisonVpc.CidrBlock, 2, 8 ] ]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select
+          - 1
+          - !GetAZs
+            Ref: Region
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+        - Key: Name
+          Value: Public Subnet Route Table
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VeraisonInternetGateway
+
+  PublicRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetA
+
+  PublicRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetB
+
+  NatGatewayEipA:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGatewayEipB:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGatewayA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEipA.AllocationId
+      SubnetId: !Ref PublicSubnetA
+
+  NatGatewayB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEipB.AllocationId
+      SubnetId: !Ref PublicSubnetB
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      CidrBlock: !Select [ 2, !Cidr [ !GetAtt VeraisonVpc.CidrBlock, 3, 8 ] ]
+      AvailabilityZone: !Select
+          - 0
+          - !GetAZs
+            Ref: Region
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      CidrBlock: !Select [ 3, !Cidr [ !GetAtt VeraisonVpc.CidrBlock, 4, 8 ] ]
+      AvailabilityZone: !Select
+          - 1
+          - !GetAZs
+            Ref: Region
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VeraisonVpc
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  DefaultPrivateRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayA
+
+  DefaultPrivateRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayB
+
+  PrivateSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      SubnetId: !Ref PrivateSubnetA
+
+  PrivateSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      SubnetId: !Ref PrivateSubnetB
+
+Outputs:
+  VpcId:
+    Description: ID of the deployment VPC
+    Value: !Ref VeraisonVpc
+  PublicSubnetAId:
+    Description: ID of public subnet A
+    Value: !Ref PublicSubnetA
+  PublicSubnetBId:
+    Description: ID of public subnet B
+    Value: !Ref PublicSubnetB
+  PublicSubnetACidr:
+    Description: CIDR block of public subnet A
+    Value: !GetAtt PublicSubnetA.CidrBlock
+  PublicSubnetBCidr:
+    Description: CIDR block of public subnet B
+    Value: !GetAtt PublicSubnetB.CidrBlock
+  PrivateSubnetAId:
+    Description: ID of provate subnet A
+    Value: !Ref PrivateSubnetA
+  PrivateSubnetBId:
+    Description: ID of provate subnet B
+    Value: !Ref PrivateSubnetB
+  PrivateSubnetACidr:
+    Description: CIDR block of provate subnet A
+    Value: !GetAtt PrivateSubnetA.CidrBlock
+  PrivateSubnetBCidr:
+    Description: CIDR block of provate subnet B
+    Value: !GetAtt PrivateSubnetB.CidrBlock

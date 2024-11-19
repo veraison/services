@@ -33,12 +33,8 @@ variable "subnet_id" {
   type = string
 }
 
-variable "deb" {
+variable "command_dispatcher_path" {
   type = string
-}
-
-locals {
-    dest_deb = "/tmp/${basename(var.deb)}"
 }
 
 source "amazon-ebs" "ubuntu" {
@@ -70,22 +66,32 @@ source "amazon-ebs" "ubuntu" {
 }
 
 build {
-  name = "veraison-combined"
+  name = "veraison-sentinel"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
 
   provisioner "file" {
-    source = "${var.deb}"
-    destination = "${local.dest_deb}"
+    source = "${var.command_dispatcher_path}"
+    destination = "veraison-dispatcher"
   }
 
   provisioner "shell" {
     inline = [
-      "sudo dpkg -i ${local.dest_deb} 2>&1",
       "sudo apt-get update",
-      "sudo apt-get install --yes sqlite3 jq  2>&1",
-      "echo \"\nsource /opt/veraison/env/env.bash\" >> ~/.bashrc "
+      "sudo apt-get update", # doing it twice as once doesn't seem to be enough ....
+      "sudo NEEDRESTART_MODE=a apt-get install --yes postgresql gcc libpq-dev python3-venv python3-dev",
+      "sudo systemctl disable postgresql",  # only need it to use psycopg2
+
+      "sudo mkdir -p /opt/veraison/bin",
+      "sudo mv veraison-dispatcher /opt/veraison/bin/veraison",
+      "sudo chmod +x /opt/veraison/bin/veraison",
+      "sudo ln -s /opt/veraison/bin/veraison /usr/bin/veraison",
+
+      "sudo python3 -mvenv /opt/veraison/venv",
+      "sudo /opt/veraison/venv/bin/pip install psycopg2 pyxdg",
+
+      "sudo NEEDRESTART_MODE=a apt-get remove --yes gcc",
     ]
   }
 }

@@ -1,0 +1,172 @@
+# Veraison stack
+AWSTemplateFormatVersion: 2010-09-09
+Description: Veraison attestation verfication services
+
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: |
+      The name of this deployment. Defaults to the Cloudfromation stack name
+  VpcId:
+    Description: ID for the VPC into which Veraison will be deployed
+    Type: AWS::EC2::VPC::Id
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: |
+      The name of an EC2 key pair that will be used to provide access to the
+      instance.
+  SubnetCidr:
+    Type: String
+    Description: CIDR for local access
+  PublicSubnet:
+    Type: String
+  RdsSubnets:
+    Type: String
+  RdsEngine:
+    Type: String
+    Default: postgres
+  RdsInstanceType:
+    Type: String
+    Default: db.t3.micro
+  RdsAllocatedStorage:
+    Type: Number
+    Default: 5
+  RdsDb:
+    Type: String
+    Default: veraison
+  RdsUser:
+    Type: String
+    Default: veraison
+  RdsPassword:
+    Type: String
+  ParentDomain:
+    Type: String
+    Description: |
+      DNS name of the parent domain. A subdomain will be created under this domain.
+  HostedZoneId:
+    Type: String
+    Description: |
+      ID of the Route53 public hosted zone associated with ParentDomain
+  SentinelSubdomainName:
+    Type: String
+    Description: |
+      The name of the subdomain that will be created under ParentDomain for the service
+    Default: sentinel
+  SentinelImage:
+    Type: String
+    Description: ID of the AMI image to be used for the instance.
+  SentinelInstanceType:
+    Description: An EC2 instance type that will be used to run EC2 Instances
+    Type: String
+    Default: t2.micro
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: |
+      The name of an EC2 key pair that will be used to provide access to the
+      instance.
+  AdminCidr:
+    Type: String
+    Description: CIDR to used to configure remote access
+
+Resources:
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: VeraisonRdsSubnetGroup
+      DBSubnetGroupDescription: combined stack RDS subnet group
+      SubnetIds: !Split [",", !Ref RdsSubnets]
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for RDS instances.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - CidrIp: !Ref SubnetCidr
+        FromPort: 5432
+        ToPort: 5432
+        IpProtocol: TCP
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    DependsOn:
+      - RdsSubnetGroup
+      - RdsSecurityGroup
+    Properties:
+      Engine: !Ref RdsEngine
+      DBInstanceClass: !Ref RdsInstanceType
+      AllocatedStorage: !Ref RdsAllocatedStorage
+      DBName: !Ref RdsDb
+      MasterUsername: !Ref RdsUser
+      MasterUserPassword: !Ref RdsPassword
+      DBSubnetGroupName: VeraisonRdsSubnetGroup
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      Tags:
+        - Key: veraison-deployment
+
+  SentinelInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Sub ${DeploymentName}-sentinel-intance-sg
+      GroupDescription: Keycloak access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  SentinelInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      InstanceType: !Ref SentinelInstanceType
+      ImageId: !Ref SentinelImage
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !GetAtt SentinelInstanceSecurityGroup.GroupId
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+        - Key: deployment-instance-name
+          Value: sentinel
+
+  SentinelDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Join [ ".", [ !Ref SentinelSubdomainName , !Ref ParentDomain ] ]
+      ResourceRecords: 
+        - !GetAtt SentinelInstance.PublicDnsName
+      TTL: 900
+      Type: CNAME
+        
+
+Outputs:
+  InstanceId:
+    Description: RDS instance ID
+    Value: !Ref RdsInstance
+  Host:
+    Description: RDS instance host name
+    Value: !GetAtt RdsInstance.Endpoint.Address
+  Port:
+    Description: RDS instance port
+    Value: !GetAtt RdsInstance.Endpoint.Port
+  HostedZoneId:
+    Description: RDS instance hosted zone ID
+    Value: !GetAtt RdsInstance.Endpoint.HostedZoneId
+  SentinelDnsName:
+    Description: DNS name of the sentinel instance
+    Value: !Join [ ".", [ !Ref SentinelSubdomainName , !Ref ParentDomain ] ]

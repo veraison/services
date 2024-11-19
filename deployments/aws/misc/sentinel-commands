@@ -1,0 +1,283 @@
+#!/opt/veraison/venv/bin/python
+import argparse
+import inspect
+import logging
+import json
+import shutil
+import sys
+
+import psycopg2
+from psycopg2.errors import DuplicateDatabase
+
+
+COLOR_DARK_GREY = '\x1b[38;5;245m'
+COLOR_MEDIUM_GREY = '\x1b[38;5;250m'
+COLOR_GREY = '\x1b[38;20m'
+COLOR_GREEN = '\x1b[38;5;2m'
+COLOR_YELLOW = '\x1b[33;20m'
+COLOR_RED = '\x1b[31;20m'
+COLOR_BOLD_RED = '\x1b[31;1m'
+COLOR_RESET = '\x1b[0m'
+']]]]]]]]'  # "close" the brackets above to fix nvim's auto-indent
+
+
+PGSQL_SETUP = '''
+CREATE TABLE IF NOT EXISTS endorsements (
+   kv_key TEXT NOT NULL,
+   kv_val TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS trust_anchors (
+    kv_key TEXT NOT NULL,
+    kv_val TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS policies (
+    kv_key TEXT NOT NULL,
+    kv_val TEXT NOT NULL
+);
+
+CREATE INDEX ON endorsements(kv_key);
+CREATE INDEX ON trust_anchors(kv_key);
+CREATE INDEX ON policies(kv_key);
+'''
+
+CLEAR_STORES = '''
+DELETE FROM endorsements;
+DELETE FROM trust_anchors;
+DELETE FROM policies;
+'''
+
+
+class BaseCommand:
+
+    name = None
+    desc = None
+    aliases = []
+
+    def __init__(self, fail_with_error=True):
+        self.logger = logging.getLogger(f'[sentinel]{self.name}')
+        self.fail_with_error = fail_with_error
+
+    def register(self, subparsers):
+        parser = subparsers.add_parser(self.name, help=self.desc, aliases=self.aliases)
+        self.update_arguments(parser)
+
+    def execute(self, args):
+        if args.verbose and args.quiet:
+            self.fail('only one of -v/--verbose or -q/--quiet may be specfied at a time')
+        if args.verbose:
+            self.logger.setLevel(logging.DEBUG)
+        elif args.quiet:
+            self.logger.setLevel(logging.WARNING)
+
+        self.run(args)
+
+    def fail(self, message):
+        write = self.logger.error if self.fail_with_error else self.logger.info
+        write(message)
+        raise RuntimeError(f'command {self.name} failed.')
+
+    def fail_shell(self, command, exit_code, stdout, stderr):
+        stdout_file = f'/tmp/{args.deployment_name}-{command}-failure.stdout'
+        with open(stdout_file, 'w') as wfh:
+            wfh.write(stdout)
+
+        stderr_file = f'/tmp/{args.deployment_name}-{command}-failure.stderr'
+        with open(stderr_file, 'w') as wfh:
+            wfh.write(stderr)
+
+        self.fail(f'{command} failed with {exit_code}'
+                  f'\n\tSTDOUT is in {stdout_file}\n\tSTDERR is in {stderr_file}')
+
+    def update_arguments(self, parser):
+        pass
+
+    def run(self, *args, **kwargs):
+        raise NotImplementedError()
+
+
+class LogFormatter(logging.Formatter):
+
+    fmt = f'{{}}%(asctime)s %(name)s %(levelname)s{COLOR_RESET}: %(message)s'
+
+    level_formats = {
+        logging.DEBUG: fmt.format(COLOR_DARK_GREY),
+        logging.INFO: fmt.format(COLOR_MEDIUM_GREY),
+        logging.WARNING: fmt.format(COLOR_YELLOW),
+        logging.ERROR: fmt.format(COLOR_RED),
+        logging.CRITICAL: fmt.format(COLOR_BOLD_RED),
+    }
+
+    def format(self, record):
+        log_fmt = self.level_formats.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+class SetupRdsCommand(BaseCommand):
+
+    name = 'setup-rds'
+    desc = 'setup the RDS instance for use as a K-V store for the services'
+
+    def update_arguments(self, parser):
+        parser.add_argument('host')
+        parser.add_argument('port', type=int)
+        parser.add_argument('password')
+
+    def run(self, args):
+        if not shutil.which('psql'):
+            self.fail('psql must be installed on the system')
+
+        self.logger.info('connecting to RDS instance...')
+        con_line = (f'host={args.host} port={args.port} dbname=veraison '
+                    f'user=veraison password={args.password}')
+
+        self.logger.debug(f'connection settings: {con_line}')
+        with psycopg2.connect(con_line) as con:
+            with con.cursor() as cur:
+                self.logger.info('setting up K-V store...')
+                for sql_statement in PGSQL_SETUP.split(';'):
+                    sql_statement = sql_statement.strip()
+                    if not sql_statement:
+                        continue
+                    self.logger.debug(sql_statement)
+                    cur.execute(sql_statement)
+
+        con = psycopg2.connect(con_line)
+        try:
+            # note: set_session() bellow doesn't "take" when con is used as a context,
+            # as above. Hence the try/finally block instead.
+            con.set_session(autocommit=True)
+            with con.cursor() as cur:
+                self.logger.info('creating keycloak database...')
+                try:
+                    cur.execute('CREATE DATABASE  keycloak with encoding \'UTF8\';')
+                except DuplicateDatabase:
+                    pass # there is no 'IF NOT EXISTS' for 'CREATE DATABASE'
+        finally:
+            con.close()
+
+        self.logger.debug('updating cache with DB connection settings...')
+        self.logger.info('done.')
+
+
+class CheckStoresCommand(BaseCommand):
+
+    name = 'check-stores'
+    desc = 'output the contents of deployment\'s sqlite3 stores'
+    aliases = ['stores']
+
+    def update_arguments(self, parser):
+        parser.add_argument('host')
+        parser.add_argument('port', type=int)
+        parser.add_argument('password')
+
+    def run(self, args):
+        con_line = (f'host={args.host} port={args.port} dbname=veraison '
+                    f'user=veraison password={args.password}')
+
+        self.logger.debug(f'RDS connection settings: {con_line}')
+        with psycopg2.connect(con_line) as con:
+            with con.cursor() as cur:
+                print(f'{COLOR_GREEN}TRUST ANCHORS:\n--------------{COLOR_RESET}')
+                cur.execute('SELECT * FROM trust_anchors')
+                for key, value in cur.fetchall():
+                    print(key)
+                    parsed = json.loads(value)
+                    print(json.dumps(parsed, indent=4, sort_keys=True))
+                    print()
+
+                print(f'{COLOR_GREEN}ENDORSEMENTS:\n-------------{COLOR_RESET}')
+                cur.execute('SELECT * FROM endorsements')
+                for key, value in cur.fetchall():
+                    print(key)
+                    parsed = json.loads(value)
+                    print(json.dumps(parsed, indent=4, sort_keys=True))
+                    print()
+
+                print(f'{COLOR_GREEN}POLICIES:\n---------{COLOR_RESET}')
+                cur.execute('SELECT * FROM policies')
+                for key, value in cur.fetchall():
+                    print(key)
+                    print(f'----\n{value}----\n')
+                    print()
+
+
+class ClearStoresCommand(BaseCommand):
+    name = 'clear-stores'
+    desc = 'clear the contents of deployment\'s sqlite3 stores'
+
+
+    def update_arguments(self, parser):
+        parser.add_argument('host')
+        parser.add_argument('port', type=int)
+        parser.add_argument('password')
+
+
+    def run(self, args):
+        con_line = (f'host={args.host} port={args.port} dbname=veraison '
+                    f'user=veraison password={args.password}')
+
+        self.logger.debug(f'RDS connection settings: {con_line}')
+        with psycopg2.connect(con_line) as con:
+            with con.cursor() as cur:
+                self.logger.info('clearing stores...')
+                for sql_statement in CLEAR_STORES.split(';'):
+                    sql_statement = sql_statement.strip()
+                    if not sql_statement:
+                        continue
+                    self.logger.debug(sql_statement)
+                    cur.execute(sql_statement)
+                self.logger.info('done.')
+
+
+if __name__ == '__main__':
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(LogFormatter())
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
+    logging.getLogger('botocore').setLevel(logging.WARNING)
+    logging.getLogger("paramiko").setLevel(logging.WARNING)
+
+    cmd_map = {}
+    for name, cmd_cls in inspect.getmembers(
+            sys.modules[__name__],
+            lambda x: inspect.isclass(x) and issubclass(x, BaseCommand) and x is not BaseCommand):
+        if not name[0].isupper():
+            continue  # ignore variable bindings
+        assert cmd_cls.name, f'{cmd_cls} does not define a name'
+        cmd = cmd_cls()
+        assert cmd.name not in cmd_map, f'duplicate name {cmd.name}'
+        cmd_map[cmd.name] = cmd
+        for alias in cmd.aliases:
+            assert alias not in cmd_map, f'duplicate alias {alias}'
+            cmd_map[alias] = cmd
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='force overwrite of exiting resources')
+    parser.add_argument('-W', '--wait-period', type=int, default=1,
+                        help='period (in seconds) to wait between polls to AWS for '
+                             'long-running command progress')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='show DEBUG level messages')
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='hide INFO level messages')
+    parser.add_argument(
+        '--no-error', action='store_false', dest='fail_with_error',
+        help='do not report command failures as errors',
+    )
+
+    subparsers = parser.add_subparsers(dest='command', required=True)
+    for name, command in cmd_map.items():
+        if name == command.name:
+            command.register(subparsers)
+
+    args = parser.parse_args()
+
+    cmd = cmd_map[args.command]
+    cmd.fail_with_error = args.fail_with_error
+    try:
+        cmd.execute(args)
+    except Exception as e:
+        write = cmd.logger.critical if args.fail_with_error else cmd.logger.info
+        write(f'{e.__class__.__name__}: {e}')
