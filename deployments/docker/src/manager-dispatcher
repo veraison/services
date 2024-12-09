@@ -49,17 +49,23 @@ function clear_logs() {
 }
 
 function cocli() {
-    local cmd="$_utils_dir/cocli $*"
+    local -a args
+    for arg in "$@"; do args+=("'$arg'"); done
+    local cmd="$_utils_dir/cocli ${args[@]}"
     /bin/bash -c "$cmd"
 }
 
 function evcli() {
-    local cmd="$_utils_dir/evcli $*"
+    local -a args
+    for arg in "$@"; do args+=("'$arg'"); done
+    local cmd="$_utils_dir/evcli ${args[@]}"
     /bin/bash -c "$cmd"
 }
 
 function pocli() {
-    local cmd="$_utils_dir/pocli $*"
+    local -a args
+    for arg in "$@"; do args+=("'$arg'"); done
+    local cmd="$_utils_dir/pocli ${args[@]}"
     /bin/bash -c "$cmd"
 }
 
