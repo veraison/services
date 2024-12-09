@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 set -eo pipefail
 
+# We need to make this a global variable because bash functions cannot return
+# arrays.
+declare -a translated_args
+
 function status() {
     _check_installed jq
 
@@ -269,20 +273,26 @@ function kill_tmux_session() {
 }
 
 function cocli() {
-    local -r -a args=$(printf '"%s" ' "$@")
-    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    local -a args
+    for arg in "$@"; do args+=("$arg"); done
+    # Note: calling _translated_host_paths sets translated_args
+    _translate_host_paths "${args[@]}"
     manager cocli "${translated_args[@]}"
 }
 
 function evcli() {
-    local -r -a args=$(printf '"%s" ' "$@")
-    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    local -a args
+    for arg in "$@"; do args+=("$arg"); done
+    # Note: calling _translated_host_paths sets translated_args
+    _translate_host_paths "${args[@]}"
     manager evcli "${translated_args[@]}"
 }
 
 function pocli() {
-    local -r -a args=$(printf '"%s" ' "$@")
-    local -r -a translated_args=$(_translate_host_paths "${args[@]}")
+    local -a args
+    for arg in "$@"; do args+=("$arg"); done
+    # Note: calling _translated_host_paths sets translated_args
+    _translate_host_paths "${args[@]}"
     manager pocli "${translated_args[@]}"
 }
 
@@ -384,12 +394,18 @@ function _strip_color() {
     echo "$*" | sed -r "s/$_bash_color//g"
 }
 
+# Note: this function manipulates the global variable "translated_args"
 function _translate_host_paths() {
-    local -r split_args=$(echo "$@" | sed 's/=\// \//g')
+    local -a split_args
+    for arg in "$@"; do
+        split_args+=("$(echo "$arg" | sed 's/=\// \//g')")
+    done
 
-    for part in $split_args; do
+    translated_args=()
+
+    for part in "${split_args[@]}"; do
        if [[  $part == /* ]]; then
-            local -r realpart=$(realpath -q "$part")
+            local realpart=$(realpath -q "$part")
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 # Terrible, horrible, no good, very bad CLUDGE for MocOS X:
                 # On MacOS, all top-level locations in the file system are in
@@ -397,16 +413,14 @@ function _translate_host_paths() {
                 # These do not get resolved by realpath, so we have to do it
                 # manually. Hopefully, this doesn't break for different MacOS
                 # versions...
-                ammended+=("${_host_root}/host_mnt$realpart")
+                translated_args+=("${_host_root}/host_mnt$realpart")
             else
-                ammended+=("$_host_root$realpart")
+                translated_args+=("$_host_root$realpart")
             fi
         else
-            ammended+=("$part")
+            translated_args+=("$part")
        fi
     done
-
-    echo "${ammended[@]}";
 }
 
 _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
