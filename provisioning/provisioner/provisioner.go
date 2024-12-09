@@ -27,7 +27,7 @@ func New(vtsClient vtsclient.IVTSClient) IProvisioner {
 }
 
 func (p *Provisioner) IsSupportedMediaType(mt string) (bool, error) {
-	mt, err := api.NormalizeMediaType(mt)
+	normalizedMediaType, err := api.NormalizeMediaType(mt)
 	if err != nil {
 		return false, fmt.Errorf("%w: validation failed for %s (%v)", ErrInputParam, mt, err)
 	}
@@ -41,7 +41,7 @@ func (p *Provisioner) IsSupportedMediaType(mt string) (bool, error) {
 	}
 
 	for _, v := range mts.MediaTypes {
-		if v == mt {
+		if v == normalizedMediaType {
 			return true, nil
 		}
 	}
