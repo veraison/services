@@ -124,13 +124,14 @@ function bootstrap() {
 	case $( uname -s ) in
 		Linux)
 			# shellcheck disable=SC2002
-			local distrib_id=$(cat /etc/lsb-release 2>/dev/null | head -n 1 | cut -f2 -d= | tr -d \")
+			local distrib_id=$(cat /etc/os-release | grep -w ID | cut -f2 -d= | tr -d \")
 
 			case $distrib_id in
-			Arch) ${BOOTSTRAP_DIR}/arch.sh;;
-			Ubuntu) ${BOOTSTRAP_DIR}/ubuntu.sh;;
+			arch) ${BOOTSTRAP_DIR}/arch.sh;;
+			ubuntu) ${BOOTSTRAP_DIR}/ubuntu.sh;;
+			ol) ${BOOTSTRAP_DIR}/oraclelinux.sh;;
 			*)
-				echo -e "$_ERROR: Boostrapping is currently only supported for Arch and Ubuntu. For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
+				echo -e "$_ERROR: Boostrapping is currently only supported for Arch, Ubuntu and Oracle Linux. For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
 				exit
 				;;
 			esac

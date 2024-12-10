@@ -15,12 +15,12 @@ function bootstrap() {
 		Linux)
 			# shellcheck disable=SC2002
 			local distrib_id
-			distrib_id=$(head -n 1 </etc/lsb-release 2>/dev/null | \
+			distrib_id=$(cat /etc/os-release | grep -w ID | \
 				     cut -f2 -d= | tr -d \")
 
 			case $distrib_id in
-			Arch) sudo pacman -Syy dpkg ;;
-			Ubuntu) ;;
+			arch) sudo pacman -Syy dpkg ;;
+			ubuntu) ;;
 			*)
 				echo -e "$_error: Boostrapping is currently only supported for Arch and Ubuntu."
 				exit
