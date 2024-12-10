@@ -129,8 +129,9 @@ function bootstrap() {
 			case $distrib_id in
 			arch) ${BOOTSTRAP_DIR}/arch.sh;;
 			ubuntu) ${BOOTSTRAP_DIR}/ubuntu.sh;;
+			ol) ${BOOTSTRAP_DIR}/oraclelinux.sh;;
 			*)
-				echo -e "$_ERROR: Boostrapping is currently only supported for Arch and Ubuntu. For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
+				echo -e "$_ERROR: Boostrapping is currently only supported for Arch, Ubuntu and Oracle Linux. For other systems, please see one of the scripts in ${BOOTSTRAP_DIR}, and adapt the commmand to your system."
 				exit
 				;;
 			esac
