@@ -20,10 +20,12 @@ setup:
 - Install Docker, and make sure that the current user is in the `docker` group.
 - Install jq
 - (optionally) Install tmux -- this only needed if you want to use it.
+- Install Docker Buildx (required for building Docker images)
 
 On Ubuntu you can do this with:
 
     sudo apt install git docker.io jq tmux
+    sudo apt install docker-buildx
     sudo usermod -a -G docker $USER
     newgrp docker
 
