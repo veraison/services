@@ -17,15 +17,13 @@ This should work on most Linux systems. You need to perform the following
 setup:
 
 - Install git
-- Install Docker, and make sure that the current user is in the `docker` group.
+- Install Docker (and ensure the current user is in the `docker` group) and the Docker Buildx plugin (required for building Docker images).
 - Install jq
 - (optionally) Install tmux -- this only needed if you want to use it.
-- Install Docker Buildx (required for building Docker images)
 
 On Ubuntu you can do this with:
 
-    sudo apt install git docker.io jq tmux
-    sudo apt install docker-buildx
+    sudo apt install git docker.io jq tmux docker-buildx
     sudo usermod -a -G docker $USER
     newgrp docker
 
