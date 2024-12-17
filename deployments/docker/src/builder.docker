@@ -54,7 +54,7 @@ ADD --chown=builder:builder go.mod go.sum ./
 
 # Download Go modules
 RUN go mod download &&\
-    go install golang.org/x/tools/gopls@latest &&\
+    go install golang.org/x/tools/gopls@v0.16.2 &&\
     go install golang.org/x/tools/cmd/guru@latest &&\
     go install github.com/golang/mock/mockgen@v1.7.0-rc.1 &&\
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
