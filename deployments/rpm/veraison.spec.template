@@ -1,0 +1,66 @@
+Name:           veraison
+Version:        _VERSION_
+Release:        1%{?dist}
+Summary:        Veraison server
+
+License:        APACHE
+Source0:        %{name}-%{version}.tar.gz
+
+Requires:       /usr/bin/bash
+
+%global USERNAME _VERAISON_USER_
+%global GROUPNAME _VERAISON_GROUP_
+%global LOGSDIR _VERAISON_LOGS_
+
+%description
+This package installs Veraison server
+
+%prep
+tar -xvzf %{name}-%{version}.tar.gz
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a bin/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a certs/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a config/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a env/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a logs/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a plugins/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a signing/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a stores/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+cp -a systemd/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+/%{_prefix}/local/veraison
+
+%pre
+if ! getent group %{GROUPNAME} >/dev/null 2>&1; then
+     echo "Adding group: %{GROUPNAME}"
+     groupadd --system %{GROUPNAME}
+fi
+
+if ! id -u %{USERNAME} >/dev/null 2>&1; then
+     echo "Adding user: %{USERNAME}"
+     useradd --system --shell /usr/sbin/nologin --gid %{GROUPNAME} \
+             --comment "Veraison User" %{USERNAME} --groups adm,%{GROUPNAME}
+fi
+
+getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME} || true
+
+%post
+chown -R %{USERNAME}:%{GROUPNAME} /%{_prefix}/local/veraison/
+chmod 500 /%{_prefix}/local/veraison/certs/*.key
+/%{_prefix}/local/veraison/bin/veraison -s start-services
+
+%preun
+/%{_prefix}/local/veraison/bin/veraison -s stop-services
+/%{_prefix}/local/veraison/bin/veraison -s disable-services
+rm -f /%{_prefix}/local/veraison/logs/*.log
+
+%changelog
+* Tue Nov 21 2023 root
+- 
