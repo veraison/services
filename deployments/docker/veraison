@@ -297,6 +297,7 @@ function pocli() {
 }
 
 function help() {
+	set +e
 	read -r -d '' usage <<-EOF
 	Usage: veraison [-q] [-h] [-C] COMMAND [ARG...]
 
@@ -366,6 +367,7 @@ function help() {
 
 	EOF
 	echo "$usage"
+	set -e
 }
 
 function _get_container_state() {
