@@ -18,6 +18,7 @@ DOCKER_BUILD_FLAGS ?=
 SHELL = /bin/bash
 
 THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+include deployment.cfg
 include src/load-config.mk
 
 SRC_DIR := $(THIS_DIR)src/
