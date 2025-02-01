@@ -20,3 +20,7 @@ var (
 		EvidenceMediaType,
 	}
 )
+
+const (
+	mKeyMeasurement = 641
+)
