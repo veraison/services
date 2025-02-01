@@ -8,6 +8,7 @@ SUBDIR += psa-iot
 SUBDIR += tpm-enacttrust
 SUBDIR += parsec-tpm
 SUBDIR += parsec-cca
+SUBDIR += sevsnp
 
 clean: ; $(RM) -rf ./bin
 
