@@ -10,5 +10,6 @@ import (
 
 func main() {
 	handler.RegisterEndorsementHandler(&scheme.EndorsementHandler{})
+	handler.RegisterStoreHandler(&scheme.StoreHandler{})
 	plugin.Serve()
 }
