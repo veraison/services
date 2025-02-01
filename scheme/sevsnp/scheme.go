@@ -22,5 +22,7 @@ var (
 )
 
 const (
+	mKeyReportData  = 640
 	mKeyMeasurement = 641
+	mKeyReportID    = 645
 )
