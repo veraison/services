@@ -10,6 +10,7 @@ SUBDIR += parsec-tpm
 SUBDIR += parsec-cca
 SUBDIR += nvidia-coserv
 SUBDIR += amd-kds-coserv
+SUBDIR += sevsnp
 
 clean: ; $(RM) -rf ./bin
 

@@ -94,6 +94,7 @@ cp -a $DEPLOYMENT_DEST/* %{buildroot}/
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-cca.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-tpm.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/psa.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/sevsnp.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/riot.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/tpm-enacttrust.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/management-service
