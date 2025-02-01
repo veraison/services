@@ -9,8 +9,6 @@ import (
 )
 
 func main() {
-	handler.RegisterEndorsementHandler(&scheme.EndorsementHandler{})
 	handler.RegisterEvidenceHandler(&scheme.EvidenceHandler{})
-	handler.RegisterStoreHandler(&scheme.StoreHandler{})
 	plugin.Serve()
 }
