@@ -180,7 +180,8 @@ and manage the Endorsements and Trust Anchors. The API details are documented
 under [Endorsement Provisioning
 Interface](https://github.com/veraison/docs/tree/main/api/endorsement-provisioning).
 This service accept a variety of Endorsement Formats. For now, PSA (Profile 1 &
-Profile 2), CCA, TPM and Parsec (CCA and TPM) based Endorsements are supported.
+Profile 2), CCA, TPM, Parsec (CCA and TPM) and SEV-SNP based Endorsements are
+supported.
 
 Refer to
 [scope](https://github.com/veraison/docs/blob/main/project-overview.md#scope---provisioning)
@@ -195,8 +196,8 @@ Attestation Evidence claims. On the back end, it communicates with
 the Attestation Verification Results, which are then passed to the challenger.
 
 This service acts as a frontend for accepting a variety of attestation token
-formats. For now, PSA (Profile 1 & Profile 2), CCA and TPM-based attestation
-tokens are supported.
+formats. For now, PSA (Profile 1 & Profile 2), CCA, SEV-SNP and TPM-based
+attestation tokens are supported.
 
 The API is based on the Challenge/Response Interaction Models as documented in
 [challenge-response](https://github.com/veraison/docs/tree/main/api/challenge-response)
