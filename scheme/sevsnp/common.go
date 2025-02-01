@@ -5,6 +5,8 @@ package sevsnp
 
 import (
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/ratsd/tokens"
+	"github.com/veraison/services/proto"
 )
 
 // measurementByUintKey looks up comid.Measurement in a CoMID by its MKey.
@@ -30,4 +32,15 @@ func measurementByUintKey(refVal comid.ValueTriple,
 	}
 
 	return nil, nil
+}
+
+func parseEvidence(token *proto.AttestationToken) (*tokens.TSMReport, error) {
+	var tsm tokens.TSMReport
+
+	err := tsm.FromCBOR(token.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tsm, nil
 }
