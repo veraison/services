@@ -12,13 +12,17 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/google/go-sev-guest/proto/sevsnp"
 	"github.com/veraison/corim/comid"
+	"github.com/veraison/ratsd/tokens"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/proto"
 )
 
 var (
-	ErrMissingMeasurement = errors.New("measurement not found")
-	ErrARKDecodeFailure   = errors.New("failed to decode ARK")
+	ErrMissingMeasurement          = errors.New("measurement not found")
+	ErrARKDecodeFailure            = errors.New("failed to decode ARK")
+	ErrUnsupportedMultipleEvidence = errors.New("unable to process multiple evidence in a single request")
 )
 
 // StoreHandler implements the IStoreHandler interface handler for SEVSNP scheme
@@ -118,6 +122,76 @@ func (s StoreHandler) SynthKeysFromTrustAnchor(_ string, ta *handler.Endorsement
 	}
 
 	return []string{u.String()}, nil
+}
+
+// GetTrustAnchorIDs gets the TA ID from evidence
+//
+// "auxblob" in the TSM report contains a certificate
+// table. Extract ARK from it and construct the TA key.
+func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
+	var (
+		tsm       *tokens.TSMReport
+		certChain *sevsnp.CertificateChain
+		ark       []byte
+		cert      *x509.Certificate
+		err       error
+	)
+
+	if tsm, err = parseEvidence(token); err != nil {
+		return nil, err
+	}
+
+	if certChain, err = parseCertificateChainFromEvidence(tsm); err != nil {
+		return nil, err
+	}
+
+	if ark, err = readCert(certChain.GetArkCert()); err != nil {
+		return nil, fmt.Errorf("can't read ARK to compose TA ID: %w", err)
+	}
+
+	if cert, err = x509.ParseCertificate(ark); err != nil {
+		return nil, err
+	}
+
+	u := url.URL{
+		Scheme: SchemeName,
+		Path:   cert.Issuer.CommonName,
+	}
+
+	return []string{u.String()}, nil
+}
+
+// GetRefValueIDs gets the refval key from the claims set. Looks up
+// "measurement" using its MKey (641) and construct the refval key.
+//
+// Reference value key for SEV-SNP is of the form
+// "SEVSNP://<tenantID>/<measurement>", as explained
+// in SynthKeysFromRefValue.
+func (s StoreHandler) GetRefValueIDs(
+	tenantID string,
+	_ []string,
+	claims map[string]interface{},
+) ([]string, error) {
+	claimsJson, err := json.Marshal(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	extractedComid, err := comidFromJson(claimsJson)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(extractedComid.Triples.ReferenceValues.Values) > 1 {
+		return nil, ErrUnsupportedMultipleEvidence
+	}
+
+	refValKey, err := getRefValKey(extractedComid.Triples.ReferenceValues.Values[0], tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{refValKey}, nil
 }
 
 func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
