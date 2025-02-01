@@ -169,6 +169,24 @@ func (o *HCLogger) SetLevel(level hclog.Level) {
 	// We do not want to allow plugins to change logging level.
 }
 
+func (o *HCLogger) GetLevel() hclog.Level {
+	var hcLogLevel hclog.Level
+
+	zapLevel := GetLevel()
+	switch zapLevel {
+	case zap.DebugLevel:
+		hcLogLevel = hclog.Debug
+	case zap.InfoLevel:
+		hcLogLevel = hclog.Info
+	case zap.WarnLevel:
+		hcLogLevel = hclog.Warn
+	case zap.ErrorLevel:
+		hcLogLevel = hclog.Error
+	}
+
+	return hcLogLevel
+}
+
 // Return a value that conforms to the stdlib log.Logger interface
 func (o *HCLogger) StandardLogger(opts *hclog.StandardLoggerOptions) *stdlog.Logger {
 	return zap.NewStdLog(o.logger.Desugar())
