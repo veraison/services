@@ -14,7 +14,7 @@ jobs:
       run: make integ-test | tee tavern-tests.log
     - name: Archive tavern container log
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tavern-logs
         path: ./tavern-tests.log
@@ -25,7 +25,7 @@ jobs:
       run: deployments/docker/veraison get-logs container-logs
     - name: Archive container logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-logs
         path: ./container-logs
