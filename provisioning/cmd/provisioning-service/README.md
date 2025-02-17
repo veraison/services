@@ -16,7 +16,7 @@ configuration:
 
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the provisioning
   server will be listening on. If not specified, this defaults to
-  `localhost:8888`.
+  `localhost:8443`.
 - `protocol` (optional): the protocol that will be used. Must be either "http" or "https". Defaults to "https" if not specified.
 - `cert`: path to the x509 certificate to be used. Must be specified if protocol is "https"
 - `cert-key`: path to the key associated with the certificate specified in `cert`. Must be specified if protocol is "https"
@@ -41,7 +41,7 @@ There are two config files in this directory:
 
 ```yaml
 provisioning:
-  listen-addr: localhost:8888
+  listen-addr: localhost:9443
   protocol: https
   cert: provisioning.crt
   cert-key: provisioning.key

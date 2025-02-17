@@ -825,7 +825,7 @@ class UpdateSecurityGroupsCommand(BaseCommand):
 
     def update_arguments(self, parser):
         parser.add_argument('-p', '--ports', action=StoreIntList,
-                            default=[11111, 8888, 8088, 8080, 5432, 22])
+                            default=[11111, 9443, 10443, 8443, 5432, 22])
 
     def run(self, args):
         self.logger.info('updating deployment security groups with IP address for this host...')

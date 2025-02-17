@@ -3,7 +3,7 @@
 logging:
   level: debug  # valid levels: error, warning, info, debug
 verification:
-  listen-addr: 0.0.0.0:8080
+  listen-addr: 0.0.0.0:8443
   protocol: https
   cert: ../../../deployments/docker/src/certs/verification.crt
   cert-key: ../../../deployments/docker/src/certs/verification.key

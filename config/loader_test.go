@@ -215,7 +215,7 @@ func Test_Loader_valid_tags(t *testing.T) {
 	loader := NewLoader(&cfg)
 
 	testCases := map[string]string{
-		"localhost:8080":        "",
+		"localhost:8443":        "",
 		"127.0.0.1:1234":        "",
 		"742 Evergreen Terrace": "ServerAddress: 742 Evergreen Terrace does not validate as dialstring",
 	}

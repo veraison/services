@@ -66,7 +66,7 @@ auth:
 - `host` (optional): host name of the Keycloak service. Defaults to
   `localhost`.
 - `port` (optional): the port on which the Keycloak service is listening.
-  Defaults to `8080`.
+  Defaults to `11111`.
 - `realm` (optional): the Keycloak realm used by Veraison. A realm contains the
   configuration for clients, users, roles, etc. It is roughly analogous to a
   "tenant id". Defaults to `veraison`.

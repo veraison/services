@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	DefaultListenAddr = "localhost:8088"
+	DefaultListenAddr = "localhost:10443"
 )
 
 type cfg struct {
