@@ -130,7 +130,7 @@ func main() {
         // LoadFromViper().
 	err := loader.LoadFromMap(map[string]interface{}{
 		"host": "example.com",
-		"port": 8080,
+		"port": 8443,
 	})
 	if err != nil {
             log.Fatal(err)

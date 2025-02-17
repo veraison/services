@@ -44,7 +44,7 @@ func (o *KeycloakAuthorizer) Init(v *viper.Viper, logger *zap.SugaredLogger) err
 
 	cfg := keycloakCfg{
 		Host:  "localhost",
-		Port:  "1111",
+		Port:  "11111",
 		Realm: "veraison",
 		CACert: "[unset]",
 	}

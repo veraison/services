@@ -88,8 +88,8 @@ To start Veraison services run:
 veraison start
 ```
 
-The provisioning service is now listening on port 8888, and verification
-service on port 8080 (these can be changed via configuration -- see below).
+The provisioning service is now listening on port 9443, and verification
+service on port 8443 (these can be changed via configuration -- see below).
 
 Use the `-h` option to see the full list of available commands.
 

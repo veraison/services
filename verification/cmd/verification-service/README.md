@@ -41,7 +41,7 @@ There are two config files in this directory:
 
 ```yaml
 verification:
-  listen-addr: localhost:8888
+  listen-addr: localhost:8443
   protocol: https
   cert: verification.crt
   cert-key: verification.key

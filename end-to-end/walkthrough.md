@@ -730,7 +730,7 @@ To obtain the public key for verifying the attestation result fetch it from
 
 ```sh
 wget --no-check-certificate -O- \
-    https://localhost:8080/.well-known/veraison/verification | \
+    https://localhost:8443/.well-known/veraison/verification | \
     jq '.["ear-verification-key"]' > $WORK_DIR/verif-pub.json
 ```
 

@@ -6,7 +6,7 @@ po-store:
     driver: sqlite3
     datasource: /veraison/stores/vts/po-store.sql
 management:
-  listen-addr: 0.0.0.0:8088
+  listen-addr: 0.0.0.0:10443
   protocol: https
   cert: ../../../deployments/docker/src/certs/management.crt
   cert-key: ../../../deployments/docker/src/certs/management.key
