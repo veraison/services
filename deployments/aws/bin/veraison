@@ -1448,9 +1448,15 @@ class CreateVpcStack(BaseCommand):
 class ShellCommand(BaseCommand):
 
     name = 'shell'
-    desc = 'start a shell on the sentinel instance'
+    desc = '''start a shell on an EC2 instance associated with the deployment.
+    By default, the shell will be started on the stentinel, however -H/--host
+    can be used to specify a different instance, in which case the shell
+    will be started on that instance, using the sentinel as a jumphost. status
+    command can be used to see available instances.
+    '''
 
     def update_arguments(self, parser):
+        parser.add_argument('-H', '--host')
         parser.add_argument('-s', '--server-alive-interval', type=int, default=60)
 
     def run(self, args):
@@ -1463,6 +1469,11 @@ class ShellCommand(BaseCommand):
         ssh_opts = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
         if args.server_alive_interval:
             ssh_opts += f' -o ServerAliveInterval={args.server_alive_interval}'
+
+        if args.host:
+            prox_cmd = f'ssh {ssh_opts} -i {key} -W %h:%p ubuntu@{host}'
+            ssh_opts += f' -o ProxyCommand="{prox_cmd}"'
+            host = args.host
 
         ssh_cmd = f'ssh {ssh_opts} -i {key} ubuntu@{host}'
         self.logger.debug(ssh_cmd)
