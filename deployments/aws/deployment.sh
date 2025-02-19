@@ -27,6 +27,7 @@ function help() {
 
 	  -h show this message and exist
 	  -f force overwriting of existing artifacts
+	  -l delete logs (only applies to teardown command)
 	  -v enable verbose output
 
 	COMMANDS:
@@ -41,9 +42,13 @@ function help() {
 	bringup
 	    Create a full Veraison deployment using configuration inside deployment.cfg.
 
-	teardown
+	teardown [-l]
 	    Delete the existing deployment stack and all associated artificats (DEB package,
-	    AMI images, etc).
+	    AMI images, etc). By default, CloudWatch logs will be kept. To also delete the
+	    logs, use -l flag.
+
+	delete-logs | clear-logs
+	    Delete logs stored in CloudWatch.
 
 	EOF
 	set -e
@@ -128,7 +133,11 @@ function bringup() {
 		--scaling-min-size "${SCALING_MIN_SIZE}" \
 		--scaling-max-size "${SCALING_MAX_SIZE}" \
 		--scaling-cpu-util-target "${SCALING_CPU_UTIL_TARGET}" \
-		--scaling-request-count-target "${SCALING_REQUEST_COUNT_TARGET}"
+		--scaling-request-count-target "${SCALING_REQUEST_COUNT_TARGET}" \
+		--cw-log-retention-days "${CLOUDWATCH_LOG_RETENTION_DAYS}" \
+		--iam-logger-role-name "${IAM_LOGGER_ROLE_NAME}" \
+		--iam-instance-profile-name "${IAM_INSTANCE_PROFILE_NAME}" \
+		--iam-permissions-boundary-arn "${IAM_PERMISSION_BOUNDARY_ARN}"
 
 	veraison create-deb
 	veraison create-key-pair
@@ -158,7 +167,16 @@ function teardown() {
 
 	veraison delete-key-pair
 	veraison delete-deb
+
+	if [[ ${_delete_logs} == true ]]; then
+		delete_logs
+	fi
+
 	set -e
+}
+
+function delete_logs() {
+	veraison delete-logs
 }
 
 function veraison() {
@@ -177,12 +195,14 @@ function _check_installed() {
 _force=false
 _verbose=false
 _no_error=false
+_delete_logs=false
 
-while getopts "hfNv" opt; do
+while getopts "hflNv" opt; do
 	case "$opt" in
 		h) help; exit 0;;
 		f) _force=true;;
 		N) _no_error=true;;
+		l) _delete_logs=true;;
 		v) _verbose=true;;
 		*) break;;
 	esac
@@ -211,6 +231,7 @@ case $_command in
         bootstrap) bootstrap;;
 	bringup) bringup;;
 	teardown) teardown;;
+	delete-logs | clear-logs) delete_logs;;
 	*) echo -e "$_error: unexpected command: \"$_command\"";;
 esac
 # vim: set noet sts=8 sw=8:

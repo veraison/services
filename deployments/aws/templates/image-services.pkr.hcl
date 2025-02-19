@@ -41,6 +41,10 @@ variable "config_path" {
   type = string
 }
 
+variable "cw_config_path" {
+  type = string
+}
+
 locals {
     dest_deb = "/tmp/${basename(var.deb)}"
 }
@@ -89,6 +93,11 @@ build {
     destination = "combined-services-config.yaml"
   }
 
+  provisioner "file" {
+    source = "${var.cw_config_path}"
+    destination = "amazon-cloudwatch-agent.conf"
+  }
+
   provisioner "shell" {
     inline = [
       "sudo dpkg -i ${local.dest_deb} 2>&1",
@@ -101,7 +110,14 @@ build {
       "sudo systemctl restart veraison-vts",
       "sudo systemctl restart veraison-provisioning",
       "sudo systemctl restart veraison-verification",
-      "sudo systemctl restart veraison-management"
+      "sudo systemctl restart veraison-management",
+
+      "wget https://amazoncloudwatch-agent-${var.region}.s3.${var.region}.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb",
+      "sudo dpkg -i -E amazon-cloudwatch-agent.deb",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2  -c file:$(pwd)/amazon-cloudwatch-agent.conf",
+
+      "ls"
     ]
   }
 }

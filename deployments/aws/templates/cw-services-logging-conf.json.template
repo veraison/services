@@ -1,0 +1,98 @@
+{
+    "agent": {
+        "metrics_collection_interval": 30,
+        "run_as_user": "cwagent"
+    },
+    "logs": {
+        "logs_collected": {
+            "files": {
+                "collect_list": [
+                    {
+                        "file_path": "/opt/veraison/logs/provisioning-stdout.log",
+                        "log_group_class": "STANDARD",
+                        "log_group_name": "${DEPLOYMENT_NAME}-provisioning",
+                        "log_stream_name": "{instance_id}",
+                        "retention_in_days": ${CW_LOG_RETENTION_DAYS}
+                    },
+                    {
+                        "file_path": "/opt/veraison/logs/verification-stdout.log",
+                        "log_group_class": "STANDARD",
+                        "log_group_name": "${DEPLOYMENT_NAME}-verification",
+                        "log_stream_name": "{instance_id}",
+                        "retention_in_days": ${CW_LOG_RETENTION_DAYS}
+                    },
+                    {
+                        "file_path": "/opt/veraison/logs/management-stdout.log",
+                        "log_group_class": "STANDARD",
+                        "log_group_name": "${DEPLOYMENT_NAME}-management",
+                        "log_stream_name": "{instance_id}",
+                        "retention_in_days": ${CW_LOG_RETENTION_DAYS}
+                    },
+                    {
+                        "file_path": "/opt/veraison/logs/vts-stdout.log",
+                        "log_group_class": "STANDARD",
+                        "log_group_name": "${DEPLOYMENT_NAME}-vts",
+                        "log_stream_name": "{instance_id}",
+                        "retention_in_days": ${CW_LOG_RETENTION_DAYS}
+                    }
+                ]
+            }
+        }
+    },
+    "metrics": {
+        "aggregation_dimensions": [
+            [
+                "InstanceId"
+            ]
+        ],
+        "append_dimensions": {
+            "AutoScalingGroupName": "$@{aws:AutoScalingGroupName}",
+            "ImageId": "$@{aws:ImageId}",
+            "InstanceId": "$@{aws:InstanceId}",
+            "InstanceType": "$@{aws:InstanceType}"
+        },
+        "metrics_collected": {
+            "cpu": {
+                "measurement": [
+                    "cpu_usage_idle",
+                    "cpu_usage_iowait",
+                    "cpu_usage_user",
+                    "cpu_usage_system"
+                ],
+                "metrics_collection_interval": 30,
+                "totalcpu": false
+            },
+            "disk": {
+                "measurement": [
+                    "used_percent",
+                    "inodes_free"
+                ],
+                "metrics_collection_interval": 30,
+                "resources": [
+                    "*"
+                ]
+            },
+            "diskio": {
+                "measurement": [
+                    "io_time"
+                ],
+                "metrics_collection_interval": 30,
+                "resources": [
+                    "*"
+                ]
+            },
+            "mem": {
+                "measurement": [
+                    "mem_used_percent"
+                ],
+                "metrics_collection_interval": 30
+            },
+            "swap": {
+                "measurement": [
+                    "swap_used_percent"
+                ],
+                "metrics_collection_interval": 30
+            }
+        }
+    }
+}
