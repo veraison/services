@@ -260,7 +260,7 @@ This is more-or-less a reverse of what was done during bring up and should be
 self-explanatory. 
 
 
-### Managing the deployment
+## Managing the deployment
 
 In addition to containing the commands used during deployment bring up and
 teardown, `veraison` script also acts as a CLI front-end for the deployment.
@@ -300,6 +300,7 @@ testing.
 ```bash
 veraison shell
 ```
+
 This opens an interactive shell on the sentinel instance. This can be used to
 examine and debug the internal state of the deployment (aside from the API
 endpoints, the sentinel is the only thing accessible outside the VPC).
@@ -307,8 +308,85 @@ endpoints, the sentinel is the only thing accessible outside the VPC).
 ```bash
 veraison dbshell
 ```
-
 This opens an interactive Postgres shell on the RDS instance (via the
 sentinel). The instance is used both for the Veraison services' K-Stores
 (`veraison` database -- should be the default), and for Keycloak (`keycloak`
 database).
+
+```bash
+veraison follow [-s FROM] SERVICE_NAME
+```
+
+This outputs the last 10 minutes (by default) of logs from the specified
+service and continues to print out new log entries in (near) real-time until
+stopped with CTRL-C. How far back event history is printed can be changed via
+-s/--start option which can take either an absolute date (in one of the common
+formats) or relative time. E.g.
+
+```bash
+# follow VTS service going back 2 hours
+veraison follow -s 2h vts  
+
+# follow verification events since yesterday
+veraison follow --start yesterday verification 
+
+# follow provisioning events since 20th July 2024 (note the US date ordering)
+veraison follow --start 7/20/2024 provisioning 
+veraison follow --start 2024-07-20 provisioning 
+
+# follow VTS service going back 3 days
+veraison follow --start "3 days ago" provisioning 
+
+```
+The maximum unit of time for relative time is weeks (e.g. `2w` or `2 weeks`). If
+you want a longer time period you have to convert it into days/weeks, or specify
+and absolute starting date.
+
+```bash
+veraison get-logs [-S SERVICE] [-s FROM] [-e TO] OUTPUT_DIRECTORY
+```
+
+This retrieves logs from CloudWatch and writes them to files in the specified
+output directory. The files are called `{service}-stdout.log`. If the output
+directory doesn't exist, it will be created (along with intermediate
+directories, if necessary). It's possible to specify a service using `-S`
+option, in which case only logs for the services will be obtained. The option
+may be specified multiple times. It is possible to restrict the time period for
+which the logs will be obtained using `-s/--start` and `-e/--end` options.
+Parameters for these options should be in the same format as for `--start`
+option for `follow` command (see above). There is also a shorter alias `logs` for
+this command. E.g.
+
+```bash
+# Obtain logs for all services writing them into files in "veraison-logs"
+# subdirectory under current directory (creating it if necessary).
+veraison get-logs ./veraison-logs
+
+
+# Obtain VTS log for today writing it into ./veraison-logs/vts-stdout.log
+veraison get-logs -S vts -s today veraison-logs
+
+# Obtain logs for provisioning and verification services spanning time
+# period from 10th December 2024 until yesterday
+veraison logs -S provisioning -S verification -s 2024-12-10 \
+     -e yesterday veraison-logs
+```
+
+As with `follow` command, the maximum time unit is weeks.
+
+```bash
+veraison delete-logs
+```
+
+Completely delete logs from CloudWatch. This is mostly useful for debugging.
+This command is also aliased as `clear-logs`.
+
+```bash
+veraison restart-cwagent
+```
+
+Restarts CloudWatch agent running on service EC2 instances. This is necessary
+if something happens to the log groups in CloudWatch -- the agent will not
+upload events until restarted. (note: `delete-logs` command does this
+automatically, so there is normally no need to use this command unless you,
+e.g., manually delete the log groups in AWS web console).

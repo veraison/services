@@ -106,6 +106,16 @@ Parameters:
     Description: |
       The name of the subdomain that will be created under ParentDomain for the service
     Default: keycloak
+  RoleName:
+    Type: String
+    Description: |
+      The name of the IAM role that will be created to facilitate logging.
+  InstanceProfileName:
+    Type: String
+    Description: |
+      The name of the IAM role that will be created to facillitate logging.
+  PermissionBoundaryArn:
+    Type: String
 
 Resources:
   ServicesLoadBalancer:
@@ -134,7 +144,6 @@ Resources:
         - IpProtocol: tcp
           FromPort: !Ref ProvisioningPort
           ToPort: !Ref ProvisioningPort
-          CidrIp: !Ref AdminCidr
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: !Ref VerificationPort
@@ -321,6 +330,8 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref CombinedImage
         InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt ServiceInstanceProfile.Arn
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !Ref ManagementSecurityGroup
@@ -330,7 +341,12 @@ Resources:
             systemctl restart veraison-vts
             systemctl disable --now veraison-provisioning
             systemctl disable --now veraison-verification
+            echo "" > /opt/veraison/logs/provisioning-stdout.log
+            echo "" > /opt/veraison/logs/verification-stdout.log
+            echo "" > /opt/veraison/logs/management-stdout.log
+            echo "" > /opt/veraison/logs/vts-stdout.log
             systemctl restart veraison-management
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -346,16 +362,23 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref CombinedImage
         InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt ServiceInstanceProfile.Arn
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !Ref ProvisioningSecurityGroup
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            systemctl restart veraison-vts
-            systemctl restart veraison-provisioning
             systemctl disable --now veraison-verification
             systemctl disable --now veraison-management
+            echo "" > /opt/veraison/logs/provisioning-stdout.log
+            echo "" > /opt/veraison/logs/verification-stdout.log
+            echo "" > /opt/veraison/logs/management-stdout.log
+            echo "" > /opt/veraison/logs/vts-stdout.log
+            systemctl restart veraison-vts
+            systemctl restart veraison-provisioning
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -371,16 +394,23 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref CombinedImage
         InstanceType: !Ref InstanceType
+        IamInstanceProfile: 
+          Arn: !GetAtt ServiceInstanceProfile.Arn
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !Ref VerificationSecurityGroup
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            systemctl restart veraison-vts
             systemctl disable --now veraison-provisioning
-            systemctl restart veraison-verification
             systemctl disable --now veraison-management
+            echo "" > /opt/veraison/logs/provisioning-stdout.log
+            echo "" > /opt/veraison/logs/verification-stdout.log
+            echo "" > /opt/veraison/logs/management-stdout.log
+            echo "" > /opt/veraison/logs/vts-stdout.log
+            systemctl restart veraison-vts
+            systemctl restart veraison-verification
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -619,6 +649,33 @@ Resources:
       Protocol: HTTPS
       Certificates:
         - CertificateArn: !Ref CertificateArn
+
+  LoggerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: Proj-veraison-logging
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      PermissionsBoundary: arn:aws:iam::775539126253:policy/ProjAdminsPermBoundaryv2
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
+  ServiceInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    DependsOn: LoggerRole
+    Properties:
+      InstanceProfileName: Proj-veraison-service
+      Path: /
+      Roles:
+        - !Ref LoggerRole
 
 Outputs:
   ServicesDnsName:

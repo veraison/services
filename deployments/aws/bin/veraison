@@ -20,10 +20,13 @@ import time
 from asyncio.subprocess import Process, PIPE
 from collections import defaultdict
 from copy import copy
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 import boto3
+import dateutil
 import fabric
+import pytimeparse
 import requests
 import xdg.BaseDirectory
 import yaml
@@ -36,11 +39,21 @@ COLOR_DARK_GREY = '\x1b[38;5;245m'
 COLOR_MEDIUM_GREY = '\x1b[38;5;250m'
 COLOR_GREY = '\x1b[38;20m'
 COLOR_GREEN = '\x1b[38;5;2m'
+COLOR_PURPLE = '\x1b[38;5;96m'
 COLOR_YELLOW = '\x1b[33;20m'
 COLOR_RED = '\x1b[31;20m'
 COLOR_BOLD_RED = '\x1b[31;1m'
 COLOR_RESET = '\x1b[0m'
 ']]]]]]]]'  # "close" the brackets above to fix nvim's auto-indent
+
+LEVEL_REGEX = re.compile(r'^(?P<level>DEBUG|INFO|WARN|WARNING|ERROR)\t(?P<rest>.*)')
+LOG_COLORS = {
+    'DEBUG': COLOR_DARK_GREY,
+    'INFO': COLOR_MEDIUM_GREY,
+    'WARN': COLOR_YELLOW,
+    'WARNING': COLOR_YELLOW,
+    'ERROR': COLOR_RED,
+}
 
 
 class Aws:
@@ -147,6 +160,18 @@ def revoke_security_group_rules_by_tag(aws, group_id, tag):
         GroupId=group_id,
         SecurityGroupRuleIds=rule_ids,
     )
+
+
+def colorize_log_line(line):
+    match = LEVEL_REGEX.search(line)
+    if match is None:
+        raise ValueError(f'Could find log level in line: {line}')
+
+    level = match.group('level')
+    rest = match.group('rest')
+
+    color = LOG_COLORS[level]
+    return f'{color}{level}{COLOR_RESET}\t{rest}'
 
 
 def command_create_packer_security_group(cmd, deployment_name):
@@ -364,7 +389,9 @@ def command_get(cmd, path, precondition=None):
 
 def command_instantiate_template(cmd, deployment_name, src_path, out_dir='/tmp'):
     with open(src_path) as fh:
+        os.environ['DEPLOYMENT_NAME'] = deployment_name
         instantiated_template_body = envsubst(fh.read())
+        instantiated_template_body = instantiated_template_body.replace('$@{', '${')
 
     basename = os.path.basename(src_path).removesuffix('.template')
     out_path = os.path.join(out_dir, f'{deployment_name}-{basename}')
@@ -434,7 +461,8 @@ def command_create_image(cmd, args, name, packer_params=None):
 
 
 def command_create_stack(
-        cmd, deployment_name, stack_name, template_path, extra_params, wait_period=60):
+        cmd, deployment_name, stack_name, template_path, extra_params,
+        wait_period=60, capabilities=[]):
     cmd.logger.info(f'creating stack {stack_name}...')
     stack_full_name = f'{deployment_name}-{stack_name}'
 
@@ -456,6 +484,7 @@ def command_create_stack(
         TemplateBody=template,
         Parameters=params,
         OnFailure='DELETE',
+        Capabilities=capabilities,
     )
     cmd.logger.debug(f'stack ID: {resp["StackId"]}')
 
@@ -498,6 +527,31 @@ def command_create_stack(
         cmd.fail(f'could not create stack {stack_name}')
 
 
+def command_get_ec2_instances(cmd):
+    resp = cmd.aws.ec2.describe_instances(
+        Filters=[
+            {
+                'Name': 'tag:veraison-deployment',
+                'Values': [
+                    args.deployment_name,
+                ],
+            },
+        ],
+        MaxResults=64,
+    )
+
+    instances = defaultdict(list)
+    for reservation in resp['Reservations']:
+        for instance in reservation['Instances']:
+            for tag in instance['Tags']:
+                if (tag['Key'] == 'deployment-instance-name' and
+                        instance['PrivateDnsName']):
+                    instances[tag['Value']].append(instance)
+                    break
+
+    return instances
+
+
 def command_connect_sentinel(cmd, user='ubuntu'):
     host = command_get(cmd, 'rds.sentinel-dns-name', 'RDS stack been created')
     key_path = command_get(cmd, 'key.path', 'a key pair been created')
@@ -510,12 +564,124 @@ def command_connect_sentinel(cmd, user='ubuntu'):
     )
 
 
+def command_connect_ec2_instance(cmd, host, user='ubuntu'):
+    key_path = command_get(cmd, 'key.path', 'a key pair been created')
+    proxy = command_connect_sentinel(cmd, user=user)
+    return fabric.Connection(
+        host,
+        user=user,
+        connect_kwargs={
+            'key_filename': key_path,
+        },
+        gateway=proxy,
+    )
+
+
 def command_sentinel(cmd, what, verbose=False, **kwargs):
-        flags = ''
-        if verbose:
-            flags += ' --verbose'
-        with command_connect_sentinel(cmd) as con:
-            return con.run(f'veraison{flags} {what}', **kwargs)
+    flags = ''
+    if verbose:
+        flags += ' --verbose'
+    with command_connect_sentinel(cmd) as con:
+        return con.run(f'veraison{flags} {what}', **kwargs)
+
+
+def command_restart_cw_agents(cmd):
+    cmd.logger.debug('looking up service instances...')
+    instances = command_get_ec2_instances(cmd)
+    for service in ['provisioning', 'verification', 'management']:
+        for instance in instances[service]:
+            host = instance['PrivateDnsName']
+            cwa_path = '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl'
+
+            cmd.logger.debug(f'restarting agent on {host}...')
+            con = command_connect_ec2_instance(cmd, host)
+            con.run(f'sudo {cwa_path} -a stop', echo=False, hide=True)
+            con.run(f'sudo {cwa_path} -a start', echo=False, hide=True)
+
+
+def command_get_cw_logs(cmd, deployment_name, service, start=None, end=None):
+    kwargs = {}
+
+    start_time = convert_timestamp(start)
+    if start_time:
+        kwargs['startTime'] =  int(start_time * 1000)
+
+    end_time = convert_timestamp(end)
+    if end_time:
+        kwargs['endTime'] = int(end_time * 1000)
+
+    def iter_events():
+        try:
+            resp = cmd.aws.logs.filter_log_events(
+                    logGroupName=f'{deployment_name}-{service}',
+                    **kwargs,
+            )
+            while resp['events']:
+                for event in resp['events']:
+                    yield event
+
+                token = resp.get('nextToken')
+                if token:
+                    resp = cmd.aws.logs.filter_log_events(
+                            logGroupName=f'{deployment_name}-{service}',
+                            nextToken=token,
+                            **kwargs,
+                    )
+        except cmd.aws.logs.exceptions.ResourceNotFoundException:
+            pass
+
+    return iter_events()
+
+
+def convert_timestamp(value):
+    if value is None:
+        return None
+    elif isinstance(value, datetime):
+        return value.timestamp()
+    elif isinstance(value, timedelta):
+        return (datetime.now() - value).timestamp()
+    elif isinstance(value, int):
+        return value
+    elif isinstance(value, str):
+       value = value.lower()
+       if value.endswith(' ago'):
+           value = value[:-4]
+
+       if value == 'today':
+           ret = datetime.now()
+           ret = ret.replace(hour=0, minute=0, second=0)
+           return ret.timestamp()
+       elif value == 'yesterday':
+           ret = datetime.now() - timedelta(days=1)
+           ret = ret.replace(hour=0, minute=0, second=0)
+           return ret.timestamp()
+       else:
+           # first, assume absolute date
+           try:
+               ret = dateutil.parser.parse(value) # pyright: ignore
+               return ret.timestamp()
+           except dateutil.parser.ParserError: # pyright: ignore
+               pass
+
+           #' if not absolute date, then time delta
+           seconds = pytimeparse.parse(value)
+           if not seconds:
+               raise ValueError(f'invalid time period string "{value}"')
+
+           ret = datetime.now() - timedelta(seconds=seconds)
+           return ret.timestamp()
+    else: # not any expected type
+       raise ValueError(f'invalid time period value {value}')
+
+
+def print_cw_event(event):
+    ts = datetime.fromtimestamp(event['ingestionTime']/1000, UTC)
+    inst = event['logStreamName']
+
+    tspart = f'{COLOR_GREEN}{ts.strftime('%Y-%m-%d %H:%M:%S')}{COLOR_RESET}'
+    instpart = f'{COLOR_PURPLE}{inst}{COLOR_RESET}'
+    line = colorize_log_line(event['message'])
+    print(f'{tspart} {instpart} {line}')
 
 
 class DeploymentCache:
@@ -730,6 +896,7 @@ class CreateServicesStackCommand(BaseCommand):
         scaling = command_get_config(self, 'scaling')
         hz_id = command_get_hosted_zone(self, dns_name)
         admin_cidr = command_get_config(self, 'admin-cidr')
+        iam = command_get_config(self, 'iam')
         key_name = command_get(self, 'key.name', 'a key pair been created')
         services_image = command_get(self, 'images.services', 'services image been created')
         keycloak_image = command_get(self, 'images.keycloak', 'keycloak image been created')
@@ -784,10 +951,17 @@ class CreateServicesStackCommand(BaseCommand):
              'ParameterValue': str(scaling['cpu-util-target'])},
             {'ParameterKey': 'ScalingRequestCountTarget',
              'ParameterValue': str(scaling['request-count-target'])},
+
+            {'ParameterKey': 'RoleName', 'ParameterValue': iam['logger-role-name']},
+            {'ParameterKey': 'InstanceProfileName',
+             'ParameterValue': iam['instance-profile-name']},
+            {'ParameterKey': 'PermissionBoundaryArn',
+             'ParameterValue': iam['permission-boundary-arn']},
         ]
 
         command_create_stack(cmd, args.deployment_name, 'services',
-                             template_path, extra_params, args.wait_period)
+                             template_path, extra_params, args.wait_period,
+                             capabilities=['CAPABILITY_NAMED_IAM'])
 
 
 class DeleteStackCommand(BaseCommand):
@@ -858,6 +1032,13 @@ class CreateServicesImageCommand(BaseCommand):
             )),
         )
         parser.add_argument(
+                '-C', '--cloudwatch-config-template',
+            default=os.path.abspath(os.path.join(
+                os.path.dirname(__file__),
+                '../templates/cw-services-logging-conf.json.template',
+            )),
+        )
+        parser.add_argument(
             '-t', '--template',
             default=os.path.abspath(os.path.join(
                 os.path.dirname(__file__),
@@ -873,6 +1054,7 @@ class CreateServicesImageCommand(BaseCommand):
         self.cache['deb'] = deb_path
 
         ports = command_get_config(self, 'ports')
+        retention_days = command_get_config(self, 'cw-log-retension-days')
         rds = command_get(self, 'rds', 'RDS stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         os.environ['RDS_HOST'] = rds['host']
@@ -886,16 +1068,21 @@ class CreateServicesImageCommand(BaseCommand):
         os.environ['MANAGEMENT_PORT'] = str(ports['management'])
         os.environ['VTS_PORT'] = str(ports['vts'])
         os.environ['KEYCLOAK_PORT'] = str(ports['keycloak'])
+        os.environ['CW_LOG_RETENTION_DAYS'] = str(retention_days)
 
         config_path = command_instantiate_template(
                 self, args.deployment_name, args.services_config_template,
                 self.cache.dir)
         self.cache['services_config_file'] = config_path
 
+        cw_config_path = command_instantiate_template(
+                self, args.deployment_name, args.cloudwatch_config_template)
+
         command_create_image(self, args, 'services',
                              {
                                  'deb': deb_path,
                                  'config_path': config_path,
+                                 'cw_config_path': cw_config_path,
                              })
 
 
@@ -914,6 +1101,10 @@ class ConfigureCommand(BaseCommand):
     default_scaling_max_size = 3
     default_scaling_cpu_util_target = 60
     default_scaling_request_count_target = 10
+    default_cw_log_retention_days = 30
+    default_iam_logger_role_name = 'veraison-logger'
+    default_iam_instance_profile_name = 'veraison-service'
+    default_iam_permission_boundary_arn='arn:aws:iam::aws:policy/AdministratorAccess'
 
     def update_arguments(self, parser):
         parser.add_argument('-i', '--init', action='store_true',
@@ -974,6 +1165,15 @@ class ConfigureCommand(BaseCommand):
         parser.add_argument('-E', '--scaling-request-count-target', type=int,
                             help='request count that will be targed by auto-scaling policies')
 
+        parser.add_argument('-L', '--cw-log-retention-days', type=int,
+                            help='number of days logs will be retained in CloudWatch')
+        parser.add_argument('-G', '--iam-logger-role-name',
+                            help='Name that will be used for logger AIM role')
+        parser.add_argument('-F', '--iam-instance-profile-name',
+                            help='Name that will be used for service AIM instance profile')
+        parser.add_argument('-B', '--iam-permission-boundary-arn',
+                            help='ARN of IAM policy to be used as role boundary')
+
     def run(self, args):
         self._configure_region(args)
         self._configure_admin_cidr(args)
@@ -983,6 +1183,7 @@ class ConfigureCommand(BaseCommand):
         self._configure_ports(args)
         self._configure_keycloak(args)
         self._configure_scaling(args)
+        self._configure_cloudwatch(args)
 
     def _configure_admin_cidr(self, args):
         if args.admin_cidr:
@@ -1103,6 +1304,39 @@ class ConfigureCommand(BaseCommand):
 
         self.logger.debug('writing scaling config...')
         self.cache['scaling'] = scaling
+
+    def _configure_cloudwatch(self, args):
+        arg_names = [
+            'iam-logger-role-name',
+            'iam-instance-profile-name',
+            'iam-permission-boundary-arn',
+        ]
+        iam = self.cache.get('iam', {})
+
+        for name in arg_names:
+            attr = name.replace('-', '_')
+            val = getattr(args, attr)
+            if val:
+                iam[name.replace('iam-', '')] = val
+            elif args.init:
+                default = getattr(self, f'default_{attr}', None)
+                if default:
+                    self.logger.info(f'setting {name.replace('-', ' ')} to {default}; '
+                                     f'use --{name} to change')
+                    iam[name.replace('iam-', '')] = default
+                else:
+                    self.fail(f'--{name} must be specified')
+
+        self.logger.debug('writing IAM config...')
+        self.cache['iam'] = iam
+
+        if args.cw_log_retention_days:
+            self.cache['cw-log-retention-days'] = args.cw_log_retension_days
+        elif args.init:
+            default = self.default_cw_log_retention_days
+            self.logger.info(f'setting CloudWatch log retention to {default}; '
+                             'use --cw-log-retention-days to change')
+            self.cache['cw-log-retention-days'] = default
 
 
 class CreateKeycloakImageCommand(BaseCommand):
@@ -1710,33 +1944,165 @@ class StatusCommand(BaseCommand):
             print()
 
         if 'services' in self.cache:
-            resp = self.aws.ec2.describe_instances(
-                Filters=[
-                    {
-                        'Name': 'tag:veraison-deployment',
-                        'Values': [
-                            args.deployment_name,
-                        ],
-                    },
-                ],
-                MaxResults=64,
-            )
-
-            instances = defaultdict(list)
-            for reservation in resp['Reservations']:
-                for instance in reservation['Instances']:
-                    for tag in instance['Tags']:
-                        if (tag['Key'] == 'deployment-instance-name' and
-                                instance['PrivateDnsName']):
-                            instances[tag['Value']].append(instance['PrivateDnsName'])
-                            break
-
+            instances = command_get_ec2_instances(self)
             if instances:
                 print('EC2 instances:')
-                for instance_type, hosts in instances.items():
-                    for host in hosts:
-                        print(f'  {host}\t({instance_type})')
+                for instance_type, instances in instances.items():
+                    for instance in instances:
+                        host = instance['PrivateDnsName']
+                        id = instance['InstanceId']
+                        print(f'  {host} {id}\t({instance_type})')
 
+
+class RestartCwAgentCommand(BaseCommand):
+
+    name = 'restart-cwagent'
+    desc = 'restart CloudWatch agent on running services instances'
+
+    def run(self, args):
+        self.logger.info('restarting CloudWatch agent on service EC2 instances...')
+
+        command_restart_cw_agents(self)
+
+        self.logger.info('done.')
+
+
+class FollowCommand(BaseCommand):
+
+    name = 'follow'
+    desc = 'live stream latest logged event for the specified service'
+
+    def update_arguments(self, parser):
+        parser.add_argument('service',
+                            choices=['vts', 'provisioning', 'verification', 'management'],
+                            help='service whos logs will be followed')
+        parser.add_argument('-s', '--start', default='10 mins ago',
+                            help='show history from this point before following live events')
+
+    def run(self, args):
+        self.logger.info(f'following logs for {args.service}...')
+        group_name = f'{args.deployment_name}-{args.service}'
+
+        self.logger.debug(f'getting history for {group_name}...')
+        events = command_get_cw_logs(self, args.deployment_name, args.service, args.start)
+        for event in events:
+            print_cw_event(event)
+
+        self.logger.debug(f'identifying ARN of log group {group_name}...')
+        resp = self.aws.logs.describe_log_groups(logGroupNamePrefix=args.deployment_name)
+        arn = None
+        for group in resp['logGroups']:
+            if group['logGroupName'] == group_name:
+                arn = group['arn']
+                if arn.endswith(':*'):
+                    arn = arn[:-2]
+                break
+        else:
+            self.fail(f'Could not find log group for {args.service}')
+
+        self.logger.debug(f'streaming events for {arn}...')
+        resp = self.aws.logs.start_live_tail(logGroupIdentifiers=[arn])
+        try:
+            stream = iter(resp['responseStream'])
+            next(stream) # skip sessionStart event
+            for event in stream:
+                results = event.get('sessionUpdate', {}).get('sessionResults', [])
+                for res in results:
+                    print_cw_event(res)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            resp['responseStream'].close()
+
+
+        self.logger.info('done.')
+
+
+class GetLogsCommand(BaseCommand):
+
+    name = 'get-logs'
+    aliases = ['logs']
+    desc = 'Download services logs into the specified directory'
+
+    all_services=['vts', 'provisioning', 'verification', 'management']
+
+    def update_arguments(self, parser):
+        parser.add_argument('outdir',
+                            help='output directory into which logs will be donloaded')
+        parser.add_argument('-s', '--start', help='get logs from this point')
+        parser.add_argument('-e', '--end', help='get logs up to this point')
+        parser.add_argument('-S' '--service', action='append', dest='services',
+                            choices=self.all_services,
+                            help='only get logs for this services (may be specified '
+                                 'multiple times')
+
+    def run(self, args):
+        services = args.services or self.all_services
+        svc_str = ', '.join(services)
+        self.logger.info(f'getting logs for {svc_str}...')
+
+        if os.path.isfile(args.outdir):
+            self.fail('{args.outdir} is a file')
+        elif not os.path.isdir(args.outdir):
+            self.logger.debug(f'creating {args.outdir}...')
+            os.makedirs(args.outdir)
+        else:
+            self.logger.debug(f'writing into existing {args.outdir}...')
+
+        for service in services:
+            outfile = os.path.join(args.outdir, f'{service}-stdout.log')
+            group_name = f'{args.deployment_name}-{service}'
+
+            self.logger.info(f'getting events for {group_name}...')
+            events = command_get_cw_logs(self, args.deployment_name, service,
+                                         args.start, args.end)
+
+            with open(outfile, 'w') as wfh:
+                for event in events:
+                    ts = datetime.fromtimestamp(event['ingestionTime']/1000, UTC)
+                    inst = event['logStreamName']
+                    message = event['message']
+                    wfh.write(f'{ts} {inst} {message}\n')
+
+            self.logger.debug(f'written {outfile}')
+
+        self.logger.info('done.')
+
+
+class DeleteLogsCommand(BaseCommand):
+
+    name = 'delete-logs'
+    aliases = ['clear-logs']
+    desc = 'Delete services logs in CloudWatch'
+
+    all_services=['vts', 'provisioning', 'verification', 'management']
+
+    def update_arguments(self, parser):
+        parser.add_argument('-S' '--service', action='append', dest='services',
+                            choices=self.all_services,
+                            help='only get logs for this services (may be specified '
+                                 'multiple times')
+
+    def run(self, args):
+        services = args.services or self.all_services
+        svc_str = ', '.join(services)
+        self.logger.info(f'deleting logs for {svc_str}...')
+
+        need_agent_restart = False
+        for service in services:
+            log_group = f'{args.deployment_name}-{service}'
+            self.logger.debug(f'deleting log group {log_group}...')
+            try:
+                self.aws.logs.delete_log_group(logGroupName=log_group)
+                need_agent_restart = True
+            except self.aws.logs.exceptions.ResourceNotFoundException:
+                pass
+
+        if need_agent_restart:
+            self.logger.info('restarting CloudWatch agents...')
+            command_restart_cw_agents(self)
+
+        self.logger.info('done.')
 
 # }}} commands
 
