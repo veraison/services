@@ -899,23 +899,6 @@ class CreateServicesImageCommand(BaseCommand):
                              })
 
 
-class RegisterDomainCommand(BaseCommand):
-
-    name = 'register-domain'
-    desc = 'delete a previously created stack'
-
-    def update_arguments(self, parser):
-        parser.add_argument('domain', help='domain to be registred')
-        parser.add_argument('-a', '--autorenew', action='store_true',
-                            help='domain will autorenew upon expiration if this is specified')
-        parser.add_argument('-d' '--duration-in-years', type=int, default=1,
-                            help='duration of the registration in years')
-
-    def run(self, args):
-        stack_name = f'{args.deployment_name}-{args.name}'
-        self.logger.info(f'deleting stack {stack_name}...')
-
-
 class ConfigureCommand(BaseCommand):
 
     name = 'configure'
