@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import getpass
 import inspect
+import json
 import logging
 import os
 import pprint
@@ -32,6 +33,8 @@ import xdg.BaseDirectory
 import yaml
 from botocore.exceptions import ClientError
 from envsubst import envsubst
+from oauthlib.oauth2 import LegacyApplicationClient
+from requests_oauthlib import OAuth2Session
 from sqlitedict import SqliteDict
 
 
@@ -1952,7 +1955,53 @@ class StatusCommand(BaseCommand):
                         host = instance['PrivateDnsName']
                         id = instance['InstanceId']
                         print(f'  {host} {id}\t({instance_type})')
+                print()
 
+                services = command_get(self, 'services', 'services stack has been crated')
+                host = services['services-dns-name']
+                port = services['verification-port']
+
+                resp = requests.get(f'https://{host}:{port}/.well-known/veraison/verification')
+                well_known = json.loads(resp.text)
+
+                print(f'Veraison version: {well_known['version']}')
+                print()
+
+                print('EAR verification key:')
+                print(json.dumps(well_known['ear-verification-key'], indent=4))
+                print()
+
+                print('Supported verification media types:')
+                for mt in well_known['media-types']:
+                    print(f'\t{mt}')
+                print()
+
+                client_config = command_get(self, 'client_config',
+                                            'create-client-config been run')
+                client_id = client_config['client_id']
+                client_secret = client_config['client_secret']
+                username = client_config['provisioning_user']
+                password = client_config['provisioning_password']
+
+                kc_host = services['keycloak-dns-name']
+                kc_port = services['keycloak-port']
+
+                oauth = OAuth2Session(client=LegacyApplicationClient(client_id=client_id))
+                oauth.fetch_token(
+                    token_url=f'https://{kc_host}:{kc_port}' + \
+                               '/realms/veraison/protocol/openid-connect/token',
+                    username=username, password=password,
+                    client_id=client_id, client_secret=client_secret,
+                )
+
+                port = services['provisioning-port']
+                resp = oauth.get(f'https://{host}:{port}/.well-known/veraison/provisioning')
+                well_known = json.loads(resp.text)
+
+                print('Supported provisioning media types:')
+                for mt in well_known['media-types']:
+                    print(f'\t{mt}')
+                print()
 
 class RestartCwAgentCommand(BaseCommand):
 
