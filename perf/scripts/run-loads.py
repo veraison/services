@@ -6,46 +6,84 @@ import multiprocessing
 import os
 import subprocess
 import time
+from contextlib import contextmanager
+from collections.abc import Generator
+from typing import Any, Unpack
 
 import gevent
 import json
 import locust.stats # must be imported before requests, as it monkey-patches ssl
+from oauthlib.oauth2 import LegacyApplicationClient
 import requests
 from locust import HttpUser, task, events
 from locust.env import Environment
 from locust.stats import stats_printer, stats_history, StatsEntry, RequestStats
+from requests_oauthlib import OAuth2Session
 
 locust.stats.CSV_STATS_INTERVAL_SEC = 5 # default is 1 second
 locust.stats.CSV_STATS_FLUSH_INTERVAL_SEC = 60 # Determines how often the data is flushed to disk, default is 10 seconds
 
 
-class ProvisioningUser(HttpUser):
-    host = 'http://localhost:8888'
+aws_auth = {
+    'token_url': 'https://keycloak.veraison-testing.com:11111/realms/veraison/protocol/openid-connect/token',
+    'client_id': 'veraison-client',
+    'client_secret': 'YifmabB4cVSPPtFLAmHfq7wKaEHQn10Z',
+    'password': 'veraison',
+    'username': 'veraison-provisioner',
+}
+
+
+def get_oauth2_token(token_url, username, password, client_id, client_secret):
+    oauth = OAuth2Session(client=LegacyApplicationClient(client_id=client_id))
+    return oauth.fetch_token(
+        token_url=token_url,
+        username=username, password=password,
+        client_id=client_id, client_secret=client_secret,
+    )['access_token']
+
+
+def get_auth_headers(auth_config):
+    ret = {}
+    if auth_config:
+        token = get_oauth2_token(**auth_config)
+        ret['Authorization'] = f'Bearer {token}'
+    return ret
+
+
+class BaseProvisioningUser(HttpUser):
+    host = ''
+    auth_headers = {}
 
     def on_start(self):
         this_dir = os.path.dirname(__file__)
-
         endorsements_file = os.path.join(this_dir, '../data/corim-psa-full.cbor')
         with open(endorsements_file, 'rb') as fh:
             self.provisioning_data = fh.read()
 
     @task
     def get_wellkown(self):
-        self.client.get("/.well-known/veraison/provisioning")
+        self.client.get(
+            "/.well-known/veraison/provisioning",
+            headers=self.auth_headers,
+        )
 
     @task
     def provision(self):
+        headers = {
+            'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
+        }
+        headers.update(self.auth_headers)
+
         self.client.post(
             "/endorsement-provisioning/v1/submit",
-            headers={
-                'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
-            },
+            headers=headers,
             data=self.provisioning_data,
         )
 
 
-class VerificationUser(HttpUser):
-    host = 'http://localhost:8080'
+class BaseVerificationUser(HttpUser):
+    host = ''
+    auth_headers = {}
 
     def on_start(self):
         this_dir = os.path.dirname(__file__)
@@ -60,11 +98,14 @@ class VerificationUser(HttpUser):
         with open(endorsements_file, 'rb') as fh:
             provisioning_data = fh.read()
 
+        headers = {
+            'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
+        }
+        headers.update(self.auth_headers)
+
         requests.post(
-            ProvisioningUser.host + "/endorsement-provisioning/v1/submit",
-            headers={
-                'Content-Type': 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"',
-            },
+            self.provisioning_host + "/endorsement-provisioning/v1/submit", # type: ignore
+            headers=headers,
             data=provisioning_data,
         )
 
@@ -88,6 +129,43 @@ class VerificationUser(HttpUser):
         self.client.delete(f"/challenge-response/v1/{location}")
 
 
+class LocalProvisioningUser(BaseProvisioningUser):
+    host = 'http://localhost:9443'
+
+
+class AWSProvisioningUser(BaseProvisioningUser):
+    host = 'https://services.veraison-testing.com:9443'
+
+    def on_start(self):
+        self.auth_headers = get_auth_headers(aws_auth)
+        super().on_start()
+
+
+class LocalVerificationUser(BaseVerificationUser):
+    host = 'http://localhost:8443'
+    provisioning_host = 'http://localhost:9443'
+
+
+class AWSVerificationUser(BaseVerificationUser):
+    host = 'https://services.veraison-testing.com:8443'
+    provisioning_host = 'https://services.veraison-testing.com:9443'
+
+    def on_start(self):
+        self.auth_headers = get_auth_headers(aws_auth)
+        super().on_start()
+
+
+user_classes= {
+    'local': [
+        LocalProvisioningUser,
+        LocalVerificationUser,
+    ],
+    'aws': [
+        AWSProvisioningUser,
+        AWSVerificationUser,
+    ],
+}
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--users', type=int, default=2,
@@ -102,6 +180,8 @@ def main():
                         help='do not launch web UI')
     parser.add_argument('-o', '--outfile', default='results.json',
                         help='output file the results will be written to')
+    parser.add_argument('-s', '--services', default='local', choices=['local', 'aws'],
+                        help='Which services deployment to use')
     args = parser.parse_args()
 
     # WebUI, when created, will instantiate its own argument parser (for some
@@ -110,10 +190,7 @@ def main():
     import sys
     sys.argv = [sys.argv[0]]
 
-    env = Environment(user_classes=[
-        ProvisioningUser,
-        VerificationUser,
-    ], events=events)
+    env = Environment(user_classes=user_classes[args.services], events=events)
 
     if args.local:
         run_local(env, args.users, args.duration, args.webui)
@@ -152,10 +229,10 @@ def run(
         worker.wait(timeout=5)
 
     if launch_webui:
-        web_ui.stop()
+        web_ui.stop() # type: ignore
 
 
-def run_local(env: Environment, num_users: int, launch_webui: bool = True):
+def run_local(env: Environment, duration: int, num_users: int, launch_webui: bool = True):
     runner = env.create_local_runner()
 
     if launch_webui:
@@ -167,7 +244,7 @@ def run_local(env: Environment, num_users: int, launch_webui: bool = True):
     time.sleep(2)
     runner.start(num_users, spawn_rate=num_users)
 
-    gevent.spawn_later(30, lambda: runner.quit())
+    gevent.spawn_later(duration, lambda: runner.quit())
 
     runner.greenlet.join()
 

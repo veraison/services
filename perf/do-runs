@@ -3,15 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-VERAISON=$THIS_DIR/../deployments/docker/veraison
+VERAISON=veraison
 RUN_LOADS=$THIS_DIR/scripts/run-loads.py
 EXTRACT_GIN_LOGS=$THIS_DIR/scripts/extract-gin-logs
 
 function do_runs() {
-    local num_steps=$1
-    local step=$2
-    local duration=$3
-    local outdir=$4
+    local service=$1
+    local num_steps=$2
+    local step=$3
+    local duration=$4
+    local outdir=$5
 
     if [[ ! -d $outdir ]]; then
         mkdir -p $outdir
@@ -25,7 +26,8 @@ function do_runs() {
         local basename="status-u$[$i*$step]-d$duration"
 
         $VERAISON clear-logs
-        $RUN_LOADS  --users $[$i*$step] --duration $duration --outfile $outdir/$basename.json
+        $RUN_LOADS --service $service  --users $[$i*$step] --duration $duration \
+		--outfile $outdir/$basename.json
         $VERAISON logs $outdir/$basename-logs
         $EXTRACT_GIN_LOGS $outdir/$basename-logs/provisioning-stdout.log \
                           $outdir/$basename-prov.csv \
@@ -38,9 +40,9 @@ function do_runs() {
     set +e
 }
 
-if [[ $# != 4 ]]; then
-    echo "Usage: do-runs NUM_STEPS STEP DURATION OUTPUT_DIR"
+if [[ $# != 5 ]]; then
+    echo "Usage: service do-runs NUM_STEPS STEP DURATION OUTPUT_DIR"
     exit 1
 fi
 
-do_runs $1 $2 $3 $4
+do_runs $1 $2 $3 $4 $5
