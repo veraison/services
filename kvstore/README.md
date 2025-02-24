@@ -57,7 +57,7 @@ Currently, `memory` backend does not support any configuration.
 
 ### `sql` backend configuration
 
-> **Note**: `sqlite3`, the default driver for the backend, is unsuitable for
+> [!NOTE]: `sqlite3`, the default driver for the backend, is unsuitable for
 > production or performance testing.
 
 - `driver`: The name of the golang SQL driver. Veraison currently includes the
@@ -70,8 +70,16 @@ Currently, `memory` backend does not support any configuration.
   - `mysql`: string in the form `<user>:<password>@<protocol>(<address>)/<database>`
   (Please see the drivers' documentation for more details.)
 - `tablename` (optional): the name of the table within the SQL database that will
-- be used by the store. If this is not specified, it will default to
-  `"kvstore"`.
+  be used by the store. If this is not specified, it will default to `"kvstore"`.
+- `max_connections` (optional): the maxium number of parallel connections to
+  DBMS that will be opened by the SQL driver. Once this number is reached,
+  further transactions will block until a connection becomes available.
+  Defaults to `10`.
+
+  > [!NOTE]: `max_connections`, like all settings above, is specific to the
+  > store for which it is being configured. This means that the total maximum
+  > numer of connectins Veraison will try to open is the sum of the
+  > `max_connections` values for all three stores (`30` by default).
 
 ## Alternative SQL drivers
 

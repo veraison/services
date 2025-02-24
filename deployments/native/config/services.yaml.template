@@ -48,6 +48,8 @@ plugin:
 ta-store:
   backend: sql
   sql:
+    max_connections: 10
+
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/ta-store.sql
 
@@ -61,6 +63,8 @@ ta-store:
 en-store:
   backend: sql
   sql:
+    max_connections: 10
+
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/en-store.sql
 
@@ -74,6 +78,8 @@ en-store:
 po-store:
   backend: sql
   sql:
+    max_connections: 10
+
     driver: sqlite3
     datasource: ${VERAISON_ROOT}/stores/po-store.sql
 

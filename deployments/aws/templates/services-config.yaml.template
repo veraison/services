@@ -25,18 +25,21 @@ plugin:
 ta-store:
   backend: sql
   sql:
+    max_connections: ${MAX_STORE_CONNECTIONS}
     driver: pgx
     datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
     tablename: trust_anchors
 en-store:
   backend: sql
   sql:
+    max_connections: ${MAX_STORE_CONNECTIONS}
     driver: pgx
     datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
     tablename: endorsements
 po-store:
   backend: sql
   sql:
+    max_connections: ${MAX_STORE_CONNECTIONS}
     driver: pgx
     datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
     tablename: policies

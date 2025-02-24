@@ -1058,6 +1058,8 @@ class CreateServicesImageCommand(BaseCommand):
 
         ports = command_get_config(self, 'ports')
         retention_days = command_get_config(self, 'cw-log-retention-days')
+        total_max_conn = command_get_config(self, 'max-dbms-connections')
+        scaling = command_get_config(self, 'scaling')
         rds = command_get(self, 'rds', 'RDS stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         os.environ['RDS_HOST'] = rds['host']
@@ -1072,6 +1074,7 @@ class CreateServicesImageCommand(BaseCommand):
         os.environ['VTS_PORT'] = str(ports['vts'])
         os.environ['KEYCLOAK_PORT'] = str(ports['keycloak'])
         os.environ['CW_LOG_RETENTION_DAYS'] = str(retention_days)
+        os.environ['MAX_STORE_CONNECTIONS'] = str(total_max_conn // (3 * scaling['max-size'])) # pyright: ignore
 
         config_path = command_instantiate_template(
                 self, args.deployment_name, args.services_config_template,
@@ -1107,7 +1110,8 @@ class ConfigureCommand(BaseCommand):
     default_cw_log_retention_days = 30
     default_iam_logger_role_name = 'veraison-logger'
     default_iam_instance_profile_name = 'veraison-service'
-    default_iam_permission_boundary_arn='arn:aws:iam::aws:policy/AdministratorAccess'
+    default_iam_permission_boundary_arn = 'arn:aws:iam::aws:policy/AdministratorAccess'
+    default_max_dbms_connections = 75
 
     def update_arguments(self, parser):
         parser.add_argument('-i', '--init', action='store_true',
@@ -1176,6 +1180,9 @@ class ConfigureCommand(BaseCommand):
                             help='Name that will be used for service AIM instance profile')
         parser.add_argument('-B', '--iam-permission-boundary-arn',
                             help='ARN of IAM policy to be used as role boundary')
+        parser.add_argument('-O', '--max-dbms-connections', type=int,
+                            help='Maxium number of parallel DBMS connections that will be created'
+                                 'by Veraison; should be divisible by 3')
 
     def run(self, args):
         self._configure_region(args)
@@ -1187,6 +1194,7 @@ class ConfigureCommand(BaseCommand):
         self._configure_keycloak(args)
         self._configure_scaling(args)
         self._configure_cloudwatch(args)
+        self._configure_dbms(args)
 
     def _configure_admin_cidr(self, args):
         if args.admin_cidr:
@@ -1340,6 +1348,14 @@ class ConfigureCommand(BaseCommand):
             self.logger.info(f'setting CloudWatch log retention to {default}; '
                              'use --cw-log-retention-days to change')
             self.cache['cw-log-retention-days'] = default
+
+    def _configure_dbms(self, args):
+        if args.max_dbms_connections:
+            self.cache['max-dbms-connections'] = args.max_dbms_connections
+        elif args.init:
+            self.logger.info('setting max dbms connections to 75; '
+                             'use --keycloak-version to change')
+            self.cache['max-dbms-connections'] = 75
 
 
 class CreateKeycloakImageCommand(BaseCommand):

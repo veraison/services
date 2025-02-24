@@ -1,4 +1,4 @@
-// Copyright 2021-2024 Contributors to the Veraison project.
+// Copyright 2021-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -21,6 +21,7 @@ import (
 
 var (
 	DefaultTableName = "kvstore"
+	DefaultMaxConnections = 10
 )
 
 var (
@@ -35,6 +36,7 @@ type sqlConfig struct {
 	TableName      string `mapstructure:"tablename"`
 	DriverName     string `mapstructure:"driver"`
 	DataSourceName string `mapstructure:"datasource"`
+	MaxConnections int    `mapstructure:"max_connections"`
 }
 
 func (o *sqlConfig) Validate() error {
@@ -68,6 +70,7 @@ func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 
 	cfg := sqlConfig{
 		TableName: DefaultTableName,
+		MaxConnections: DefaultMaxConnections,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -82,6 +85,8 @@ func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 		return err
 	}
 
+	db.SetMaxOpenConns(cfg.MaxConnections)
+
 	switch cfg.DriverName {
 	case "pgx", "pgx/v5":
 		o.Placeholder = sq.Dollar
@@ -91,7 +96,8 @@ func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 
 	o.DB = db
 	o.logger.Infow("store opened", "driver", cfg.DriverName,
-		"datasource", cfg.DataSourceName, "table", o.TableName)
+		"datasource", cfg.DataSourceName, "table", o.TableName,
+		"max_connections", cfg.MaxConnections)
 
 	return nil
 }

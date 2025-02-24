@@ -33,16 +33,19 @@ plugin:
 ta-store:
   backend: sql
   sql:
+    max_connections: 10
     driver: sqlite3
     datasource: stores/vts/ta-store.sql
 en-store:
   backend: sql
   sql:
+    max_connections: 10
     driver: sqlite3
     datasource: stores/vts/en-store.sql
 po-store:
   backend: sql
   sql:
+    max_connections: 10
     driver: sqlite3
     datasource: stores/vts/po-store.sql
 po-agent:
