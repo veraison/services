@@ -11,7 +11,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
-	sessionmanager "github.com/veraison/services/verification/sessionmanager"
+	viper "github.com/spf13/viper"
 )
 
 // MockISessionManager is a mock of ISessionManager interface.
@@ -81,17 +81,17 @@ func (mr *MockISessionManagerMockRecorder) GetSession(id, tenant interface{}) *g
 }
 
 // Init mocks base method.
-func (m *MockISessionManager) Init(cfg sessionmanager.Config) error {
+func (m *MockISessionManager) Init(v *viper.Viper) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", cfg)
+	ret := m.ctrl.Call(m, "Init", v)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockISessionManagerMockRecorder) Init(cfg interface{}) *gomock.Call {
+func (mr *MockISessionManagerMockRecorder) Init(v interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockISessionManager)(nil).Init), cfg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockISessionManager)(nil).Init), v)
 }
 
 // SetSession mocks base method.
