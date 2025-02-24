@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -47,7 +47,8 @@ func main() {
 		Protocol: "https",
 	}
 
-	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification", "*logging")
+	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification", "*logging",
+				"*sessionmanager")
 	if err != nil {
 		log.Fatalf("Could not read config: %v", err)
 	}
@@ -65,7 +66,11 @@ func main() {
 		log.Fatalf("Could not load verification config: %v", err)
 	}
 
-	sessionManager := sessionmanager.NewSessionManagerTTLCache()
+	log.Info("initializing session manager")
+	sessionManager, err := sessionmanager.New(subs["sessionmanager"])
+	if err != nil {
+		log.Fatalf("Could not create session manager: %v", err)
+	}
 
 	log.Info("initializing VTS client")
 	vtsClient := vtsclient.NewGRPC()

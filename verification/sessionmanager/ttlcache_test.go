@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package sessionmanager
 
@@ -20,25 +20,10 @@ var (
 	testShortTTL, _ = time.ParseDuration("1s")
 )
 
-func Test_SessionManagerTTLCache_InitBadTTLDirective(t *testing.T) {
-	sm := SessionManagerTTLCache{}
+func Test_TTLCache_SetGetDelOK(t *testing.T) {
+	sm := TTLCache{}
 
-	cfg := Config{
-		"ttl": "invalid duration",
-	}
-
-	expectedErr := `invalid ttl: "invalid duration"`
-
-	err := sm.Init(cfg)
-	assert.EqualError(t, err, expectedErr)
-}
-
-func Test_SessionManagerTTLCache_SetGetDelOK(t *testing.T) {
-	sm := SessionManagerTTLCache{}
-
-	cfg := Config{}
-
-	err := sm.Init(cfg)
+	err := sm.Init(nil)
 	defer sm.Close()
 
 	assert.NoError(t, err)
@@ -59,11 +44,10 @@ func Test_SessionManagerTTLCache_SetGetDelOK(t *testing.T) {
 	assert.EqualError(t, err, expectedErr)
 }
 
-func Test_SessionManagerTTLCache_Eviction(t *testing.T) {
-	sm := SessionManagerTTLCache{}
-	cfg := Config{}
+func Test_TTLCache_Eviction(t *testing.T) {
+	sm := TTLCache{}
 
-	err := sm.Init(cfg)
+	err := sm.Init(nil)
 	defer sm.Close()
 
 	assert.NoError(t, err)
