@@ -49,13 +49,14 @@ COLOR_BOLD_RED = '\x1b[31;1m'
 COLOR_RESET = '\x1b[0m'
 ']]]]]]]]'  # "close" the brackets above to fix nvim's auto-indent
 
-LEVEL_REGEX = re.compile(r'^(?P<level>DEBUG|INFO|WARN|WARNING|ERROR)\t(?P<rest>.*)')
+LEVEL_REGEX = re.compile(r'^(?P<level>DEBUG|INFO|WARN|WARNING|ERROR|FATAL)\t(?P<rest>.*)')
 LOG_COLORS = {
     'DEBUG': COLOR_DARK_GREY,
     'INFO': COLOR_MEDIUM_GREY,
     'WARN': COLOR_YELLOW,
     'WARNING': COLOR_YELLOW,
     'ERROR': COLOR_RED,
+    'FATAL': COLOR_BOLD_RED,
 }
 
 
@@ -349,7 +350,6 @@ def run_in_shell(cmd, should_log):
 async def _run_in_shell_teed(cmd, logger):
     process: Process = await asyncio.create_subprocess_shell(
             cmd, stdout=PIPE, stderr=PIPE, cwd=os.getcwd())
-
 
     stdout_buf, stderr_buf = [], []
     tasks = {
@@ -1057,7 +1057,7 @@ class CreateServicesImageCommand(BaseCommand):
         self.cache['deb'] = deb_path
 
         ports = command_get_config(self, 'ports')
-        retention_days = command_get_config(self, 'cw-log-retension-days')
+        retention_days = command_get_config(self, 'cw-log-retention-days')
         rds = command_get(self, 'rds', 'RDS stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         os.environ['RDS_HOST'] = rds['host']
@@ -1334,7 +1334,7 @@ class ConfigureCommand(BaseCommand):
         self.cache['iam'] = iam
 
         if args.cw_log_retention_days:
-            self.cache['cw-log-retention-days'] = args.cw_log_retension_days
+            self.cache['cw-log-retention-days'] = args.cw_log_retention_days
         elif args.init:
             default = self.default_cw_log_retention_days
             self.logger.info(f'setting CloudWatch log retention to {default}; '
@@ -1712,9 +1712,9 @@ class DbShellCommand(BaseCommand):
         if not shutil.which('ssh'):
             self.fail('ssh does not appear to be installed on the system')
 
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         pgpass = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
-        psql_cmd = f'PGPASSWORD={pgpass} psql -h {rds['host']} -p {rds['port']} '\
+        psql_cmd = f'PGPASSWORD={pgpass} psql -h {support['host']} -p {support['port']} '\
                    f'-U veraison -d veraison'
 
         host = command_get(self, 'rds.sentinel-dns-name', 'RDS stack been created')
@@ -1871,11 +1871,11 @@ class CheckStoresCommand(BaseCommand):
     aliases = ['stores']
 
     def run(self, args):
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         res = command_sentinel(
             self,
-            f'check-stores {rds['host']} {rds['port']} {password}',
+            f'check-stores {support['host']} {support['port']} {password}',
             verbose=args.verbose, echo=False, hide=False, pty=True,
         )
         if res.exited != 0:
@@ -1887,11 +1887,11 @@ class ClearStoresCommand(BaseCommand):
     desc = 'clear the contents of deployment\'s sqlite3 stores'
 
     def run(self, args):
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         res = command_sentinel(
             self,
-            f'clear-stores {rds['host']} {rds['port']} {password}',
+            f'clear-stores {support['host']} {support['port']} {password}',
             verbose=args.verbose, echo=False, hide=False, pty=True,
         )
         if res.exited != 0:

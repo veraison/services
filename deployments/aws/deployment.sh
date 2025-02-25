@@ -137,7 +137,7 @@ function bringup() {
 		--cw-log-retention-days "${CLOUDWATCH_LOG_RETENTION_DAYS}" \
 		--iam-logger-role-name "${IAM_LOGGER_ROLE_NAME}" \
 		--iam-instance-profile-name "${IAM_INSTANCE_PROFILE_NAME}" \
-		--iam-permissions-boundary-arn "${IAM_PERMISSION_BOUNDARY_ARN}"
+		--iam-permission-boundary-arn "${IAM_PERMISSION_BOUNDARY_ARN}"
 
 	veraison create-deb
 	veraison create-key-pair
