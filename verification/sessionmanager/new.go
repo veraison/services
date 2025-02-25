@@ -22,6 +22,7 @@ type cfg struct {
 func (o cfg) Validate() error {
 	supportedBackends := map[string]bool{
 		"ttlcache": true,
+		"memcached": true,
 	}
 
 	var unexpected []string
@@ -53,6 +54,8 @@ func New(v *viper.Viper) (ISessionManager, error) {
 	switch cfg.Backend {
 	case "ttlcache":
 		sm = NewTTLCache()
+	case "memcached":
+		sm = NewMemcached()
 	default:
 		return nil, fmt.Errorf("backend %q is not supported", cfg.Backend)
 	}

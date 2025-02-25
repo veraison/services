@@ -7,17 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-)
-
-var (
-	testTenant      = "0123456789"
-	testUUIDString  = uuid.NewString()
-	testUUID        = uuid.MustParse(testUUIDString)
-	testSession     = []byte(`{ "a": 1 }`)
-	testTTL, _      = time.ParseDuration("1m30s")
-	testShortTTL, _ = time.ParseDuration("1s")
 )
 
 func Test_TTLCache_SetGetDelOK(t *testing.T) {

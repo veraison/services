@@ -7,6 +7,7 @@ configuration:
 - `verifier` (optional): verifier configuration. See [below](#verifier-configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
+- `sessionmanager` (optional): Session manager backend configuration. See [below](#session-manager-configuration)
 
 ### Verification service configuration
 
@@ -20,6 +21,33 @@ configuration:
 ### Verifier configuration
 
 The verifier currently doesn't support any configuration.
+
+### Session manager configuration
+
+Session manager has a single configuration point: `backend`. This specifies
+which `ISessionManager` implementation will be used. The following backends are
+supported:
+
+- `ttlcache`: the default; this creates the session cache in memory of the
+  `verification-service` process.
+- `memcached`: uses an external [memcached](https://www.memcached.org/) server.
+
+All other entries under `sessionmanager` must be backend names (i.e. `ttlcache`
+or `memcached`), providing backend-specific configuration. Only configuration
+for the backend selected by `backend` entry will actually be used.
+
+#### `ttlcache` backend
+
+`ttlcache` backend does not have any configuration points.
+
+#### `memcached` backend
+
+`memcached` backend has the following configuration points:
+
+- `servers` (optional): a list of servers in "<host>:<port>" format that will
+  be used by the backend. The servers will be used with equal weight. Adding
+  the same entry multiple times increases its weight. If this is not specified,
+  it will default to `["localhost:11211"]`.
 
 ### Config files
 
@@ -47,4 +75,9 @@ verification:
   cert-key: verification.key
 vts:
   server-addr: 127.0.0.1:50051
+sessionmanager:
+  backend: memcached
+  memcached:
+    servers:
+      - localhost:11211
 ```
