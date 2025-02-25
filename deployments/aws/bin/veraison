@@ -556,7 +556,7 @@ def command_get_ec2_instances(cmd):
 
 
 def command_connect_sentinel(cmd, user='ubuntu'):
-    host = command_get(cmd, 'rds.sentinel-dns-name', 'RDS stack been created')
+    host = command_get(cmd, 'support.sentinel-dns-name', 'RDS stack been created')
     key_path = command_get(cmd, 'key.path', 'a key pair been created')
     return fabric.Connection(
         host,
@@ -830,15 +830,15 @@ class BaseCommand:
         raise NotImplementedError()
 
 
-class CreateRdsStackCommand(BaseCommand):
+class CreateSupportStackCommand(BaseCommand):
 
-    name = 'create-rds-stack'
+    name = 'create-support-stack'
     desc = 'create deployment\'s cloudformation stack running RDS instance'
 
     def run(self, args):
         template_path = os.path.abspath(os.path.join(
             os.path.dirname(__file__),
-            '../templates/stack-rds.yaml',
+            '../templates/stack-support.yaml',
         ))
 
         vpc_cidr = command_get_config(self, 'vpc-cidr')
@@ -877,7 +877,7 @@ class CreateRdsStackCommand(BaseCommand):
             {'ParameterKey': 'AdminCidr', 'ParameterValue': admin_cidr},
         ]
 
-        command_create_stack(cmd, args.deployment_name, 'rds',
+        command_create_stack(cmd, args.deployment_name, 'support',
                              template_path, extra_params, args.wait_period)
 
 
@@ -1060,10 +1060,10 @@ class CreateServicesImageCommand(BaseCommand):
         retention_days = command_get_config(self, 'cw-log-retention-days')
         total_max_conn = command_get_config(self, 'max-dbms-connections')
         scaling = command_get_config(self, 'scaling')
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
-        os.environ['RDS_HOST'] = rds['host']
-        os.environ['RDS_PORT'] = rds['port']
+        os.environ['RDS_HOST'] = support['host']
+        os.environ['RDS_PORT'] = support['port']
         os.environ['RDS_DBNAME'] = 'veraison'
         os.environ['RDS_USER'] = 'veraison'
         os.environ['RDS_PASSWORD'] = password # pyright: ignore
@@ -1401,17 +1401,17 @@ class CreateKeycloakImageCommand(BaseCommand):
         self.logger.debug('generating admin password for Keycloak and writing into cache...')
         # note: not using punctuation in the initial password, as it will be passed through
         # multiple shells, environments, and tools, and we don't want to
-        # warry about correctrly escaping everything at every stage. Using a longer string
+        # warry about correctly escaping everything at every stage. Using a longer string
         # to compensate.
         password = randomword(40)
         os.environ['KEYCLOAK_ADMIN_PASSWORD'] = password
         self.cache['keycloak_admin_password'] = password
 
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
 
-        os.environ['RDS_HOST'] = rds['host']
-        os.environ['RDS_PORT'] = rds['port']
+        os.environ['RDS_HOST'] = support['host']
+        os.environ['RDS_PORT'] = support['port']
         os.environ['RDS_USER'] = 'veraison'
         os.environ['RDS_PASSWORD'] = password  # pyright: ignore
 
@@ -1699,7 +1699,7 @@ class ShellCommand(BaseCommand):
         if not shutil.which('ssh'):
             self.fail('ssh does not appear to be installed on the system')
 
-        host = command_get(self, 'rds.sentinel-dns-name', 'RDS stack been created')
+        host = command_get(self, 'support.sentinel-dns-name', 'RDS stack been created')
         key = command_get(self, 'key.path', 'a key pair been created')
 
         ssh_opts = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
@@ -1733,7 +1733,7 @@ class DbShellCommand(BaseCommand):
         psql_cmd = f'PGPASSWORD={pgpass} psql -h {support['host']} -p {support['port']} '\
                    f'-U veraison -d veraison'
 
-        host = command_get(self, 'rds.sentinel-dns-name', 'RDS stack been created')
+        host = command_get(self, 'support.sentinel-dns-name', 'RDS stack been created')
         key = command_get(self, 'key.path', 'a key pair been created')
 
         ssh_opts = '-t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
@@ -1869,11 +1869,11 @@ class SetupRdsCommand(BaseCommand):
     desc = 'setup the RDS instance for use as a K-V store for the services'
 
     def run(self, args):
-        rds = command_get(self, 'rds', 'RDS stack has been created')
+        support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
         res = command_sentinel(
             self,
-            f'setup-rds {rds['host']} {rds['port']} {password}',
+            f'setup-rds {support['host']} {support['port']} {password}',
             verbose=args.verbose, echo=False, hide=False, pty=True,
         )
         if res.exited != 0:
@@ -1946,10 +1946,10 @@ class StatusCommand(BaseCommand):
         else:
             print(f'       vpc stack: {COLOR_GREY}not created{COLOR_RESET}')
 
-        if 'rds' in self.cache:
-            print(f'       rds stack: {COLOR_GREEN}created{COLOR_RESET}')
+        if 'support' in self.cache:
+            print(f'   support stack: {COLOR_GREEN}created{COLOR_RESET}')
         else:
-            print(f'       rds stack: {COLOR_GREY}not created{COLOR_RESET}')
+            print(f'   support stack: {COLOR_GREY}not created{COLOR_RESET}')
 
         if 'services' in self.cache:
             print(f'  services stack: {COLOR_GREEN}created{COLOR_RESET}')
@@ -1957,9 +1957,9 @@ class StatusCommand(BaseCommand):
             print(f'  services stack: {COLOR_GREY}not created{COLOR_RESET}')
         print()
 
-        if 'rds' in self.cache:
-            rds = self.cache['rds']
-            print(f'RDS instance:\n  {rds['host']}:{rds['port']}')
+        if 'support' in self.cache:
+            support = self.cache['support']
+            print(f'RDS instance:\n  {support['host']}:{support['port']}')
             print()
 
         if 'services' in self.cache:

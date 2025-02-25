@@ -1,6 +1,6 @@
 # Veraison stack
 AWSTemplateFormatVersion: 2010-09-09
-Description: Veraison attestation verfication services
+Description: Support infrastructure for Veraison services.
 
 Parameters:
   DeploymentName:
