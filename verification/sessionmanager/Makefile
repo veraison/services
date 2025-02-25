@@ -3,6 +3,8 @@
 
 .DEFAULT_GOAL := test
 
+COPYRIGHT_FLAGS += --ignore */memcached_fakeserver_test.go
+
 include ../../mk/common.mk
 include ../../mk/pkg.mk
 include ../../mk/lint.mk

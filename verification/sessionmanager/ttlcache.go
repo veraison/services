@@ -5,7 +5,6 @@ package sessionmanager
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -60,15 +59,4 @@ func (o *TTLCache) GetSession(id uuid.UUID, tenant string) (json.RawMessage, err
 	}
 
 	return nil, fmt.Errorf("session not found for (id, tenant)=(%s, %s)", id, tenant)
-}
-
-func makeKey(id uuid.UUID, tenant string) string {
-	// session://{tenant}/{uuid}
-	u := url.URL{
-		Scheme: "session",
-		Host:   tenant,
-		Path:   id.String(),
-	}
-
-	return u.String()
 }
