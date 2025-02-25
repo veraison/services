@@ -1,6 +1,6 @@
 # Veraison VPC stack
 AWSTemplateFormatVersion: 2010-09-09
-Description: Veraison attestation verfication services
+Description: VPC and subnet configuration for Veraison services.
 
 Parameters:
   DeploymentName:

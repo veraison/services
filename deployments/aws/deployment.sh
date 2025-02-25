@@ -146,7 +146,7 @@ function bringup() {
 	veraison create-vpc-stack
 
 	veraison create-sentinel-image
-	veraison create-rds-stack
+	veraison create-support-stack
 	veraison update-security-groups # need to access sentinel to set up RDS
 	veraison setup-rds
 
