@@ -49,4 +49,8 @@ auth:
    backend: keycloak
    host: keycloak.${VERAISON_AWS_DNS_NAME}
    port: ${KEYCLOAK_PORT}
+sessionmanager:
+  backend: memcached
+  memcached:
+    servers: ${ELASTICACHE_SERVERS}
 # vim: set ft=yaml:
