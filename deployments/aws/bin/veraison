@@ -636,6 +636,24 @@ def command_get_cw_logs(cmd, deployment_name, service, start=None, end=None):
     return iter_events()
 
 
+def command_get_elasticache_servers(cmd):
+    cmd.logger.debug('obtaining ElastiCache servers...')
+    support = command_get(cmd, 'support', 'support stack been deployed')
+    cluster_id = support['elasti-cache-cluster-id']
+
+    resp = cmd.aws.elasticache.describe_cache_clusters(
+        CacheClusterId=cluster_id,
+        ShowCacheNodeInfo=True,
+    )
+
+    servers = []
+    for node in resp['CacheClusters'][0]['CacheNodes']:
+        ep = node['Endpoint']
+        servers.append(f'{ep['Address']}:{ep['Port']}')
+
+    return servers
+
+
 def convert_timestamp(value):
     if value is None:
         return None
@@ -843,6 +861,7 @@ class CreateSupportStackCommand(BaseCommand):
 
         vpc_cidr = command_get_config(self, 'vpc-cidr')
         admin_cidr = command_get_config(self, 'admin-cidr')
+        region = command_get_config(self, 'region')
         key_name = command_get(self, 'key.name', 'a key pair been created')
         vpc_id = command_get(self, 'vpc.vpc-id', 'VPC stack been created')
         dns_name = command_get_config(self, 'dns-name')
@@ -875,6 +894,7 @@ class CreateSupportStackCommand(BaseCommand):
             {'ParameterKey': 'HostedZoneId', 'ParameterValue': hz_id},
             {'ParameterKey': 'SentinelImage', 'ParameterValue': sentinel_image},
             {'ParameterKey': 'AdminCidr', 'ParameterValue': admin_cidr},
+            {'ParameterKey': 'Region', 'ParameterValue': region},
         ]
 
         command_create_stack(cmd, args.deployment_name, 'support',
@@ -1075,6 +1095,9 @@ class CreateServicesImageCommand(BaseCommand):
         os.environ['KEYCLOAK_PORT'] = str(ports['keycloak'])
         os.environ['CW_LOG_RETENTION_DAYS'] = str(retention_days)
         os.environ['MAX_STORE_CONNECTIONS'] = str(total_max_conn // (3 * scaling['max-size'])) # pyright: ignore
+
+        servers = command_get_elasticache_servers(self)
+        os.environ['ELASTICACHE_SERVERS'] = yaml.dump(servers, default_flow_style=True)
 
         config_path = command_instantiate_template(
                 self, args.deployment_name, args.services_config_template,
@@ -1961,6 +1984,12 @@ class StatusCommand(BaseCommand):
             support = self.cache['support']
             print(f'RDS instance:\n  {support['host']}:{support['port']}')
             print()
+            servers = command_get_elasticache_servers(self)
+            print(f'ElastiCache servers:')
+            for server in servers:
+                print(f'  {server}')
+            print()
+
 
         if 'services' in self.cache:
             instances = command_get_ec2_instances(self)

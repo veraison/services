@@ -67,6 +67,18 @@ Parameters:
   AdminCidr:
     Type: String
     Description: CIDR to used to configure remote access
+  Region:
+    Type: String
+    Description: |
+      AWS Region into which Veraison will be deployed
+  CacheNodeType:
+    Type: String
+    Default: cache.t2.micro
+  NumCacheNodes:
+    Type: Number
+    Default: 2
+    Description: |
+      Number of nodes that will be created in the cache cluster.
 
 Resources:
   RdsSubnetGroup:
@@ -148,11 +160,65 @@ Resources:
     Properties:
       HostedZoneId: !Ref HostedZoneId
       Name: !Join [ ".", [ !Ref SentinelSubdomainName , !Ref ParentDomain ] ]
-      ResourceRecords: 
+      ResourceRecords:
         - !GetAtt SentinelInstance.PublicDnsName
       TTL: 900
       Type: CNAME
-        
+
+  ElastiCacheIAMRole:
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties:
+      AWSServiceName: elasticache.amazonaws.com
+      Description: Service-linked role for ElastiCache to access the deployment
+
+  ElastiCacheSubnetGroup:
+    Type: 'AWS::ElastiCache::SubnetGroup'
+    DependsOn: ElastiCacheIAMRole
+    Properties:
+      CacheSubnetGroupName: VeraisonCacheSubnetGroup
+      Description: ElastiCache cluster will be created across these subnets
+      SubnetIds: !Split [",", !Ref RdsSubnets]
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ElastiCacheSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: ElastiCache Security Group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 11211
+          ToPort: 11211
+          CidrIp: !Ref SubnetCidr
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
+
+  ElastiCacheCluster:
+    Type: 'AWS::ElastiCache::CacheCluster'
+    DependsOn: ElastiCacheSubnetGroup
+    Properties:
+      AZMode: cross-az
+      CacheSubnetGroupName: VeraisonCacheSubnetGroup
+      PreferredAvailabilityZones:
+        - !Select
+          - 0
+          - !GetAZs
+            Ref: Region
+        - !Select
+          - 1
+          - !GetAZs
+            Ref: Region
+      Engine: memcached
+      CacheNodeType: !Ref CacheNodeType
+      NumCacheNodes: !Ref NumCacheNodes
+      VpcSecurityGroupIds:
+        - !GetAtt ElastiCacheSecurityGroup.GroupId
+      Tags:
+        - Key: veraison-deployment
+          Value: !Ref DeploymentName
 
 Outputs:
   InstanceId:
@@ -170,3 +236,12 @@ Outputs:
   SentinelDnsName:
     Description: DNS name of the sentinel instance
     Value: !Join [ ".", [ !Ref SentinelSubdomainName , !Ref ParentDomain ] ]
+  ElastiCacheClusterId:
+    Description: ID of the ElastiCache cluster
+    Value: !Ref ElastiCacheCluster
+  ElastiCacheConfigAddress:
+    Description: Address of ElastiCache cluster's configuration endpoint
+    Value: !GetAtt ElastiCacheCluster.ConfigurationEndpoint.Address
+  ElastiCacheConfigPort:
+    Description: Port of ElastiCache cluster's configuration endpoint
+    Value: !GetAtt ElastiCacheCluster.ConfigurationEndpoint.Port
