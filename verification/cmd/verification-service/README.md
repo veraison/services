@@ -3,8 +3,10 @@
 `verification-services` is expecting to find the following top-level entries in
 configuration:
 
-- `verification` (optional): verification service configuration. See [below](#verification-service-configuration).
-- `verifier` (optional): verifier configuration. See [below](#verifier-configuration).
+- `verification` (optional): configuration for the verification REST service
+  endpoint. See [below](#verification-service-configuration).
+- `verifier` (optional): configuration for the attestation verifier component
+  (as opposed to the REST service endpoint) See [below](#verifier-configuration).
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 - `sessionmanager` (optional): Session manager backend configuration. See [below](#session-manager-configuration)
