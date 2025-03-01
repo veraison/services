@@ -12,6 +12,7 @@ import os
 import pprint
 import random
 import re
+import shlex
 import shutil
 import socket
 import stat
@@ -1754,7 +1755,15 @@ class DbShellCommand(BaseCommand):
     desc = 'start a database shell on a deployment\'s RDS instance'
 
     def update_arguments(self, parser):
-        parser.add_argument('-s', '--server-alive-interval', type=int, default=60)
+        parser.add_argument('-c', '--db-command',
+                            help='command to run in the DB shell (if not specified, an '
+                                 'interactive shell will be started).')
+        parser.add_argument('-s', '--server-alive-interval', type=int, default=60,
+                            help='sets ssh\'s ServerAliveInterval option to periodically '
+                                 'keep idle sessions alive')
+        parser.add_argument('-t', '--tuples-only', action='store_true',
+                            help='when used with -c/--db-command, only output the query '
+                                 'result tuples, and omit header/footer')
 
     def run(self, args):
         if not shutil.which('ssh'):
@@ -1765,10 +1774,17 @@ class DbShellCommand(BaseCommand):
         psql_cmd = f'PGPASSWORD={pgpass} psql -h {support['host']} -p {support['port']} '\
                    f'-U veraison -d veraison'
 
+        if args.tuples_only:
+            psql_cmd = f'{psql_cmd} -t'
+
+        if args.db_command:
+            psql_cmd = f'{psql_cmd} -c {shlex.quote(args.db_command)}'
+
         host = command_get(self, 'support.sentinel-dns-name', 'RDS stack been created')
         key = command_get(self, 'key.path', 'a key pair been created')
 
-        ssh_opts = '-t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        ssh_opts = '-t -o StrictHostKeyChecking=no -o LogLevel=ERROR ' +\
+                   '-o UserKnownHostsFile=/dev/null'
         if args.server_alive_interval:
             ssh_opts += f' -o ServerAliveInterval={args.server_alive_interval}'
 
