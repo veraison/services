@@ -588,7 +588,7 @@ def command_sentinel(cmd, what, verbose=False, **kwargs):
         return con.run(f'veraison{flags} {what}', **kwargs)
 
 
-def command_restart_cw_agents(cmd):
+def command_restart_cw_agents(cmd, delete_logs=False):
     cmd.logger.debug('looking up service instances...')
     instances = command_get_ec2_instances(cmd)
     for service in ['provisioning', 'verification', 'management']:
@@ -596,8 +596,17 @@ def command_restart_cw_agents(cmd):
             host = instance['PrivateDnsName']
             cwa_path = '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl'
 
-            cmd.logger.debug(f'restarting agent on {host}...')
+            cmd.logger.debug(f'connecting to {host}...')
             con = command_connect_ec2_instance(cmd, host)
+
+            if delete_logs:
+                cmd.logger.debug(f'clearing veraison logs...')
+                for service in ['vts', 'provisioning', 'verification', 'management']:
+                    con.run(f'sudo -u veraison /usr/bin/bash -c \'echo "" > '
+                            f'/opt/veraison/logs/{service}-stdout.log\'',
+                        echo=False, hide=True)
+
+            cmd.logger.debug(f'restarting agent on {host}...')
             con.run(f'sudo {cwa_path} -a stop', echo=False, hide=True)
             con.run(f'sudo {cwa_path} -a start', echo=False, hide=True)
 
@@ -2048,15 +2057,20 @@ class StatusCommand(BaseCommand):
                     print(f'\t{mt}')
                 print()
 
+
 class RestartCwAgentCommand(BaseCommand):
 
     name = 'restart-cwagent'
     desc = 'restart CloudWatch agent on running services instances'
 
+    def update_arguments(self, parser):
+        parser.add_argument('-D', '--delete-logs', action='store_true',
+                            help='delete instance\'s logs before restarting the agent')
+
     def run(self, args):
         self.logger.info('restarting CloudWatch agent on service EC2 instances...')
 
-        command_restart_cw_agents(self)
+        command_restart_cw_agents(self, delete_logs=args.delete_logs)
 
         self.logger.info('done.')
 
@@ -2172,7 +2186,10 @@ class DeleteLogsCommand(BaseCommand):
     all_services=['vts', 'provisioning', 'verification', 'management']
 
     def update_arguments(self, parser):
-        parser.add_argument('-S' '--service', action='append', dest='services',
+        parser.add_argument('-f', '--force-agent-restart', action='store_true',
+                            help='force restart of CloudWatch agents even if no log groups '
+                                 'were deleted')
+        parser.add_argument('-S', '--service', action='append', dest='services',
                             choices=self.all_services,
                             help='only get logs for this services (may be specified '
                                  'multiple times')
@@ -2182,7 +2199,7 @@ class DeleteLogsCommand(BaseCommand):
         svc_str = ', '.join(services)
         self.logger.info(f'deleting logs for {svc_str}...')
 
-        need_agent_restart = False
+        need_agent_restart = args.force_agent_restart
         for service in services:
             log_group = f'{args.deployment_name}-{service}'
             self.logger.debug(f'deleting log group {log_group}...')
@@ -2194,7 +2211,7 @@ class DeleteLogsCommand(BaseCommand):
 
         if need_agent_restart:
             self.logger.info('restarting CloudWatch agents...')
-            command_restart_cw_agents(self)
+            command_restart_cw_agents(self, delete_logs=True)
 
         self.logger.info('done.')
 
