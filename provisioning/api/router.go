@@ -1,8 +1,10 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
 import (
+	"path"
+
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/auth"
 )
@@ -10,8 +12,8 @@ import (
 var publicApiMap = make(map[string]string)
 
 const (
-	provisioningSubmitUrl           = "/endorsement-provisioning/v1/submit"
-	getWellKnownProvisioningInfoUrl = "/.well-known/veraison/provisioning"
+	provisioningPath           = "/endorsement-provisioning/v1"
+	getWellKnownProvisioningInfoPath = "/.well-known/veraison/provisioning"
 )
 
 func NewRouter(handler IHandler, authorizer auth.IAuthorizer) *gin.Engine {
@@ -19,12 +21,15 @@ func NewRouter(handler IHandler, authorizer auth.IAuthorizer) *gin.Engine {
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(authorizer.GetGinHandler(auth.ProvisionerRole))
 
-	router.POST(provisioningSubmitUrl, handler.Submit)
-	publicApiMap["provisioningSubmit"] = provisioningSubmitUrl
+	router.GET(getWellKnownProvisioningInfoPath, handler.GetWellKnownProvisioningInfo)
 
-	router.GET(getWellKnownProvisioningInfoUrl, handler.GetWellKnownProvisioningInfo)
+	provGroup := router.Group(provisioningPath)
+	provGroup.Use(authorizer.GetGinHandler(auth.ProvisionerRole))
+
+	provGroup.POST("submit", handler.Submit)
+	publicApiMap["provisioningSubmit"] = path.Join(provisioningPath, "submit")
+
 
 	return router
 }
