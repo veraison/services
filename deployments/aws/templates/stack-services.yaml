@@ -210,48 +210,51 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     DependsOn: ServicesLoadBalancer
     Properties:
-      HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: HTTP
+      HealthCheckPath: /.well-known/veraison/provisioning
+      HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 15
       HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
       Matcher:
-        HttpCode: '401'
+        HttpCode: '200'
       Name: !Sub ${DeploymentName}-prov-tg
       Port: !Ref ProvisioningPort
       Protocol: HTTP
-      UnhealthyThresholdCount: 3
       VpcId: !Ref VpcId
 
   VerificationTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     DependsOn: ServicesLoadBalancer
     Properties:
-      HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: HTTP
+      HealthCheckPath: /.well-known/veraison/verification
+      HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 15
       HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
       Matcher:
-        HttpCode: '401'
+        HttpCode: '200'
       Name: !Sub ${DeploymentName}-verif-tg
       Port: !Ref VerificationPort
       Protocol: HTTP
-      UnhealthyThresholdCount: 3
       VpcId: !Ref VpcId
 
   ManagementTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     DependsOn: ServicesLoadBalancer
     Properties:
-      HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: HTTP
+      HealthCheckPath: /.well-known/veraison/management
+      HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 15
       HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
       Matcher:
-        HttpCode: '401'
+        HttpCode: '200'
       Name: !Sub ${DeploymentName}-manage-tg
       Port: !Ref ManagementPort
       Protocol: HTTP
-      UnhealthyThresholdCount: 3
       VpcId: !Ref VpcId
 
   ManagementSecurityGroup:
