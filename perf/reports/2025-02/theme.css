@@ -1,0 +1,67 @@
+@import "default";
+@import "schema";
+@import "structure";
+
+:root {
+  font-family: Vedana, sans-serif;
+  font-weight: normal;
+  font-size: 20pt;
+}
+
+section {
+  align-content: start;
+  line-height: 1.2;
+}
+
+section::after {
+  left: 30px;
+  right: auto;
+  font-size: 10pt;
+}
+
+section.title {
+  align-content: center;
+  line-height: 1.2;
+}
+
+section.title::after {
+  content: "";
+}
+
+section.smallercode code {
+  font-size: 11pt;
+}
+
+section.nomargin {
+  margin: 0;
+  padding: 0;
+}
+
+footer {
+  font-size: 10pt;
+  left: auto;
+  right: 30px;
+}
+
+img[alt~="logo"] {
+  position: absolute;
+  top: 450px;
+  right: 50px;
+  heght: 200px;
+  width: 200px;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+  marginwidth: 0;
+  marginheight: 0;
+  frameborder: 0;
+  scrolling: no;
+}
+
+ul ul li {
+  font-size: 20pt;
+}
+
+/* vim: set sts=2 sw=2 et */

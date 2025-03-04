@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+import os
+import re
+import sys
+from collections import defaultdict
+from datetime import datetime, timezone
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+
+local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+template = 'plotly_dark'
+colors = px.colors.qualitative.Dark24
+sp_spec = {
+    'secondary_y': True,
+}
+run_re = re.compile(r'u(?P<users>\d+)-d(?P<duration>\d+)-(?P<task>[\w\-_]+)')
+
+
+def list_runs(path):
+    runs = []
+    for entry in os.listdir(path):
+        match = run_re.match(entry)
+        if not match:
+            continue
+
+        run = {
+            'users': int(match.group('users')),
+            'duration': int(match.group('duration')),
+            'task': match.group('task'),
+            'path': os.path.join(path, entry),
+            'csv_path': os.path.join(path, entry, 'csv/_stats_history.csv'),
+            'requests': None,
+        }
+
+        if not os.path.isfile(run['csv_path']):
+            continue
+
+        df = pd.read_csv(run['csv_path'])
+        df = df[df['User Count'] != 0]
+        start = datetime.fromtimestamp(df['Timestamp'][df.index.values[0]], local_tz) # type: ignore
+        df.loc[df.index, 'Timestamp'] = df['Timestamp'] - df['Timestamp'][df.index.values[0]]
+        df = df.set_index('Timestamp')
+
+        run['start'] = start
+        run['df'] = df
+        reqs = df[['Type', 'Name']].drop_duplicates().dropna().values.tolist()
+        run['requests'] = {tuple(req): True for req in reqs}
+
+        runs.append(run)
+
+    return runs
+
+
+def plot_request(
+    fig,
+    runs,
+    req,
+    color,
+    title='',
+    period=None
+    ):
+    metrics = ['Requests/s', 'Failures/s', '95%']
+
+    users = []
+    means = defaultdict(list)
+    conf_ints = defaultdict(list)
+
+    for run in sorted(runs, key=lambda x: x['users']):
+        if req not in run['requests']:
+            continue
+
+        df = run['df']
+        df[(df['Name'] == req[1]) & (df['Type'] == req[0])]
+        users.append(run['users'])
+        for metric in metrics:
+            if period:
+                slice = df.loc[(df.index >= period[0]) & (df.index <= period[1]), metric]
+            else:
+                slice = df.loc[df.index, metric]
+            means[metric].append(float(slice.mean()))
+            conf_ints[metric].append(float(slice.sem()*1.96))
+
+    fig.add_trace(
+        go.Scatter(
+            x=users,
+            y=means['Requests/s'],
+            error_y=dict(
+                array=conf_ints['Requests/s'],
+            ),
+            name=title,
+            marker=dict(
+                color=color,
+            ),
+            line=None,
+            showlegend=True,
+        ),
+        row=1, col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=users,
+            y=means['95%'],
+            error_y=dict(
+                array=conf_ints['95%'],
+            ),
+            name=title,
+            marker=dict(
+                color=color,
+            ),
+            line=None,
+            showlegend=False,
+        ),
+        row=2, col=1,
+    )
+
+    req_max = max(means['Requests/s']) + max(conf_ints['Requests/s'])
+    lat_max = max(means['95%']) + max(conf_ints['95%'])
+
+    return (req_max, lat_max)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--lhs', action='append', metavar='DIR',
+                        help='left hand side runs')
+    parser.add_argument('-r', '--rhs', action='append', metavar='DIR',
+                        help='right hand side runs')
+    parser.add_argument('-L', '--lhs-label', help='left hand side label')
+    parser.add_argument('-R', '--rhs-label', help='right hand side label')
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='overwrite existing output')
+    parser.add_argument('-o', '--output-dir',
+                        help='output directory will be created if does not exit')
+    parser.add_argument('-t', '--title', default='Requests timeline',
+                        help='title to use for the overall plot figure')
+    args = parser.parse_args()
+
+    if os.path.exists(args.output_dir) and not args.force:
+        print(f'ERROR: {args.output_dir} already exists')
+        sys.exit(1)
+
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    lhs_runs = []
+    for dir in args.lhs:
+        lhs_runs.extend(list_runs(dir))
+
+    rhs_runs = []
+    for dir in args.rhs:
+        rhs_runs.extend(list_runs(dir))
+
+    all_requests = {}
+    for run in lhs_runs:
+        for req in run['requests'].keys():
+            if req not in all_requests:
+                all_requests[req] = True
+
+    for req in all_requests:
+        typ = req[0]
+        sanitized_path = req[1].replace('/', '_').strip('_')
+        req_text = f'{typ}-{sanitized_path}'
+
+        fig = make_subplots(rows=2, cols=1, specs=[[sp_spec], [sp_spec]])
+        req_max_l, lat_max_l = plot_request(fig, lhs_runs, req, colors[0], args.lhs_label)
+        req_max_r, lat_max_r = plot_request(fig, rhs_runs, req, colors[2], args.rhs_label)
+
+        req_limit = max(req_max_l, req_max_r)
+        lat_limit = max(lat_max_l, lat_max_r)
+
+        fig.update_xaxes(title_text='number of users')
+        fig.update_yaxes(title_text='requests/s', range=[0, req_limit], row=1, col=1)
+        fig.update_yaxes(title_text='ms', range=[0, lat_limit], row=2, col=1)
+
+        for row, text in enumerate(['throughput', 'latency (95<sup>th</sup> percentile)'], 1):
+            fig.add_annotation(
+                text=text,
+                xref="x domain", yref="y domain",
+                x=0.5, y=1.1,
+                showarrow=False,
+                row=row, col=1,
+                font=dict(
+                    size=16,
+                ),
+            )
+
+        fig.update_layout(
+            height=720,
+            width=1280,
+            title_text=f'{args.lhs_label} vs. {args.rhs_label} <b>{req[0]} {req[1]}</b>',
+            title_font_size=24,
+            template=template,
+            plot_bgcolor='#0d1117',
+            paper_bgcolor='#0d1117',
+        )
+
+        basename = f'comparsion-{args.lhs_label}-vs-{args.rhs_label}'
+        fig.write_html(os.path.join(args.output_dir, f'{basename}-{req_text}.html'))
+        fig.write_image(os.path.join(args.output_dir, f'{basename}-{req_text}.png'))
+
+
+if __name__ == '__main__':
+    main()

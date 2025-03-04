@@ -1,0 +1,225 @@
+#!/usr/bin/env python
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+import json
+import os
+import re
+import sys
+from collections import defaultdict
+from datetime import datetime, timezone
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+
+local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+template = 'plotly_dark'
+colors = px.colors.qualitative.Dark24
+sp_spec = {
+    'secondary_y': True,
+}
+run_re = re.compile(r'u(?P<users>\d+)-d(?P<duration>\d+)-(?P<step>\d+)')
+
+
+def read_data_frame(path):
+    df = pd.read_csv(path)
+    df = df[df['User Count'] != 0]
+    start = datetime.fromtimestamp(df['Timestamp'][df.index.values[0]], local_tz) # type: ignore
+    df.loc[df.index, 'Timestamp'] = df['Timestamp'] - df['Timestamp'][df.index.values[0]]
+    df = df.set_index('Timestamp')
+    return df, start
+
+
+def list_runs(path):
+    runs = []
+    for entry in os.listdir(path):
+        match = run_re.match(entry)
+        if not match:
+            continue
+
+        run = {
+            'users': int(match.group('users')),
+            'duration': int(match.group('duration')),
+            'step': int(match.group('step')),
+            'path': os.path.join(path, entry),
+            'prov_csv_path': os.path.join(path, entry, 'provision/csv/_stats_history.csv'),
+            'verif_csv_path': os.path.join(path, entry, 'verify/csv/_stats_history.csv'),
+            'weight_path': os.path.join(path, entry, 'store-weight.json'),
+        }
+
+        for file_path in ['prov_csv_path', 'verif_csv_path', 'weight_path']:
+            if not os.path.isfile(run[file_path]):
+                continue
+
+        df, start= read_data_frame(run['prov_csv_path'])
+        run['prov_start'] = start
+        run['prov_df'] = df
+        reqs = df[['Type', 'Name']].drop_duplicates().dropna().values.tolist()
+        run['prov_requests'] = {tuple(req): True for req in reqs}
+
+        df, start= read_data_frame(run['verif_csv_path'])
+        run['verif_start'] = start
+        run['verif_df'] = df
+        reqs = df[['Type', 'Name']].drop_duplicates().dropna().values.tolist()
+        run['verif_requests'] = {tuple(req): True for req in reqs}
+
+        with open(run['weight_path'], 'r') as fh:
+            run['weight'] = json.load(fh)
+
+        runs.append(run)
+
+    return runs
+
+
+def plot_weight_perf(runs):
+    prov_req = ('POST', '/endorsement-provisioning/v1/submit')
+    verif_req = ('POST', '/challege-response/v1/session/[SESSION_ID]')
+    metrics = ['Requests/s', 'Failures/s', '95%']
+
+    steps = []
+    means = defaultdict(list)
+    conf_ints = defaultdict(list)
+    period = None
+    weights = []
+
+    for run in runs:
+        steps.append(run['step'])
+
+        df = run['prov_df']
+        df[(df['Name'] == prov_req[1]) & (df['Type'] == prov_req[0])]
+        for metric in metrics:
+            if period:
+                slice = df.loc[(df.index >= period[0]) & (df.index <= period[1]), metric]
+            else:
+                slice = df.loc[df.index, metric]
+            means['Prov. ' + metric].append(float(slice.mean()))
+            conf_ints['Prov. ' + metric].append(float(slice.sem()*1.96))
+
+        df = run['verif_df']
+        df[(df['Name'] == verif_req[1]) & (df['Type'] == verif_req[0])]
+        for metric in metrics:
+            if period:
+                slice = df.loc[(df.index >= period[0]) & (df.index <= period[1]), metric]
+            else:
+                slice = df.loc[df.index, metric]
+            means['Verif. ' + metric].append(float(slice.mean()))
+            conf_ints['Verif. ' + metric].append(float(slice.sem()*1.96))
+
+        weights.append(
+            int(run['weight']['num_endorsements']) + 
+            int(run['weight']['num_trust_anchors'])
+        )
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        vertical_spacing=0.005,
+        shared_xaxes=True,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=means['Prov. Requests/s'],
+            marker=dict(
+                color=colors[6],
+            ),
+            name='provision',
+        ),
+        row=1, col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=means['Verif. Requests/s'],
+            marker=dict(
+                color=colors[7],
+            ),
+            name='verify',
+        ),
+        row=1, col=1,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=means['Prov. 95%'],
+            marker=dict(
+                color=colors[6],
+            ),
+            name='provision',
+            showlegend=False,
+        ),
+        row=2, col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=means['Verif. 95%'],
+            marker=dict(
+                color=colors[7],
+            ),
+            name='verify',
+            showlegend=False,
+        ),
+        row=2, col=1,
+    )
+
+    fig.update_xaxes(
+        title_text='store weight (number of entries)',
+        tickmode='array',
+        tickvals=steps,
+        ticktext=list(map(str,weights)),
+        row=2,
+    )
+    fig.update_yaxes(title_text='requests/s', row=1, col=1)
+    fig.update_yaxes(title_text='latency (ms)', row=2, col=1)
+
+
+    fig.update_layout(
+        height=720,
+        width=1280,
+        title_text='Performance vs. K-V store weight',
+        title_font_size=24,
+        template=template,
+        plot_bgcolor='#0d1117',
+        paper_bgcolor='#0d1117',
+    )
+
+    return fig
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('indirs', nargs='+', metavar='DIR',
+                        help='input directorieis containg runs preveously collected via do-runs')
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='overwrite existing output')
+    parser.add_argument('-o', '--output-dir',
+                        help='output directory will be created if does not exit')
+    parser.add_argument('-t', '--title', default='Requests timeline',
+                        help='title to use for the overall plot figure')
+    args = parser.parse_args()
+
+    if os.path.exists(args.output_dir) and not args.force:
+        print(f'ERROR: {args.output_dir} already exists')
+        sys.exit(1)
+
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    runs = []
+    for dir in args.indirs:
+        runs.extend(list_runs(dir))
+
+    fig = plot_weight_perf(runs)
+
+    prefix = os.path.join(args.output_dir, 'weight_perf')
+    fig.write_html(f'{prefix}.html')
+    fig.write_image(f'{prefix}.png')
+
+
+if __name__ == '__main__':
+    main()

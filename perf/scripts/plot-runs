@@ -1,0 +1,290 @@
+#!/usr/bin/env python
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+import os
+import re
+import sys
+from collections import defaultdict
+from datetime import datetime, timezone
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+
+local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+template = 'plotly_dark'
+colors = px.colors.qualitative.Dark24
+sp_spec = {
+    'secondary_y': True,
+}
+run_re = re.compile(r'u(?P<users>\d+)-d(?P<duration>\d+)-(?P<task>[\w\-_]+)')
+
+
+def list_runs(path):
+    runs = []
+    for entry in os.listdir(path):
+        match = run_re.match(entry)
+        if not match:
+            continue
+
+        run = {
+            'users': int(match.group('users')),
+            'duration': int(match.group('duration')),
+            'task': match.group('task'),
+            'path': os.path.join(path, entry),
+            'csv_path': os.path.join(path, entry, 'csv/_stats_history.csv'),
+            'requests': None,
+        }
+
+        if not os.path.isfile(run['csv_path']):
+            continue
+
+        df = pd.read_csv(run['csv_path'])
+        df = df[df['User Count'] != 0]
+        start = datetime.fromtimestamp(df['Timestamp'][df.index.values[0]], local_tz) # type: ignore
+        df.loc[df.index, 'Timestamp'] = df['Timestamp'] - df['Timestamp'][df.index.values[0]]
+        df = df.set_index('Timestamp')
+
+        run['start'] = start
+        run['df'] = df
+        reqs = df[['Type', 'Name']].drop_duplicates().dropna().values.tolist()
+        run['requests'] = {tuple(req): True for req in reqs}
+
+        runs.append(run)
+
+    return runs
+
+
+def plot_request_summary(runs, req, title='', period=None):
+    metrics = ['Requests/s', 'Failures/s', '95%']
+    plot_colors = [colors[0], colors[1], colors[8]]
+    plots = ['throughput', 'latency']
+
+    users = []
+    means = defaultdict(list)
+    conf_ints = defaultdict(list)
+
+    for run in sorted(runs, key=lambda x: x['users']):
+        if req not in run['requests']:
+            continue
+
+        df = run['df']
+        df[(df['Name'] == req[1]) & (df['Type'] == req[0])]
+        users.append(run['users'])
+        for metric in metrics:
+            if period:
+                slice = df.loc[(df.index >= period[0]) & (df.index <= period[1]), metric]
+            else:
+                slice = df.loc[df.index, metric]
+            means[metric].append(float(slice.mean()))
+            conf_ints[metric].append(float(slice.sem()*1.96))
+
+    fig = make_subplots(rows=2, cols=1, specs=[[sp_spec], [sp_spec]])
+    for color, metric in zip(plot_colors, metrics):
+        fig.add_trace(
+            go.Scatter(
+                x=users,
+                y=means[metric],
+                error_y=dict(
+                    array=conf_ints[metric],
+                ),
+                name=metric,
+                marker=dict(
+                    color=color,
+                ),
+                line=None,
+            ),
+            row=(2 if metric == '95%' else 1), col=1,
+        )
+
+    req_limit =  max(
+        max(means['Requests/s']) + max(conf_ints['Requests/s']),
+        max(means['Failures/s']) + max(conf_ints['Failures/s']),
+    )
+    lat_limit = max(means['95%']) + max(conf_ints['95%'])
+
+
+    fig.update_xaxes(title_text='number of users')
+    fig.update_yaxes(title_text='requests/s', range=[0, req_limit], row=1, col=1)
+    fig.update_yaxes(title_text='ms', range=[0, lat_limit], row=2, col=1)
+
+    for row, text in enumerate(plots, 1):
+        fig.add_annotation(
+            text=text,
+            xref="x domain", yref="y domain",
+            x=0.5, y=1.1,
+            showarrow=False,
+            row=row, col=1,
+            font=dict(
+                size=16,
+            ),
+        )
+
+    fig.update_layout(
+        height=720,
+        width=1280,
+        title_text=f'{title} <b>{req[0]} {req[1]}</b>',
+        title_font_size=24,
+        template=template,
+        plot_bgcolor='#0d1117',
+        paper_bgcolor='#0d1117',
+    )
+
+    return fig
+
+
+def plot_entry(run, typ, name, users, fig, row, col, showlegend):
+    df = run['df']
+    rq_df = df[(df['Name'] == name) & (df['Type'] == typ)]
+
+    fig.add_trace(
+        go.Scatter(
+            x=rq_df.index,
+            y=rq_df['Requests/s'],
+            name='request rate',
+            line=dict(
+                color=colors[0],
+            ),
+            showlegend=showlegend,
+        ),
+        row=row, col=col,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=rq_df.index,
+            y=rq_df['Failures/s'],
+            name='failure rate',
+            line=dict(
+                color=colors[1],
+            ),
+            showlegend=showlegend,
+        ),
+        row=row, col=col,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=rq_df.index,
+            y=rq_df['95%'],
+            name='latency 95%',
+                    line=dict(
+                color=colors[8],
+            ),
+            showlegend=showlegend,
+        ),
+        row=row, col=col, secondary_y=True,
+    )
+
+    fig.add_annotation(
+        text=f"<b>{typ} {name}</b> {users} users, started {run['start'].isoformat()}",
+        xref="x domain", yref="y domain",
+        x=0.5, y=1.1,
+        showarrow=False,
+        row=row, col=1,
+    )
+
+    fig.update_yaxes(
+        title_text='ms',
+        range=[0, rq_df['95%'].max()],
+        row=row,
+        col=col,
+        secondary_y=True,
+    )
+
+
+def plot_request_timelines(runs, req, title):
+    filtered_runs = [run for run in runs if req in run['requests']]
+    fig = make_subplots(rows=len(filtered_runs), cols=1, specs=([[sp_spec]]*len(filtered_runs)))
+
+    max_rate = 0
+    showlegend = True
+    for i, run in enumerate(sorted(filtered_runs, key=lambda x: x['users']), 1):
+        df = run['df']
+        df_max = df[(df['Name'] == req[1]) & (df['Type'] == req[0])]['Requests/s'].max()
+        if df_max > max_rate:
+            max_rate = df_max
+
+        plot_entry(run, req[0], req[1], run['users'], fig, i, 1, showlegend)
+        showlegend = False  # as they're identical, only show legend for the first entry
+
+    fig.update_xaxes(title_text='time (s)')
+    fig.update_yaxes(title_text='requests/s', range=[0, max_rate], secondary_y=False)
+
+    fig.update_layout(
+        height=50 + 300*len(filtered_runs),
+        width=1270,
+        title_text=title,
+        title_font_size=24,
+        template=template,
+        plot_bgcolor='#0d1117',
+        paper_bgcolor='#0d1117',
+    )
+
+    return fig
+
+
+def parse_failures(runs):
+    entries = []
+    for run in runs:
+        df = run['df']
+        users = run['users']
+        for req in run['requests']:
+            req_df = df[(df['Name'] == req[1]) & (df['Type'] == req[0])]
+            entries.append(dict(
+                users=users,
+                method=req[0],
+                location=req[1],
+                failures=int(req_df.iloc[-1]['Total Failure Count'])
+            ))
+    return pd.DataFrame(entries)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('indirs', nargs='+', metavar='DIR',
+                        help='input directorieis containg runs preveously collected via do-runs')
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='overwrite existing output')
+    parser.add_argument('-o', '--output-dir',
+                        help='output directory will be created if does not exit')
+    parser.add_argument('-t', '--title', default='Requests timeline',
+                        help='title to use for the overall plot figure')
+    args = parser.parse_args()
+
+    if os.path.exists(args.output_dir) and not args.force:
+        print(f'ERROR: {args.output_dir} already exists')
+        sys.exit(1)
+
+    runs = []
+    for dir in args.indirs:
+        runs.extend(list_runs(dir))
+
+    all_requests = {}
+    for run in runs:
+        for req in run['requests'].keys():
+            if req not in all_requests:
+                all_requests[req] = True
+
+    timelines_dir = os.path.join(args.output_dir, 'timelines')
+    os.makedirs(timelines_dir, exist_ok=True)
+    summary_dir = os.path.join(args.output_dir, 'summary')
+    os.makedirs(summary_dir, exist_ok=True)
+
+    for req in all_requests:
+        typ = req[0]
+        sanitized_path = req[1].replace('/', '_').strip('_')
+        basename = f'{typ}-{sanitized_path}'
+
+        fig = plot_request_summary(runs, req, args.title)
+        fig.write_html(os.path.join(summary_dir, f'summary-{basename}.html'))
+        fig.write_image(os.path.join(summary_dir, f'summary-{basename}.png'))
+
+        fig = plot_request_timelines(runs, req, args.title)
+        fig.write_html(os.path.join(timelines_dir, f'timelines-{basename}.html'))
+        fig.write_image(os.path.join(timelines_dir, f'timelines-{basename}.png'))
+
+
+if __name__ == '__main__':
+    main()

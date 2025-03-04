@@ -1,0 +1,51 @@
+#!/bin/bash
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+VERAISON=veraison
+RUN_LOADS=$THIS_DIR/../scripts/run-loads.py
+
+function do_runs() {
+    local service=$1
+    local start=$2
+    local num_steps=$3
+    local step=$4
+    local duration=$5
+    local outdir=$6
+
+    if [[ ! -d "$outdir" ]]; then
+        mkdir -p "$outdir"
+    fi
+    echo "trials/user-steps $1 $2 $3 $4 $5 $6" > "$outdir/command.txt"
+
+    ulimit -n 10000
+
+    set -e
+    
+    if [[ "$service" == "aws" ]]; then
+	    $VERAISON update-security-groups
+    fi
+
+    for i in $(seq 0 "$num_steps"); do
+        for task in "well-known" "provision" "verify"; do 
+            local users=$((start+i*step))
+            local basename="u$users-d$duration-$task"
+
+            $VERAISON clear-logs -f
+            $VERAISON clear-stores
+            $RUN_LOADS --service "$service"  --users $users --duration "$duration" \
+                    --task "$task" --output-dir "$outdir/$basename"
+            $VERAISON logs "$outdir/$basename/logs"
+        done
+    done
+
+    set +e
+}
+
+if [[ $# != 6 ]]; then
+    echo "Usage: user-steps WHERE START NUM_STEPS STEP DURATION OUTPUT_DIR"
+    exit 1
+fi
+
+do_runs "$1" "$2" "$3" "$4" "$5" "$6"

@@ -1,0 +1,57 @@
+#!/bin/bash
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+VERAISON=veraison
+RUN_LOADS=$THIS_DIR/../scripts/run-loads.py
+
+function do_runs() {
+    local service=$1
+    local users=$2
+    local num_steps=$3
+    local duration=$4
+    local outdir=$5
+
+    if [[ ! -d "$outdir" ]]; then
+        mkdir -p "$outdir"
+    fi
+    echo "trials/store-weight-steps $1 $2 $3 $4 $5" > "$outdir/command.txt"
+
+    ulimit -n 10000
+
+    set -e
+
+    $VERAISON clear-stores
+
+    for i in $(seq 0 "$num_steps"); do
+            $VERAISON clear-logs -f
+
+            local basename="u$users-d$duration-$i"
+
+            $RUN_LOADS --service "$service"  --users $users --duration "$duration" \
+                    --task provision --output-dir "$outdir/$basename/provision"
+            $RUN_LOADS --service "$service"  --users $users --duration "$duration" \
+                    --task verify --output-dir "$outdir/$basename/verify"
+
+            local json num_en num_ta
+            num_en=$($VERAISON dbshell -t -c 'select count(*) from endorsements;' |  \
+                        tr -d '[:space:]')
+            num_ta=$($VERAISON dbshell -t -c 'select count(*) from trust_anchors;' |  \
+                        tr -d '[:space:]')
+            json=$(jq -n --arg en "$num_en" --arg ta "$num_ta" \
+                    '{num_endorsements: $en, num_trust_anchors: $ta}')
+
+            echo "$json" > "$outdir/$basename/store-weight.json"
+            $VERAISON logs "$outdir/$basename/logs"
+    done
+
+    set +e
+}
+
+if [[ $# != 5 ]]; then
+    echo "Usage: store-weight-steps WHERE USERS NUM_STEPS DURATION OUTPUT_DIR"
+    exit 1
+fi
+
+do_runs "$1" "$2" "$3" "$4" "$5"
