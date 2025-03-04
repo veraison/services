@@ -35,3 +35,15 @@ management/cmd/management-service/management-service
 tags
 
 .ipynb_checkpoints
+
+# Raw data is too voluminous to include in the repo
+perf/raw
+
+# Images in the above subdirectories are copied from perf/2025-02/analysis
+# in order to be included in the presentation (which does not allow external
+# paths).
+perf/reports/2025-02/images/1p1v
+perf/reports/2025-02/images/3p3v
+perf/reports/2025-02/images/auto
+perf/reports/2025-02/images/comp-3v1
+perf/reports/2025-02/images/weights
