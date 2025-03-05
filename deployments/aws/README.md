@@ -173,6 +173,8 @@ veraison create-rds-stack
 veraison update-security-groups
 veraison setup-rds
 
+veraison create-signing-key
+
 veraison create-services-image
 veraison create-keycloak-image
 
@@ -226,6 +228,9 @@ command in the future.
 
 This initializes the RDS instance for use by Veraison services.
 
+#### create-signing-key
+
+Create a new signing key in JWK format and upload it to AWS Secrets Manager.
 
 #### create-services-image and create-keycloak-image
 
@@ -251,6 +256,8 @@ veraison delete-stack vpc
 veraison delete-image keycloak
 veraison delete-image services
 veraison delete-image sentinel
+
+veraison delete-signing-key
 
 veraison delete-key-pair
 veraison delete-deb

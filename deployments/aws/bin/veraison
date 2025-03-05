@@ -34,6 +34,7 @@ import xdg.BaseDirectory
 import yaml
 from botocore.exceptions import ClientError
 from envsubst import envsubst
+from jwcrypto import jwk
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 from sqlitedict import SqliteDict
@@ -942,6 +943,7 @@ class CreateServicesStackCommand(BaseCommand):
                                         'VPC stack been created')
         priv_subnet_a_id = command_get(self, 'vpc.private-subnet-a-id', 'VPC stack been created')
         priv_subnet_b_id = command_get(self, 'vpc.private-subnet-b-id', 'VPC stack been created')
+        sig_key_arn = command_get(self, 'signer-key-arn', 'signer key been created')
 
         self.logger.debug(f'looking up certificate for {dns_name}...')
         cert_arn = None
@@ -990,6 +992,7 @@ class CreateServicesStackCommand(BaseCommand):
              'ParameterValue': iam['instance-profile-name']},
             {'ParameterKey': 'PermissionBoundaryArn',
              'ParameterValue': iam['permission-boundary-arn']},
+            {'ParameterKey': 'SignerKeyArn', 'ParameterValue': sig_key_arn},
         ]
 
         command_create_stack(cmd, args.deployment_name, 'services',
@@ -1089,6 +1092,7 @@ class CreateServicesImageCommand(BaseCommand):
         ports = command_get_config(self, 'ports')
         retention_days = command_get_config(self, 'cw-log-retention-days')
         total_max_conn = command_get_config(self, 'max-dbms-connections')
+        region = command_get_config(self, 'region')
         scaling = command_get_config(self, 'scaling')
         support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
@@ -1105,6 +1109,8 @@ class CreateServicesImageCommand(BaseCommand):
         os.environ['KEYCLOAK_PORT'] = str(ports['keycloak'])
         os.environ['CW_LOG_RETENTION_DAYS'] = str(retention_days)
         os.environ['MAX_STORE_CONNECTIONS'] = str(total_max_conn // (3 * scaling['max-size'])) # pyright: ignore
+        os.environ['DEPLOYMENT_NAME'] = args.deployment_name
+        os.environ['AWS_REGION'] = region # pyright: ignore
 
         servers = command_get_elasticache_servers(self)
         os.environ['ELASTICACHE_SERVERS'] = yaml.dump(servers, default_flow_style=True)
@@ -1897,7 +1903,8 @@ class CacheCommand(BaseCommand):
                                  'to be displayed; if not specified, the entrie cache will be '
                                  'shown')
         parser.add_argument('-d', '--delete',
-                            help='the key to be deleted (note: dot-spearated paths not supported')
+                            help='the key to be deleted (note: dot-spearated paths '
+                                 'not supported)')
 
     def run(self, args):
         if args.query:
@@ -2158,7 +2165,7 @@ class GetLogsCommand(BaseCommand):
         parser.add_argument('-S' '--service', action='append', dest='services',
                             choices=self.all_services,
                             help='only get logs for this services (may be specified '
-                                 'multiple times')
+                                 'multiple times)')
 
     def run(self, args):
         services = args.services or self.all_services
@@ -2208,7 +2215,7 @@ class DeleteLogsCommand(BaseCommand):
         parser.add_argument('-S', '--service', action='append', dest='services',
                             choices=self.all_services,
                             help='only get logs for this services (may be specified '
-                                 'multiple times')
+                                 'multiple times)')
 
     def run(self, args):
         services = args.services or self.all_services
@@ -2230,6 +2237,86 @@ class DeleteLogsCommand(BaseCommand):
             command_restart_cw_agents(self, delete_logs=True)
 
         self.logger.info('done.')
+
+
+class CreateSignerKeyCommand(BaseCommand):
+
+    name = 'create-signer-key'
+    desc = 'Create EAR signer key and add it to AWS Secrets Manager'
+
+    ec_curves=['P-256', 'P-384', 'P-521', 'secp256k1']
+    okp_curves=['Ed25519', 'Ed448', 'X25519', 'X448']
+
+    def update_arguments(self, parser):
+        parser.add_argument('-t', '--kty', default='EC',
+                            choices=['EC', 'RSA', 'OKP', 'oct'],
+                            help='Key type')
+        parser.add_argument('-c', '--crv', default='P-256',
+                            choices=(self.ec_curves + self.okp_curves),
+                            help='''Curve to be used when generating the key. This is only used
+                                 if kty is EC or OK. Valid curves for EC are P-256, P-384, P-521,
+                                 and secp256k1. Valid curves for OKP are Ed25519, Ed448, X25519,
+                                 and X448,''')
+        parser.add_argument('-s', '--size', type=int, default=4096,
+                            help='''Size, in bits, of the generated key. This is inly used if
+                                 kty is RSA or oct''')
+
+    def run(self, args):
+        self.logger.info('Creating signer key...')
+
+        name = f'{args.deployment_name}-ear-signer'
+        params = dict(
+            kid=name,
+            kty=args.kty,
+            use='sig',
+            key_ops=['sign'],
+        )
+
+        if args.kty == 'EC':
+            if args.crv not in self.ec_curves:
+                self.fail(f'curve "{args.crv}" for kty EC')
+            params['crv'] = args.crv
+        if args.kty == 'OKP':
+            if args.crv not in self.okp_curves:
+                self.fail(f'curve "{args.crv}" for kty OKP')
+            params['crv'] = args.crv
+        else:
+            if args.size < 2048:
+                self.fail('key size of at least 2048 bits must be used')
+            params['size'] = args.size
+
+        self.logger.debug(f'params: {params}')
+
+        key = jwk.JWK.generate(**params)
+
+        resp = self.aws.secretsmanager.create_secret(
+            Name=name,
+            SecretString=key.export_private(),
+            Tags=[
+                {'Key': 'veraison-deployment', 'Value': args.deployment_name},
+            ],
+        )
+        self.cache['signer-key-arn'] = resp['ARN']
+
+        self.logger.info('Done.')
+
+
+class DeleteSignerKeyCommand(BaseCommand):
+
+    name = 'delete-signer-key'
+    desc = 'Delete previously created EAR signer key from AWS Secrets Manager'
+
+    def run(self, args):
+        self.logger.info('Creating signer key...')
+
+        self.aws.secretsmanager.delete_secret(
+            SecretId=f'{args.deployment_name}-ear-signer',
+            ForceDeleteWithoutRecovery=True,
+        )
+
+        del self.cache['signer-key-arn']
+
+        self.logger.info('Done.')
 
 # }}} commands
 
