@@ -116,6 +116,9 @@ Parameters:
       The name of the IAM role that will be created to facillitate logging.
   PermissionBoundaryArn:
     Type: String
+  SignerKeyArn:
+    Type: String
+    Description: ARN of the EAR signing key to be used by the verification service
 
 Resources:
   ServicesLoadBalancer:
@@ -653,7 +656,7 @@ Resources:
       Certificates:
         - CertificateArn: !Ref CertificateArn
 
-  LoggerRole:
+  ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
       RoleName: Proj-veraison-logging
@@ -670,15 +673,23 @@ Resources:
       PermissionsBoundary: arn:aws:iam::775539126253:policy/ProjAdminsPermBoundaryv2
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: allow-signer-key-read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref SignerKeyArn
 
   ServiceInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
-    DependsOn: LoggerRole
+    DependsOn: ServiceRole
     Properties:
       InstanceProfileName: Proj-veraison-service
       Path: /
       Roles:
-        - !Ref LoggerRole
+        - !Ref ServiceRole
 
 Outputs:
   ServicesDnsName:

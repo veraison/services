@@ -17,7 +17,7 @@ vts:
   tls: false
 ear-signer:
   alg: ES256
-  key: /opt/veraison/signing/skey.jwk
+  key: aws:${AWS_REGION}/${DEPLOYMENT_NAME}-ear-signer
 plugin:
   backend: go-plugin
   go-plugin:
