@@ -3,6 +3,7 @@
 package earsigner
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -17,6 +18,7 @@ func NewKeyLoader(fs afero.Fs) *KeyLoader {
 	return &KeyLoader{
 		loaders: map[string]IKeyLoader{
 			"file": NewFileKeyLoader(fs),
+			"aws": NewAwsKeyLoader(context.TODO()),
 		},
 	}
 }
