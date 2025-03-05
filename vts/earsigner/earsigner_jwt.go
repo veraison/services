@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package earsigner
 
@@ -8,7 +8,6 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/spf13/afero"
 	"github.com/veraison/ear"
 )
 
@@ -17,12 +16,12 @@ type JWT struct {
 	Alg jwa.KeyAlgorithm
 }
 
-func (o *JWT) Init(cfg Cfg, fs afero.Fs) error {
+func (o *JWT) Init(cfg Cfg, key []byte) error {
 	if err := o.setAlg(cfg.Alg); err != nil {
 		return err
 	}
 
-	if err := o.loadKey(fs, cfg.Key); err != nil {
+	if err := o.loadKey(key); err != nil {
 		return err
 	}
 
@@ -77,19 +76,14 @@ func algList() string {
 	return strings.Join(l, ", ")
 }
 
-func (o *JWT) loadKey(fs afero.Fs, keyFile string) error {
+func (o *JWT) loadKey(raw []byte) error {
 	var (
 		err error
-		b   []byte
 		k   jwk.Key
 	)
 
-	if b, err = afero.ReadFile(fs, keyFile); err != nil {
-		return fmt.Errorf("loading signing key from %q: %w", keyFile, err)
-	}
-
-	if k, err = jwk.ParseKey(b); err != nil {
-		return fmt.Errorf("parsing signing key from %q: %w", keyFile, err)
+	if k, err = jwk.ParseKey(raw); err != nil {
+		return fmt.Errorf("parsing signing key: %w", err)
 	}
 
 	o.Key = k
