@@ -150,6 +150,8 @@ function bringup() {
 	veraison update-security-groups # need to access sentinel to set up RDS
 	veraison setup-rds
 
+	veraison create-signing-key
+
 	veraison create-services-image
 	veraison create-keycloak-image
 
@@ -165,6 +167,8 @@ function teardown() {
 	veraison delete-image keycloak
 	veraison delete-image services
 	veraison delete-image sentinel
+
+	veraison delete-signing-key
 
 	veraison delete-key-pair
 	veraison delete-deb
