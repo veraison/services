@@ -41,10 +41,7 @@ make bootstrap
 
 ### AWS account
 
-You need an existing AWS account, that has at least one VPC with at least two
-subnets (at least one of which is public) configured.
-
-Please see [boto3
+You need an existing AWS account. Please see [boto3
 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html)
 for how to configure `aws` CLI to access this account.
 
