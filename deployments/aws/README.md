@@ -24,11 +24,11 @@ Additionally, the following dependencies are required specifically for AWS deplo
 `curl` and `openssl` should be available from your OS's package manager. Python
 dependencies are installable via `pip`/`PyPI`. For `packer`, please see [its
 documentation](https://developer.hashicorp.com/packer/tutorials/aws-get-started/get-started-install-cli).
-             
+
 ### Bootstrap
 
 To simplify dependency installation, the deployment script implements bootstrap
-for Arch, Ubuntu, and MacOSX (using [homebrew](https://brew.sh)). 
+for Arch, Ubuntu, and MacOSX (using [homebrew](https://brew.sh)).
 
 ```bash
 git clone https://github.com/veraison/services.git
@@ -96,7 +96,7 @@ Veraison services as active and running.
 To make sure the deployment works, you can run through
 [end-to-end](../../end-to-end/README.md) flow.
 
-For example 
+For example
 
 ```bash
 # env/env.bash must be sourced
@@ -261,7 +261,7 @@ veraison delete-deb
 ```
 
 This is more-or-less a reverse of what was done during bring up and should be
-self-explanatory. 
+self-explanatory.
 
 
 ## Managing the deployment
@@ -329,17 +329,17 @@ formats) or relative time. E.g.
 
 ```bash
 # follow VTS service going back 2 hours
-veraison follow -s 2h vts  
+veraison follow -s 2h vts
 
 # follow verification events since yesterday
-veraison follow --start yesterday verification 
+veraison follow --start yesterday verification
 
 # follow provisioning events since 20th July 2024 (note the US date ordering)
-veraison follow --start 7/20/2024 provisioning 
-veraison follow --start 2024-07-20 provisioning 
+veraison follow --start 7/20/2024 provisioning
+veraison follow --start 2024-07-20 provisioning
 
 # follow VTS service going back 3 days
-veraison follow --start "3 days ago" provisioning 
+veraison follow --start "3 days ago" provisioning
 
 ```
 The maximum unit of time for relative time is weeks (e.g. `2w` or `2 weeks`). If
