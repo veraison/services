@@ -33,7 +33,9 @@ if [[ "${1}" != "" && "${1}" != "--" ]]; then
 fi
 set +a
 
-# shellcheck disable=SC1091
-source "${VERAISON_AWS_VENV}/bin/activate"
+if [[ -f "${VERAISON_AWS_VENV}/bin/activate" ]]; then
+	# shellcheck disable=SC1091
+	source "${VERAISON_AWS_VENV}/bin/activate"
+fi
 
 export PATH="${_deployment_root}/bin":${PATH}
