@@ -33,6 +33,8 @@ function create_rpm() {
 
 	export _VERAISON_VERSION=${_version}
 
+	export GOOS=linux
+
 	rm -rf "${pkg_dir}"
 	"${_repo_root}/deployments/native/deployment.sh" -S quick-init-all
 

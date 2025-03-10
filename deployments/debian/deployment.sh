@@ -60,6 +60,8 @@ function create_deb() {
 	export VERIFICATION_HOST=$VERAISON_HOST
 	export MANAGEMENT_HOST=$VERAISON_HOST
 
+	export GOOS=linux
+
 	rm -rf "${pkg_dir}"
 	"${_repo_root}/deployments/native/deployment.sh" -S quick-init-all
 
