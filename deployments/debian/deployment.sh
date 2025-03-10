@@ -61,7 +61,7 @@ function create_deb() {
 	export MANAGEMENT_HOST=$VERAISON_HOST
 
 	rm -rf "${pkg_dir}"
-	"${_repo_root}/deployments/native/deployment.sh" quick-init-all
+	"${_repo_root}/deployments/native/deployment.sh" -S quick-init-all
 
 	mkdir -p "${pkg_dir}/DEBIAN"
 	cp "${_deb_src}"/{postinst,prerm} "${pkg_dir}/DEBIAN/"
