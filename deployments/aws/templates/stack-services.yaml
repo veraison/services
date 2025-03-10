@@ -124,13 +124,13 @@ Resources:
   ServicesLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-      Name: "veraison-load-balancer"
+      Name: !Sub "${DeploymentName}-svc-lb"
       Scheme: "internet-facing"
       Type: "application"
-      Subnets: 
+      Subnets:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
-      SecurityGroups: 
+      SecurityGroups:
         - !Ref ServicesLoadBalancerSecurityGroup
       IpAddressType: "ipv4"
       Tags:
@@ -141,7 +141,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VpcId
-      GroupName: veraison-services-elb
+      GroupName: ${DeploymentName}-services-elb
       GroupDescription: Veraison services access
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -165,7 +165,7 @@ Resources:
     Properties:
       HostedZoneId: !Ref HostedZoneId
       Name: !Join [ ".", [ !Ref SubdomainName , !Ref ParentDomain ] ]
-      ResourceRecords: 
+      ResourceRecords:
         - !GetAtt ServicesLoadBalancer.DNSName
       TTL: 900
       Type: CNAME
@@ -400,7 +400,7 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref CombinedImage
         InstanceType: !Ref InstanceType
-        IamInstanceProfile: 
+        IamInstanceProfile:
           Arn: !GetAtt ServiceInstanceProfile.Arn
         KeyName: !Ref KeyName
         SecurityGroupIds:
@@ -428,6 +428,7 @@ Resources:
   ManagementAutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
+      AutoScalingGroupName: !Sub ${DeploymentName}-manage-asg
       LaunchTemplate:
         LaunchTemplateId: !Ref ManagementLaunchTemplate
         Version: !GetAtt ManagementLaunchTemplate.LatestVersionNumber
@@ -458,8 +459,8 @@ Resources:
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ALBRequestCountPerTarget
-          ResourceLabel: !Join 
-            - '/' 
+          ResourceLabel: !Join
+            - '/'
             - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
               - !GetAtt ManagementTargetGroup.TargetGroupFullName
         TargetValue: !Ref ScalingRequestCountTarget
@@ -467,6 +468,7 @@ Resources:
   ProvisioningAutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
+      AutoScalingGroupName: !Sub ${DeploymentName}-prov-asg
       LaunchTemplate:
         LaunchTemplateId: !Ref ProvisioningLaunchTemplate
         Version: !GetAtt ProvisioningLaunchTemplate.LatestVersionNumber
@@ -497,8 +499,8 @@ Resources:
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ALBRequestCountPerTarget
-          ResourceLabel: !Join 
-            - '/' 
+          ResourceLabel: !Join
+            - '/'
             - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
               - !GetAtt ProvisioningTargetGroup.TargetGroupFullName
         TargetValue: !Ref ScalingRequestCountTarget
@@ -507,6 +509,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     DependsOn: VerificationListener
     Properties:
+      AutoScalingGroupName: !Sub ${DeploymentName}-verif-asg
       LaunchTemplate:
         LaunchTemplateId: !Ref VerificationLaunchTemplate
         Version: !GetAtt VerificationLaunchTemplate.LatestVersionNumber
@@ -537,8 +540,8 @@ Resources:
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ALBRequestCountPerTarget
-          ResourceLabel: !Join 
-            - '/' 
+          ResourceLabel: !Join
+            - '/'
             - - !GetAtt ServicesLoadBalancer.LoadBalancerFullName
               - !GetAtt VerificationTargetGroup.TargetGroupFullName
         TargetValue: !Ref ScalingRequestCountTarget
@@ -548,21 +551,21 @@ Resources:
     Properties:
       HostedZoneId: !Ref HostedZoneId
       Name: !Join [ ".", [ !Ref KeycloakSubdomainName , !Ref ParentDomain ] ]
-      ResourceRecords: 
+      ResourceRecords:
         - !GetAtt KeycloakLoadBalancer.DNSName
       TTL: 900
       Type: CNAME
-        
+
   KeycloakLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-      Name: "veraison-keycloak-load-balancer"
+      Name: !Sub "${DeploymentName}-kc-lb"
       Scheme: "internet-facing"
       Type: "application"
-      Subnets: 
+      Subnets:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
-      SecurityGroups: 
+      SecurityGroups:
         - !Ref KeycloakLoadBalancerSecurityGroup
       IpAddressType: "ipv4"
       Tags:
@@ -659,7 +662,7 @@ Resources:
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: Proj-veraison-logging
+      RoleName: !Sub Proj-${DeploymentName}-svc
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -686,7 +689,7 @@ Resources:
     Type: 'AWS::IAM::InstanceProfile'
     DependsOn: ServiceRole
     Properties:
-      InstanceProfileName: Proj-veraison-service
+      InstanceProfileName: !Sub Proj-${DeploymentName}-svc
       Path: /
       Roles:
         - !Ref ServiceRole
