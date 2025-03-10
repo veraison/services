@@ -34,7 +34,7 @@ function create_rpm() {
 	export _VERAISON_VERSION=${_version}
 
 	rm -rf "${pkg_dir}"
-	"${_repo_root}/deployments/native/deployment.sh" quick-init-all
+	"${_repo_root}/deployments/native/deployment.sh" -S quick-init-all
 
 	mkdir -p ${pkg_dir}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 	tar -C ${DEPLOYMENT_DEST} -cvzf veraison-${_VERAISON_VERSION}.tar.gz .

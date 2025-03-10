@@ -173,10 +173,16 @@ function create_deployment() {
 
 	_deploy_env
 
-	case $( uname -s ) in
-		Linux) _deploy_systemd_units;;
-		Darwin) _deploy_launchd_units;;
-	esac
+	if [[ $_force_systemd == true ]]; then
+		_deploy_systemd_units
+	elif [[ $_force_launchd == true ]]; then
+		_deploy_launchd_units
+	else
+		case $( uname -s ) in
+			Linux) _deploy_systemd_units;;
+			Darwin) _deploy_launchd_units;;
+		esac
+	fi
 }
 
 function create_root_cert() {
@@ -566,16 +572,25 @@ OPTIND=1
 _force=false
 _binaries="install"
 _certs_and_keys="generate"
+_force_systemd=false
+_force_launchd=false
 
-while getopts "hefs" opt; do
+while getopts "hefsLS" opt; do
 	case "$opt" in
 		h) help; exit 0;;
 		e) _certs_and_keys="copy";;
 		f) _force=true;;
+		L) _force_launchd=true;;
 		s) _binaries="symlink";;
+		S) _force_systemd=true;;
 		*) break;;
 	esac
 done
+
+if [[ ($_force_systemd == true) && ($_force_launchd == true) ]]; then
+	echo "ERROR: cannot specify -S and -L  at the same time"
+	exit 1
+fi
 
 shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
