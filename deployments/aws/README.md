@@ -45,6 +45,32 @@ You need an existing AWS account. Please see [boto3
 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html)
 for how to configure `aws` CLI to access this account.
 
+The AWS credentials will also need to available to `packer` tool. Where
+`packer` looks for them is described by [packer
+docs](https://developer.hashicorp.com/packer/integrations/hashicorp/amazon#environment-variables).
+
+The simplest way to configure credentials is probably via Single Sign On (SSO).
+
+1. Run
+   ```bash
+   aws configure sso
+   ```
+   and follow the interactive wizard to specify configuration.
+2. Make sure the configuration works by doing
+   ```bash
+   aws sso login
+   ```
+   You will need to periodically re-do this step when your current login
+   expires (usually around once a day).
+3. Create `AWS_PROFILE` environment variable pointing to profile created in
+   step (1).
+   ```bash
+   export AWS_PROFILE=<YOU PROFILE NAME>
+   ```
+The steps above are not the only way to establish AWS credentials. Please refer
+to the documentation linked above for alternatives.
+
+
 ### Domain and certificate
 
 Finally, you need a domain registered in Route53, with a corresponding

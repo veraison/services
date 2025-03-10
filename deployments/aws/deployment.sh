@@ -100,6 +100,8 @@ function bootstrap() {
 	source "${VERAISON_AWS_VENV}/bin/activate"
 	pip install -r "${_this_dir}/misc/requirements.txt"
 
+	packer init "${_this_dir}/templates/image-services.pkr.hcl"
+
 	set +e
 	local message
 	read -r -d '' message <<-EOF
