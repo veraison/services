@@ -1658,6 +1658,10 @@ class CreateDebCommand(BaseCommand):
         if not os.path.isfile(script):
             self.fail(f'script {script} does not exist')
 
+        # Ensure we'll be bulding for amd64 even on Arm hosts, as the EC2
+        # instances are x86_64.
+        os.environ['GOARCH'] = 'amd64'
+
         self.logger.info(f'creating Debian package under {args.work_dir}...')
         create_deb_cmd = f'{script} create-deb {args.work_dir}'
         self.logger.debug(create_deb_cmd)
