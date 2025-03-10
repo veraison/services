@@ -165,15 +165,8 @@ Resources:
       TTL: 900
       Type: CNAME
 
-  ElastiCacheIAMRole:
-    Type: AWS::IAM::ServiceLinkedRole
-    Properties:
-      AWSServiceName: elasticache.amazonaws.com
-      Description: Service-linked role for ElastiCache to access the deployment
-
   ElastiCacheSubnetGroup:
     Type: 'AWS::ElastiCache::SubnetGroup'
-    DependsOn: ElastiCacheIAMRole
     Properties:
       CacheSubnetGroupName: !Sub ${DeploymentName}-subnet-cache-grp
       Description: ElastiCache cluster will be created across these subnets

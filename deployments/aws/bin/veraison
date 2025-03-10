@@ -884,6 +884,16 @@ class CreateSupportStackCommand(BaseCommand):
             self.cache.get('vpc.private-subnet-b-id'),
         ]
 
+        self.logger.debug('checking linked ElastiCache role...')
+        resp = self.aws.iam.list_roles(
+            PathPrefix='/aws-service-role/elasticache.amazonaws.com/',
+        )
+        if not resp['Roles']:
+            self.logger.debug('creating linked role for ElastiCache...')
+            self.aws.iam.create_service_linked_role(
+                AWSServiceName='elasticache.amazonaws.com',
+                Description='Service-linked role for ElastiCache to access Veraison deployments',
+            )
 
         self.logger.debug('generating admin password for Postgres and writing into cache...')
         # note: not using punctuation in the initial password, as it will be passed through
