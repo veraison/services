@@ -84,7 +84,7 @@ Resources:
   RdsSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: VeraisonRdsSubnetGroup
+      DBSubnetGroupName: !Sub ${DeploymentName}-rds-subnet-grp
       DBSubnetGroupDescription: combined stack RDS subnet group
       SubnetIds: !Split [",", !Ref RdsSubnets]
       Tags:
@@ -117,7 +117,7 @@ Resources:
       DBName: !Ref RdsDb
       MasterUsername: !Ref RdsUser
       MasterUserPassword: !Ref RdsPassword
-      DBSubnetGroupName: VeraisonRdsSubnetGroup
+      DBSubnetGroupName: !Sub ${DeploymentName}-rds-subnet-grp
       PubliclyAccessible: false
       StorageEncrypted: true
       VPCSecurityGroups:
@@ -175,7 +175,7 @@ Resources:
     Type: 'AWS::ElastiCache::SubnetGroup'
     DependsOn: ElastiCacheIAMRole
     Properties:
-      CacheSubnetGroupName: VeraisonCacheSubnetGroup
+      CacheSubnetGroupName: !Sub ${DeploymentName}-subnet-cache-grp
       Description: ElastiCache cluster will be created across these subnets
       SubnetIds: !Split [",", !Ref RdsSubnets]
       Tags:
@@ -201,7 +201,7 @@ Resources:
     DependsOn: ElastiCacheSubnetGroup
     Properties:
       AZMode: cross-az
-      CacheSubnetGroupName: VeraisonCacheSubnetGroup
+      CacheSubnetGroupName: !Sub ${DeploymentName}-subnet-cache-grp
       PreferredAvailabilityZones:
         - !Select
           - 0
