@@ -1707,6 +1707,34 @@ class DeleteDebCommand(BaseCommand):
         self.logger.info('done.')
 
 
+class AddDebCommand(BaseCommand):
+
+    name = 'add-deb'
+    desc = 'Use the specified debian package for the deployment, rather than creating a new one'
+
+    def update_arguments(self, parser):
+        parser.add_argument('path', 
+                            help='Path to the deb package to add.')
+        parser.add_argument('-l', '--link', action='store_true',
+                            help='''"Link" the package to the deployment via a cache entry, but
+                            do not copy it into the deployment files. I.e. use it in-place.''')
+
+    def run(self, args):
+        self.logger.info(f'Adding {args.path} to the deployment...')
+
+        path = args.path
+        if not args.link:
+            dest_path = os.path.join(args.cache_dir, os.path.basename(path))
+            self.logger.debug(f'copying {path} to {dest_path}...')
+            shutil.copyfile(path, dest_path)
+            path = dest_path
+
+        self.logger.debug('updating deployment cache...')
+        self.cache['deb'] = path
+
+        self.logger.info('done.')
+
+
 class CreateVpcStack(BaseCommand):
     name = 'create-vpc-stack'
     desc = 'create stack setting up the VPC, subnets and associated routing for Veraison services'
@@ -2331,8 +2359,6 @@ class DeleteSignerKeyCommand(BaseCommand):
         del self.cache['signer-key-arn']
 
         self.logger.info('Done.')
-
-# }}} commands
 
 
 class Port(int):
