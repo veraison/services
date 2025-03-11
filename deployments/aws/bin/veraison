@@ -1106,6 +1106,7 @@ class CreateServicesImageCommand(BaseCommand):
         scaling = command_get_config(self, 'scaling')
         support = command_get(self, 'support', 'support stack has been created')
         password = command_get(self, 'postgres_admin_password', 'RDS stack has been created')
+        dns_name = command_get_config(self, 'dns-name')
         os.environ['RDS_HOST'] = support['host']
         os.environ['RDS_PORT'] = support['port']
         os.environ['RDS_DBNAME'] = 'veraison'
@@ -1121,6 +1122,7 @@ class CreateServicesImageCommand(BaseCommand):
         os.environ['MAX_STORE_CONNECTIONS'] = str(total_max_conn // (3 * scaling['max-size'])) # pyright: ignore
         os.environ['DEPLOYMENT_NAME'] = args.deployment_name
         os.environ['AWS_REGION'] = region # pyright: ignore
+        os.environ['VERAISON_AWS_DNS_NAME'] = dns_name # pyright: ignore
 
         servers = command_get_elasticache_servers(self)
         os.environ['ELASTICACHE_SERVERS'] = yaml.dump(servers, default_flow_style=True)
