@@ -1,5 +1,10 @@
 ## Configuration
 
+Configuration for Veraison Trusted Services is specified under `vts` top-level
+entry.
+
+### `vts` configuration
+
 - `server-addr` (optional): address of the VTS server in the form
   `<host>:<port>`. If not specified, this defaults to `127.0.0.1:50051`. Unless
   `listen-addr` is specified (see below), VTS server will extract the port to

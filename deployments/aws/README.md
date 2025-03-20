@@ -129,7 +129,6 @@ For example
 ../../end-to-end/end-to-end-aws provision
 # followed by
 ../../end-to-end/end-to-end-aws verify rp
-# followed by
 ```
 
 Finally, to remove the deployment, you can run

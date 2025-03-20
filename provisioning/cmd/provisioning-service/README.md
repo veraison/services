@@ -12,7 +12,7 @@ configuration:
   authorization is based on `provisioner` role. See [auth
   config](/auth/README.md#Configuration).
 
-### Provisioning service configuration
+### `provisioning` configuration
 
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the provisioning
   server will be listening on. If not specified, this defaults to

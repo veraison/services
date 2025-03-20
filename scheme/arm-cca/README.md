@@ -2,13 +2,13 @@ This directory contains packages implementing `arm-cca` (Arm Confidential Comput
 
 Arm CCA attestation scheme is a composite attestation scheme which comprises a CCA Platform Attestation & a Realm Attestation.
 
-Endorsement Store Interface for the CCA Platform and Realm Attesation Scheme is given below.
+Endorsement Store Interface for the CCA Platform and Realm Attestation Scheme is given below.
 
-# Endorsement Store Interface
+## Endorsement Store Interface
 
-## Arm CCA Platform 
+### Arm CCA Platform 
 
-### Reference Value
+#### Reference Value
 ```json
 {
   "scheme": "ARM_CCA",
@@ -39,7 +39,7 @@ Endorsement Store Interface for the CCA Platform and Realm Attesation Scheme is 
 }
 ```
 
-### Trust Anchor
+#### Trust Anchor
 ```json
 {
   "scheme": "ARM_CCA",
@@ -54,9 +54,9 @@ Endorsement Store Interface for the CCA Platform and Realm Attesation Scheme is 
 }
 ```
 
-## Arm CCA Realm  
+### Arm CCA Realm  
 
-### Reference Value
+#### Reference Value
 
 A Realm instance is uniquely identified by the values of Realm initial measurements and Realm Personalization Value (if provided) used to launch a Realm.
 
@@ -79,6 +79,6 @@ A Realm instance is uniquely identified by the values of Realm initial measureme
 }
 ```
 
-### Trust Anchor
+#### Trust Anchor
 
 Realms have no explicit Trust Anchor to provision, as they are supplied inline in the Realm attestation token.

@@ -8,8 +8,9 @@ user is authenticated, authorization is
 documentation for specific services for which role(s) are needed to access
 their API.
 
+## Authentication configuration
 
-## Configuration
+Authentication configuration is specified under `auth` top-level entry.
 
 - `backend`: specifies which auth backend will be used by the service. The
   valid options are:
@@ -23,7 +24,8 @@ their API.
   - `keycloak`: Uses OpenID Connect protocol as implemented by the Keycloak
     authentication server.
 
-  See below for details of how to configure individual backends.
+The rest of the expected entries are defined by the value of `backend`. See
+below for details of how to configure individual backends.
 
 ### Passthrough
 

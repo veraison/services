@@ -6,7 +6,7 @@ configuration:
 - `provisioning`: provisioning service configuration. See [below](#provisioning-service-configuration).
 - `vts`: Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 
-### Provisioning service configuration
+### `provisioning` configuration
 
 - `listen-addr`: the address, in the form `<host>:<port>` the provisioning
   server will be listening on.
