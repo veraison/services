@@ -11,7 +11,7 @@ configuration:
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 - `sessionmanager` (optional): Session manager backend configuration. See [below](#session-manager-configuration)
 
-### Verification service configuration
+### `verification` configuration
 
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the verification
   server will be listening on. If not specified, this defaults to
@@ -20,11 +20,11 @@ configuration:
 - `cert`: path to the x509 certificate to be used. Must be specified if protocol is "https"
 - `cert-key`: path to the key associated with the certificate specified in `cert`. Must be specified if protocol is "https"
 
-### Verifier configuration
+### `verifier` configuration
 
 The verifier currently doesn't support any configuration.
 
-### Session manager configuration
+### `sessionmanager` configuration
 
 Session manager has a single configuration point: `backend`. This specifies
 which `ISessionManager` implementation will be used. The following backends are
