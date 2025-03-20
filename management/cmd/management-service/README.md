@@ -14,7 +14,7 @@ configuration:
   authorization is based on `manager` role. See [auth
   config](/auth/README.md#Configuration).
 
-### Management service configuration
+### `management` configuration
 
 - `listen-addr` (optional): the address, in the form `<host>:<port>` the
   management server will be listening on. If not specified, this defaults to

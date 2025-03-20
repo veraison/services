@@ -4,7 +4,7 @@ be used to override the overall attestation status and/or the trust vector
 values in the result (e.g. rejecting a token considered valid by the scheme if
 the more stringent constraints described in the policy are not met).
 
-> **Note**
+> [!NOTE]
 > Policy administration framework is to be determined in the future. The
 > short-term plan is to make this a part of the deployment flow, but a more
 > complete policy admin flow may follow.
@@ -16,8 +16,12 @@ moment, the following policy agents are supported:
 generic Open Source policy agent that utilizes its own policy language called
 Rego. See [README.opa.md](README.opa.md).
 
-
 ## Configuration
+
+Configuration for the policy agent is specified under top-level entry
+`po-agent`.
+
+### `po-agent` configuration
 
 The following policy agent configuration directives are currently supported:
 
@@ -28,7 +32,7 @@ The following policy agent configuration directives are currently supported:
   config, but only the one for the backend specified by the `backend` directive
   will be used.
 
-### `opa` backend configuration
+#### `opa` backend configuration
 
 Currently, `opa` backend does not support any configuration.
 

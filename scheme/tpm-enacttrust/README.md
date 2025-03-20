@@ -1,6 +1,6 @@
-# Endorsement Store Interface
+## Endorsement Store Interface
 
-## Reference Value
+### Reference Value
 
 ```json
 {
@@ -14,7 +14,7 @@
 }
 ```
 
-## Trust Anchor
+### Trust Anchor
 
 ```json
 {

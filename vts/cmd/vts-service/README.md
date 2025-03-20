@@ -7,10 +7,28 @@ configuration:
 - `en-store`: endorsements store configuration. See [kvstore config](/kvstore/README.md#Configuration).
 - `po-store`: policy store configuration. See [kvstore config](/kvstore/README.md#Configuration).
 - `po-agent` (optional): policy agent configuration. See [policy config](/policy/README.md#Configuration).
-- `plugin`: plugin manager configuration. See [plugin config](/vts/pluginmanager/README.md#Configuration).
+- `plugin`: plugin manager configuration. See below.
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 - `ear-signer`: Attestation Result signing configuration. See [signer config](/vts/ear-signer/README.md#Configuration).
+
+### `plugin` configuration
+
+The following directives are currently supported:
+
+- `backend`: specifies which plugin mechanism will be used. Currently the only
+  supported plugin backend is `go-plugin`.
+- `<backend name>` (in practice, just `go-plugin`): configuration specific to
+  the backend.
+- `builtin`: configuration used when plugins are disabled and scheme-specific
+  functionally is compiled into the VTS service executable. (Currently just a
+  place-holder as there is no configuration for the built-in loading mechanism.)
+  Note: enabling or disabling of plugins is a build-time option. It is not
+  possible to do so via configuration.
+
+#### `go-plugin` backend configuration
+
+- `dir`: path to the directory that will be scanned for plugin executables.
 
 ### Config files
 
