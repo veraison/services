@@ -1,5 +1,9 @@
 ## Configuration
 
+Logging configuration is specified under top-level entry `logging`.
+
+### `logging` configuration
+
 - `level` (optional): specify the minimum enabled logging level. Supported
   values (from lowest to highest) are: `debug`, `info`, `warn`, `error`.
   Defaults to `info`.

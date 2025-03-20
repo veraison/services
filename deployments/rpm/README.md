@@ -12,6 +12,9 @@ deployment](../native/README.md#dependencies), `rpm-build` must be installed. To
 install all dependencies to build an rpm, run
 
 ```sh
+git clone https://github.com/veraison/services.git
+cd services/deployments/rpm
+
 make bootstrap
 ```
 
@@ -35,4 +38,6 @@ where `VERSION` is the Veraison version as reported by the
 
 The following command installs the RPM package
 
-```sudo dnf install ${PACKAGE_DEST}/veraison_VERSION_ARCH/rpmbuild/RPMS/ARCH/veraison-VERSION.FLA.ARCH.rpm```
+```sh
+    sudo dnf install ${PACKAGE_DEST}/veraison_VERSION_ARCH/rpmbuild/RPMS/ARCH/veraison-VERSION.FLA.ARCH.rpm
+```

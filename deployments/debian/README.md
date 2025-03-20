@@ -26,6 +26,9 @@ environment variable. It will default to `/tmp` if not set. To build the
 package simply do
 
 ```sh
+git clone https://github.com/veraison/services.git
+cd services/deployments/debian
+
 make deb
 ```
 

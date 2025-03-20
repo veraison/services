@@ -1,5 +1,16 @@
 This directory contains packages implementing support of specific attestation
-schemes. Currently the following schemes are implemented:
+schemes.
+
+> [!NOTE]
+> When adding (or removing) a scheme, please update `../builtin/scheme.gen.go`
+> to include the appropriate entries. This can be done automatically using
+> `../scripts/gen-schemes` script (see `../builtin/Makefile`) or by manually
+> editing the file. The script takes a long time to execute, so unless multiple
+> schemes are being added/moved/deleted, manual editing may be easier.
+
+## Current Schemes
+
+Currently the following schemes are implemented:
 
 - `arm-cca` Arm Confidential Compute Architecture attestation.
 - `psa-iot`: Arm Platform Security Architecture attestation.
@@ -12,16 +23,10 @@ schemes. Currently the following schemes are implemented:
 - `parsec-cca` : Parsec CCA based hardware-backed attestation, details
    [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 
-> [!NOTE]
-> When adding (or removing) a scheme, please update `../builtin/scheme.gen.go`
-> to include the appropriate entries. This can be done automatically using
-> `../scripts/gen-schemes` script (see `../buildin/Makefile`) or by manually
-> editing the file. The script takes a long time to execute, so unless multiple
-> schemes are being added/moved/deleted, manual editing may be easier.
-
 ## Implementing Attestation Scheme Support
 
-> **Note**: If you already have attestation scheme plugins implemented for an
+> [!NOTE]
+> If you already have attestation scheme plugins implemented for an
 > earlier version of Veraison, please see the [migration guide](MIGRATING.md)
 > for how to convert them to the new framework.
 
@@ -34,7 +39,7 @@ by implementing [`IStoreHandler`](../handler/istorehandler.go).
 Finally, an executable should be created that [registers](../handler/plugin.go)
 and serves them.
 
-```
+```go
 package main
 
 import (
