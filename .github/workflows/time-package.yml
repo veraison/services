@@ -1,7 +1,7 @@
 name: Automatic package creation based on the monthly tag
 on:
-  - workflow_dispatch
-  - push:
+  workflow_dispatch:
+  push:
       tags:
         - v0.0.**
 permissions:
