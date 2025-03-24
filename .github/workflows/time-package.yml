@@ -1,0 +1,66 @@
+name: Automatic package creation based on the monthly tag
+on:
+  - workflow_dispatch
+  - push:
+      tags:
+        - v0.0.**
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+jobs:
+  package:
+    name: Createa Debian package
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+      CI_PIPELINE: true
+    steps:
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Install mockgen
+        run: |
+          go install github.com/golang/mock/mockgen@v1.7.0-rc.1
+      - name: Install gopls
+        run: |
+          go install golang.org/x/tools/gopls@latest
+      - name: Install guru
+        run: |
+          go install golang.org/x/tools/cmd/guru@latest
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: protoc-gen deps
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+          go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
+      - name: Install packaging deps
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: openssl sqlite3 gettext findutils jq
+      - name: Install step-cli
+        run: |
+          wget https://dl.smallstep.com/cli/docs-cli-install/latest/step-cli_amd64.deb -O /tmp/step-cli_amd64.deb
+          sudo dpkg -i /tmp/step-cli_amd64.deb
+      - name: create deb
+        run: |
+          mkdir /tmp/veraison-package
+          deployments/debian/deployment.sh create-deb /tmp/veraison-package
+      - name: upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veraison services Debian package
+          path: /tmp/veraison-package/*deb
+      - name: attest deb
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: /tmp/veraison-package/*deb
