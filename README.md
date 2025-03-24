@@ -2,6 +2,12 @@
 
 This repository contains attestation services assembled using Veraison components.
 
+## Pre-built packages
+
+Packages are automatically generated for each monthly tag, you can find them
+attached to the [corresponding job
+here](https://github.com/veraison/services/actions/workflows/time-package.yml).
+
 ## Getting Started
 
 This section contains the instructions for creating a test deployment of
