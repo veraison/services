@@ -109,6 +109,15 @@ make deploy
 > This could take a while -- in the order of 45 minutes, depending on how
 > responsive AWS is.
 
+> [!NOTE]
+> It's possible to use an existing Veraison Debian package when creating the
+> deployment (by default, one will be built from source as part of the
+> process).
+> To do so, set `VERAISON_DEB` environment variable to point to the package
+> before calling `make deploy`. (You can also add the variable to the config
+> file you are using with  `AWS_ACCOUNT_CFG`).
+>
+
 Deployment can be accessed via CLI front end:
 
 ```bash
@@ -185,7 +194,12 @@ The bring up stages are:
 
 ```bash
 veraison configure --init [...]
+
 veraison create-deb
+# or
+# veraison add-deb "$VERAISON_DEB"
+# if VERAISON_DEB is set
+
 veraison create-key-pair
 
 veraison create-vpc-stack
