@@ -142,7 +142,12 @@ function bringup() {
 		--iam-permission-boundary-arn "${IAM_PERMISSION_BOUNDARY_ARN}" \
 		--max-dbms-connections "${MAX_DBMS_CONNECTIONS}"
 
-	veraison create-deb
+	if [[ "${VERAISON_DEB}" == "" ]]; then
+		veraison create-deb
+	else
+		veraison add-deb "${VERAISON_DEB}"
+	fi
+
 	veraison create-key-pair
 
 	veraison create-vpc-stack
