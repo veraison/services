@@ -3,6 +3,7 @@ ifndef COMBINED_PLUGINS
   SUBDIR += endorsement-handler
   SUBDIR += evidence-handler
   SUBDIR += store-handler
+  SUBDIR += coserv-handler
 else
   SUBDIR += combined
 endif

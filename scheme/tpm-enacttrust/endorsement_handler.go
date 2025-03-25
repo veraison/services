@@ -3,6 +3,8 @@
 package tpm_enacttrust
 
 import (
+	"errors"
+
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
 )
@@ -31,4 +33,8 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 
 func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
 	return common.UnsignedCorimDecoder(data, &Extractor{})
+}
+
+func (o EndorsementHandler) CoservRepackage(coservQuery string, resultSet []string) ([]byte, error) {
+	return nil, errors.New("TODO")
 }

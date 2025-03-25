@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -67,6 +67,17 @@ func (s EndorsementRPCServer) Decode(data []byte, resp *[]byte) error {
 	}
 
 	return nil
+}
+
+type CoservRepackageArgs struct {
+	Query     string
+	ResultSet []string
+}
+
+func (s EndorsementRPCServer) CoservRepackage(args CoservRepackageArgs, resp *[]byte) (err error) {
+	*resp, err = s.Impl.CoservRepackage(args.Query, args.ResultSet)
+
+	return err
 }
 
 /*
@@ -156,4 +167,14 @@ func (c EndorsementRPCClient) Decode(data []byte) (*EndorsementHandlerResponse, 
 	}
 
 	return &resp, nil
+}
+
+func (c EndorsementRPCClient) CoservRepackage(query string, resultSet []string) (resp []byte, err error) {
+	args := CoservRepackageArgs{Query: query, ResultSet: resultSet}
+
+	if err = c.client.Call("Plugin.CoservRepackage", args, &resp); err != nil {
+		return nil, fmt.Errorf("Plugin.CoservRepackage RPC call failed: %w", ParseError(err))
+	}
+
+	return resp, nil
 }

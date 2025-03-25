@@ -44,3 +44,7 @@ func (s StoreHandler) SynthKeysFromRefValue(tenantID string, swComp *handler.End
 func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endorsement) ([]string, error) {
 	return nil, errors.New("TODO")
 }
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
+}

@@ -20,6 +20,7 @@ var plugins = []plugin.IPluggable{
 	&scheme3.EvidenceHandler{},
 	&scheme3.EndorsementHandler{},
 	&scheme3.StoreHandler{},
+	&scheme3.CoservProxyHandler{},
 	&scheme4.EvidenceHandler{},
 	&scheme4.EndorsementHandler{},
 	&scheme4.StoreHandler{},
@@ -29,4 +30,5 @@ var plugins = []plugin.IPluggable{
 	&scheme6.EvidenceHandler{},
 	&scheme6.EndorsementHandler{},
 	&scheme6.StoreHandler{},
+	&scheme6.CoservProxyHandler{},
 }
