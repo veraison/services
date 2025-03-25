@@ -2,17 +2,14 @@ syntax = "proto3";
 package proto;
 
 import "appraisal_context.proto";
+import "endorsement_query.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "state.proto";
+import "status.proto";
 import "token.proto";
 
 option go_package = "github.com/veraison/services/proto";
-
-message Status {
-  bool result = 1;
-  string error_detail = 2;
-}
 
 message Evidence {
   google.protobuf.Struct value = 1;
@@ -51,5 +48,10 @@ service VTS {
 
   // Returns the public key used to sign evidence.
   rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
-}
 
+  // endorsement distribution API
+  rpc GetEndorsements(EndorsementQueryIn) returns (EndorsementQueryOut);
+  rpc GetSupportedCoservMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  // Returns the public key used to sign CoSERV results
+  rpc GetCoservSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
+}

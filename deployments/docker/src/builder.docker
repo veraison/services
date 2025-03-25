@@ -63,7 +63,7 @@ RUN go mod download &&\
     go install github.com/veraison/cocli@8ebd64c1 &&\
     go install github.com/veraison/evcli/v2@0d3a093 &&\
     go install github.com/veraison/pocli@v0.2.0 &&\
-    go install github.com/go-delve/delve/cmd/dlv@v1.22.1
+    go install github.com/go-delve/delve/cmd/dlv@v1.23.0
 
 ADD --chown=builder:builder builder-dispatcher .
 ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc

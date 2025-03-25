@@ -3,6 +3,8 @@
 package tpm_enacttrust
 
 import (
+	"errors"
+
 	"mime"
 
 	"github.com/veraison/services/handler"
@@ -48,4 +50,8 @@ func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []b
 
 	// Default to unsigned CoRIM decoder
 	return common.UnsignedCorimDecoder(data, extractor)
+}
+
+func (o EndorsementHandler) CoservRepackage(coservQuery string, resultSet []string) ([]byte, error) {
+	return nil, errors.New("TODO")
 }

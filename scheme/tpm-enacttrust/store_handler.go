@@ -116,3 +116,7 @@ func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
 
 	return u.String()
 }
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
+}

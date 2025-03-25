@@ -4,6 +4,7 @@ import (
 	"github.com/veraison/services/plugin"
 
 	scheme3 "github.com/veraison/services/scheme/arm-cca"
+	scheme7 "github.com/veraison/services/scheme/nvidia-coserv"
 	scheme1 "github.com/veraison/services/scheme/parsec-cca"
 	scheme5 "github.com/veraison/services/scheme/parsec-tpm"
 	scheme6 "github.com/veraison/services/scheme/psa-iot"
@@ -29,4 +30,5 @@ var plugins = []plugin.IPluggable{
 	&scheme6.EvidenceHandler{},
 	&scheme6.EndorsementHandler{},
 	&scheme6.StoreHandler{},
+	&scheme7.CoservProxyHandler{},
 }
