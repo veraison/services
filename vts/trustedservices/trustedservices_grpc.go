@@ -44,11 +44,10 @@ const DummyTenantID = "0"
 //
 //   - TODO(tho) load balancing config
 //     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
 type GRPCConfig struct {
 	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
 	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
-	UseTLS	      bool     `mapstructure:"tls" config:"zerodefault"`
+	UseTLS        bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
@@ -117,7 +116,7 @@ func (o *GRPC) Init(
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -145,7 +144,7 @@ func (o *GRPC) Init(
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
-		creds, err :=  LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
 		if err != nil {
 			return err
 		}
@@ -468,8 +467,8 @@ func (c *GRPC) initEvidenceContext(
 }
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
-
 	var taValues []string //nolint
+
 	for _, taID := range id {
 		values, err := c.TaStore.Get(taID)
 		if err != nil {
@@ -517,6 +516,13 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 	return &proto.PublicKey{
 		Key: bstring,
 	}, nil
+}
+
+func (o *GRPC) GetEndorsements(
+	ctx context.Context,
+	token *proto.EndorsementQueryIn,
+) (*proto.EndorsementQueryOut, error) {
+	return nil, errors.New("TODO(vts) GetEndorsements")
 }
 
 func (o *GRPC) finalize(
@@ -592,7 +598,6 @@ func LoadTLSCreds(
 			return nil, fmt.Errorf("error reading CA cert in %s: %w", caPath, err)
 		}
 
-
 		if !certPool.AppendCertsFromPEM(caCertPEM) {
 			return nil, fmt.Errorf("invalid CA cert in %s", caPath)
 		}
@@ -600,10 +605,10 @@ func LoadTLSCreds(
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		RootCAs: certPool,
-		ClientCAs: certPool,
-		MinVersion: tls.VersionTLS12,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		RootCAs:      certPool,
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil
