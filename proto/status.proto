@@ -1,0 +1,9 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "github.com/veraison/services/proto";
+
+message Status {
+  bool result = 1;
+  string error_detail = 2;
+}

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -67,6 +67,7 @@ func main() {
 	var evPluginManager plugin.IManager[handler.IEvidenceHandler]
 	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
 	var storePluginManager plugin.IManager[handler.IStoreHandler]
+	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
@@ -104,6 +105,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
 		}
+		coservProxyPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"coserv-handler",
+			log.Named("plugin"),
+			handler.CoservProxyHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create coserv PluginManagerWithLoader: %v", err)
+		}
 	} else if config.SchemeLoader == "builtin" {
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
@@ -129,6 +138,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create store BuiltinManagerWithLoader: %v", err)
 		}
+		coservProxyPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ICoservProxyHandler](
+			loader, log.Named("builtin"),
+			"coserv-handler")
+		if err != nil {
+			log.Fatalf("could not create coserv BuiltinManagerWithLoader: %v", err)
+		}
 	} else {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
@@ -143,6 +158,11 @@ func main() {
 		log.Info("\t", mt)
 	}
 
+	log.Info("CoSERV Proxy media types:")
+	for _, mt := range coservProxyPluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
+	}
+
 	log.Info("loading EAR signer")
 	earSigner, err := earsigner.New(subs["ear-signer"], afero.NewOsFs())
 	if err != nil {
@@ -150,12 +170,14 @@ func main() {
 	}
 
 	log.Info("initializing service")
-	// from this point onwards taStore, enStore, evPluginManager, endPluginManager,
-	// storePluginManager, policyManager and earSigner are owned by vts
+	// from this point onwards taStore, enStore, evPluginManager,
+	// endPluginManager, storePluginManager, coservProxyPluginManager,
+	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		evPluginManager, endPluginManager, storePluginManager, policyManager, earSigner, log.Named("vts"))
+		evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager,
+		policyManager, earSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager); err != nil {
+	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

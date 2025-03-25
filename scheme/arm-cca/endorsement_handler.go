@@ -3,8 +3,14 @@
 package arm_cca
 
 import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/veraison/corim/coserv"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
+	"github.com/veraison/services/scheme/common/arm"
 )
 
 type EndorsementHandler struct{}
@@ -31,4 +37,63 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 
 func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
 	return common.UnsignedCorimDecoder(data, &CorimExtractor{})
+}
+
+func (o EndorsementHandler) CoservRepackage(query string, resultSet []string) ([]byte, error) {
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query); err != nil {
+		return nil, err
+	}
+
+	rset := coserv.NewResultSet()
+
+	for i, j := range resultSet {
+		var e handler.Endorsement
+		err := json.Unmarshal([]byte(j), &e)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode result[%d] %q to Endorsement: %w", i, j, err)
+		}
+
+		switch q.Query.ArtifactType {
+		// reference values
+		case coserv.ArtifactTypeReferenceValues:
+			if e.Type != "reference value" {
+				log.Errorf("CCA query-result mismatch: want reference value, got %s", e.Type)
+				continue
+			} else if e.SubType != "platform.sw-component" {
+				log.Warnf("CCA reference values of sub-type %q are not currently handled", e.SubType)
+				continue
+			}
+
+			rvt, err := arm.EndorsementToReferenceValueTriple(e)
+			if err != nil {
+				return nil, fmt.Errorf("unable to map result[%d] %q to CoRIM reference value triple: %w", i, j, err)
+			}
+
+			rset.AddReferenceValues(*rvt)
+		// trust anchors
+		case coserv.ArtifactTypeTrustAnchors:
+			if e.Type != "trust anchor" {
+				log.Errorf("CCA query-result mismatch: want trust anchor, got %s", e.Type)
+				continue
+			}
+
+			akt, err := arm.EndorsementToAttestationKeyTriple(e)
+			if err != nil {
+				return nil, fmt.Errorf("unable to map result[%d] %q to CoRIM attest key triple: %w", i, j, err)
+			}
+
+			rset.AddAttestationKeys(*akt)
+
+		default:
+			log.Errorf("CCA CoSERV can only deal with reference values and trust anchors at the moment")
+			continue
+		}
+	}
+
+	if err := q.AddResults(*rset); err != nil {
+		return nil, fmt.Errorf("failure adding the translated result set: %w", err)
+	}
+
+	return q.ToCBOR()
 }

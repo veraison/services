@@ -6,13 +6,10 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "state.proto";
 import "token.proto";
+import "status.proto";
+import "endorsement_query.proto";
 
 option go_package = "github.com/veraison/services/proto";
-
-message Status {
-  bool result = 1;
-  string error_detail = 2;
-}
 
 message Evidence {
   google.protobuf.Struct value = 1;
@@ -51,5 +48,8 @@ service VTS {
 
   // Returns the public key used to sign evidence.
   rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
+
+  // endorsement distribution API
+  rpc GetEndorsements(EndorsementQueryIn) returns (EndorsementQueryOut);
 }
 
