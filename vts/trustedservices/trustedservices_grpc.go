@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/veraison/corim/coserv"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
@@ -44,11 +45,10 @@ const DummyTenantID = "0"
 //
 //   - TODO(tho) load balancing config
 //     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
 type GRPCConfig struct {
 	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
 	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
-	UseTLS	      bool     `mapstructure:"tls" config:"zerodefault"`
+	UseTLS        bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
@@ -117,7 +117,7 @@ func (o *GRPC) Init(
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -145,7 +145,7 @@ func (o *GRPC) Init(
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
-		creds, err :=  LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
 		if err != nil {
 			return err
 		}
@@ -468,8 +468,8 @@ func (c *GRPC) initEvidenceContext(
 }
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
-
 	var taValues []string //nolint
+
 	for _, taID := range id {
 		values, err := c.TaStore.Get(taID)
 		if err != nil {
@@ -517,6 +517,71 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 	return &proto.PublicKey{
 		Key: bstring,
 	}, nil
+}
+
+func (o *GRPC) GetEndorsements(
+	ctx context.Context,
+	query *proto.EndorsementQueryIn,
+) (*proto.EndorsementQueryOut, error) {
+	o.logger.Infow("get endorsements", "result type", query.GetResultSetMediaType(), "query", query.Query)
+
+	var (
+		q     coserv.Coserv
+		store kvstore.IKVStore
+	)
+
+	// check that the supplied CoSERV query is in good shape
+	if err := q.FromBase64Url(query.Query); err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	// check that profile is supported
+	if profile, _ := q.Profile.Get(); !__isSupportedProfile(profile) {
+		return nil, fmt.Errorf(
+			"unsupported profile: %q. Supported profiles: %s",
+			profile, strings.Join(__supportedProfiles, ", "),
+		)
+	}
+
+	// select store
+	switch q.Query.ArtifactType {
+	case coserv.ArtifactTypeEndorsedValues:
+		return nil, fmt.Errorf("endorsed value queries are not supported")
+	case coserv.ArtifactTypeReferenceValues:
+		store = o.EnStore
+	case coserv.ArtifactTypeTrustAnchors:
+		store = o.TaStore
+	}
+
+	// synthesize store query key
+	k := "arm-cca://1234/4567"
+
+	// make query
+	res, err := store.Get(k)
+	if err != nil {
+		edn, _ := q.ToEDN()
+		return nil, fmt.Errorf("store retrieval failed for %s: %w", edn, err)
+	}
+
+	o.logger.Infow("get endorsements", "result set", res)
+
+	return nil, errors.New("TODO(vts) GetEndorsements")
+}
+
+var (
+	__supportedProfiles = []string{
+		`tag:arm.com,2023:cca_platform#1.0.0`,
+		`tag:arm.com,2023:realm#1.0.0`,
+	}
+)
+
+func __isSupportedProfile(profile string) bool {
+	for _, candidate := range __supportedProfiles {
+		if profile == candidate {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *GRPC) finalize(
@@ -592,7 +657,6 @@ func LoadTLSCreds(
 			return nil, fmt.Errorf("error reading CA cert in %s: %w", caPath, err)
 		}
 
-
 		if !certPool.AppendCertsFromPEM(caCertPEM) {
 			return nil, fmt.Errorf("invalid CA cert in %s", caPath)
 		}
@@ -600,10 +664,10 @@ func LoadTLSCreds(
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		RootCAs: certPool,
-		ClientCAs: certPool,
-		MinVersion: tls.VersionTLS12,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		RootCAs:      certPool,
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil
