@@ -78,9 +78,9 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 	invalidCbor := []byte("invalid CBOR")
 
-	expectedErr := `CBOR decoding failed: expected map (CBOR Major Type 5), found Major Type 3`
+	expectedErr := `CBOR decoding failed`
 
 	_, err := d.Decode(invalidCbor, "", nil)
 
-	assert.EqualError(t, err, expectedErr)
+	assert.ErrorContains(t, err, expectedErr)
 }

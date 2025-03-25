@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -12,9 +12,10 @@ import (
 type ITrustedServices interface {
 	Init(
 		cfg *viper.Viper,
-		evm plugin.IManager[handler.IEvidenceHandler],
-		endm plugin.IManager[handler.IEndorsementHandler],
-		stm plugin.IManager[handler.IStoreHandler],
+		evidenceManager plugin.IManager[handler.IEvidenceHandler],
+		endorsementManager plugin.IManager[handler.IEndorsementHandler],
+		storeManager plugin.IManager[handler.IStoreHandler],
+		coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
 	) error
 	Close() error
 	Run() error

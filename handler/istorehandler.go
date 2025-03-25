@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -14,9 +14,10 @@ import (
 type IStoreHandler interface {
 	plugin.IPluggable
 
-	// GetTrustAnchorIDs returns a slice of trust anchor identifiers used
-	// to retrieve the trust anchors associated with this token. The trust anchors may be necessary to validate the
-	// entire token and/or extract its claims (if it is encrypted).
+	// GetTrustAnchorIDs returns a slice of trust anchor identifiers used to
+	// retrieve the trust anchors associated with this token. The trust anchors
+	// may be necessary to validate the entire token and/or extract its claims
+	// (if it is encrypted).
 	GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error)
 
 	// GetRefValueIDs returns a slice of identifiers used to retrieve
@@ -35,4 +36,8 @@ type IStoreHandler interface {
 	// SynthKeysFromTrustAnchor synthesizes lookup key(s) for the provided
 	// trust anchor.
 	SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error)
+
+	// SynthCoservQueryKeys synthesizes lookup keys for the supplied CoSERV
+	// environment selector.
+	SynthCoservQueryKeys(tenantID string, query string) ([]string, error)
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 Contributors to the Veraison project.
+// Copyright 2021-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package psa_iot
@@ -57,4 +57,8 @@ func (s StoreHandler) GetRefValueIDs(
 	claims map[string]interface{},
 ) ([]string, error) {
 	return arm.GetPlatformReferenceIDs(SchemeName, tenantID, claims)
+}
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -22,6 +22,13 @@ func RegisterEvidenceHandler(i IEvidenceHandler) {
 
 func RegisterStoreHandler(i IStoreHandler) {
 	err := plugin.RegisterImplementation("store-handler", i, StoreHandlerRPC)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func RegisterCoservProxyHandler(i ICoservProxyHandler) {
+	err := plugin.RegisterImplementation("coserv-proxy-handler", i, CoservProxyHandlerRPC)
 	if err != nil {
 		panic(err)
 	}

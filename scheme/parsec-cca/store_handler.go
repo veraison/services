@@ -66,3 +66,7 @@ func (s StoreHandler) GetRefValueIDs(
 	}
 	return arm.GetPlatformReferenceIDs(SchemeName, tenantID, platformClaimsMap)
 }
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
+}

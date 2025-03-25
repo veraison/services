@@ -597,6 +597,8 @@ cloud.google.com/go/workflows v1.10.0/go.mod h1:fZ8LmRmZQWacon9UCX1r/g/DfAXx5VcP
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
+fortio.org/safecast v1.0.0 h1:dr3131WPX8iS1pTf76+39WeXbTrerDYLvi9s7Oi3wiY=
+fortio.org/safecast v1.0.0/go.mod h1:xZmcPk3vi4kuUFf+tq4SvnlVdwViqf6ZSZl91Jr9Jdg=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 git.sr.ht/~sbinet/gg v0.3.1/go.mod h1:KGYtlADtqsqANL9ueOFkWymvzUvLMQllU5Ixo+8v3pc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -765,8 +767,8 @@ github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nos
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/fxamacker/cbor/v2 v2.2.0/go.mod h1:TA1xS00nchWmaBnEIxPSE5oHLuJBAVvqrtAnWBwBCVo=
 github.com/fxamacker/cbor/v2 v2.3.0/go.mod h1:TA1xS00nchWmaBnEIxPSE5oHLuJBAVvqrtAnWBwBCVo=
-github.com/fxamacker/cbor/v2 v2.5.0 h1:oHsG0V/Q6E/wqTS2O1Cozzsy69nqCiguo5Q1a1ADivE=
-github.com/fxamacker/cbor/v2 v2.5.0/go.mod h1:TA1xS00nchWmaBnEIxPSE5oHLuJBAVvqrtAnWBwBCVo=
+github.com/fxamacker/cbor/v2 v2.8.0 h1:fFtUGXUzXPHTIUdne5+zzMPTfffl3RD5qYnkY40vtxU=
+github.com/fxamacker/cbor/v2 v2.8.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/gabriel-vasile/mimetype v1.4.2/go.mod h1:zApsH/mKG4w07erKIaJPFiX0Tsq9BFQgN3qGY5GnNgA=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
@@ -1186,8 +1188,9 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
+github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/tbaehler/gin-keycloak v1.6.1 h1:LOXSW5P4j6eGt667/IiKQiyHSBVsECKgvMqdoHtnijA=
@@ -1203,10 +1206,10 @@ github.com/ugorji/go/codec v1.2.11 h1:BMaWp1Bb6fHwEtbplGBGJ498wD+LKlNSl25MjdZY4d
 github.com/ugorji/go/codec v1.2.11/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/veraison/ccatoken v1.3.1 h1:zUHXr2mPprxMYv5Mm2mumxzQZ3I9wy7QGayXqa9Rv/E=
 github.com/veraison/ccatoken v1.3.1/go.mod h1:vMqdbW4H/8A3oT+24qssuIK3Aefy06XqzTELGg+gWAg=
-github.com/veraison/cmw v0.1.0 h1:vD6tBlGPROCW/HlDcG1jh+XUJi5ihrjXatKZBjrv8mU=
-github.com/veraison/cmw v0.1.0/go.mod h1:WoBrlgByc6C1FeHhdze1/bQx1kv5d1sWKO5ezEf4Hs4=
-github.com/veraison/corim v1.1.3-0.20250318170802-c37ac860ac4d h1:d1+U+qOtPG/XUsbApivrIuPJVHp+tGW4WRp87zc3mzk=
-github.com/veraison/corim v1.1.3-0.20250318170802-c37ac860ac4d/go.mod h1:ih8kOpsI3+2iy8IvHkD6xSNryfK3oe9c05nlBE78BV0=
+github.com/veraison/cmw v0.2.0 h1:BWEvwZnD4nn5osq6XwQpTRcGxwV+Su4t6ytdAbVXAJY=
+github.com/veraison/cmw v0.2.0/go.mod h1:OiYKk1t6/Fmmg30ZpSMzi4nKr5kt3374sNTkgxC5BDs=
+github.com/veraison/corim v1.1.3-0.20251002172919-3c18c66c77b0 h1:rl3ANdIHIStRQEYVhU0BaNc87j0W38iWqTwu0HYcuMA=
+github.com/veraison/corim v1.1.3-0.20251002172919-3c18c66c77b0/go.mod h1:NDUWXTTPOnpwTa79HULq+o/6dkgK6XymHdSRGP9YP8M=
 github.com/veraison/dice v0.0.1 h1:dOm7ByDN/r4WlDsGkEUXzdPMXgTvAPTAksQ8+BwBrD4=
 github.com/veraison/dice v0.0.1/go.mod h1:QPMLc5LVMj08VZ+HNMYk4XxWoVYGAUBVm8Rd5V1hzxs=
 github.com/veraison/ear v1.1.2 h1:Xs41FqAG8IyJaceqNFcX2+nf51Et1uyhmCJV8SZqw/8=
