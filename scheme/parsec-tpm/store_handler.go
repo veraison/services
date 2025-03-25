@@ -124,3 +124,6 @@ func tpmLookupKey(scope, tenantID, class, instance string) string {
 	return u.String()
 }
 
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
+}

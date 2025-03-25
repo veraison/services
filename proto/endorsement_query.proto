@@ -1,0 +1,22 @@
+// Copyright 2025 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package proto;
+
+import "status.proto";
+
+option go_package = "github.com/veraison/services/proto";
+
+message EndorsementQueryIn {
+  // media type (including profile)
+  string media_type = 1;
+  // base64url-encoded CoSERV
+  string query = 2;
+}
+
+message EndorsementQueryOut {
+  Status status = 1;
+  bytes result_set = 2;
+}

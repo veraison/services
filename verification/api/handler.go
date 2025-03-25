@@ -336,8 +336,25 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 			return
 		}
 
-		mediaType = w.GetType()
-		evidence = w.GetValue()
+		// Here we only deal with CMW records and tags.  Collection CMWs are
+		// dealt with in the non-exceptional path.
+		if w.GetKind() == cmw.KindMonad {
+			mediaType, err = w.GetMonadType()
+			if err != nil {
+				ReportProblem(c,
+					http.StatusBadRequest,
+					fmt.Sprintf("could not extract CMW media type: %v", err),
+				)
+			}
+
+			evidence, err = w.GetMonadValue()
+			if err != nil {
+				ReportProblem(c,
+					http.StatusBadRequest,
+					fmt.Sprintf("could not extract CMW value: %v", err),
+				)
+			}
+		}
 	}
 
 	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
@@ -506,7 +523,6 @@ func (o *Handler) getKey() (jwk.Key, error) {
 	}
 
 	return key, nil
-
 }
 
 func (o *Handler) getVerificationMediaTypes() ([]string, error) {

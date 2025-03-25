@@ -1,4 +1,4 @@
-// Copyright 2021-2024 Contributors to the Veraison project.
+// Copyright 2021-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package arm
@@ -91,9 +91,13 @@ func SynthKeysFromTrustAnchors(scheme string, tenantID string,
 		return nil, fmt.Errorf("unable to synthesize trust anchor abs-path: %w", err)
 	}
 
-	lookupKey := TaLookupKey(scheme, tenantID, implID, instID)
-	log.Debugf("Scheme %s Plugin TA Look Up Key= %s\n", scheme, lookupKey)
-	return []string{lookupKey}, nil
+	verificationLookupKey := TaLookupKey(scheme, tenantID, implID, instID)
+	log.Debugf("TA verification look up key: %s", verificationLookupKey)
+
+	coservLookupKey := TaCoservLookupKey(scheme, tenantID, instID)
+	log.Debugf("TA coserv look up key: %s", coservLookupKey)
+
+	return []string{verificationLookupKey, coservLookupKey}, nil
 }
 
 func GetTrustAnchorID(scheme string, tenantID string, claims psatoken.IClaims) (string, error) {

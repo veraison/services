@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/veraison/corim/coserv"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
@@ -30,6 +31,7 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
 )
@@ -62,14 +64,16 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore            kvstore.IKVStore
-	EnStore            kvstore.IKVStore
-	EvPluginManager    plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager   plugin.IManager[handler.IEndorsementHandler]
-	StorePluginManager plugin.IManager[handler.IStoreHandler]
-	PolicyManager      *policymanager.PolicyManager
-	EarSigner          earsigner.IEarSigner
-	CACertsPEM         [][]byte
+	TaStore                  kvstore.IKVStore
+	EnStore                  kvstore.IKVStore
+	EvPluginManager          plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
+	StorePluginManager       plugin.IManager[handler.IStoreHandler]
+	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	PolicyManager            *policymanager.PolicyManager
+	EarSigner                earsigner.IEarSigner
+	CoservSigner             coservsigner.ICoservSigner
+	CACertsPEM               [][]byte
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -81,22 +85,26 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	evpluginManager plugin.IManager[handler.IEvidenceHandler],
-	endpluginManager plugin.IManager[handler.IEndorsementHandler],
-	storepluginManager plugin.IManager[handler.IStoreHandler],
+	evidencePluginManager plugin.IManager[handler.IEvidenceHandler],
+	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
+	storePluginManager plugin.IManager[handler.IStoreHandler],
+	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
+	coservSigner coservsigner.ICoservSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:            taStore,
-		EnStore:            enStore,
-		EvPluginManager:    evpluginManager,
-		EndPluginManager:   endpluginManager,
-		StorePluginManager: storepluginManager,
-		PolicyManager:      policyManager,
-		EarSigner:          earSigner,
-		logger:             logger,
+		TaStore:                  taStore,
+		EnStore:                  enStore,
+		EvPluginManager:          evidencePluginManager,
+		EndPluginManager:         endorsementPluginManager,
+		StorePluginManager:       storePluginManager,
+		CoservProxyPluginManager: coservProxyPluginManager,
+		PolicyManager:            policyManager,
+		EarSigner:                earSigner,
+		CoservSigner:             coservSigner,
+		logger:                   logger,
 	}
 }
 
@@ -111,15 +119,16 @@ func (o *GRPC) Run() error {
 
 func (o *GRPC) Init(
 	v *viper.Viper,
-	evm plugin.IManager[handler.IEvidenceHandler],
-	endm plugin.IManager[handler.IEndorsementHandler],
-	stm plugin.IManager[handler.IStoreHandler],
+	evidenceManager plugin.IManager[handler.IEvidenceHandler],
+	endorsementManager plugin.IManager[handler.IEndorsementHandler],
+	storeManager plugin.IManager[handler.IStoreHandler],
+	coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
 ) error {
 	var err error
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -127,9 +136,10 @@ func (o *GRPC) Init(
 		return err
 	}
 
-	o.EvPluginManager = evm
-	o.EndPluginManager = endm
-	o.StorePluginManager = stm
+	o.EvPluginManager = evidenceManager
+	o.EndPluginManager = endorsementManager
+	o.StorePluginManager = storeManager
+	o.CoservProxyPluginManager = coservProxyManager
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -193,6 +203,10 @@ func (o *GRPC) Close() error {
 		o.logger.Errorf("store plugin manager shutdown failed: %v", err)
 	}
 
+	if err := o.CoservProxyPluginManager.Close(); err != nil {
+		o.logger.Errorf("coserv plugin manager shutdown failed: %v", err)
+	}
+
 	if err := o.TaStore.Close(); err != nil {
 		o.logger.Errorf("trust anchor store closure failed: %v", err)
 	}
@@ -203,6 +217,12 @@ func (o *GRPC) Close() error {
 
 	if err := o.EarSigner.Close(); err != nil {
 		o.logger.Errorf("EAR signer closure failed: %v", err)
+	}
+
+	if o.CoservSigner != nil {
+		if err := o.CoservSigner.Close(); err != nil {
+			o.logger.Errorf("CoSERV signer closure failed: %v", err)
+		}
 	}
 
 	return nil
@@ -502,8 +522,8 @@ func (c *GRPC) initEvidenceContext(
 }
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
-
 	var taValues []string //nolint
+
 	for _, taID := range id {
 		values, err := c.TaStore.Get(taID)
 		if err != nil {
@@ -530,6 +550,53 @@ func (c *GRPC) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empt
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
 
+func (c *GRPC) assembleCoservMediaTypes(mts []string, filter string) []string {
+	mediaTypes := make([]string, 0, 10)
+
+	for _, mt := range mts {
+		t, p, err := mime.ParseMediaType(mt)
+		if err != nil || t != filter {
+			continue
+		}
+		profile := p["profile"]
+		if profile == "" {
+			continue
+		}
+
+		mediaType := fmt.Sprintf(`application/coserv+cbor; profile=%q`, profile)
+		mediaTypes = append(mediaTypes, mediaType)
+
+		if c.CoservSigner != nil {
+			mediaType = fmt.Sprintf(`application/coserv+cose; profile=%q`, profile)
+			mediaTypes = append(mediaTypes, mediaType)
+		}
+	}
+
+	return mediaTypes
+}
+
+func (c *GRPC) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
+	var mediaTypes []string
+
+	corimDerived := c.assembleCoservMediaTypes(
+		c.EndPluginManager.GetRegisteredMediaTypes(),
+		"application/rim+cbor",
+	)
+
+	mediaTypes = append(mediaTypes, corimDerived...)
+
+	coservProxyDerived := c.assembleCoservMediaTypes(
+		c.CoservProxyPluginManager.GetRegisteredMediaTypes(),
+		"application/coserv+cbor",
+	)
+
+	mediaTypes = append(mediaTypes, coservProxyDerived...)
+
+	c.logger.Debugw("GetSupportedCoservMediaTypes", "media types", mediaTypes)
+
+	return &proto.MediaTypeList{MediaTypes: mediaTypes}, nil
+}
+
 func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
 	alg, key, err := o.EarSigner.GetEARSigningPublicKey()
 	if err != nil {
@@ -550,6 +617,156 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 
 	return &proto.PublicKey{
 		Key: bstring,
+	}, nil
+}
+
+func (o *GRPC) GetCoservSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
+	// If CoSERV is not enabled, return an error.
+	if o.CoservSigner == nil {
+		return &proto.PublicKey{Key: ""}, nil
+	}
+
+	alg, key, err := o.CoservSigner.GetCoservSigningPublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	err = key.Set("alg", alg.String())
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(key)
+	if err != nil {
+		return nil, err
+	}
+
+	bstring := string(b)
+
+	return &proto.PublicKey{
+		Key: bstring,
+	}, nil
+}
+
+func getEndorsementsError(err error) *proto.EndorsementQueryOut {
+	return &proto.EndorsementQueryOut{
+		Status: &proto.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
+}
+
+func (o *GRPC) getEndorsementsFromStores(query *proto.EndorsementQueryIn) ([]byte, error) {
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query.Query); err != nil {
+		return nil, err
+	}
+
+	// select store based on the requested artefact type
+	var (
+		store     kvstore.IKVStore
+		storeName string
+	)
+	switch q.Query.ArtifactType {
+	case coserv.ArtifactTypeEndorsedValues:
+		return nil, errors.New("endorsed value queries are not supported")
+	case coserv.ArtifactTypeReferenceValues:
+		storeName = "reference-value"
+		store = o.EnStore
+	case coserv.ArtifactTypeTrustAnchors:
+		storeName = "trust-anchors"
+		store = o.TaStore
+	}
+
+	profile, err := q.Profile.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	// Look up a matching endorsement plugin
+	endorsementHandler, err := o.EndPluginManager.LookupByMediaType(fmt.Sprintf(`application/rim+cbor; profile=%q`, profile))
+	if err != nil {
+		return nil, err
+	}
+
+	scheme := endorsementHandler.GetAttestationScheme()
+
+	storeHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	queryKeys, err := storeHandler.SynthCoservQueryKeys(DummyTenantID, query.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	var resultSet []string
+	for _, key := range queryKeys {
+		res, err := store.Get(key)
+		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
+			return nil, fmt.Errorf("lookup %q in %s failed: %w", key, storeName, err)
+		}
+
+		resultSet = append(resultSet, res...)
+	}
+
+	coservResults, err := endorsementHandler.CoservRepackage(query.Query, resultSet)
+	if err != nil {
+		return nil, err
+	}
+
+	return coservResults, nil
+}
+
+func (o *GRPC) getEndorsementsFromProxy(handlerPlugin handler.ICoservProxyHandler, query *proto.EndorsementQueryIn) ([]byte, error) {
+	return handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
+}
+
+func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
+	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
+
+	var (
+		err           error
+		out           []byte
+		handlerPlugin handler.ICoservProxyHandler
+	)
+
+	// First, check to see if we have a CoSERV proxy plugin that can handle this query
+	handlerPlugin, err = o.CoservProxyPluginManager.LookupByMediaType(query.MediaType)
+	if err == nil {
+		// No error means we have a proxy plugin, so delegate to that.
+		out, err = o.getEndorsementsFromProxy(handlerPlugin, query)
+	} else {
+		// There was no proxy plugin, so assume we can obtain from own stores
+		out, err = o.getEndorsementsFromStores(query)
+	}
+
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	// If we have a CoSERV signer configured and the client requested a COSE
+	// response, sign the result here.
+	if strings.HasPrefix(query.MediaType, "application/coserv+cose") {
+		if o.CoservSigner != nil {
+			var tmp coserv.Coserv
+			err = tmp.FromCBOR(out)
+			if err != nil {
+				return getEndorsementsError(fmt.Errorf("could not parse CoSERV response: %w", err)), nil
+			}
+
+			out, err = o.CoservSigner.Sign(tmp)
+			if err != nil {
+				return getEndorsementsError(fmt.Errorf("could not sign CoSERV response: %w", err)), nil
+			}
+		}
+	}
+
+	return &proto.EndorsementQueryOut{
+		Status:    &proto.Status{Result: true},
+		ResultSet: out,
 	}, nil
 }
 

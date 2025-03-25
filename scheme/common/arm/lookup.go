@@ -1,4 +1,4 @@
-// Copyright 2021-2024 Contributors to the Veraison project.
+// Copyright 2021-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package arm
@@ -30,6 +30,16 @@ func TaLookupKey(schemeName, tenantID, implID, instID string) string {
 		Scheme: schemeName,
 		Host:   tenantID,
 		Path:   strings.Join(absPath, "/"),
+	}
+
+	return u.String()
+}
+
+func TaCoservLookupKey(schemeName, tenantID, instID string) string {
+	u := url.URL{
+		Scheme: schemeName,
+		Host:   tenantID,
+		Path:   instID,
 	}
 
 	return u.String()
