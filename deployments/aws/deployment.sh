@@ -68,7 +68,7 @@ function bootstrap() {
 
 			case $distrib_id in
 			arch) sudo pacman -Syy packer ssh;;
-			Ubuntu)
+			ubuntu)
 				sudo apt update
 				sudo apt --yes install curl postgresql
 
