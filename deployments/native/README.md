@@ -3,7 +3,7 @@ native deployment of Veraison on the system.
 
 ## Dependencies
 
-To build Veraison services, you will need a Go toolchain, at least v1.22.
+To build Veraison services, you will need a Go toolchain, at least v1.23.
 If Go is already installed, you can check the version:
 ```sh
 go version

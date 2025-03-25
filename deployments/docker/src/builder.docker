@@ -1,6 +1,6 @@
 # Go version that will be used to build the project. Due to the use of generics
-# within the project, it must be at least 1.22.
-ARG GO_VERSION=1.22
+# within the project, it must be at least 1.23.
+ARG GO_VERSION=1.23
 
 FROM golang:${GO_VERSION} AS veraison-builder
 
@@ -63,7 +63,7 @@ RUN go mod download &&\
     go install github.com/veraison/cocli@4eada925 &&\
     go install github.com/veraison/evcli/v2@0d3a093 &&\
     go install github.com/veraison/pocli@v0.2.0 &&\
-    go install github.com/go-delve/delve/cmd/dlv@v1.22.1
+    go install github.com/go-delve/delve/cmd/dlv@v1.23.0
 
 ADD --chown=builder:builder builder-dispatcher .
 ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc

@@ -3,7 +3,6 @@
 package common
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 
@@ -42,22 +41,13 @@ func UnsignedCorimDecoder(
 	rsp := handler.EndorsementHandlerResponse{}
 
 	for i, tag := range uc.Tags {
-		// need at least 3 bytes for the tag and 1 for the smallest bstr
-		if len(tag) < 3+1 {
-			return nil, fmt.Errorf("malformed tag at index %d", i)
-		}
-
-		// split tag from data
-		cborTag, cborData := tag[:3], tag[3:]
-
-		// The EnactTrust profile only knows about CoMIDs
-		if !bytes.Equal(cborTag, corim.ComidTag) {
-			return nil, fmt.Errorf("unknown CBOR tag %x detected at index %d", cborTag, i)
+		if tag.Number != corim.ComidTag {
+			return nil, fmt.Errorf("unknown CBOR tag %x detected at index %d", tag.Number, i)
 		}
 
 		var c comid.Comid
 
-		err := c.FromCBOR(cborData)
+		err := c.FromCBOR(tag.Content)
 		if err != nil {
 			return nil, fmt.Errorf("decoding failed for CoMID at index %d: %w", i, err)
 		}

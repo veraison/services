@@ -67,14 +67,14 @@ function check_requirements() {
 	fi
 
 	if [[ "$(type -p go)" == "" ]]; then
-		echo -e "$_ERROR: Go toolchain (at least version 1.22) must be installed."
+		echo -e "$_ERROR: Go toolchain (at least version 1.23) must be installed."
 		exit 1
 	fi
 
-	if ! printf '%s\n' 1.22 "$(go version | grep -o -E '[0-9.]+' | head -n1)" | \
+	if ! printf '%s\n' 1.23 "$(go version | grep -o -E '[0-9.]+' | head -n1)" | \
 		$_sort -C -V; then
 
-		echo -e "$_ERROR: Go version must be at least 1.22."
+		echo -e "$_ERROR: Go version must be at least 1.23."
 		exit 1
 	fi
 

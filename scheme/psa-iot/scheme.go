@@ -16,3 +16,7 @@ var EvidenceMediaTypes = []string{
 	`application/eat+cwt; eat_profile="tag:psacertified.org,2023:psa#tfm"`,
 	`application/eat+cwt; eat_profile="tag:psacertified.org,2019:psa#legacy"`,
 }
+
+var CoservMediaTypes = []string{
+	`application/coserv+cbor; profile="tag:psacertified.org,2023:psa#tfm"`,
+}

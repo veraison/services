@@ -3,11 +3,12 @@
 
 SUBDIR := common
 SUBDIR += arm-cca
-SUBDIR += riot
-SUBDIR += psa-iot
-SUBDIR += tpm-enacttrust
-SUBDIR += parsec-tpm
-SUBDIR += parsec-cca
+#SUBDIR += riot
+#SUBDIR += psa-iot
+#SUBDIR += tpm-enacttrust
+#SUBDIR += parsec-tpm
+#SUBDIR += parsec-cca
+#SUBDIR += nvidia-coserv
 
 clean: ; $(RM) -rf ./bin
 

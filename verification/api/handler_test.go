@@ -32,8 +32,8 @@ const (
 )
 
 var (
-	testSupportedMediaTypeA = `application/eat_cwt; profile=http://arm.com/psa/2.0.0`
-	testSupportedMediaTypeB = `application/eat_cwt; profile=PSA_IOT_PROFILE_1`
+	testSupportedMediaTypeA = `application/eat_cwt; profile="http://arm.com/psa/2.0.0"`
+	testSupportedMediaTypeB = `application/eat_cwt; profile="PSA_IOT_PROFILE_1"`
 	testSupportedMediaTypeC = `application/psa-attestation-token`
 	testSupportedMediaTypes = []string{
 		testSupportedMediaTypeA,
@@ -48,8 +48,8 @@ var (
 	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
-		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
+		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
+		"application/eat_cwt;profile=\"PSA_IOT_PROFILE_1\"",
 		"application/psa-attestation-token"
 	]
 }`
@@ -64,12 +64,12 @@ var (
 	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
-		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
+		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
+		"application/eat_cwt;profile=\"PSA_IOT_PROFILE_1\"",
 		"application/psa-attestation-token"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
+		"type":"application/eat_cwt; profile=\"http://arm.com/psa/2.0.0\"",
 		"value":"eyAiayI6ICJ2IiB9"
 	}
 }`
@@ -78,12 +78,12 @@ var (
 	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
-		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
+		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
+		"application/eat_cwt;profile=\"PSA_IOT_PROFILE_1\"",
 		"application/psa-attestation-token"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
+		"type":"application/eat_cwt; profile=\"http://arm.com/psa/2.0.0\"",
 		"value":"eyAiayI6ICJ2IiB9"
 	},
 	"result": "{}"
@@ -1111,10 +1111,9 @@ func TestHandler_GetWellKnownVerificationInfo_UnsupportedAccept(t *testing.T) {
 }
 
 func goodCMW(t *testing.T) []byte {
-	var w cmw.CMW
-	w.SetMediaType(testSupportedMediaTypeA)
-	w.SetValue([]byte(testJSONBody))
-	b, err := w.Serialize(cmw.JSONArray)
+	w, err := cmw.NewMonad(testSupportedMediaTypeA, []byte(testJSONBody))
+	require.NoError(t, err)
+	b, err := w.MarshalJSON()
 	require.NoError(t, err)
 	return b
 }
@@ -1168,7 +1167,7 @@ func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
 
 	badCMW := []byte(`["missing value"]`)
 
-	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW array"
+	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW record"
 
 	url := path.Join(testSessionBaseURL, testUUIDString)
 

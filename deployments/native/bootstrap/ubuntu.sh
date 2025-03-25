@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 arch=$(dpkg --print-architecture)
+go_ver=1.23
 
 sudo apt update
-sudo apt install --yes git protobuf-compiler golang-1.22 make gettext sqlite3 openssl jq
+sudo apt install --yes git protobuf-compiler golang-${go_ver} make gettext sqlite3 openssl jq
 
-sudo ln -s /usr/lib/go-1.22/bin/go /usr/local/bin/go
-sudo ln -s /usr/lib/go-1.22/bin/gofmt /usr/local/bin/gofmt
+sudo ln -s /usr/lib/go-${go_ver}/bin/go /usr/local/bin/go
+sudo ln -s /usr/lib/go-${go_ver}/bin/gofmt /usr/local/bin/gofmt
 
 wget https://dl.smallstep.com/cli/docs-cli-install/latest/step-cli_${arch}.deb -O /tmp/step-cli_${arch}.deb
 sudo dpkg -i /tmp/step-cli_${arch}.deb

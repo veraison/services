@@ -4,9 +4,13 @@
 package arm_cca
 
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/veraison/ccatoken"
+	"github.com/veraison/corim/comid"
+	"github.com/veraison/corim/coserv"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/scheme/common/arm"
@@ -85,4 +89,68 @@ func (s StoreHandler) GetRefValueIDs(
 		return nil, fmt.Errorf("unable to get cca realm reference IDs: %w", err)
 	}
 	return append(pids, rids...), nil
+}
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query); err != nil {
+		return nil, err
+	}
+
+	var keys []string
+
+	switch q.Query.ArtifactType {
+	case coserv.ArtifactTypeReferenceValues:
+		s := q.Query.EnvironmentSelector
+
+		if s.Classes != nil {
+			for i, v := range *s.Classes {
+				implID, err := extractImplID(*v.Class)
+				if err != nil {
+					return nil, fmt.Errorf("creating lookup key for class[%d]: %w", i, err)
+				}
+
+				keys = append(keys, arm.RefValLookupKey(SchemeName, tenantID, implID))
+			}
+		}
+	case coserv.ArtifactTypeTrustAnchors:
+		s := q.Query.EnvironmentSelector
+
+		if s.Instances != nil {
+			for i, v := range *s.Instances {
+				instID, err := extractInstID(*v.Instance)
+				if err != nil {
+					return nil, fmt.Errorf("creating lookup key for instance[%d]: %w", i, err)
+				}
+
+				keys = append(keys, arm.TaCoservLookupKey(SchemeName, tenantID, instID))
+			}
+		}
+	case coserv.ArtifactTypeEndorsedValues:
+		return nil, errors.New("CCA does not implement endorsed value queries")
+	}
+
+	return keys, nil
+}
+
+func extractImplID(c comid.Class) (string, error) {
+	if c.ClassID == nil {
+		return "", errors.New("missing class-id")
+	}
+
+	implID, err := c.ClassID.GetImplID()
+	if err != nil {
+		return "", fmt.Errorf("could not extract implementation-id from class-id: %w", err)
+	}
+
+	return implID.String(), nil
+}
+
+func extractInstID(i comid.Instance) (string, error) {
+	instID, err := i.GetUEID()
+	if err != nil {
+		return "", fmt.Errorf("could not extract implementation-id from instance-id: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(instID), nil
 }

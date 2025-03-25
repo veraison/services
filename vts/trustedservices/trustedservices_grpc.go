@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/veraison/corim/coserv"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
@@ -44,11 +45,10 @@ const DummyTenantID = "0"
 //
 //   - TODO(tho) load balancing config
 //     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
 type GRPCConfig struct {
 	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
 	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
-	UseTLS	      bool     `mapstructure:"tls" config:"zerodefault"`
+	UseTLS        bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
@@ -61,13 +61,14 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore            kvstore.IKVStore
-	EnStore            kvstore.IKVStore
-	EvPluginManager    plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager   plugin.IManager[handler.IEndorsementHandler]
-	StorePluginManager plugin.IManager[handler.IStoreHandler]
-	PolicyManager      *policymanager.PolicyManager
-	EarSigner          earsigner.IEarSigner
+	TaStore                  kvstore.IKVStore
+	EnStore                  kvstore.IKVStore
+	EvPluginManager          plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
+	StorePluginManager       plugin.IManager[handler.IStoreHandler]
+	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	PolicyManager            *policymanager.PolicyManager
+	EarSigner                earsigner.IEarSigner
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -79,22 +80,24 @@ type GRPC struct {
 
 func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
-	evpluginManager plugin.IManager[handler.IEvidenceHandler],
-	endpluginManager plugin.IManager[handler.IEndorsementHandler],
-	storepluginManager plugin.IManager[handler.IStoreHandler],
+	evidencePluginManager plugin.IManager[handler.IEvidenceHandler],
+	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
+	storePluginManager plugin.IManager[handler.IStoreHandler],
+	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:            taStore,
-		EnStore:            enStore,
-		EvPluginManager:    evpluginManager,
-		EndPluginManager:   endpluginManager,
-		StorePluginManager: storepluginManager,
-		PolicyManager:      policyManager,
-		EarSigner:          earSigner,
-		logger:             logger,
+		TaStore:                  taStore,
+		EnStore:                  enStore,
+		EvPluginManager:          evidencePluginManager,
+		EndPluginManager:         endorsementPluginManager,
+		StorePluginManager:       storePluginManager,
+		CoservProxyPluginManager: coservProxyPluginManager,
+		PolicyManager:            policyManager,
+		EarSigner:                earSigner,
+		logger:                   logger,
 	}
 }
 
@@ -109,15 +112,16 @@ func (o *GRPC) Run() error {
 
 func (o *GRPC) Init(
 	v *viper.Viper,
-	evm plugin.IManager[handler.IEvidenceHandler],
-	endm plugin.IManager[handler.IEndorsementHandler],
-	stm plugin.IManager[handler.IStoreHandler],
+	evidenceManager plugin.IManager[handler.IEvidenceHandler],
+	endorsementManager plugin.IManager[handler.IEndorsementHandler],
+	storeManager plugin.IManager[handler.IStoreHandler],
+	coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
 ) error {
 	var err error
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -125,9 +129,10 @@ func (o *GRPC) Init(
 		return err
 	}
 
-	o.EvPluginManager = evm
-	o.EndPluginManager = endm
-	o.StorePluginManager = stm
+	o.EvPluginManager = evidenceManager
+	o.EndPluginManager = endorsementManager
+	o.StorePluginManager = storeManager
+	o.CoservProxyPluginManager = coservProxyManager
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -145,7 +150,7 @@ func (o *GRPC) Init(
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
-		creds, err :=  LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
 		if err != nil {
 			return err
 		}
@@ -177,6 +182,10 @@ func (o *GRPC) Close() error {
 
 	if err := o.StorePluginManager.Close(); err != nil {
 		o.logger.Errorf("store plugin manager shutdown failed: %v", err)
+	}
+
+	if err := o.CoservProxyPluginManager.Close(); err != nil {
+		o.logger.Errorf("coserv plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.TaStore.Close(); err != nil {
@@ -468,8 +477,8 @@ func (c *GRPC) initEvidenceContext(
 }
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
-
 	var taValues []string //nolint
+
 	for _, taID := range id {
 		values, err := c.TaStore.Get(taID)
 		if err != nil {
@@ -517,6 +526,104 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 	return &proto.PublicKey{
 		Key: bstring,
 	}, nil
+}
+
+func getEndorsementsError(err error) *proto.EndorsementQueryOut {
+	return &proto.EndorsementQueryOut{
+		Status: &proto.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
+}
+
+func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
+	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
+
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query.Query); err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	// select store based on the requested artefact type
+	var (
+		store     kvstore.IKVStore
+		storeName string
+	)
+	switch q.Query.ArtifactType {
+	case coserv.ArtifactTypeEndorsedValues:
+		return getEndorsementsError(
+			fmt.Errorf("endorsed value queries are not supported"),
+		), nil
+	case coserv.ArtifactTypeReferenceValues:
+		storeName = "reference-value"
+		store = o.EnStore
+	case coserv.ArtifactTypeTrustAnchors:
+		storeName = "trust-anchors"
+		store = o.TaStore
+	}
+
+	profile, err := q.Profile.Get()
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	// Look up a matching endorsement plugin
+	endorsementHandler, err := o.EndPluginManager.LookupByMediaType(fmt.Sprintf(`application/rim+cbor; profile=%q`, profile))
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	scheme := endorsementHandler.GetAttestationScheme()
+
+	storeHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	queryKeys, err := storeHandler.SynthCoservQueryKeys(DummyTenantID, query.Query)
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	var resultSet []string
+	for _, key := range queryKeys {
+		res, err := store.Get(key)
+		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
+			return getEndorsementsError(
+				fmt.Errorf("lookup %q in %s failed: %w", key, storeName, err),
+			), nil
+		}
+
+		resultSet = append(resultSet, res...)
+	}
+
+	coservResults, err := endorsementHandler.CoservRepackage(query.Query, resultSet)
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
+
+	return &proto.EndorsementQueryOut{
+		Status:    &proto.Status{Result: true},
+		ResultSet: coservResults,
+	}, nil
+
+	// TODO(tho) -- proxy logics
+	//
+	// handlerPlugin, err := o.CoservProxyPluginManager.LookupByMediaType(query.MediaType)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// resultSet, err := handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
+	// if err != nil {
+	// 	return getEndorsementsError(err), nil
+	// }
+
+	// return &proto.EndorsementQueryOut{
+	// 	Status:    &proto.Status{Result: true},
+	// 	ResultSet: resultSet,
+	// }, nil
 }
 
 func (o *GRPC) finalize(
@@ -592,7 +699,6 @@ func LoadTLSCreds(
 			return nil, fmt.Errorf("error reading CA cert in %s: %w", caPath, err)
 		}
 
-
 		if !certPool.AppendCertsFromPEM(caCertPEM) {
 			return nil, fmt.Errorf("invalid CA cert in %s", caPath)
 		}
@@ -600,10 +706,10 @@ func LoadTLSCreds(
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		RootCAs: certPool,
-		ClientCAs: certPool,
-		MinVersion: tls.VersionTLS12,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		RootCAs:      certPool,
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil

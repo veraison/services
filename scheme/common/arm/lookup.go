@@ -35,6 +35,16 @@ func TaLookupKey(schemeName, tenantID, implID, instID string) string {
 	return u.String()
 }
 
+func TaCoservLookupKey(schemeName, tenantID, instID string) string {
+	u := url.URL{
+		Scheme: schemeName,
+		Host:   tenantID,
+		Path:   instID,
+	}
+
+	return u.String()
+}
+
 func MustImplIDString(c psatoken.IClaims) string {
 	v, err := c.GetImplID()
 	if err != nil {

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 arch=$(arch)
-req_go_version="1.22.0"
+req_go_version="1.23.0"
 install_go="no"
 go_pkg=""
 step_pkg=""

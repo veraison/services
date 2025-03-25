@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -116,9 +116,17 @@ func (s *StoreRPCServer) GetRefValueIDs(args GetRefValueIDsArgs, resp *[]string)
 	}
 
 	*resp, err = s.Impl.GetRefValueIDs(args.TenantID, args.TrustAnchors, claims)
-	if err != nil {
-		return err
-	}
+
+	return err
+}
+
+type SynthCoservQueryKeysArgs struct {
+	TenantID string
+	Query    string
+}
+
+func (s *StoreRPCServer) SynthCoservQueryKeys(args SynthCoservQueryKeysArgs, resp *[]string) (err error) {
+	*resp, err = s.Impl.SynthCoservQueryKeys(args.TenantID, args.Query)
 
 	return err
 }
@@ -186,7 +194,7 @@ func (c StoreRPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, refVal *Endorsement) ([]string, error) {
+func (c *StoreRPCClient) SynthKeysFromRefValue(tenantID string, refVal *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -200,7 +208,7 @@ func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, refVal *Endorsem
 		return nil, fmt.Errorf("marshaling reference value: %w", err)
 	}
 
-	err = s.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)
+	err = c.client.Call("Plugin.SynthKeysFromRefValue", args, &resp)
 	if err != nil {
 		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.SynthKeysFromRefValue RPC call failed: %w", err) // nolint
@@ -209,7 +217,7 @@ func (s *StoreRPCClient) SynthKeysFromRefValue(tenantID string, refVal *Endorsem
 	return resp, nil
 }
 
-func (s *StoreRPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
+func (c *StoreRPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorsement) ([]string, error) {
 	var (
 		err  error
 		resp []string
@@ -223,7 +231,7 @@ func (s *StoreRPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorseme
 		return nil, fmt.Errorf("marshaling trust anchor: %w", err)
 	}
 
-	err = s.client.Call("Plugin.SynthKeysFromTrustAnchor", args, &resp)
+	err = c.client.Call("Plugin.SynthKeysFromTrustAnchor", args, &resp)
 	if err != nil {
 		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.SynthKeysFromTrustAnchor RPC call failed: %w", err) // nolint
@@ -232,7 +240,7 @@ func (s *StoreRPCClient) SynthKeysFromTrustAnchor(tenantID string, ta *Endorseme
 	return resp, nil
 }
 
-func (s *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
+func (c *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	var (
 		err  error
 		data []byte
@@ -244,7 +252,7 @@ func (s *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]str
 		return []string{""}, fmt.Errorf("marshaling token: %w", err)
 	}
 
-	err = s.client.Call("Plugin.GetTrustAnchorIDs", data, &resp)
+	err = c.client.Call("Plugin.GetTrustAnchorIDs", data, &resp)
 	if err != nil {
 		err = ParseError(err)
 		return []string{""}, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
@@ -253,7 +261,7 @@ func (s *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]str
 	return resp, nil
 }
 
-func (s *StoreRPCClient) GetRefValueIDs(
+func (c *StoreRPCClient) GetRefValueIDs(
 	tenantID string,
 	trustAnchors []string,
 	claims map[string]interface{},
@@ -273,10 +281,23 @@ func (s *StoreRPCClient) GetRefValueIDs(
 		return nil, err
 	}
 
-	err = s.client.Call("Plugin.GetRefValueIDs", args, &resp)
+	err = c.client.Call("Plugin.GetRefValueIDs", args, &resp)
 	if err != nil {
 		err = ParseError(err)
 		return nil, fmt.Errorf("Plugin.GetRefValueIDs RPC call failed: %w", err) // nolint
+	}
+
+	return resp, nil
+}
+
+func (c *StoreRPCClient) SynthCoservQueryKeys(
+	tenantID string,
+	query string,
+) (resp []string, err error) {
+	args := SynthCoservQueryKeysArgs{TenantID: tenantID, Query: query}
+
+	if err = c.client.Call("Plugin.SynthCoservQueryKeys", args, &resp); err != nil {
+		return nil, fmt.Errorf("Plugin.SynthCoservQueryKeys RPC call failed: %w", ParseError(err))
 	}
 
 	return resp, nil

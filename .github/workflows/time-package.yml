@@ -16,9 +16,9 @@ jobs:
       GO111MODULE: on
       CI_PIPELINE: true
     steps:
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.23"
           cache: false
       - name: Checkout code
         uses: actions/checkout@v4
