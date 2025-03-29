@@ -1,16 +1,28 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package tpm_enacttrust
 
 import (
+	"crypto/x509"
+	"fmt"
+
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
 )
 
-type EndorsementHandler struct{}
+type EndorsementHandler struct {
+	caPool *x509.CertPool
+}
 
 func (o EndorsementHandler) Init(params handler.EndorsementHandlerParams) error {
-	return nil // no-op
+	// Extract CA certificates from params
+	if caCerts, ok := params["ca_certs"].([]*x509.Certificate); ok {
+		o.caPool = x509.NewCertPool()
+		for _, cert := range caCerts {
+			o.caPool.AddCert(cert)
+		}
+	}
+	return nil
 }
 
 func (o EndorsementHandler) Close() error {
@@ -18,7 +30,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "unsigned-corim (TPM EnactTrust profile)"
+	return "corim (EnactTrust TPM profile)"
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {
@@ -29,6 +41,16 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 	return EndorsementMediaTypes
 }
 
-func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return common.UnsignedCorimDecoder(data, &Extractor{})
+func (o EndorsementHandler) Decode(data []byte, mediaType string) (*handler.EndorsementHandlerResponse, error) {
+	switch mediaType {
+	case "application/rim+cbor":
+		return common.UnsignedCorimDecoder(data, &Extractor{})
+	case "application/rim+cose":
+		if o.caPool == nil {
+			return nil, fmt.Errorf("CA certificate pool not initialized")
+		}
+		return common.SignedCorimDecoder(data, &Extractor{}, o.caPool)
+	default:
+		return nil, fmt.Errorf("unsupported media type: %s", mediaType)
+	}
 }

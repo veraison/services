@@ -22,6 +22,8 @@ type IEndorsementHandler interface {
 	// Close the decoder, finalizing any state it may contain.
 	Close() error
 
-	// Decode the endorsements from the provided []byte.
-	Decode([]byte) (*EndorsementHandlerResponse, error)
+	// Decode the endorsements from the provided []byte. The mediaType parameter
+	// specifies the format of the input data (e.g. "application/rim+cbor" for
+	// unsigned CoRIMs or "application/rim+cose" for signed CoRIMs).
+	Decode([]byte, string) (*EndorsementHandlerResponse, error)
 }
