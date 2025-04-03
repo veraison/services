@@ -673,7 +673,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Path: /
-      PermissionsBoundary: arn:aws:iam::775539126253:policy/ProjAdminsPermBoundaryv2
+      PermissionsBoundary: !Ref PermissionBoundaryArn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
       Policies:
