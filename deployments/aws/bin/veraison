@@ -904,7 +904,6 @@ class CreateSupportStackCommand(BaseCommand):
         # warry about correctrly escaping everything at every stage. Using a longer string
         # to compensate.
         password = randomword(40)
-        self.cache['postgres_admin_password'] = password
 
         extra_params = [
             {'ParameterKey': 'VpcId', 'ParameterValue': vpc_id},
@@ -923,6 +922,8 @@ class CreateSupportStackCommand(BaseCommand):
 
         command_create_stack(cmd, args.deployment_name, 'support',
                              template_path, extra_params, args.wait_period)
+
+        self.cache['postgres_admin_password'] = password
 
 
 class CreateServicesStackCommand(BaseCommand):
