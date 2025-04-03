@@ -69,7 +69,10 @@ class Aws:
     }
 
     def __init__(self, **kwargs):
-        self.session = boto3.Session(**kwargs)
+        if kwargs:
+            self.session = boto3.Session(**kwargs)
+        else:
+            self.session = boto3
         self.clients = {}
 
     def close(self):
