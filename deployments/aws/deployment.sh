@@ -168,7 +168,7 @@ function bringup() {
 function teardown() {
 	set +e
 	veraison delete-stack services
-	veraison delete-stack rds
+	veraison delete-stack support
 	veraison delete-stack vpc
 
 	veraison delete-image keycloak
