@@ -102,9 +102,9 @@ func (s *StoreRPCServer) GetTrustAnchorIDs(data []byte, resp *[]string) error {
 }
 
 type GetRefValueIDsArgs struct {
-	TenantID string
+	TenantID     string
 	TrustAnchors []string
-	Claims []byte
+	Claims       []byte
 }
 
 func (s *StoreRPCServer) GetRefValueIDs(args GetRefValueIDsArgs, resp *[]string) error {
@@ -259,12 +259,12 @@ func (s *StoreRPCClient) GetRefValueIDs(
 	claims map[string]interface{},
 ) ([]string, error) {
 	var (
-		err error
+		err  error
 		resp []string
 	)
 
 	args := GetRefValueIDsArgs{
-		TenantID: tenantID,
+		TenantID:     tenantID,
 		TrustAnchors: trustAnchors,
 	}
 
