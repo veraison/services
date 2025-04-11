@@ -146,7 +146,7 @@ func GetBuiltinHandleByAttestationSchemeUsing[I plugin.IPluggable](
 		if ictx.GetAttestationScheme() != scheme {
 			continue
 		}
-		ldr.logger.Debugw("found plugin implenting scheme",
+		ldr.logger.Debugw("found plugin implementing scheme",
 			"plugin", name, "scheme", scheme)
 
 		impl, ok = ictx.(I)
@@ -158,7 +158,7 @@ func GetBuiltinHandleByAttestationSchemeUsing[I plugin.IPluggable](
 
 	if !found {
 		return *new(I), fmt.Errorf( // nolint:gocritic
-			"could not find plugin providing schdme %q and implementing interface %s",
+			"could not find plugin providing scheme %q and implementing interface %s",
 			scheme, iface)
 	}
 
