@@ -1,6 +1,7 @@
 # Copyright 2023-2024 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 import ast
+import json
 import os
 import shutil
 
@@ -35,14 +36,26 @@ def generate_cca_end_to_end_endorsements(test):
 
     scheme = test.test_vars['scheme']
     spec = test.test_vars['endorsements']
+    corim_type = test.test_vars.get('corim_type', 'unsigned')
+    
     # first construct platform templates
     corim_template_name = 'corim-{}-platform-{}.json'.format(scheme, spec)
     corim_template = f'data/endorsements/{corim_template_name}'
     tag = ["refval", "ta"]
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in tag[0:]]
-    output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, output_path)
+    
+    # Generate unsigned CoRIM
+    unsigned_output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.cbor'
+    generate_corim(corim_template, comid_templates, unsigned_output_path)
+    
+    # If signed CoRIM is requested, sign it
+    if corim_type == 'signed':
+        # sign the CoRIM
+        signed_output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.signed.cbor'
+        sign_corim(unsigned_output_path, signed_output_path)
+        # Use the signed CoRIM as the output
+        shutil.copyfile(signed_output_path, unsigned_output_path)
 
     # next realm templates
     corim_template_name = 'corim-{}-realm-{}.json'.format(scheme, spec)
@@ -50,8 +63,17 @@ def generate_cca_end_to_end_endorsements(test):
     tag = ["refval"]
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in tag[0:]]
-    output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, output_path)
+    
+    # Generate unsigned CoRIM
+    unsigned_output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
+    generate_corim(corim_template, comid_templates, unsigned_output_path)
+
+    if corim_type == 'signed':
+        # sign the CoRIM
+        signed_output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.signed.cbor'
+        sign_corim(unsigned_output_path, signed_output_path)
+        # Use the signed CoRIM as the output
+        shutil.copyfile(signed_output_path, unsigned_output_path)
 
 
 def generate_artefacts_from_response(response, scheme, evidence, signing, keys, expected):
@@ -208,6 +230,36 @@ def generate_corim(corim_template, comid_templates, output_path):
             [f'--comid={cf}' for cf in comid_files]
     )
     run_command(corim_create_cmd, 'generate CoRIM')
+
+
+def sign_corim(unsigned_corim_path, signed_corim_path):
+    meta_file = f'{GENDIR}/meta.json'
+    meta_content = {
+        "signer": {
+            "name": "Veraison Test Signer",
+            "uri": "https://veraison.example/test-signer",
+            "id": "Veraison Test Signer"
+        }
+    }
+    
+    with open(meta_file, 'w') as f:
+        json.dump(meta_content, f, indent=2)
+    
+    key_file = 'data/keys/certs/endEntity.jwk'
+    cert_file = 'data/keys/certs/endEntity.der'
+    int_cert_file = 'data/keys/certs/intermediateCA.der'
+    
+    # Sign the CoRIM using cocli
+    sign_cmd = (
+        f'cocli corim sign '
+        f'--file={unsigned_corim_path} '
+        f'--key={key_file} '
+        f'--cert={cert_file} '
+        f'--intermediates={int_cert_file} '
+        f'--meta={meta_file} '
+        f'--output={signed_corim_path}'
+    )
+    run_command(sign_cmd, 'sign CoRIM')
 
 
 def generate_psa_evidence_token(claims_file, key_file, token_file):

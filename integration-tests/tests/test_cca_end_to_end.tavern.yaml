@@ -22,8 +22,11 @@ marks:
         - expected
         # Indicates which nonce configurations ought to be used.
         - nonce
+        # Indicates whether to use signed or unsigned CoRIM
+        - corim_type
       vals:
-        - [cca, _, good, full, ccakeys, good, nonce64]
+        - [cca, _, good, full, ccakeys, good, nonce64, unsigned]
+        - [cca, _, good, full, ccakeys, good, nonce64, signed]
 
 includes:
   - !include common.yaml
@@ -34,7 +37,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"'
+        content-type: '{platform-en-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-platform-{endorsements}.cbor
     response:
@@ -45,7 +48,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/realm/1"'
+        content-type: '{realm-en-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-realm-{endorsements}.cbor
     response:

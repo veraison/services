@@ -23,6 +23,8 @@ vts:
   tls: true
   cert: /opt/veraison/vts.crt
   cert-key: /opt/veraison/vts.key
+  ca-certs:
+    - /usr/local/share/ca-certificates/corim-ca.crt
 ear-signer:
   alg: ES256
   key: skey.jwk
