@@ -47,7 +47,7 @@ func TestDecoder_Decode_empty_data(t *testing.T) {
 
 	expectedErr := `empty data`
 
-	_, err := d.Decode(emptyData)
+	_, err := d.Decode(emptyData, "", nil)
 
 	assert.EqualError(t, err, expectedErr)
 }
@@ -59,7 +59,7 @@ func TestDecoder_Decode_invalid_data(t *testing.T) {
 
 	expectedErr := `CBOR decoding failed: expected map (CBOR Major Type 5), found Major Type 3`
 
-	_, err := d.Decode(invalidCbor)
+	_, err := d.Decode(invalidCbor, "", nil)
 
 	assert.EqualError(t, err, expectedErr)
 }
@@ -73,7 +73,7 @@ func TestDecoder_Decode_CcaSsdRefVal_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		_, err := d.Decode(tv)
+		_, err := d.Decode(tv, "", nil)
 		assert.NoError(t, err)
 	}
 }
@@ -98,7 +98,7 @@ func TestDecoder_Decode_CCaSsdRefVal_NOK(t *testing.T) {
 
 	for _, tv := range tvs {
 		d := &EndorsementHandler{}
-		_, err := d.Decode(tv.input)
+		_, err := d.Decode(tv.input, "", nil)
 		assert.EqualError(t, err, tv.expectedErr)
 	}
 }
@@ -112,7 +112,7 @@ func TestDecoder_DecodeCcaRealm_OK(t *testing.T) {
 	d := &EndorsementHandler{}
 
 	for _, tv := range tvs {
-		_, err := d.Decode(tv)
+		_, err := d.Decode(tv, "", nil)
 		assert.NoError(t, err)
 	}
 }
@@ -141,9 +141,9 @@ func TestDecoder_DecodeCcaRealm_negative_tests(t *testing.T) {
 	}
 
 	for _, tv := range tvs {
-		t.Run(tv.desc, func (t *testing.T) {
+		t.Run(tv.desc, func(t *testing.T) {
 			d := &EndorsementHandler{}
-			_, err := d.Decode(tv.input)
+			_, err := d.Decode(tv.input, "", nil)
 			assert.EqualError(t, err, tv.expectedErr)
 		})
 	}

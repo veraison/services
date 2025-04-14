@@ -3,6 +3,7 @@
 package trustedservices
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -44,11 +45,10 @@ const DummyTenantID = "0"
 //
 //   - TODO(tho) load balancing config
 //     See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-//
 type GRPCConfig struct {
 	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
 	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
-	UseTLS	      bool     `mapstructure:"tls" config:"zerodefault"`
+	UseTLS       bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
@@ -68,6 +68,7 @@ type GRPC struct {
 	StorePluginManager plugin.IManager[handler.IStoreHandler]
 	PolicyManager      *policymanager.PolicyManager
 	EarSigner          earsigner.IEarSigner
+	CACertsPEM         [][]byte
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -117,7 +118,7 @@ func (o *GRPC) Init(
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -142,6 +143,12 @@ func (o *GRPC) Init(
 	}
 
 	var opts []grpc.ServerOption
+
+	certsPEM, err := LoadCACerts(cfg.CACerts)
+	if err != nil {
+		return err
+	}
+	o.CACertsPEM = certsPEM
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
@@ -219,7 +226,17 @@ func (o *GRPC) SubmitEndorsements(ctx context.Context, req *proto.SubmitEndorsem
 		return nil, err
 	}
 
-	rsp, err := handlerPlugin.Decode(req.Data)
+	// Serialize the CA cert pool for transmission if it's a signed CoRIM
+	var caCertPoolBytes []byte
+	if strings.Contains(req.MediaType, "corim-signed") && len(o.CACertsPEM) != 0 {
+		var err error
+		caCertPoolBytes, err = SerializeCertPEMBytes(o.CACertsPEM)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	rsp, err := handlerPlugin.Decode(req.Data, req.MediaType, caCertPoolBytes)
 	if err != nil {
 		return submitEndorsementErrorResponse(err), nil
 	}
@@ -592,7 +609,6 @@ func LoadTLSCreds(
 			return nil, fmt.Errorf("error reading CA cert in %s: %w", caPath, err)
 		}
 
-
 		if !certPool.AppendCertsFromPEM(caCertPEM) {
 			return nil, fmt.Errorf("invalid CA cert in %s", caPath)
 		}
@@ -600,11 +616,52 @@ func LoadTLSCreds(
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		RootCAs: certPool,
-		ClientCAs: certPool,
-		MinVersion: tls.VersionTLS12,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		RootCAs:      certPool,
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return credentials.NewTLS(config), nil
+}
+
+// LoadCaCerts loads and validates CA certificates from file paths
+func LoadCACerts(paths []string) ([][]byte, error) {
+	if len(paths) == 0 {
+		return [][]byte{}, nil
+	}
+
+	certsPEM := [][]byte{}
+
+	for _, path := range paths {
+		certPEM, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("error reading cert in %s: %w", path, err)
+		}
+
+		tempPool := x509.NewCertPool()
+		if !tempPool.AppendCertsFromPEM(certPEM) {
+			return nil, fmt.Errorf("invalid cert in %s", path)
+		}
+
+		certsPEM = append(certsPEM, certPEM)
+	}
+
+	return certsPEM, nil
+}
+
+// SerializeCertPEMBytes converts the CA certificate pool to PEM format for transmission
+func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
+	if len(certPEMs) == 0 {
+		return []byte{}, nil
+	}
+
+	var allPEM bytes.Buffer
+	for _, pemData := range certPEMs {
+		if _, err := allPEM.Write(pemData); err != nil {
+			return nil, fmt.Errorf("failed to write certificate data: %w", err)
+		}
+	}
+
+	return allPEM.Bytes(), nil
 }

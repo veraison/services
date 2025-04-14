@@ -22,6 +22,6 @@ type IEndorsementHandler interface {
 	// Close the decoder, finalizing any state it may contain.
 	Close() error
 
-	// Decode the endorsements from the provided []byte.
-	Decode([]byte) (*EndorsementHandlerResponse, error)
+	// Decode the endorsements from the provided []byte with specified media type.
+	Decode(data []byte, mediaType string, caCertPool []byte) (*EndorsementHandlerResponse, error)
 }

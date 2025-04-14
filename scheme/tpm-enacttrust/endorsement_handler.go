@@ -3,6 +3,8 @@
 package tpm_enacttrust
 
 import (
+	"strings"
+
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
 )
@@ -18,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "unsigned-corim (TPM EnactTrust profile)"
+	return "corim (TPM EnactTrust profile)"
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {
@@ -29,6 +31,14 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 	return EndorsementMediaTypes
 }
 
-func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return common.UnsignedCorimDecoder(data, &Extractor{})
+func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []byte) (*handler.EndorsementHandlerResponse, error) {
+	extractor := &Extractor{}
+
+	// Choose decoder based on media type
+	if strings.Contains(mediaType, "corim-signed") {
+		return common.SignedCorimDecoder(data, extractor, caCertPool)
+	}
+
+	// Default to unsigned CoRIM decoder
+	return common.UnsignedCorimDecoder(data, extractor)
 }
