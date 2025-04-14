@@ -55,8 +55,18 @@ func (s *EndorsementRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]
 	return nil
 }
 
-func (s EndorsementRPCServer) Decode(data []byte, resp *[]byte) error {
-	j, err := s.Impl.Decode(data)
+func (s EndorsementRPCServer) Decode(args []byte, resp *[]byte) error {
+	var decodeArgs struct {
+		Data       []byte
+		MediaType  string
+		CACertPool []byte
+	}
+
+	if err := json.Unmarshal(args, &decodeArgs); err != nil {
+		return fmt.Errorf("failed to unmarshal decode arguments: %w", err)
+	}
+
+	j, err := s.Impl.Decode(decodeArgs.Data, decodeArgs.MediaType, decodeArgs.CACertPool)
 	if err != nil {
 		return fmt.Errorf("plugin %q returned error: %w", s.Impl.GetName(), err)
 	}
@@ -138,14 +148,29 @@ func (c EndorsementRPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
-func (c EndorsementRPCClient) Decode(data []byte) (*EndorsementHandlerResponse, error) {
+func (c EndorsementRPCClient) Decode(data []byte, mediaType string, caCertPool []byte) (*EndorsementHandlerResponse, error) {
 	var (
 		err  error
 		resp EndorsementHandlerResponse
 		j    []byte
 	)
 
-	err = c.client.Call("Plugin.Decode", data, &j)
+	decodeArgs := struct {
+		Data       []byte
+		MediaType  string
+		CACertPool []byte
+	}{
+		Data:       data,
+		MediaType:  mediaType,
+		CACertPool: caCertPool,
+	}
+
+	args, err := json.Marshal(decodeArgs)
+	if err != nil {
+		return nil, fmt.Errorf("failed marshaling RPC arguments: %w", err)
+	}
+
+	err = c.client.Call("Plugin.Decode", args, &j)
 	if err != nil {
 		return nil, fmt.Errorf("RPC server returned error: %w", err)
 	}

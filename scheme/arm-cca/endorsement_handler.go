@@ -3,6 +3,8 @@
 package arm_cca
 
 import (
+	"mime"
+
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
 )
@@ -18,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "unsigned-corim (CCA platform profile)"
+	return "corim (CCA platform profile)"
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {
@@ -29,6 +31,21 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 	return EndorsementMediaTypes
 }
 
-func (o EndorsementHandler) Decode(data []byte) (*handler.EndorsementHandlerResponse, error) {
-	return common.UnsignedCorimDecoder(data, &CorimExtractor{})
+func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []byte) (*handler.EndorsementHandlerResponse, error) {
+	extractor := &CorimExtractor{}
+
+	if mediaType != "" {
+		mt, _, err := mime.ParseMediaType(mediaType)
+		if err != nil {
+			return nil, err
+		}
+
+		// Use signed decoder for signed CoRIM
+		if mt == "application/rim+cose" {
+			return common.SignedCorimDecoder(data, extractor, caCertPool)
+		}
+	}
+
+	// Default to unsigned CoRIM decoder
+	return common.UnsignedCorimDecoder(data, extractor)
 }

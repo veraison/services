@@ -15,6 +15,7 @@ import (
 func UnsignedCorimDecoder(
 	data []byte,
 	xtr IExtractor,
+	signerThumbprint ...string,
 ) (*handler.EndorsementHandlerResponse, error) {
 	if len(data) == 0 {
 		return nil, errors.New("empty data")

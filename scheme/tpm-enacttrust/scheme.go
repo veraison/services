@@ -6,7 +6,10 @@ const SchemeName = "TPM_ENACTTRUST"
 
 var (
 	EndorsementMediaTypes = []string{
+		// Unsigned CoRIM profiles
 		`application/corim-unsigned+cbor; profile="http://enacttrust.com/veraison/1.0.0"`,
+		// Signed CoRIM profiles
+		`application/rim+cose; profile="http://enacttrust.com/veraison/1.0.0"`,
 	}
 
 	EvidenceMediaTypes = []string{
