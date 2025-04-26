@@ -119,7 +119,7 @@ func (o *GRPC) Init(
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS:        true,
+		UseTLS: true,
 	}
 
 	loader := config.NewLoader(&cfg)
