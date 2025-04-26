@@ -34,15 +34,16 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []byte) (*handler.EndorsementHandlerResponse, error) {
 	extractor := &ParsecCcaExtractor{}
 
-	// Parse the media type
-	mt, _, err := mime.ParseMediaType(mediaType)
-	if err != nil {
-		return nil, err
-	}
+	if mediaType != "" {
+		mt, _, err := mime.ParseMediaType(mediaType)
+		if err != nil {
+			return nil, err
+		}
 
-	// Choose decoder based on media type
-	if mt == "application/rim+cose" {
-		return common.SignedCorimDecoder(data, extractor, caCertPool)
+		// Use signed decoder for signed CoRIM
+		if mt == "application/rim+cose" {
+			return common.SignedCorimDecoder(data, extractor, caCertPool)
+		}
 	}
 
 	// Default to unsigned CoRIM decoder
