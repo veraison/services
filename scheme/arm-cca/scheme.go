@@ -10,8 +10,8 @@ var (
 		`application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"`,
 		`application/corim-unsigned+cbor; profile="http://arm.com/cca/realm/1"`,
 		// Signed CoRIM profiles
-		`application/corim-signed+cbor; profile="http://arm.com/cca/ssd/1"`,
-		`application/corim-signed+cbor; profile="http://arm.com/cca/realm/1"`,
+		`application/rim+cose; profile="http://arm.com/cca/ssd/1"`,
+		`application/rim+cose; profile="http://arm.com/cca/realm/1"`,
 	}
 
 	EvidenceMediaTypes = []string{

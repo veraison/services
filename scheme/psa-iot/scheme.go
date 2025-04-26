@@ -10,7 +10,7 @@ var EndorsementMediaTypes = []string{
 	// Unsigned CoRIM profile
 	`application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"`,
 	// Signed CoRIM profile
-	`application/corim-signed+cbor; profile="http://arm.com/psa/iot/1"`,
+	`application/rim+cose; profile="http://arm.com/psa/iot/1"`,
 }
 
 var EvidenceMediaTypes = []string{

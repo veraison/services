@@ -3,7 +3,7 @@
 package tpm_enacttrust
 
 import (
-	"strings"
+	"mime"
 
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common"
@@ -34,8 +34,14 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []byte) (*handler.EndorsementHandlerResponse, error) {
 	extractor := &Extractor{}
 
+	// Parse the media type
+	mt, _, err := mime.ParseMediaType(mediaType)
+	if err != nil {
+		return nil, err
+	}
+
 	// Choose decoder based on media type
-	if strings.Contains(mediaType, "corim-signed") {
+	if mt == "application/rim+cose" {
 		return common.SignedCorimDecoder(data, extractor, caCertPool)
 	}
 

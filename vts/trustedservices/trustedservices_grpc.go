@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net"
 	"os"
 	"strings"
@@ -48,7 +49,7 @@ const DummyTenantID = "0"
 type GRPCConfig struct {
 	ServerAddress string   `mapstructure:"server-addr" valid:"dialstring"`
 	ListenAddress string   `mapstructure:"listen-addr" valid:"dialstring" config:"zerodefault"`
-	UseTLS       bool     `mapstructure:"tls" config:"zerodefault"`
+	UseTLS        bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
@@ -144,15 +145,21 @@ func (o *GRPC) Init(
 
 	var opts []grpc.ServerOption
 
-	certsPEM, err := LoadCACerts(cfg.CACerts)
-	if err != nil {
-		return err
+	var certsPEM [][]byte
+	if len(cfg.CACerts) > 0 {
+		var err error
+		certsPEM, err = LoadCACerts(cfg.CACerts)
+		if err != nil {
+			return err
+		}
+	} else {
+		certsPEM = [][]byte{}
 	}
 	o.CACertsPEM = certsPEM
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
-		creds, err :=  LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
 		if err != nil {
 			return err
 		}
@@ -228,7 +235,11 @@ func (o *GRPC) SubmitEndorsements(ctx context.Context, req *proto.SubmitEndorsem
 
 	// Serialize the CA cert pool for transmission if it's a signed CoRIM
 	var caCertPoolBytes []byte
-	if strings.Contains(req.MediaType, "corim-signed") && len(o.CACertsPEM) != 0 {
+	mt, _, err := mime.ParseMediaType(req.MediaType)
+	if err != nil {
+		return nil, err
+	}
+	if mt == "application/rim+cose" && len(o.CACertsPEM) != 0 {
 		var err error
 		caCertPoolBytes, err = SerializeCertPEMBytes(o.CACertsPEM)
 		if err != nil {
@@ -627,10 +638,6 @@ func LoadTLSCreds(
 
 // LoadCaCerts loads and validates CA certificates from file paths
 func LoadCACerts(paths []string) ([][]byte, error) {
-	if len(paths) == 0 {
-		return [][]byte{}, nil
-	}
-
 	certsPEM := [][]byte{}
 
 	for _, path := range paths {

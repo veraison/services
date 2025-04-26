@@ -1,14 +1,29 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
+
 package common
 
 import (
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/services/handler"
 )
+
+// calculateCertThumbprint computes the SHA-256 thumbprint of an X.509 certificate
+func calculateCertThumbprint(cert *x509.Certificate) (string, error) {
+	if cert == nil {
+		return "", fmt.Errorf("certificate is nil")
+	}
+
+	thumbprint := sha256.Sum256(cert.Raw)
+	hexStr := hex.EncodeToString(thumbprint[:])
+
+	return hexStr, nil
+}
 
 // SignedCorimDecoder processes a signed CoRIM, verifies its signature, and then
 // passes the unsigned CoRIM to the UnsignedCorimDecoder for further processing.
@@ -31,22 +46,19 @@ func SignedCorimDecoder(
 		return nil, fmt.Errorf("no signing certificate found in the CoRIM")
 	}
 
+	rootCertPool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("could not load system certificates: %w", err)
+	}
+
 	// CA certs must be provided for verification
 	if len(caCertPoolPEM) == 0 {
 		return nil, fmt.Errorf("no CA certificates available for verification")
 	}
 
-	// Load CA certificates from PEM into a certificate pool
-	rootCertPool := x509.NewCertPool()
-
 	// Add the CA certificates from the provided PEM data
 	if !rootCertPool.AppendCertsFromPEM(caCertPoolPEM) {
-		// Also try to parse as DER format
-		cert, err := x509.ParseCertificate(caCertPoolPEM)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse CA certificates (neither PEM nor DER format)")
-		}
-		rootCertPool.AddCert(cert)
+		return nil, fmt.Errorf("failed to parse and append CA certificates from the cert pool")
 	}
 
 	// Create a separate pool for intermediate certificates
@@ -62,7 +74,7 @@ func SignedCorimDecoder(
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 	}
 
-	_, err := sc.SigningCert.Verify(verifyOpts)
+	_, err = sc.SigningCert.Verify(verifyOpts)
 	if err != nil {
 		return nil, fmt.Errorf("certificate chain verification failed: %w", err)
 	}
@@ -77,5 +89,11 @@ func SignedCorimDecoder(
 		return nil, fmt.Errorf("failed to extract unsigned CoRIM: %w", err)
 	}
 
-	return UnsignedCorimDecoder(unsignedCorimCBOR, xtr)
+	// Calculate the signing certificate thumbprint
+	thumbprint, err := calculateCertThumbprint(sc.SigningCert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate certificate thumbprint: %w", err)
+	}
+
+	return UnsignedCorimDecoder(unsignedCorimCBOR, xtr, thumbprint)
 }

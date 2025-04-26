@@ -20,4 +20,5 @@ type Endorsement struct {
 type EndorsementHandlerResponse struct {
 	ReferenceValues []Endorsement
 	TrustAnchors    []Endorsement
+	SignerInfo      map[string]string
 }

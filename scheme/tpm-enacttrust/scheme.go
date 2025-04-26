@@ -9,7 +9,7 @@ var (
 		// Unsigned CoRIM profiles
 		`application/corim-unsigned+cbor; profile="http://enacttrust.com/veraison/1.0.0"`,
 		// Signed CoRIM profiles
-		`application/corim-signed+cbor; profile="http://enacttrust.com/veraison/1.0.0"`,
+		`application/rim+cose; profile="http://enacttrust.com/veraison/1.0.0"`,
 	}
 
 	EvidenceMediaTypes = []string{

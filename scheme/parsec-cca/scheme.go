@@ -11,7 +11,7 @@ var EndorsementMediaTypes = []string{
 	// Unsigned CoRIM profile
 	`application/corim-unsigned+cbor; profile=` + EndorsementProfile,
 	// Signed CoRIM profile
-	`application/corim-signed+cbor; profile=` + EndorsementProfile,
+	`application/rim+cose; profile=` + EndorsementProfile,
 }
 
 var EvidenceMediaTypes = []string{
