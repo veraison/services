@@ -34,11 +34,11 @@ def generate_cca_end_to_end_endorsements(test):
     os.makedirs(f'{GENDIR}/endorsements', exist_ok=True)
 
     scheme = test.test_vars['scheme']
-    profile = test.test_vars['profile']
     spec = test.test_vars['endorsements']
+    media_type = test.test_vars['media_type']
     
-    # Check if we're using a signed CoRIM based on the profile
-    is_signed = profile == 'signed'
+    # Check if we're using a signed CoRIM based on the media_type
+    is_signed = media_type == 'signed'
     
     # first construct platform templates
     corim_template_name = 'corim-{}-platform-{}.json'.format(scheme, spec)

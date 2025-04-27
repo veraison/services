@@ -8,7 +8,7 @@ marks:
         - scheme
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
-        # as '_'. For CCA, we use this to indicate signed vs. unsigned CoRIM
+        # as '_'.
         - profile
         # Which evidence description will be used to construct the evidence token.
         - evidence
@@ -22,9 +22,11 @@ marks:
         - expected
         # Indicates which nonce configurations ought to be used.
         - nonce
+        # Indicates whether to use signed or unsigned CoRIM
+        - media_type
       vals:
-        - [cca, _, good, full, ccakeys, good, nonce64]
-        - [cca, signed, good, full, ccakeys, good, nonce64]
+        - [cca, _, good, full, ccakeys, good, nonce64, unsigned]
+        - [cca, _, good, full, ccakeys, good, nonce64, signed]
 
 includes:
   - !include common.yaml
@@ -52,7 +54,7 @@ stages:
     response:
       status_code: 200
     # Skip this step for signed CoRIM tests
-    skip: !fn format_str: "{profile}" == "signed"
+    skip: !fn format_str: "{media_type}" == "signed"
   - name: verify as relying party - creation of session resource
     request:
       method: POST

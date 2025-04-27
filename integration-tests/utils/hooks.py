@@ -82,7 +82,17 @@ def _set_content_types(test, variables):
     profile = test.test_vars['profile']
     ends_content_types = test.common_vars['endorsements-content-types']
     ev_content_types = test.common_vars['evidence-content-types']
-    variables['endorsements-content-type'] = ends_content_types[f'{scheme}.{profile}']
+    
+    # For CCA scheme, use media_type to determine the correct content type
+    if scheme == 'cca' and 'media_type' in test.test_vars:
+        media_type = test.test_vars['media_type']
+        if media_type == 'signed':
+            variables['endorsements-content-type'] = ends_content_types['cca.signed']
+        else:
+            variables['endorsements-content-type'] = ends_content_types[f'{scheme}.{profile}']
+    else:
+        variables['endorsements-content-type'] = ends_content_types[f'{scheme}.{profile}']
+        
     variables['evidence-content-type'] = ev_content_types[f'{scheme}.{profile}']
 
 
