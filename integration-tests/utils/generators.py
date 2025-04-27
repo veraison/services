@@ -34,7 +34,12 @@ def generate_cca_end_to_end_endorsements(test):
     os.makedirs(f'{GENDIR}/endorsements', exist_ok=True)
 
     scheme = test.test_vars['scheme']
+    profile = test.test_vars['profile']
     spec = test.test_vars['endorsements']
+    
+    # Check if we're using a signed CoRIM based on the profile
+    is_signed = profile == 'signed'
+    
     # first construct platform templates
     corim_template_name = 'corim-{}-platform-{}.json'.format(scheme, spec)
     corim_template = f'data/endorsements/{corim_template_name}'
@@ -42,16 +47,20 @@ def generate_cca_end_to_end_endorsements(test):
     comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
                        for c in tag[0:]]
     output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, output_path)
+    
+    # Generate platform CoRIM (signed or unsigned based on profile)
+    generate_corim(corim_template, comid_templates, output_path, is_signed)
 
-    # next realm templates
-    corim_template_name = 'corim-{}-realm-{}.json'.format(scheme, spec)
-    corim_template = f'data/endorsements/{corim_template_name}'
-    tag = ["refval"]
-    comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
-                       for c in tag[0:]]
-    output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, output_path)
+    # Only generate realm CoRIM if using unsigned CoRIM (for signed tests, we use the same file)
+    if not is_signed:
+        # next realm templates
+        corim_template_name = 'corim-{}-realm-{}.json'.format(scheme, spec)
+        corim_template = f'data/endorsements/{corim_template_name}'
+        tag = ["refval"]
+        comid_templates = ['data/endorsements/comid-{}-{}.json'.format(scheme, c)
+                           for c in tag[0:]]
+        output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
+        generate_corim(corim_template, comid_templates, output_path, is_signed)
 
 
 def generate_artefacts_from_response(response, scheme, evidence, signing, keys, expected):
@@ -191,9 +200,41 @@ def generate_evidence_no_nonce(scheme, evidence, signing, outname):
         raise ValueError(f'Unexpected scheme: {scheme}')
 
 
-def generate_corim(corim_template, comid_templates, output_path):
+def sign_corim(unsigned_corim_path, signed_corim_path):
+    """
+    Sign a CoRIM file using the endEntity certificate and key.
+    The signing certificate chain includes the endEntity and intermediateCA certificates.
+    
+    Args:
+        unsigned_corim_path: Path to the unsigned CoRIM file (CBOR format)
+        signed_corim_path: Output path for the signed CoRIM file
+    """
+    # Certificates are in DER format, need to be referenced in the sign command
+    end_entity_key = 'data/keys/certs/endEntity.jwk'
+    end_entity_cert = 'data/keys/certs/endEntity.der'
+    intermediate_cert = 'data/keys/certs/intermediateCA.der'
+    
+    # Use cocli to sign the CoRIM
+    sign_cmd = f'cocli corim sign --key={end_entity_key} --cert={end_entity_cert} ' \
+               f'--cert-chain={intermediate_cert} --output={signed_corim_path} {unsigned_corim_path}'
+    
+    run_command(sign_cmd, 'sign CoRIM')
+    
+
+def generate_corim(corim_template, comid_templates, output_path, is_signed=False):
+    """
+    Generate a CoRIM file from a template and CoMID files.
+    Optionally sign the CoRIM if is_signed is True.
+    
+    Args:
+        corim_template: Path to the CoRIM template file
+        comid_templates: List of paths to CoMID template files
+        output_path: Output path for the generated CoRIM file
+        is_signed: Whether to generate a signed CoRIM (True) or unsigned CoRIM (False)
+    """
     output_dir = os.path.dirname(output_path)
 
+    # Generate CoMIDs
     comid_create_cmd = ' '.join(
         [f'cocli comid create --output-dir={output_dir}'] +
         [f'--template={t}' for t in comid_templates]
@@ -202,12 +243,24 @@ def generate_corim(corim_template, comid_templates, output_path):
 
     comid_files = [os.path.join(output_dir, '.'.join([os.path.splitext(name)[0], 'cbor']))
                    for name in map(os.path.basename, comid_templates)]
-
+    
+    # Generate unsigned CoRIM
+    unsigned_output_path = output_path
+    if is_signed:
+        # If we're generating a signed CoRIM, first generate the unsigned version with a temp name
+        unsigned_output_path = f"{output_path}.unsigned"
+    
     corim_create_cmd = ' '.join(
-            [f'cocli corim create --output {output_path} --template={corim_template}'] +
+            [f'cocli corim create --output {unsigned_output_path} --template={corim_template}'] +
             [f'--comid={cf}' for cf in comid_files]
     )
     run_command(corim_create_cmd, 'generate CoRIM')
+    
+    # Sign the CoRIM if needed
+    if is_signed:
+        sign_corim(unsigned_output_path, output_path)
+        # Remove the temporary unsigned file
+        os.remove(unsigned_output_path)
 
 
 def generate_psa_evidence_token(claims_file, key_file, token_file):

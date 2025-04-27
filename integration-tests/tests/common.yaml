@@ -19,6 +19,7 @@ variables:
   endorsements-content-types:
     psa.p1: application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"
     cca._: application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"
+    cca.signed: application/rim+cose; profile="http://arm.com/cca/ssd/1"
     enacttrust._: application/corim-unsigned+cbor; profile="http://enacttrust.com/veraison/1.0.0"
   evidence-content-types:
     psa.p1: application/psa-attestation-token

@@ -8,7 +8,7 @@ marks:
         - scheme
         # Some attestation schemes (currently, only PSA) may support multiple
         # profiles. If a scheme does not support multiple profiles, specify it
-        # as '_'.
+        # as '_'. For CCA, we use this to indicate signed vs. unsigned CoRIM
         - profile
         # Which evidence description will be used to construct the evidence token.
         - evidence
@@ -24,6 +24,7 @@ marks:
         - nonce
       vals:
         - [cca, _, good, full, ccakeys, good, nonce64]
+        - [cca, signed, good, full, ccakeys, good, nonce64]
 
 includes:
   - !include common.yaml
@@ -34,7 +35,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"'
+        content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-platform-{endorsements}.cbor
     response:
@@ -45,12 +46,13 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/cca/realm/1"'
+        content-type: '{endorsements-content-type}' # set via hook
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-realm-{endorsements}.cbor
     response:
       status_code: 200
-
+    # Skip this step for signed CoRIM tests
+    skip: !fn format_str: "{profile}" == "signed"
   - name: verify as relying party - creation of session resource
     request:
       method: POST
