@@ -61,7 +61,7 @@ func (o EvidenceHandler) GetSupportedMediaTypes() []string {
 }
 
 func transformEvidenceToCorim(token *proto.AttestationToken) (*corim.UnsignedCorim, error) {
-	tsm, err := parseEvidence(token)
+	tsm, err := parseAttestationToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (o EvidenceHandler) ValidateEvidenceIntegrity(
 		err            error
 	)
 
-	if tsm, err = parseEvidence(token); err != nil {
+	if tsm, err = parseAttestationToken(token); err != nil {
 		return err
 	}
 

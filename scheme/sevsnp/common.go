@@ -4,19 +4,26 @@
 package sevsnp
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
+
 	"github.com/google/go-sev-guest/abi"
 	"github.com/google/go-sev-guest/proto/sevsnp"
+	"github.com/veraison/cmw"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/ratsd/tokens"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/proto"
 )
 
 var (
 	ErrCertificateReadFailure = errors.New("failed to read certificate")
 	ErrMissingCertChain       = errors.New("evidence missing certificate chain")
+	ErrMissingCMW             = errors.New("CMW not found in evidence token")
 )
 
 // measurementByUintKey looks up comid.Measurement in a CoMID by its MKey.
@@ -42,17 +49,6 @@ func measurementByUintKey(refVal comid.ValueTriple,
 	}
 
 	return nil, nil
-}
-
-func parseEvidence(token *proto.AttestationToken) (*tokens.TSMReport, error) {
-	var tsm tokens.TSMReport
-
-	err := tsm.FromCBOR(token.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tsm, nil
 }
 
 // comidFromJson accepts a CoRIM in JSON format and returns its first CoMID
@@ -105,4 +101,73 @@ func readCert(cert []byte) ([]byte, error) {
 		return nil, ErrCertificateReadFailure
 	}
 	return block.Bytes, nil
+}
+
+func parseAttestationToken(token *proto.AttestationToken) (*tokens.TSMReport, error) {
+	var (
+		err           error
+		tsm           = new(tokens.TSMReport)
+		cmwCollection cmw.CMW
+	)
+
+	switch token.MediaType {
+	case EvidenceMediaTypeTSMCbor:
+		err = tsm.FromCBOR(token.Data)
+		if err != nil {
+			return nil, err
+		}
+	case EvidenceMediaTypeTSMJson:
+		err = tsm.FromJSON(token.Data)
+		if err != nil {
+			return nil, err
+		}
+	case EvidenceMediaTypeRATSd:
+		eat := make(map[string]interface{})
+
+		err = json.Unmarshal(token.Data, &eat)
+		if err != nil {
+			return nil, err
+		}
+
+		cmwBase64, ok := eat["cmw"].(string)
+		if !ok {
+			return nil, handler.BadEvidence(ErrMissingCMW)
+		}
+
+		cmwJson, err := base64.StdEncoding.DecodeString(cmwBase64)
+		if err != nil {
+			return nil, err
+		}
+		
+		err = cmwCollection.UnmarshalJSON(cmwJson)
+		if err != nil {
+			return nil, err
+		}
+
+		cmwMonad, err := cmwCollection.GetCollectionItem("tsm-report")
+		if err != nil {
+			return nil, err
+		}
+
+		cmwType, err := cmwMonad.GetMonadType()
+		if err != nil {
+			return nil, err
+		}
+		if cmwType != "application/vnd.veraison.configfs-tsm+json" {
+			return nil, fmt.Errorf("unexpected CMW type: %s", cmwType)
+		}
+		cmwValue, err := cmwMonad.GetMonadValue()
+		if err != nil {
+			return nil, err
+		}
+
+		err = tsm.FromJSON(cmwValue)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unexpected media type: %s", token.MediaType)
+	}
+
+	return tsm, nil
 }
