@@ -55,7 +55,7 @@ func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId:  "0",
 		Data:      tokenBytes,
-		MediaType: EvidenceMediaType,
+		MediaType: EvidenceMediaTypeRATSd,
 		Nonce:     testNonce,
 	}
 
@@ -81,7 +81,7 @@ func Test_GetRefValueIDs_ok(t *testing.T) {
 	token := proto.AttestationToken{
 		TenantId:  "0",
 		Data:      tokenBytes,
-		MediaType: EvidenceMediaType,
+		MediaType: EvidenceMediaTypeRATSd,
 		Nonce:     testNonce,
 	}
 	ta := string(taEndValBytes)
