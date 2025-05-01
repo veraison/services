@@ -130,7 +130,7 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 		err       error
 	)
 
-	if tsm, err = parseEvidence(token); err != nil {
+	if tsm, err = parseAttestationToken(token); err != nil {
 		return nil, err
 	}
 

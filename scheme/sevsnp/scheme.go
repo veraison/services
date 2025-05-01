@@ -6,8 +6,10 @@ const (
 	SchemeName             = "SEVSNP"
 	EndorsementMediaTypeRV = `application/corim-unsigned+cbor; profile="tag:amd.com,2024:snp-corim-profile"`
 	// ToDo: check media type for AMD ARK
-	EndorsementMediaTypeTA = `application/corim-unsigned+cbor; profile="https://amd.com/ark"`
-	EvidenceMediaType      = "application/vnd.veraison.tsm-report+cbor"
+	EndorsementMediaTypeTA   = `application/corim-unsigned+cbor; profile="https://amd.com/ark"`
+	EvidenceMediaTypeTSMCbor = "application/vnd.veraison.tsm-report+cbor"
+	EvidenceMediaTypeTSMJson = "application/vnd.veraison.configfs-tsm+json"
+	EvidenceMediaTypeRATSd   = `application/eat+cwt; eat_profile="tag:github.com,2025:veraison/ratsd/cmw"`
 )
 
 var (
@@ -17,7 +19,9 @@ var (
 	}
 
 	EvidenceMediaTypes = []string{
-		EvidenceMediaType,
+		EvidenceMediaTypeTSMCbor,
+		EvidenceMediaTypeTSMJson,
+		EvidenceMediaTypeRATSd,
 	}
 )
 
