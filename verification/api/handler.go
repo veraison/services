@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -336,8 +336,24 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 			return
 		}
 
-		mediaType = w.GetType()
-		evidence = w.GetValue()
+		mediaType, err = w.GetMonadType()
+		if err != nil {
+			o.logger.Error("unable to get CMW type: %v", err)
+			ReportProblem(c,
+				http.StatusBadRequest,
+				"unable to get CMW type",
+			)
+			return
+		}
+		evidence, err = w.GetMonadValue()
+		if err != nil {
+			o.logger.Error("unable to get CMW value: %v", err)
+			ReportProblem(c,
+				http.StatusBadRequest,
+				"unable to get CMW value",
+			)
+			return
+		}
 	}
 
 	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
