@@ -5,7 +5,6 @@ _error='\e[0;31mERROR\e[0m'
 _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 _repo_root=$(realpath "${_this_dir}/../..")
-_version=$("${_repo_root}/scripts/get-veraison-version")
 
 
 function bootstrap() {
@@ -16,13 +15,18 @@ function bootstrap() {
 function create_rpm() {
 	_check_installed rpmbuild
 
-	local work_dir=${1:-/tmp}
-	local arch; arch="$(arch)"
-	local pkg_dir=${work_dir}/veraison_${_version}_${arch}
-
 	set -a
 	source "${_this_dir}/deployment.cfg"
 	set +a
+
+	if [[ -v VERAISON_BUILD_VERSION ]]; then
+		export VERAISON_BUILD_VERSION=${VERAISON_BUILD_VERSION}
+	fi
+
+	local version=$("${_repo_root}/scripts/get-veraison-version")
+	local work_dir=${1:-/tmp}
+	local arch; arch="$(arch)"
+	local pkg_dir=${work_dir}/veraison_${version}_${arch}
 
 	export VERAISON_ROOT=${VERAISON_ROOT}
 	export DEPLOYMENT_DEST=${pkg_dir}${VERAISON_ROOT}
@@ -31,7 +35,7 @@ function create_rpm() {
 	export VERIFICATION_HOST=$VERAISON_HOST
 	export MANAGEMENT_HOST=$VERAISON_HOST
 
-	export _VERAISON_VERSION=${_version}
+	export _VERAISON_VERSION=${version}
 
 	export GOOS=linux
 
