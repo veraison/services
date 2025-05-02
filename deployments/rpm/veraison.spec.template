@@ -52,6 +52,7 @@ fi
 getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME} || true
 
 %post
+/%{_prefix}/local/veraison/bin/veraison -f gen-service-certs localhost,@@-service,$(hostname -f)
 chown -R %{USERNAME}:%{GROUPNAME} /%{_prefix}/local/veraison/
 chmod 500 /%{_prefix}/local/veraison/certs/*.key
 /%{_prefix}/local/veraison/bin/veraison -s start-services
