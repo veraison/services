@@ -68,6 +68,7 @@ Available targets:
 	               and MacOSX using homebrew)
 	native-deploy: create and start the native deployment
 	deb:           create .deb package for installation on Debian or Ubuntu
+	rpm:           create .rpm package for installation on Fedora-like distros
 endef
 export __MAKEFILE_HELP
 
@@ -112,6 +113,7 @@ endif
 really-clean:
 	make -C integration-tests really-clean
 	make -C deployments/debian really-clean
+	make -C deployments/rpm really-clean
 	make -C deployments/docker really-clean
 	make -C deployments/native really-clean
 
@@ -174,7 +176,15 @@ endif
 deb:
 	make -C deployments/debian deb
 
+.PHONY: rpm
+rpm:
+	make -C deployments/rpm rpm
+
 ifeq ($(filter deb,$(MAKECMDGOALS)),deb)
+__NO_RECURSE = true
+endif
+
+ifeq ($(filter rpm,$(MAKECMDGOALS)),rpm)
 __NO_RECURSE = true
 endif
 
