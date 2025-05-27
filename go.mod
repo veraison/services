@@ -136,7 +136,7 @@ require (
 )
 
 require (
-	github.com/google/go-sev-guest v0.12.1
+	github.com/google/go-sev-guest v0.13.1-0.20250428212537-f1e27d58c946
 	github.com/jraman567/go-gen-ref v0.0.0-20250307151627-97b7e781d801
 	github.com/mitchellh/protoc-gen-go-json v1.1.0
 	github.com/veraison/ratsd v0.0.0-20250606135719-0faee12eab70
