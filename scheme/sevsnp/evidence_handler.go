@@ -371,6 +371,38 @@ func compareMeasurements(refM comid.Measurement, evM comid.Measurement) bool {
 	return true
 }
 
+func compareTcb(refM comid.Measurement, evM comid.Measurement) bool {
+	if refM.Val.SVN == nil {
+		log.Errorf("reference doesn't have SVN")
+		return false
+	}
+
+	if evM.Val.SVN == nil {
+		log.Errorf("evidence doesn't have SVN")
+		return false
+	}
+
+	refTcbParts, err := transformSVNtoTCB(*refM.Val.SVN)
+	if err != nil {
+		log.Errorf("could not transform reference SVN to TCB parts: %v", err)
+		return false
+	}
+
+	evTcbParts, err := transformSVNtoTCB(*evM.Val.SVN)
+	if err != nil {
+		log.Errorf("could not transform evidence SVN to TCB parts: %v", err)
+	}
+
+	if evTcbParts.BlSpl < refTcbParts.BlSpl ||
+		evTcbParts.SnpSpl < refTcbParts.SnpSpl ||
+		evTcbParts.TeeSpl < refTcbParts.TeeSpl ||
+		evTcbParts.UcodeSpl < refTcbParts.UcodeSpl {
+		return false
+	}
+
+	return true
+}
+
 // AppraiseEvidence confirms if the claims in the evidence match with the provisioned
 // reference values.
 //
@@ -410,6 +442,7 @@ func (o EvidenceHandler) AppraiseEvidence(
 	appraisal.TrustVector.Hardware = ear.UnsafeHardwareClaim
 	appraisal.TrustVector.RuntimeOpaque = ear.VisibleMemoryRuntimeClaim
 
+claimsLoop:
 	for _, m := range refVal.Measurements.Values {
 		var (
 			k  uint64
@@ -438,9 +471,17 @@ func (o EvidenceHandler) AppraiseEvidence(
 			break
 		}
 
-		if !compareMeasurements(m, *em) {
-			err = fmt.Errorf("MKey %d in reference value doesn't match with evidence", k)
-			break
+		switch k {
+		case mKeyReportedTcb:
+			if !compareTcb(m, *em) {
+				err = fmt.Errorf("reported TCB in evidence doesn't match reference")
+				break claimsLoop
+			}
+		default:
+			if !compareMeasurements(m, *em) {
+				err = fmt.Errorf("MKey %d in reference value doesn't match with evidence", k)
+				break claimsLoop
+			}
 		}
 	}
 
