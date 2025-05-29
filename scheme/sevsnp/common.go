@@ -9,8 +9,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/google/go-sev-guest/abi"
+	"github.com/google/go-sev-guest/kds"
 	"github.com/google/go-sev-guest/proto/sevsnp"
 	"github.com/veraison/cmw"
 	"github.com/veraison/corim/comid"
@@ -170,4 +173,35 @@ func parseAttestationToken(token *proto.AttestationToken) (*tokens.TSMReport, er
 	}
 
 	return tsm, nil
+}
+
+// transformSVNtoTCB extracts TCB from the supplied SVN. SEV-SNP's TCB_VERSION
+// is a composite version; it's bitfield consisting of SVNs from various firmware components
+func transformSVNtoTCB(svn comid.SVN) (*kds.TCBParts, error) {
+	var (
+		tcbVersion uint64
+		err        error
+		tcbParts   kds.TCBParts
+	)
+
+	// ToDo: following is a circuitous way to obtain the 64-bit TCB integer value
+	// from SVN. Consider updating the SVN type to return a 64-bit value
+	switch v := svn.Value.(type) {
+	case *comid.TaggedSVN:
+		tcbString := v.String()
+		tcbVersion, err = strconv.ParseUint(tcbString, 10, 64)
+	case *comid.TaggedMinSVN:
+		tcbString := v.String()
+		tcbVersion, err = strconv.ParseUint(tcbString, 10, 64)
+	default:
+		err = fmt.Errorf("unsupported SVN type: %v", reflect.TypeOf(svn.Value))
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	tcbParts = kds.DecomposeTCBVersion(kds.TCBVersion(tcbVersion))
+
+	return &tcbParts, nil
 }
