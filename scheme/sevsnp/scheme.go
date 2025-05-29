@@ -26,8 +26,17 @@ var (
 )
 
 const (
-	mKeyReportData  = 640
-	mKeyMeasurement = 641
-	mKeyReportID    = 645
-	mKeyReportedTcb = 647
+	mKeyPolicy           = 2
+	mKeyCurrentTcb       = 6
+	mKeyPlatformInfo     = 7
+	mKeyReportData       = 640
+	mKeyMeasurement      = 641
+	mKeyReportID         = 645
+	mKeyReportIDMA       = 646
+	mKeyReportedTcb      = 647
+	mKeyChipID           = 3328
+	mKeyCommittedTcb     = 3329
+	mKeyCurrentVersion   = 3330
+	mKeyCommittedVersion = 3936
+	mKeyLaunchTcb        = 3968
 )

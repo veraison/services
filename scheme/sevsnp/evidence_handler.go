@@ -460,10 +460,30 @@ claimsLoop:
 			break
 		}
 
-		// REPORT_ID is ephemeral, so we can't use it for verification.
-		// REPORT_DATA is client-supplied , which we aren't using for
-		// verification in this scheme.
-		if k == mKeyReportData || k == mKeyReportID {
+		// We can skip validating certain claims for the following reasons:
+		// - POLICY ToDo: Do we need to test individual policy features?
+		// - CURRENT_TCB is informational only. It's best handled by policy
+		// - PLATFORM_INFO ToDO: Do we need to test individual platform features?
+		// - REPORT_DATA is a nonce supplied by user for freshness. It's used
+		//       for freshness verification, and verified as part of
+		//       evidence integrity check (session nonce check).
+		// - REPORT_ID is ephemeral, so we can't use it for verification.
+		// - REPORT_ID_MA is also ephemeral, used for migration
+		// - CHIP_ID is unique to an specific attester, but reference values could be used more generally
+		// - Current Version (CURRENT_MAJOR/MINOR/BUILD) should already be part of REPORTED_TCB.
+		//     ToDo: It is a good idea to test it anyway, but the Version type only tests for
+		//     equality, and this would trigger spurious failures
+		// - COMMITTED_TCB is informational, used by the host to advance REPORTED_TCB
+		if k == mKeyPolicy ||
+			k == mKeyCurrentTcb ||
+			k == mKeyPlatformInfo ||
+			k == mKeyReportData ||
+			k == mKeyReportID ||
+			k == mKeyReportIDMA ||
+			k == mKeyChipID ||
+			k == mKeyCommittedTcb ||
+			k == mKeyCurrentVersion ||
+			k == mKeyCommittedVersion {
 			continue
 		}
 
@@ -482,6 +502,15 @@ claimsLoop:
 			if !compareTcb(m, *em) {
 				err = ErrMismatchedReportedTCB
 				break claimsLoop
+			}
+		case mKeyLaunchTcb:
+			reportedTcb, err := measurementByUintKey(*evidence, mKeyReportedTcb)
+			if err != nil {
+				break claimsLoop
+			}
+			if !compareTcb(*reportedTcb, *em) {
+				// ToDo: Is this a failure condition?
+				log.Errorf("TEE launched with older TCB version")
 			}
 		default:
 			if !compareMeasurements(m, *em) {
