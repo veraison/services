@@ -1,24 +1,26 @@
 #!/bin/bash
-# Copyright 2024 Contributors to the Veraison project.
+# Copyright 2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck disable=SC2155,SC2086
 set -e
 
 _os=$(uname)
 
-# NOTE: when this script is installed into a deployment, the definition below
+# NOTE: when this script is installed into a deployment, the definitions below
 # will be replaced with a hard-coded path (based on the deployment).
 # shellcheck disable=SC2153
 _veraison_root=${VERAISON_ROOT}
 
-_bin_dir=${_veraison_root}/bin
-_config_dir=${_veraison_root}/config
-_certs_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/certs
-_signing_dir=${VERAISON_ROOT_OVERRIDE:-${_veraison_root}}/signing
-_stores_dir=${_veraison_root}/stores
-_systemd_dir=${_veraison_root}/systemd
-_launchd_dir=${_veraison_root}/launchd
-_logs_dir=${_veraison_root}/logs
+_bin_dir=${VERAISON_BIN_DIR}
+_config_dir=${VERAISON_CONFIG_DIR}
+_certs_dir=${VERAISON_CERTS_DIR}
+_signing_dir=${VERAISON_SIGNING_DIR}
+_stores_dir=${VERAISON_STORES_DIR}
+_systemd_sys_dir=${VERAISON_SYSTEMD_SYS_DIR}
+_systemd_user_dir=${VERAISON_SYSTEMD_USER_DIR}
+_launchd_dir=${VERAISON_LAUNCHD_DIR}
+_logs_dir=${VERAISON_LOGS_DIR}
+_tmux_dir=${VERAISON_TMUX_DIR}
 
 _services=(vts provisioning verification management)
 
@@ -176,12 +178,12 @@ function create_tmux_session() {
 
 	local session_name="${1:-veraison}"
 
-	tmux new-session -d -s $session_name -c $_veraison_root "$SHELL"
+	tmux new-session -d -s $session_name -c $_tmux_dir "$SHELL"
 	tmux rename-window -t $session_name:0 services
 
-	tmux split-window -t $session_name:0.0 -c $_veraison_root "$SHELL"
-	tmux split-window -h -t $session_name:0.1 -c $_veraison_root "$SHELL"
-	tmux split-window -h -t $session_name:0.0 -c $_veraison_root "$SHELL"
+	tmux split-window -t $session_name:0.0 -c $_tmux_dir "$SHELL"
+	tmux split-window -h -t $session_name:0.1 -c $_tmux_dir "$SHELL"
+	tmux split-window -h -t $session_name:0.0 -c $_tmux_dir "$SHELL"
 
 	tmux send-keys -t $session_name:0.0 bin/vts-service Space\
 	    --config Space ${_config_dir}/services/config.yaml C-m
@@ -349,11 +351,11 @@ function enable_systemd_services() {
 
 	if [[ $mode == "user" ]]; then
 		for service in "${_services[@]}"; do
-			systemctl --user enable ${_systemd_dir}/user/veraison-${service}.service
+			systemctl --user enable ${_systemd_user_dir}/veraison-${service}.service
 		done
 	elif [[ $mode == "system" ]]; then
 		for service in "${_services[@]}"; do
-			systemctl enable ${_systemd_dir}/system/veraison-${service}.service
+			systemctl enable ${_systemd_sys_dir}/veraison-${service}.service
 		done
 	else
 		echo -e "$_error: unexpected systemd mode \"$mode\"."
@@ -502,8 +504,7 @@ function help() {
 
 	This is the command line front-end for Veraison services deployment under
 
-	    ${_veraison_root}
-
+	${_veraison_root}
 
 	OPTIONS:
 

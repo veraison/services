@@ -4,7 +4,7 @@ After=veraison-trusted.service
 
 [Service]
 Type=exec
-ExecStart=${VERAISON_ROOT}/bin/provisioning-service --config ${VERAISON_ROOT}/config/services/config.yaml
+ExecStart=${VERAISON_BIN_DIR}/provisioning-service --config ${VERAISON_CONFIG_DIR}/services/config.yaml
 Restart=always
 User=${VERAISON_USER}
 
