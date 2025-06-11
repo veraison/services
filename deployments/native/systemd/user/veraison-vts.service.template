@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=exec
-ExecStart=${VERAISON_ROOT}/bin/vts-service --config ${VERAISON_ROOT}/config/services/config.yaml
+ExecStart=${VERAISON_BIN_DIR}/vts-service --config ${VERAISON_CONFIG_DIR}/services/config.yaml
 ExecStartPost=/usr/bin/sleep 0.5
 Restart=always
 

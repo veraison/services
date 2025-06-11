@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2024 Contributors to the Veraison project.
+# Copyright 2024-2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck disable=SC2155,SC2086
 
@@ -13,7 +13,6 @@ set -e
 
 set -a
 source ${_THIS_DIR}/deployment.cfg
-VERAISON_CERTS=${VERAISON_CERTS:-${_THIS_DIR}/example/certs}
 set +a
 
 ROOT_DIR=${_THIS_DIR}/../..
@@ -25,21 +24,19 @@ SRC_ENV_DIR=${_THIS_DIR}/env
 SRC_SIGNING_DIR=${EXAMPLE_DIR}/signing
 SRC_SYSTEMD_DIR=${_THIS_DIR}/systemd
 SRC_LAUNCHD_DIR=${_THIS_DIR}/launchd
+SRC_CERTS_DIR=${VERAISON_CERTS:-${EXAMPLE_DIR}/certs}
 
-DEPLOYMENT_BIN_DIR=${DEPLOYMENT_DEST}/bin
-DEPLOYMENT_PLUGINS_DIR=${DEPLOYMENT_DEST}/plugins
-DEPLOYMENT_CERTS_DIR=${DEPLOYMENT_DEST}/certs
-DEPLOYMENT_LOGS_DIR=${DEPLOYMENT_DEST}/logs
-DEPLOYMENT_STORES_DIR=${DEPLOYMENT_DEST}/stores
-DEPLOYMENT_CONFIG_DIR=${DEPLOYMENT_DEST}/config
-DEPLOYMENT_ENV_DIR=${DEPLOYMENT_DEST}/env
-DEPLOYMENT_SIGNING_DIR=${DEPLOYMENT_DEST}/signing
-DEPLOYMENT_SYSTEMD_DIR=${DEPLOYMENT_DEST}/systemd
-DEPLOYMENT_LAUNCHD_DIR=${DEPLOYMENT_DEST}/launchd
-
-# VERAISON_ROOT_OVERRIDE will be used by veraison frontend script when
-# generating certificates/sigining key as part of the deployment creation.
-export VERAISON_ROOT_OVERRIDE=${DEPLOYMENT_DEST}
+DEPLOYMENT_BIN_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_BIN_DIR} | tr -s '/')
+DEPLOYMENT_PLUGINS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_PLUGINS_DIR} | tr -s '/')
+DEPLOYMENT_CERTS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_CERTS_DIR} | tr -s '/')
+DEPLOYMENT_LOGS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_LOGS_DIR} | tr -s '/')
+DEPLOYMENT_STORES_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_STORES_DIR} | tr -s '/')
+DEPLOYMENT_CONFIG_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_CONFIG_DIR} | tr -s '/')
+DEPLOYMENT_ENV_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_ENV_DIR} | tr -s '/')
+DEPLOYMENT_SIGNING_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SIGNING_DIR} | tr -s '/')
+DEPLOYMENT_SYSTEMD_SYS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SYSTEMD_SYS_DIR} | tr -s '/')
+DEPLOYMENT_SYSTEMD_USER_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SYSTEMD_USER_DIR} | tr -s '/')
+DEPLOYMENT_LAUNCHD_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_LAUNCHD_DIR} | tr -s '/')
 
 function check_requirements() {
 	set +e
@@ -432,21 +429,21 @@ function _init_deployment_dir() {
 	mkdir -p ${DEPLOYMENT_SIGNING_DIR}
 	mkdir -p ${DEPLOYMENT_STORES_DIR}
 	case $( uname -s ) in
-		Linux) mkdir -p ${DEPLOYMENT_SYSTEMD_DIR};;
+		Linux) mkdir -p ${DEPLOYMENT_SYSTEMD_SYS_DIR}; mkdir -p ${DEPLOYMENT_SYSTEMD_USER_DIR};;
 		Darwin) mkdir -p ${DEPLOYMENT_LAUNCHD_DIR};;
 	esac
 }
 
 function _deploy_systemd_units() {
-	mkdir -p ${DEPLOYMENT_SYSTEMD_DIR}/user
-	mkdir -p ${DEPLOYMENT_SYSTEMD_DIR}/system
+	mkdir -p ${DEPLOYMENT_SYSTEMD_USER_DIR}
+	mkdir -p ${DEPLOYMENT_SYSTEMD_SYS_DIR}
 
 	for service in "${_SERVICES[@]}"; do
 		cat ${SRC_SYSTEMD_DIR}/user/veraison-${service}.service.template | envsubst > \
-			${DEPLOYMENT_SYSTEMD_DIR}/user/veraison-${service}.service
+			${DEPLOYMENT_SYSTEMD_USER_DIR}/veraison-${service}.service
 
 		cat ${SRC_SYSTEMD_DIR}/system/veraison-${service}.service.template | envsubst > \
-			${DEPLOYMENT_SYSTEMD_DIR}/system/veraison-${service}.service
+			${DEPLOYMENT_SYSTEMD_SYS_DIR}/veraison-${service}.service
 	done
 }
 
@@ -462,10 +459,10 @@ function _deploy_launchd_units() {
 
 function _deploy_certs() {
 	for service in "${_SERVICES[@]}"; do
-		cp ${VERAISON_CERTS}/${service}.{crt,key} ${DEPLOYMENT_CERTS_DIR}
+		cp ${SRC_CERTS_DIR}/${service}.{crt,key} ${DEPLOYMENT_CERTS_DIR}
 	done
 
-	cp ${VERAISON_CERTS}/rootCA.crt ${DEPLOYMENT_CERTS_DIR}
+	cp ${SRC_CERTS_DIR}/rootCA.crt ${DEPLOYMENT_CERTS_DIR}
 }
 
 function _gen_certs() {
@@ -546,11 +543,12 @@ function _deploy_bins() {
 }
 
 function _deploy_frontend {
-	local veraison_root=${VERAISON_ROOT//\//\\\/}
-
 	cat ${SRC_BIN_DIR}/veraison | \
-		sed -e "s/_veraison_root=.*/_veraison_root=${veraison_root}/" > \
-		${DEPLOYMENT_BIN_DIR}/veraison
+	  envsubst '${VERAISON_BIN_DIR} ${VERAISON_CONFIG_DIR} ${VERAISON_CERTS_DIR} \
+	  ${VERAISON_SIGNING_DIR} ${VERAISON_STORES_DIR} ${VERAISON_SYSTEMD_SYS_DIR} \
+	  ${VERAISON_SYSTEMD_USER_DIR} ${VERAISON_LAUNCHD_DIR} ${VERAISON_LOGS_DIR} \
+	  ${VERAISON_TMUX_DIR}' > \
+	  ${DEPLOYMENT_BIN_DIR}/veraison
 
 	chmod 0755 ${DEPLOYMENT_BIN_DIR}/veraison
 }
