@@ -7,11 +7,6 @@ _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 _repo_root=$(realpath "${_this_dir}/../..")
 
 
-function bootstrap() {
-	sudo dnf install -y rpm-build
-	"${_repo_root}/deployments/native/deployment.sh" bootstrap
-}
-
 function create_rpm() {
 	_check_installed rpmbuild
 
@@ -89,10 +84,6 @@ function help() {
 	help
 	    Show this message and exit. The same as -h option.
 
-        bootstrap
-            Set up the enviroment for creating the deployment, installing any
-            necessary dependencies.
-
 	create-rpm [DIR]
 	    Create a RPM package under DIR. If DIR is not specified, /tmp will be
             used. Upon successful completion, it will contain the .rpm package and a 
@@ -124,7 +115,6 @@ _command=$1; shift
 _command=$(echo "$_command" | tr -- _ -)
 case $_command in 
 	help) help;;
-        bootstrap) bootstrap;;
 	create-rpm) create_rpm "$1";;
 	*) echo -e "$_error: unexpected command: \"$_command\"";;
 esac
