@@ -6,8 +6,8 @@
     <string>com.veraison-project.vts</string>
     <key>ProgramArguments</key>
     <array>
-      <string>${VERAISON_ROOT}/bin/vts-service</string>
-      <string>--config=${VERAISON_ROOT}/config/services/config.yaml</string>
+      <string>${VERAISON_BIN_DIR}/bin/vts-service</string>
+      <string>--config=${VERAISON_CONFIG_DIR}/config/services/config.yaml</string>
     </array>
   </dict>
 </plist>

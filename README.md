@@ -84,7 +84,7 @@ system (on MacOS, they should be available via brew).
 Veraison will be deployed into the directory specified by `VERAISON_ROOT`
 environment variable (or into `${HOME}/veraison-deployment` if it is not set).
 
-    export VERAISON_ROOT=${HOME}/veraison-deployment
+    export VERAISON_ROOT=${HOME}/veraison-deployment/
 
 You can build, deploy, and start Veraison services with the following sequence
 of commands:

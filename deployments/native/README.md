@@ -161,7 +161,7 @@ variable. If the variable does not exist, it defaults to
 `~/veraison-deployment` (as seen above).
 
 ```bash
-export VERAISON_ROOT=~/alternate-deployment
+export VERAISON_ROOT=~/alternate-deployment/
 ```
 
 If the specified location does not exist, it will be created by the script.
