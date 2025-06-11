@@ -4,7 +4,7 @@ After=veraison-trusted.service
 
 [Service]
 Type=exec
-ExecStart=${VERAISON_ROOT}/bin/verification-service --config ${VERAISON_ROOT}/config/services/config.yaml
+ExecStart=${VERAISON_BIN_DIR}/verification-service --config ${VERAISON_CONFIG_DIR}/services/config.yaml
 Restart=always
 
 [Install]

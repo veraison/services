@@ -29,7 +29,7 @@ function create_rpm() {
 	local pkg_dir=${work_dir}/veraison_${version}_${arch}
 
 	export VERAISON_ROOT=${VERAISON_ROOT}
-	export DEPLOYMENT_DEST=${pkg_dir}${VERAISON_ROOT}
+	export DEPLOYMENT_DEST=${pkg_dir}
 	export VTS_HOST=$VERAISON_HOST
 	export PROVISIONING_HOST=$VERAISON_HOST
 	export VERIFICATION_HOST=$VERAISON_HOST
