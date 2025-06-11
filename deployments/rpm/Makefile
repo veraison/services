@@ -12,10 +12,6 @@ PACKAGE_DEST ?= /tmp
 rpm:
 	$(THIS_DIR)/deployment.sh create-rpm $(PACKAGE_DEST)
 
-.PHONY: bootstrap
-bootstrap:
-	$(THIS_DIR)/deployment.sh bootstrap
-
 .PHONY: really-clean
 really-clean:
 	rm -rf $(PACKAGE_DEST)/veraison-rpm-package
