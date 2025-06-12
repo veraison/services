@@ -3,7 +3,7 @@ Version:        _VERSION_
 Release:        1%{?dist}
 Summary:        Veraison remote attestation server
 
-License:        APACHE
+License:        Apache-2.0
 URL:            https://github.com/veraison/services
 Source0:        %{name}-%{version}.tar.gz
 
@@ -55,6 +55,7 @@ export VERAISON_STORES_SUBDIR="%{_datarootdir}/%{name}/stores"
 export VERAISON_SYSTEMD_SYS_SUBDIR="%{_unitdir}"
 export VERAISON_SYSTEMD_USER_SUBDIR="%{_userunitdir}"
 export VERAISON_TMUX_SUBDIR="%{_tmppath}"
+export VERAISON_LICENSE_SUBDIR="%{_datarootdir}/licenses/%{name}"
 export VERAISON_ROOT="/"
 export DEPLOYMENT_DEST="%{_builddir}/%{name}-%{version}/staging"
 export GOPATH=$(go env GOPATH)
@@ -112,6 +113,7 @@ cp -a $DEPLOYMENT_DEST/* %{buildroot}/
 %{_userunitdir}/veraison-provisioning.service
 %{_userunitdir}/veraison-verification.service
 %{_userunitdir}/veraison-vts.service
+%license %{_datarootdir}/licenses/%{name}/LICENSE
 %exclude %{_sysconfdir}/%{name}/certs/*
 %exclude %{_sysconfdir}/%{name}/env
 %exclude %{_sysconfdir}/%{name}/signing/*
