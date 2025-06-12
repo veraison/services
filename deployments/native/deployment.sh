@@ -37,6 +37,7 @@ DEPLOYMENT_SIGNING_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SIGNING_DIR} | tr -s
 DEPLOYMENT_SYSTEMD_SYS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SYSTEMD_SYS_DIR} | tr -s '/')
 DEPLOYMENT_SYSTEMD_USER_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_SYSTEMD_USER_DIR} | tr -s '/')
 DEPLOYMENT_LAUNCHD_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_LAUNCHD_DIR} | tr -s '/')
+DEPLOYMENT_LICENSE_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_LICENSE_DIR} | tr -s '/')
 
 function check_requirements() {
 	set +e
@@ -180,6 +181,9 @@ function create_deployment() {
 			Darwin) _deploy_launchd_units;;
 		esac
 	fi
+
+	_deploy_license
+
 }
 
 function create_root_cert() {
@@ -189,6 +193,10 @@ function create_root_cert() {
 	fi
 
 	${DEPLOYMENT_BIN_DIR}/veraison $_f gen-root-cert "$1"
+}
+
+function _deploy_license() {
+	cp ${ROOT_DIR}/LICENSE ${DEPLOYMENT_LICENSE_DIR}
 }
 
 function init_certs() {
@@ -432,6 +440,7 @@ function _init_deployment_dir() {
 		Linux) mkdir -p ${DEPLOYMENT_SYSTEMD_SYS_DIR}; mkdir -p ${DEPLOYMENT_SYSTEMD_USER_DIR};;
 		Darwin) mkdir -p ${DEPLOYMENT_LAUNCHD_DIR};;
 	esac
+	mkdir -p ${DEPLOYMENT_LICENSE_DIR}
 }
 
 function _deploy_systemd_units() {
