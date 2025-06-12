@@ -135,3 +135,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+require (
+	github.com/mitchellh/protoc-gen-go-json v1.1.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
+)
