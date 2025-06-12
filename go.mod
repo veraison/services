@@ -26,6 +26,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/mitchellh/protoc-gen-go-json v1.1.0
 	github.com/moogar0880/problems v0.1.1
 	github.com/open-policy-agent/opa v0.43.1
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20211021192214-5ab2d9280aa9
@@ -46,6 +47,7 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/text v0.21.0
 	google.golang.org/grpc v1.64.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
