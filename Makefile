@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Contributors to the Veraison project.
+# Copyright 2021-2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -113,7 +113,6 @@ endif
 really-clean:
 	make -C integration-tests really-clean
 	make -C deployments/debian really-clean
-	make -C deployments/rpm really-clean
 	make -C deployments/docker really-clean
 	make -C deployments/native really-clean
 
