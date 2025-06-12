@@ -6,60 +6,54 @@ _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 _repo_root=$(realpath "${_this_dir}/../..")
 
+_package_name="veraison"
 
 function create_rpm() {
-	_check_installed rpmbuild
-
-	set -a
-	source "${_this_dir}/deployment.cfg"
-	set +a
-
-	if [[ -v VERAISON_BUILD_VERSION ]]; then
-		export VERAISON_BUILD_VERSION=${VERAISON_BUILD_VERSION}
-	fi
+	## Uncomment the following to set build version
+	#export VERAISON_BUILD_VERSION="version"
 
 	local version=$("${_repo_root}/scripts/get-veraison-version")
-	local work_dir=${1:-/tmp}
-	local arch; arch="$(arch)"
-	local pkg_dir=${work_dir}/veraison_${version}_${arch}
-
-	export VERAISON_ROOT=${VERAISON_ROOT}
-	export DEPLOYMENT_DEST=${pkg_dir}
-	export VTS_HOST=$VERAISON_HOST
-	export PROVISIONING_HOST=$VERAISON_HOST
-	export VERIFICATION_HOST=$VERAISON_HOST
-	export MANAGEMENT_HOST=$VERAISON_HOST
-
-	export VERAISON_BIN_SUBDIR=$VERAISON_BIN_SUBDIR
-	export VERAISON_CERTS_SUBDIR=$VERAISON_CERTS_SUBDIR
-	export VERAISON_CONFIG_SUBDIR=$VERAISON_CONFIG_SUBDIR
-	export VERAISON_ENV_SUBDIR=$VERAISON_ENV_SUBDIR
-	# Skipping VERAISON_LAUNCHD_DIR; it doesn't apply to RPMs
-	export VERAISON_LOGS_SUBDIR=$VERAISON_LOGS_SUBDIR
-	export VERAISON_PLUGINS_SUBDIR=$VERAISON_PLUGINS_SUBDIR
-	export VERAISON_SIGNING_SUBDIR=$VERAISON_SIGNING_SUBDIR
-	export VERAISON_STORES_SUBDIR=$VERAISON_STORES_SUBDIR
-	export VERAISON_SYSTEMD_SYS_SUBDIR=$VERAISON_SYSTEMD_SYS_SUBDIR
-	export VERAISON_SYSTEMD_USER_SUBDIR=$VERAISON_SYSTEMD_USER_SUBDIR
-	export VERAISON_TMUX_SUBDIR=$VERAISON_TMUX_SUBDIR
-
 	export _VERAISON_VERSION=${version}
 
 	export GOOS=linux
 
-	rm -rf "${pkg_dir}"
-	"${_repo_root}/deployments/native/deployment.sh" -S quick-init-all
+	## Create an archive of the source needed for rpmbuild; cleanup
+	## build files from previous builds
+	if [ -d "/tmp/${_package_name}-${_VERAISON_VERSION}" ]; then
+		mv /tmp/${_package_name}-${_VERAISON_VERSION} /tmp/${_package_name}-${_VERAISON_VERSION}-old
+	fi
 
-	mkdir -p ${pkg_dir}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-	tar -C ${DEPLOYMENT_DEST} -cvzf veraison-${_VERAISON_VERSION}.tar.gz .
-	mv veraison-${_VERAISON_VERSION}.tar.gz ${pkg_dir}/rpmbuild/BUILD/
-	cp veraison.spec.template ${pkg_dir}/rpmbuild/BUILD/veraison.spec
+	if [ -f "/tmp/${_package_name}-${_VERAISON_VERSION}.tar.gz" ]; then
+		mv /tmp/${_package_name}-${_VERAISON_VERSION}.tar.gz /tmp/${_package_name}-${_VERAISON_VERSION}.tar.gz.old
+	fi
 
-	sed -i -e "s/_VERSION_/${_VERAISON_VERSION}/g" ${pkg_dir}/rpmbuild/BUILD/veraison.spec
-	sed -i -e "s/_VERAISON_USER_/${VERAISON_USER}/g" ${pkg_dir}/rpmbuild/BUILD/veraison.spec
-	sed -i -e "s/_VERAISON_GROUP_/${VERAISON_GROUP}/g" ${pkg_dir}/rpmbuild/BUILD/veraison.spec
+	mkdir -p /tmp/${_package_name}-${_VERAISON_VERSION}
+	cp -r ${_repo_root}/. /tmp/${_package_name}-${_VERAISON_VERSION}/
+	pushd /tmp
+	tar -cvzf ${_package_name}-${_VERAISON_VERSION}.tar.gz --exclude=perf --exclude=.git --exclude=.github ${_package_name}-${_VERAISON_VERSION}/
+	popd
 
-	rpmbuild --define "_topdir ${pkg_dir}/rpmbuild" -bb ${pkg_dir}/rpmbuild/BUILD/veraison.spec
+	## Create RPM build tree, if not present. Cleanup up source files
+	## from previous builds
+	rpmdev-setuptree
+
+	if [ -f "${HOME}/rpmbuild/SOURCES/${_package_name}-${_VERAISON_VERSION}.tar.gz" ]; then
+		rm -f ${HOME}/rpmbuild/SOURCES/${_package_name}-${_VERAISON_VERSION}.tar.gz
+	fi
+
+	if [ -d "${HOME}/rpmbuild/BUILD/${_package_name}-${_VERAISON_VERSION}" ]; then
+		rm -rf ${HOME}/rpmbuild/BUILD/${_package_name}-${_VERAISON_VERSION}
+	fi
+
+	## Kickoff RPM build
+	mv /tmp/${_package_name}-${_VERAISON_VERSION}.tar.gz ${HOME}/rpmbuild/SOURCES
+	cp ${_this_dir}/${_package_name}.spec.template ${HOME}/rpmbuild/SPECS/${_package_name}.spec
+	sed -i -e "s/_VERSION_/${_VERAISON_VERSION}/g" ${HOME}/rpmbuild/SPECS/${_package_name}.spec
+	rpmbuild -ba ${HOME}/rpmbuild/SPECS/${_package_name}.spec
+
+	## Cleanup temporary build files
+	rm -rf /tmp/${_package_name}-${_VERAISON_VERSION}
+	rm -f /tmp/${_package_name}-${_VERAISON_VERSION}.tar.gz
 
 	echo "done."
 }
@@ -93,15 +87,6 @@ function help() {
 	set -e
 
 	echo "$usage"
-}
-
-function _check_installed() {
-	local what=$1
-
-	if [[ "$(type -p "$what")" == "" ]]; then
-		echo -e "$_error: $what executable must be installed to use this command."
-		exit 1
-	fi
 }
 
 while getopts "h" opt; do
