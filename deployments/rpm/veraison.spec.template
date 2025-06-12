@@ -1,68 +1,144 @@
 Name:           veraison
 Version:        _VERSION_
 Release:        1%{?dist}
-Summary:        Veraison server
+Summary:        Veraison remote attestation server
 
 License:        APACHE
+URL:            https://github.com/veraison/services
 Source0:        %{name}-%{version}.tar.gz
 
-Requires:       /usr/bin/bash
-Requires:       sqlite > 3
+Requires:       bash
+Requires:       sqlite > 3.0.0
+Requires:       step
 
-%global USERNAME _VERAISON_USER_
-%global GROUPNAME _VERAISON_GROUP_
-%global LOGSDIR _VERAISON_LOGS_
+BuildRequires:  git
+BuildRequires:  protobuf
+BuildRequires:  protobuf-devel
+BuildRequires:  gettext
+BuildRequires:  sqlite
+BuildRequires:  openssl
+BuildRequires:  jq
+BuildRequires:  golang >= 1.23.0
+BuildRequires:  step
+
+%define debug_package %{nil}
+
+%global USERNAME veraison
+%global GROUPNAME veraison
+
+%global VTS_PORT 50051
+%global PROVISIONING_PORT 9443
+%global VERIFICATION_PORT 8443
+%global MANAGEMENT_PORT 10443
+%global VERAISON_HOST localhost
 
 %description
-This package installs Veraison server
+This package provides provisioning, verification and management services to implement a remote attestation solution.
 
 %prep
-tar -xvzf %{name}-%{version}.tar.gz
+%setup -q -n %{name}-%{version}
+
+%build
+export VTS_PORT="%{VTS_PORT}"
+export PROVISIONING_PORT="%{PROVISIONING_PORT}"
+export VERIFICATION_PORT="%{VERIFICATION_PORT}"
+export MANAGEMENT_PORT="%{MANAGEMENT_PORT}"
+export VERAISON_HOST="%{VERAISON_HOST}"
+export VERAISON_BIN_SUBDIR="%{_bindir}"
+export VERAISON_CERTS_SUBDIR="%{_sysconfdir}/%{name}/certs"
+export VERAISON_CONFIG_SUBDIR="%{_sysconfdir}/%{name}/config"
+export VERAISON_ENV_SUBDIR="%{_sysconfdir}/%{name}/env"
+export VERAISON_LOGS_SUBDIR="%{_localstatedir}/log/%{name}"
+export VERAISON_PLUGINS_SUBDIR="%{_bindir}"
+export VERAISON_SIGNING_SUBDIR="%{_sysconfdir}/%{name}/signing"
+export VERAISON_STORES_SUBDIR="%{_datarootdir}/%{name}/stores"
+export VERAISON_SYSTEMD_SYS_SUBDIR="%{_unitdir}"
+export VERAISON_SYSTEMD_USER_SUBDIR="%{_userunitdir}"
+export VERAISON_TMUX_SUBDIR="%{_tmppath}"
+export VERAISON_ROOT="/"
+export DEPLOYMENT_DEST="%{_builddir}/%{name}-%{version}/staging"
+export GOPATH=$(go env GOPATH)
+mkdir -p $GOPATH/bin
+export PATH=$GOPATH/bin:${PATH}
+go install google.golang.org/protobuf/cmd/protoc-gen-go
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+go install github.com/mitchellh/protoc-gen-go-json
+mkdir -p $DEPLOYMENT_DEST
+make -C deployments/native quick-deploy
 
 %install
-rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a bin/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a certs/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a config/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a env/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a logs/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a plugins/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a signing/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a stores/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-cp -a systemd/ $RPM_BUILD_ROOT/%{_prefix}/local/veraison/
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+export DEPLOYMENT_DEST="%{_builddir}/%{name}-%{version}/staging"
+cp -a $DEPLOYMENT_DEST/* %{buildroot}/
 
 %files
-/%{_prefix}/local/veraison
+%defattr(0644,%{USERNAME},%{GROUPNAME},0755)
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/config
+%dir %{_sysconfdir}/%{name}/config/cocli
+%dir %{_sysconfdir}/%{name}/config/evcli
+%dir %{_sysconfdir}/%{name}/config/pocli
+%dir %{_sysconfdir}/%{name}/config/services
+%dir %{_sysconfdir}/%{name}/certs
+%dir %{_sysconfdir}/%{name}/signing
+%dir %{_datarootdir}/%{name}
+%dir %{_datarootdir}/%{name}/stores
+%dir %{_localstatedir}/log/%{name}
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/cocli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/evcli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/pocli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/veraison
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/arm-cca.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-cca.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-tpm.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/psa.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/riot.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/tpm-enacttrust.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/management-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/provisioning-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/verification-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/vts-service
+%config(noreplace) %{_sysconfdir}/%{name}/config/cocli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/evcli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/pocli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/services/config.yaml
+%{_datarootdir}/%{name}/stores/en-store.sql
+%{_datarootdir}/%{name}/stores/po-store.sql
+%{_datarootdir}/%{name}/stores/ta-store.sql
+%{_unitdir}/veraison-management.service
+%{_unitdir}/veraison-provisioning.service
+%{_unitdir}/veraison-verification.service
+%{_unitdir}/veraison-vts.service
+%{_userunitdir}/veraison-management.service
+%{_userunitdir}/veraison-provisioning.service
+%{_userunitdir}/veraison-verification.service
+%{_userunitdir}/veraison-vts.service
+%exclude %{_sysconfdir}/%{name}/certs/*
+%exclude %{_sysconfdir}/%{name}/env
+%exclude %{_sysconfdir}/%{name}/signing/*
 
 %pre
 if ! getent group %{GROUPNAME} >/dev/null 2>&1; then
-     echo "Adding group: %{GROUPNAME}"
      groupadd --system %{GROUPNAME}
 fi
-
 if ! id -u %{USERNAME} >/dev/null 2>&1; then
-     echo "Adding user: %{USERNAME}"
      useradd --system --shell /usr/sbin/nologin --gid %{GROUPNAME} \
              --comment "Veraison User" %{USERNAME} --groups adm,%{GROUPNAME}
 fi
-
-getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME} || true
+getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME}
 
 %post
-/%{_prefix}/local/veraison/bin/veraison -f gen-service-certs localhost,@@-service,$(hostname -f)
-chown -R %{USERNAME}:%{GROUPNAME} /%{_prefix}/local/veraison/
-chmod 500 /%{_prefix}/local/veraison/certs/*.key
-/%{_prefix}/local/veraison/bin/veraison -s start-services
+if [ ! -f %{_sysconfdir}/%{name}/certs/rootCA.crt ]; then
+    su %{USERNAME} -s "/usr/bin/bash" -c "%{_bindir}/veraison -f gen-service-certs localhost,@@-service,$(hostname -f)"
+fi
+if [ ! -f %{_sysconfdir}/%{name}/signing/skey.jwk ]; then
+    su %{USERNAME} -s "/usr/bin/bash" -c "%{_bindir}/veraison gen-signing-key"
+fi
+%{_bindir}/veraison -s start-services
 
 %preun
-/%{_prefix}/local/veraison/bin/veraison -s stop-services
-/%{_prefix}/local/veraison/bin/veraison -s disable-services
-rm -f /%{_prefix}/local/veraison/logs/*.log
+%{_bindir}/veraison -s stop-services
+%{_bindir}/veraison -s disable-services
 
 %changelog
-* Tue Nov 21 2023 root
-- 
+* Tue Jun 24 2025 Jagannathan Raman <jag.raman@@oracle.com> - 0.0.2506
+- build with RPM spec
