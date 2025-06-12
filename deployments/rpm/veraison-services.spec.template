@@ -1,4 +1,4 @@
-Name:           veraison
+Name:           veraison-services
 Version:        _VERSION_
 Release:        1%{?dist}
 Summary:        Veraison remote attestation server

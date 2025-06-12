@@ -6,7 +6,7 @@ _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 _repo_root=$(realpath "${_this_dir}/../..")
 
-_package_name="veraison"
+_package_name="veraison-services"
 
 function create_rpm() {
 	## Uncomment the following to set build version
