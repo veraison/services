@@ -9,7 +9,7 @@ Source0:        %{name}-%{version}.tar.gz
 
 Requires:       bash
 Requires:       sqlite > 3.0.0
-Requires:       step
+Requires:       jose
 
 BuildRequires:  git
 BuildRequires:  protobuf
@@ -19,7 +19,7 @@ BuildRequires:  sqlite
 BuildRequires:  openssl
 BuildRequires:  jq
 BuildRequires:  golang >= 1.23.0
-BuildRequires:  step
+BuildRequires:  jose
 
 %define debug_package %{nil}
 
