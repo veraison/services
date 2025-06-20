@@ -40,7 +40,7 @@ function init_sqlite_stores() {
 }
 
 function generate_signing_key() {
-	_check_installed step
+	_check_installed jose
 
 	local force=$1
 	local path=$2
@@ -53,8 +53,7 @@ function generate_signing_key() {
 		fi
 	fi
 
-	step crypto jwk create --kty EC --crv P-256 --no-password --force --insecure \
-		/dev/null "$path"
+	jose jwk gen -i '{"kty": "EC", "crv": "P-256"}' -o "$path"
 }
 
 function generate_certs() {

@@ -1,11 +1,11 @@
 #!/bin/sh
-# Copyright 2024 Contributors to the Veraison project.
+# Copyright 2024-2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 set -eux
 set -o pipefail
 
-brew install step coreutils gettext openssl sqlite3 protobuf jq
+brew install jose coreutils gettext openssl sqlite3 protobuf jq
 brew link --force gettext 
 
 go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28

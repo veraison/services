@@ -48,10 +48,6 @@ jobs:
         uses: ConorMacBride/install-package@v1
         with:
           apt: openssl sqlite3 gettext findutils jq
-      - name: Install step-cli
-        run: |
-          wget https://dl.smallstep.com/cli/docs-cli-install/latest/step-cli_amd64.deb -O /tmp/step-cli_amd64.deb
-          sudo dpkg -i /tmp/step-cli_amd64.deb
       - name: create deb
         run: |
           mkdir /tmp/veraison-package
