@@ -106,8 +106,8 @@ function check_requirements() {
 		ok=false
 	fi
 
-	if [[ "$(type -p step)" == "" ]]; then
-		echo -e "$_WARN: step (needed by some commands) is not installed"
+	if [[ "$(type -p jose)" == "" ]]; then
+		echo -e "$_WARN: jose (needed by some commands) is not installed"
 		ok=false
 	fi
 

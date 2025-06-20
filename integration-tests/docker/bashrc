@@ -7,13 +7,25 @@ export KEYCLOAK_HOST=keycloak-service
 export PS1='\e[0;32m\u@debug-container \e[0;34m\w\n\e[0;32m$\e[0m '
 
 alias ll='ls -lh --color=auto'
-alias jwt='step crypto jwt'
+
+## jose usage example
+# 1. Create keys if they don't exist
+#    - jose jwk gen -i '{"kty":"RSA"}' -o private.jwk
+#    - jose jwk pub -i private.jwk -o public.jwk
+# 2. Create sa sample payload
+#    - echo '{"hello":"world"}' > payload.txt
+# 3. Sign the payload
+#    - jwt sig -I payload.txt -k private.jwk -o signed.jws -c
+# 4. Verify the signed message
+#    - jwt ver -i signed.jws -k public.jwk -O verified_payload.txt
+##
+alias jwt='jose jws'
 
 _stores_dir=/opt/veraison/stores/vts
 
 function inspect-result() {
     local file=$1
-    step crypto jwt inspect --insecure < $file
+    jose jws fmt -i $file -o -
 }
 
 function clear_stores() {
