@@ -87,7 +87,7 @@ func (s StoreHandler) SynthKeysFromRefValue(
 //
 // The attester supplies all the keys in the certificate chain
 // for verification. During verification, the scheme must ensure that
-// the ARK in the evidence matches the provisioned Trust Anchor.
+// the ARK in the evidence  chains back to the provisioned Trust Anchor.
 func (s StoreHandler) SynthKeysFromTrustAnchor(_ string, ta *handler.Endorsement) ([]string, error) {
 	var avk comid.KeyTriple
 
