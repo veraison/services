@@ -49,8 +49,8 @@ func measurementByUintKey(refVal comid.ValueTriple,
 
 // comidFromJson accepts a CoRIM in JSON format and returns its first CoMID
 //
-//	Returns error if there are more than a single CoMID, or passes on
-//	error from corim routine.
+// Returns error if there are more than a single CoMID, or passes on
+// error from corim routine.
 func comidFromJson(buf []byte) (*comid.Comid, error) {
 	extractedCorim, err := corim.UnmarshalUnsignedCorimFromJSON(buf)
 	if err != nil {
