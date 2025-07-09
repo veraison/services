@@ -24,7 +24,7 @@ var (
 
 // measurementByUintKey looks up comid.Measurement in a CoMID by its MKey.
 //
-//	If no measurements are found, returns nil and no error. Otherwise,
+// If no measurements are found, returns nil and no error. Otherwise,
 //	returns the error encountered.
 func measurementByUintKey(refVal comid.ValueTriple,
 	key uint64) (*comid.Measurement, error) {
