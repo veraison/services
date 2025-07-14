@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := all
 
-GOPKG := github.com/veraison/services/ed/cmd/ed-service
+GOPKG := github.com/veraison/services/coserv/cmd/coserv-service
 CMD := coserv-service
 SRCS := main.go
 
