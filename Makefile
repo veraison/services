@@ -50,7 +50,8 @@ IGNORE_COVERAGE += github.com/veraison/services/verification/verifier
 IGNORE_COVERAGE += github.com/veraison/services/vts/cmd/vts-service
 IGNORE_COVERAGE += github.com/veraison/services/vts/trustedservices
 IGNORE_COVERAGE += github.com/veraison/services/vtsclient
-IGNORE_COVERAGE += github.com/veraison/services/coserv
+IGNORE_COVERAGE += github.com/veraison/services/coserv/api
+IGNORE_COVERAGE += github.com/veraison/services/coserv/cmd/coserv-service
 
 include mk/cover.mk
 

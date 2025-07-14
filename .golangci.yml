@@ -1,2 +1,91 @@
-run:
-  go: '1.18'
+# Do not delete linter settings. Linters like gocritic can be enabled on the command line.
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: false
+
+linters:
+  default: none
+  enable:
+    - dupl # style
+    - errcheck # bugs
+    - funlen # complexity
+    - goconst # style
+    - gocritic # metalinter
+    - gocyclo # complexity
+    - gosec # bugs
+    - govet # bugs
+    - ineffassign
+    - lll  # style
+    - misspell # comment
+    - staticcheck # metalinter
+    - unconvert # style
+    - unused # unused
+  exclusions:
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - dupl
+          - funlen
+          - lll
+          - goconst
+  settings:
+    dupl:
+      threshold: 100
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport # https://github.com/go-critic/go-critic/issues/845
+        - ifElseChain
+        - octalLiteral
+        - paramTypeCombine
+        - whyNoLint
+        - wrapperFunc
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+
+issues:
+  # max-issues-per-linter default is 50.  Set to 0 to disable limit.
+  max-issues-per-linter: 0
+  # max-same-issues default is 3.  Set to 0 to disable limit.
+  max-same-issues: 0
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - goconst
+        - dupl
+        - gomnd
+        - lll
+    - path: doc\.go
+      linters:
+        - goimports
+        - gomnd
+        - lll
+    - path: psatoken_fuzz_test.go
+      linters:
+        # the Fuzz function is only invoked by go-fuzz, therefore golangci will
+        # see it as unused
+        - unused
+
+version: "2"
