@@ -537,9 +537,7 @@ func getEndorsementsError(err error) *proto.EndorsementQueryOut {
 	}
 }
 
-func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
-	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
-
+func (o *GRPC) getEndorsementsFromStores(query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
 	var q coserv.Coserv
 	if err := q.FromBase64Url(query.Query); err != nil {
 		return getEndorsementsError(err), nil
@@ -607,23 +605,32 @@ func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQuer
 		Status:    &proto.Status{Result: true},
 		ResultSet: coservResults,
 	}, nil
+}
 
-	// TODO(tho) -- proxy logics
-	//
-	// handlerPlugin, err := o.CoservProxyPluginManager.LookupByMediaType(query.MediaType)
-	// if err != nil {
-	// 	return nil, err
-	// }
+func (o *GRPC) getEndorsementsFromProxy(handlerPlugin handler.ICoservProxyHandler, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
+	resultSet, err := handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
+	if err != nil {
+		return getEndorsementsError(err), nil
+	}
 
-	// resultSet, err := handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
-	// if err != nil {
-	// 	return getEndorsementsError(err), nil
-	// }
+	return &proto.EndorsementQueryOut{
+		Status:    &proto.Status{Result: true},
+		ResultSet: resultSet,
+	}, nil
+}
 
-	// return &proto.EndorsementQueryOut{
-	// 	Status:    &proto.Status{Result: true},
-	// 	ResultSet: resultSet,
-	// }, nil
+func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
+	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
+
+	// First, check to see if we have a CoSERV proxy plugin that can handle this query
+	handlerPlugin, err := o.CoservProxyPluginManager.LookupByMediaType(query.MediaType)
+	if err == nil {
+		// No error means we have a proxy plugin, so delegate to that.
+		return o.getEndorsementsFromProxy(handlerPlugin, query)
+	}
+
+	// Fall through to here means that there was no proxy plugin, so assume we can obtain from own stores
+	return o.getEndorsementsFromStores(query)
 }
 
 func (o *GRPC) finalize(
