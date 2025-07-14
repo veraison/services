@@ -8,7 +8,8 @@ SUBDIR += arm-cca
 #SUBDIR += tpm-enacttrust
 #SUBDIR += parsec-tpm
 #SUBDIR += parsec-cca
-#SUBDIR += nvidia-coserv
+SUBDIR += nvidia-coserv
+SUBDIR += amd-kds-coserv
 
 clean: ; $(RM) -rf ./bin
 
