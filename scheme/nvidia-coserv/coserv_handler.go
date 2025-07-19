@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/veraison/cmw"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
@@ -104,9 +105,26 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	}
 
 	// If we want the raw source artifacts, add the RIM verbatim into the result set.
+	// We just need to switch on the RIM type (TCG or CORIM), and use a different media type
+	// label in each case.
 	if query.ResultType == coserv.ResultTypeBoth || query.ResultType == coserv.ResultTypeSourceArtifacts {
-		// TODO(paulhowardarm) - Figure out how to turn rimBytes into CMW and AddSourceArtifacts here
-		// results.AddSourceArtifacts(...)
+		if rimServiceResponse.RimFormat == "CORIM" {
+			cmw, err := cmw.NewMonad("application/rim+cbor", rimBytes)
+			if err != nil {
+				return fmt.Errorf("failed to create CMW for CORIM source artifact")
+			}
+			results.AddSourceArtifacts(*cmw)
+		} else if rimServiceResponse.RimFormat == "TCG" {
+			// TODO(paulhowardarm): Find out the correct media type for TCG XML RIM files.
+			// Just using 'application/xml' for now.
+			cmw, err := cmw.NewMonad("application/xml", rimBytes)
+			if err != nil {
+				return fmt.Errorf("failed to create CMW for TCG source artifact")
+			}
+			results.AddSourceArtifacts(*cmw)
+		} else {
+			return fmt.Errorf("unexpected RIM format %s from NVIDIA RIM service", rimServiceResponse.RimFormat)
+		}
 	}
 
 	// If we want collected artifacts, we need to parse the CORIM
