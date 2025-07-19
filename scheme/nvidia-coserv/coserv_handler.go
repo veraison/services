@@ -115,9 +115,7 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 			}
 			results.AddSourceArtifacts(*cmw)
 		} else if rimServiceResponse.RimFormat == "TCG" {
-			// TODO(paulhowardarm): Find out the correct media type for TCG XML RIM files.
-			// Just using 'application/xml' for now.
-			cmw, err := cmw.NewMonad("application/xml", rimBytes)
+			cmw, err := cmw.NewMonad("application/swid+xml", rimBytes)
 			if err != nil {
 				return fmt.Errorf("failed to create CMW for TCG source artifact")
 			}
