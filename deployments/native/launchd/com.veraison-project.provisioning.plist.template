@@ -6,8 +6,8 @@
     <string>com.veraison-project.provisioning</string>
     <key>ProgramArguments</key>
     <array>
-      <string>${VERAISON_ROOT}/bin/provisioning-service</string>
-      <string>--config=${VERAISON_ROOT}/config/services/config.yaml</string>
+      <string>${VERAISON_BIN_DIR}/provisioning-service</string>
+      <string>--config=${VERAISON_CONFIG_DIR}/services/config.yaml</string>
     </array>
   </dict>
 </plist>

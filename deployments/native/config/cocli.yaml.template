@@ -1,4 +1,4 @@
-ca_cert: ${VERAISON_ROOT}/certs/rootCA.crt
+ca_cert: ${VERAISON_CERTS_DIR}/rootCA.crt
 api_server: https://${PROVISIONING_HOST}:${PROVISIONING_PORT}/endorsement-provisioning/v1/submit
 ##############################################################################
 # Authentication is disabled in the native deployment by default. If you have

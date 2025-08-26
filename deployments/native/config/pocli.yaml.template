@@ -1,4 +1,4 @@
-ca_cert: ${VERAISON_ROOT}/certs/rootCA.crt
+ca_cert: ${VERAISON_CERTS_DIR}/rootCA.crt
 tls: true
 host: ${MANAGEMENT_HOST}
 port: ${MANAGEMENT_PORT}

@@ -11,13 +11,13 @@ would also need to be installed.
 
 ```sh
 # on Ubuntu
-sudo apt install bash make git docker.io docker-buildx jq tmux
+sudo apt install bash make git docker.io docker-buildx jq tmux jose
 
 # on Arch
-sudo pacman -S bash make git docker docker-buildx jq tmux
+sudo pacman -S bash make git docker docker-buildx jq tmux jose
 
 # On MacOSX with Homebrew
-brew install step coreutils gettext openssl sqlite3 protobuf jq
+brew install jose coreutils gettext openssl sqlite3 protobuf jq
 brew link --force gettext
 ```
 

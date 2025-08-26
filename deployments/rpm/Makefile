@@ -6,16 +6,6 @@ SHELL = /bin/bash
 
 THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-PACKAGE_DEST ?= /tmp
-
 .PHONY: rpm
 rpm:
-	$(THIS_DIR)/deployment.sh create-rpm $(PACKAGE_DEST)
-
-.PHONY: bootstrap
-bootstrap:
-	$(THIS_DIR)/deployment.sh bootstrap
-
-.PHONY: really-clean
-really-clean:
-	rm -rf $(PACKAGE_DEST)/veraison-rpm-package
+	$(THIS_DIR)/deployment.sh create-rpm
