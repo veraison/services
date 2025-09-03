@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package log
 
@@ -167,6 +167,24 @@ func (o *HCLogger) ResetNamed(name string) hclog.Logger {
 func (o *HCLogger) SetLevel(level hclog.Level) {
 	// NO-OP
 	// We do not want to allow plugins to change logging level.
+}
+
+func (o *HCLogger) GetLevel() hclog.Level {
+	var hcLogLevel hclog.Level
+
+	zapLevel := GetLevel()
+	switch zapLevel {
+	case zap.DebugLevel:
+		hcLogLevel = hclog.Debug
+	case zap.InfoLevel:
+		hcLogLevel = hclog.Info
+	case zap.WarnLevel:
+		hcLogLevel = hclog.Warn
+	case zap.ErrorLevel:
+		hcLogLevel = hclog.Error
+	}
+
+	return hcLogLevel
 }
 
 // Return a value that conforms to the stdlib log.Logger interface
