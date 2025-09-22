@@ -7,10 +7,14 @@ const (
 )
 
 var EndorsementMediaTypes = []string{
-	// Unsigned CoRIM profile
+	// Unsigned CoRIM profile - legacy PSA profile
 	`application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"`,
-	// Signed CoRIM profile
+	// Signed CoRIM profile - legacy PSA profile
 	`application/rim+cose; profile="http://arm.com/psa/iot/1"`,
+	// Unsigned CoRIM profile - new PSA profile
+	`application/corim-unsigned+cbor; profile="tag:arm.com,2025:psa#1.0.0"`,
+	// Signed CoRIM profile - new PSA profile
+	`application/rim+cose; profile="tag:arm.com,2025:psa#1.0.0"`,
 }
 
 var EvidenceMediaTypes = []string{

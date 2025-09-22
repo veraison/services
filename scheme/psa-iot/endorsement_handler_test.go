@@ -126,3 +126,15 @@ func TestDecoder_Decode_negative_tests(t *testing.T) {
 		})
 	}
 }
+
+func TestCorimExtractor_ProfileSupport(t *testing.T) {
+	extractor := &CorimExtractor{}
+	
+	// Test old PSA profile
+	extractor.SetProfile("http://arm.com/psa/iot/1")
+	assert.Equal(t, "http://arm.com/psa/iot/1", extractor.Profile)
+	
+	// Test new PSA profile
+	extractor.SetProfile("tag:arm.com,2025:psa#1.0.0")
+	assert.Equal(t, "tag:arm.com,2025:psa#1.0.0", extractor.Profile)
+}
