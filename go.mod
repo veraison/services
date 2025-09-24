@@ -18,7 +18,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/go-tpm v0.3.3
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-hclog v1.2.0
+	github.com/hashicorp/go-hclog v1.5.0
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/jellydator/ttlcache/v3 v3.0.0
@@ -44,7 +44,7 @@ require (
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
-	go.uber.org/zap v1.23.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.21.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
@@ -125,7 +125,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.1.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/crypto v0.31.0
 	golang.org/x/net v0.22.0 // indirect
