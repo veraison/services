@@ -24,8 +24,7 @@ jobs:
         go install golang.org/x/tools/cmd/guru@latest
     - name: Install golangci-lint
       run: |
-        go version
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
       with:
