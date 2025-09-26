@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/moogar0880/problems"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/coserv/endorsementdistributor"
@@ -66,7 +66,6 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 	}
 
 	// TODO(tho)
-	// - capabilities
 	// - keys (reuse EAR Signer?)
 	obj := NewCoservWellKnownInfo(
 		config.Version,
@@ -80,16 +79,30 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 }
 
 func reportProblem(c *gin.Context, status int, details ...string) {
-	prob := problems.NewStatusProblem(status)
+	type PD struct {
+		Title  string `cbor:"-1,keyasint,omitempty"`
+		Detail string `cbor:"-2,keyasint,omitempty"`
+	}
 
+	prob := PD{
+		Title: http.StatusText(status),
+	}
+
+	// concatenate details if there are multiple
 	if len(details) > 0 {
 		prob.Detail = strings.Join(details, ", ")
 	}
 
-	log.LogProblem(log.Named("api"), prob)
+	log.Info(log.Named("api"), prob)
 
-	c.Header("Content-Type", "application/problem+json")
-	c.AbortWithStatusJSON(status, prob)
+	// encode to CBOR
+	b, err := cbor.Marshal(prob)
+	if err != nil {
+		log.Error(log.Named("api"), "failed to marshal problem details to CBOR", "error", err)
+		c.AbortWithStatus(status)
+	}
+
+	c.Data(status, "application/concise-problem-details+cbor", b)
 }
 
 func (o Handler) CoservRequest(c *gin.Context) {
