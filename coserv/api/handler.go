@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/moogar0880/problems"
 	"github.com/veraison/corim/coserv"
-	"github.com/veraison/services/capability"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/coserv/endorsementdistributor"
 	"github.com/veraison/services/log"
@@ -38,39 +37,46 @@ func NewHandler(endorsementdistributor endorsementdistributor.IEndorsementDistri
 }
 
 func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
-	offered := c.NegotiateFormat(capability.WellKnownMediaType)
-	if offered != capability.WellKnownMediaType && offered != gin.MIMEJSON {
+	acceptable := []string{CoservDiscoveryMediaType, gin.MIMEJSON}
+
+	// TODO (tho) - add reportCBORProblem and use it here
+	if c.NegotiateFormat(acceptable...) == "" {
 		reportProblem(c,
 			http.StatusNotAcceptable,
-			fmt.Sprintf("the only supported output format is %s",
-				capability.WellKnownMediaType),
+			fmt.Sprintf("supported format(s): %s",
+				strings.Join(acceptable, ", ")),
 		)
 		return
 	}
 
-	// TODO(tho)
-	// - supported media types
-	// - vts state
-
-	obj, err := capability.NewWellKnownInfoObj(
-		nil, // key
-		[]string{EdApiMediaType},
-		nil, // supported schemes
-		config.Version,
-		"SERVICE_STATUS_READY",
-		publicApiMap,
-	)
-
+	profiles, err := o.EndorsementDistibutor.SupportedProfiles()
 	if err != nil {
 		reportProblem(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Content-Type", capability.WellKnownMediaType)
-	c.JSON(http.StatusOK, obj)
-}
+	var capabilities []Capability
 
-func (o Handler) respondToGet(c *gin.Context, mt string, ret []byte, err error) {
+	for _, p := range profiles {
+		c := Capability{
+			MediaType:       fmt.Sprint(EdApiMediaType, `; profile="`, p, `"`),
+			ArtifactSupport: []string{"collected"}, // only "collected" supported for now
+		}
+		capabilities = append(capabilities, c)
+	}
+
+	// TODO(tho)
+	// - capabilities
+	// - keys (reuse EAR Signer?)
+	obj := NewCoservWellKnownInfo(
+		config.Version,
+		capabilities,
+		publicApiMap,
+		nil, // TODO keys
+	)
+
+	c.Header("Content-Type", CoservDiscoveryMediaType)
+	c.JSON(http.StatusOK, obj)
 }
 
 func reportProblem(c *gin.Context, status int, details ...string) {

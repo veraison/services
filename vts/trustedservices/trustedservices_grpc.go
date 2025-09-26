@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net"
 	"os"
 	"strings"
@@ -503,6 +504,30 @@ func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empt
 func (c *GRPC) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
 	mts := c.EndPluginManager.GetRegisteredMediaTypes()
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
+}
+
+func (c *GRPC) GetSupportedEndorsementProfiles(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
+	mts := c.EndPluginManager.GetRegisteredMediaTypes()
+
+	var profiles []string
+
+	// extract profile parameter
+	for _, mt := range mts {
+		t, p, err := mime.ParseMediaType(mt)
+		if err != nil || t != "application/rim+cbor" {
+			continue
+		}
+		profile := p["profile"]
+		if profile == "" {
+			continue
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	c.logger.Debugw("GetSupportedEndorsementProfiles", "profiles", profiles)
+
+	return &proto.MediaTypeList{MediaTypes: profiles}, nil
 }
 
 func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
