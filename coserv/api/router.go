@@ -20,11 +20,12 @@ func NewRouter(handler Handler) *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	router.GET("/.well-known/veraison/endorsement-distribution", handler.GetEdApiWellKnownInfo)
+	router.GET("/.well-known/coserv-configuration", handler.GetEdApiWellKnownInfo)
 
 	coservEndpoint := path.Join(edApiPath, "coserv/:query")
+	// use URI template syntax to indicate the variable part in the discovery document
+	publicApiMap["CoSERVRequestResponse"] = path.Join(edApiPath, "coserv/{query}")
 	router.GET(coservEndpoint, handler.CoservRequest)
-	publicApiMap["coservRequest"] = coservEndpoint
 
 	return router
 }

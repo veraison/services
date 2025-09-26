@@ -35,6 +35,7 @@ type VTSClient interface {
 	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 	// endorsement distribution API
 	GetEndorsements(ctx context.Context, in *EndorsementQueryIn, opts ...grpc.CallOption) (*EndorsementQueryOut, error)
+	GetSupportedEndorsementProfiles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 }
 
 type vTSClient struct {
@@ -108,6 +109,15 @@ func (c *vTSClient) GetEndorsements(ctx context.Context, in *EndorsementQueryIn,
 	return out, nil
 }
 
+func (c *vTSClient) GetSupportedEndorsementProfiles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+	out := new(MediaTypeList)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedEndorsementProfiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VTSServer is the server API for VTS service.
 // All implementations must embed UnimplementedVTSServer
 // for forward compatibility
@@ -124,6 +134,7 @@ type VTSServer interface {
 	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	// endorsement distribution API
 	GetEndorsements(context.Context, *EndorsementQueryIn) (*EndorsementQueryOut, error)
+	GetSupportedEndorsementProfiles(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	mustEmbedUnimplementedVTSServer()
 }
 
@@ -151,6 +162,9 @@ func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.E
 }
 func (UnimplementedVTSServer) GetEndorsements(context.Context, *EndorsementQueryIn) (*EndorsementQueryOut, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEndorsements not implemented")
+}
+func (UnimplementedVTSServer) GetSupportedEndorsementProfiles(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedEndorsementProfiles not implemented")
 }
 func (UnimplementedVTSServer) mustEmbedUnimplementedVTSServer() {}
 
@@ -291,6 +305,24 @@ func _VTS_GetEndorsements_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VTS_GetSupportedEndorsementProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetSupportedEndorsementProfiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetSupportedEndorsementProfiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetSupportedEndorsementProfiles(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VTS_ServiceDesc is the grpc.ServiceDesc for VTS service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -325,6 +357,10 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEndorsements",
 			Handler:    _VTS_GetEndorsements_Handler,
+		},
+		{
+			MethodName: "GetSupportedEndorsementProfiles",
+			Handler:    _VTS_GetSupportedEndorsementProfiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

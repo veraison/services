@@ -210,6 +210,26 @@ func (o *GRPC) GetEndorsements(
 	return c.GetEndorsements(ctx, in, opts...)
 }
 
+func (o *GRPC) GetSupportedEndorsementProfiles(
+	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
+) (*proto.MediaTypeList, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetSupportedEndorsementProfiles", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	mts, err := c.GetSupportedEndorsementProfiles(ctx, in, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return mts, nil
+}
+
 func normalizeMediaTypeList(mts *proto.MediaTypeList) *proto.MediaTypeList {
 	var nmts []string // nolint:prealloc
 
