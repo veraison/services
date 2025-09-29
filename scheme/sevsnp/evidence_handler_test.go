@@ -15,6 +15,17 @@ import (
 )
 
 var testNonce = []byte{
+	77, 73, 68, 66, 78, 72, 50, 56,
+	105, 105, 111, 105, 115, 106, 80, 121,
+	120, 120, 120, 120, 120, 120, 120, 120,
+	120, 120, 120, 120, 120, 120, 120, 120,
+	77, 73, 68, 66, 78, 72, 50, 56,
+	105, 105, 111, 105, 115, 106, 80, 121,
+	120, 120, 120, 120, 120, 120, 120, 120,
+	120, 120, 120, 120, 120, 120, 120, 120,
+}
+
+var testBadNonce = []byte{
 	0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
 	0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,
 	0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
@@ -84,6 +95,28 @@ func Test_ValidateEvidenceIntegrity_BadTA(t *testing.T) {
 	err = handler.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
 
 	assert.EqualError(t, err, "{\"detail\":[\"evidence Trust Anchor (ARK) doesn't match the provisioned one\"],\"detail-type\":\"error\",\"error\":\"bad evidence\"}")
+}
+
+func Test_ValidateEvidenceIntegrity_BadNonce(t *testing.T) {
+	tokenBytes, err := os.ReadFile("test/sevsnp-ratsd-token")
+	require.NoError(t, err)
+
+	taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
+	require.NoError(t, err)
+
+	handler := &EvidenceHandler{}
+
+	token := proto.AttestationToken{
+		TenantId:  "0",
+		Data:      tokenBytes,
+		MediaType: EvidenceMediaTypeRATSd,
+		Nonce:     testBadNonce,
+	}
+
+	ta := string(taEndValBytes)
+	err = handler.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
+
+	assert.EqualError(t, err, "{\"detail\":[\"nonce in the evidence doesn't match the session nonce. evidence: 0x4d4944424e48323869696f69736a5079787878787878787878787878787878784d4944424e48323869696f69736a507978787878787878787878787878787878 vs session: 0x07060504030201000f0e0d0c0b0a090817161514131211101f1e1d1c1b1a1918\"],\"detail-type\":\"error\",\"error\":\"bad evidence\"}")
 }
 
 func Test_AppraiseEvidence_ok(t *testing.T) {
