@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	testSupportedMediaTypeA = `application/eat_cwt; profile=http://arm.com/psa/2.0.0`
+	testSupportedMediaTypeA = `application/eat_cwt; profile="http://arm.com/psa/2.0.0"`
 	testSupportedMediaTypeB = `application/eat_cwt; profile=PSA_IOT_PROFILE_1`
 	testSupportedMediaTypeC = `application/psa-attestation-token`
 	testSupportedMediaTypes = []string{
@@ -69,7 +69,7 @@ var (
 		"application/psa-attestation-token"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
+		"type":"application/eat_cwt; profile=\"http://arm.com/psa/2.0.0\"",
 		"value":"eyAiayI6ICJ2IiB9"
 	}
 }`
@@ -83,7 +83,7 @@ var (
 		"application/psa-attestation-token"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
+		"type":"application/eat_cwt; profile=\"http://arm.com/psa/2.0.0\"",
 		"value":"eyAiayI6ICJ2IiB9"
 	},
 	"result": "{}"
@@ -1111,10 +1111,9 @@ func TestHandler_GetWellKnownVerificationInfo_UnsupportedAccept(t *testing.T) {
 }
 
 func goodCMW(t *testing.T) []byte {
-	var w cmw.CMW
-	w.SetMediaType(testSupportedMediaTypeA)
-	w.SetValue([]byte(testJSONBody))
-	b, err := w.Serialize(cmw.JSONArray)
+	w, err := cmw.NewMonad(testSupportedMediaTypeA, []byte(testJSONBody), cmw.Indicator(cmw.Evidence))
+	require.NoError(t, err)
+	b, err := w.MarshalJSON()
 	require.NoError(t, err)
 	return b
 }
@@ -1168,7 +1167,7 @@ func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
 
 	badCMW := []byte(`["missing value"]`)
 
-	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW array"
+	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW record"
 
 	url := path.Join(testSessionBaseURL, testUUIDString)
 
