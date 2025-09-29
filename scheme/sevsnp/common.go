@@ -168,7 +168,7 @@ func parseAttestationToken(token *proto.AttestationToken) (*tokens.TSMReport, er
 }
 
 // transformSVNtoTCB extracts TCB from the supplied SVN. SEV-SNP's TCB_VERSION
-// is a composite version; it's bitfield consisting of SVNs from various firmware components
+// is a composite version; it's a bitfield consisting of SVNs from various firmware components
 func transformSVNtoTCB(svn comid.SVN) (*kds.TCBParts, error) {
 	var (
 		tcbVersion uint64
