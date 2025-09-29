@@ -1,6 +1,6 @@
 # SEV-SNP scheme
 
-This scheme supports the provisioning of reference values and appraisal of evidence. It is suitable for anyone performing verification of simple SEV-SNP evidence.
+This scheme supports the provisioning of Reference Values and appraisal of Evidence. It is suitable for anyone performing verification of SEV-SNP Evidence.
 
 ## Installation
 
