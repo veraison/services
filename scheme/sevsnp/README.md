@@ -32,7 +32,7 @@ cocli corim submit --corim-file=ta.cbor --api-server="https://localhost:9443/end
 cocli corim submit --corim-file=scheme/sevsnp/test/refval-prov.cbor --api-server="https://localhost:9443/endorsement-provisioning/v1/submit" --media-type="application/corim-unsigned+cbor; profile=\"https://amd.com/ark\""
 ```
 
-### Submitting evidence
+### Submitting Evidence
 ```
 git clone https://github.com/jraman567/evcli.git
 cd evcli; go build
