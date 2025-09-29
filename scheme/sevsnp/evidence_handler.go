@@ -238,6 +238,21 @@ func validateReportIntegrity(tsm *tokens.TSMReport, certChain *sevsnp.Certificat
 	return nil
 }
 
+func validateSessionNonce(tsm *tokens.TSMReport, sessionNonce []byte) error {
+	reportProto, err := abi.ReportToProto(tsm.OutBlob)
+	if err != nil {
+		return err
+	}
+
+	evNonce := reportProto.GetReportData()
+
+	if !bytes.Equal(evNonce, sessionNonce) {
+		return handler.BadEvidence(fmt.Errorf("nonce in the evidence doesn't match the session nonce. evidence: 0x%x vs session: 0x%x", evNonce, sessionNonce))
+	}
+
+	return nil
+}
+
 // ValidateEvidenceIntegrity confirms the integrity of evidence by doing the following:
 //   - verifies that the TA in the evidence matches the provisioned TA
 //   - confirms the integrity of the certificate chain
@@ -271,6 +286,10 @@ func (o EvidenceHandler) ValidateEvidenceIntegrity(
 	}
 
 	if err := validateTA(certChain, provisionedArk); err != nil {
+		return err
+	}
+
+	if err := validateSessionNonce(tsm, token.Nonce); err != nil {
 		return err
 	}
 
