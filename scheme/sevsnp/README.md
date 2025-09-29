@@ -39,7 +39,7 @@ cd evcli; go build
 ./evcli sev-snp verify-as relying-party --api-server=https://localhost:8443/challenge-response/v1/newSession --token=cmd/sevsnp/sample/SNP-EAT.json
 ```
 
-## Result
+## Attestation Result
 The result is in JWT format. Decoding it using an online tool like https://jwt.io/ reveals formatted results. The trustworthiness vector, as shown below, summarizes the result of verification.
 ```
     "SEVSNP": {
