@@ -71,12 +71,12 @@ var (
 // sequence and current time.  Routing to the correct node can therefore happen
 // based on the NodeID part of the UUID (i.e., octets 10-15).
 func mintSessionID() (uuid.UUID, error) {
-	mid, err := machineid.ID()
+	nodeID, err := getNodeID()
 	if err != nil {
-		return uuid.UUID{}, err
+		return uuid.UUID{}, fmt.Errorf("failed to get node ID: %v", err)
 	}
 
-	uuid.SetNodeID([]byte(mid))
+	uuid.SetNodeID(nodeID)
 
 	return uuid.NewUUID()
 }
