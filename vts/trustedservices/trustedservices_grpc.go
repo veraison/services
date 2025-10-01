@@ -461,7 +461,7 @@ func (o *GRPC) GetAttestation(
 			claimStr = "integrity validation failed"
 			ok := errors.As(err, &badErr)
 			if ok {
-				claimStr = fmt.Sprintf("integrity validation failed: %s", badErr.ToString())
+				claimStr += fmt.Sprintf(": %s", badErr.ToString())
 			}
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", claimStr)
