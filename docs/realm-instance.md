@@ -9,7 +9,7 @@ Let's break down what a Realm Instance really is in everyday terms. Think of a R
 ### The Birth Certificate: Realm Initial Measurements (RIM)
 
 Think of RIM as your Realm's birth certificate - it's the first and most fundamental piece of identity:
-- It's basically a snapshot of your code when it first starts up
+- It's basically a hash (digest) of your code when it first starts up
 - Works like a fingerprint - unique to your initial code setup
 - Helps others verify "Yes, this is exactly the code we expect to be running"
 - Every Realm Instance needs this - it's not optional
@@ -91,7 +91,8 @@ When running multiple instances:
 - Keep track of which instance is which (maintain an RPV registry)
 
 ### Watching Your REMs
-This is like having a security camera system:
+These are more like tripwire alarms than cameras:
+- They can tell you when something went wrong, but not what (for that, you need event logs)
 - Know what "normal" looks like (establish baseline measurements)
 - Watch for anything unusual (monitor for unexpected changes)
 - Set up automatic alerts (include REM checks in your security policies)
