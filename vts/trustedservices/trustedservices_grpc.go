@@ -428,13 +428,21 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
+	// Filter out empty reference IDs (can occur when no software components are provisioned)
+	filteredReferenceIDs := make([]string, 0, len(referenceIDs))
+	for _, refID := range referenceIDs {
+		if refID != "" {
+			filteredReferenceIDs = append(filteredReferenceIDs, refID)
+		}
+	}
+
 	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(claims)
 	if err != nil {
 		err = fmt.Errorf("unserializable claims in result: %w", err)
 		return o.finalize(appraisal, err)
 	}
 
-	appraisal.EvidenceContext.ReferenceIds = referenceIDs
+	appraisal.EvidenceContext.ReferenceIds = filteredReferenceIDs
 
 	o.logger.Debugw("constructed evidence context",
 		"software-id", appraisal.EvidenceContext.ReferenceIds,
@@ -442,11 +450,6 @@ func (o *GRPC) GetAttestation(
 
 	var multEndorsements []string
 	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-		// Skip empty reference IDs (can occur when no software components are provisioned)
-		if refvalID == "" {
-			o.logger.Debugw("skipping empty reference ID", "refvalID", refvalID)
-			continue
-		}
 
 		endorsements, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
