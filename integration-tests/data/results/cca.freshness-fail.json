@@ -13,7 +13,7 @@
       "storage-opaque": 99
     },
     "ear.veraison.policy-claims": {
-      "problem": "integrity validation failed"
+      "problem": "integrity validation failed: bad evidence: freshness: realm challenge (6f24d6b9635a2c8bbf58e908b94e04c1bfb3ae80cdebe832424578499fe31761e7f5e1d8bce0121844f54abdfa5286da88f53a657b15335c9396b4329254bc5c) does not match session nonce (75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6d)"
     }
   }
 }

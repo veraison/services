@@ -13,7 +13,7 @@
       "storage-opaque": 99
     },
     "ear.veraison.policy-claims": {
-      "problem": "integrity validation failed"
+      "problem": "integrity validation failed: bad evidence: freshness: psa-nonce (414a7c174141b3d0e9a1d28af31520f0d42299feac4007ded89d68ae6cd92f19) does not match session nonce (75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e69d6de79f75e6)"
     }
   }
 }

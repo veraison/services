@@ -35,7 +35,7 @@ make deb
 This will create
 `${PACKAGE_DEST}/veraison_deb_package/veraison_VERSION_ARCH.deb`, where `VERSION`
 is the Veraison version as reported by the
-[`get-veraison-version`](../scripts/get-veraison-version) script, and `ARCH` is
+[`get-veraison-version`](../../scripts/get-veraison-version) script, and `ARCH` is
 the architecture of your system as reported by `dpkg --print-architecture`.
 
 Alongside the package, there will be a subdirectory with the same name but

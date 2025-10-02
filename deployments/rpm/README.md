@@ -3,7 +3,7 @@ packages for installation on Fedora-like distros (such as RHEL and
 Oracle Linux). The build process involves creating a native deployment
 and then packaging it up using `rpmbuild`. Veraison services run as
 `VERAISON_USER` as specified in `deployment.cfg`, which defaults to
-`veraison`. If this user isn't available, RPM creates it. 
+`veraison`. If this user isn't available, RPM creates it.
 
 ## Dependencies
 
@@ -13,9 +13,7 @@ install all dependencies to build an rpm, run
 
 ```sh
 git clone https://github.com/veraison/services.git
-cd services/deployments/rpm
-
-make bootstrap
+sudo dnf builddep deployments/rpm/veraison.spec.template
 ```
 
 ## Building the package

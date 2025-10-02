@@ -13,7 +13,7 @@
     },
     "ear.appraisal-policy-id": "policy:PSA_IOT",
     "ear.veraison.policy-claims": {
-      "problem": "integrity validation failed"
+      "problem": "integrity validation failed: bad evidence: signature verification failed: verification error"
     }
   }
 }

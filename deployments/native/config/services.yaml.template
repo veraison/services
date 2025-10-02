@@ -2,35 +2,35 @@ logging:
   level: info  # valid levels: error, warning, info, debug
   output-paths:
     - stdout
-    - ${VERAISON_ROOT}/logs/{{ .service }}-stdout.log
+    - ${VERAISON_LOGS_DIR}/{{ .service }}-stdout.log
 provisioning:
   listen-addr: 0.0.0.0:${PROVISIONING_PORT}
   protocol: https
-  cert: ${VERAISON_ROOT}/certs/provisioning.crt
-  cert-key: ${VERAISON_ROOT}/certs/provisioning.key
+  cert: ${VERAISON_CERTS_DIR}/provisioning.crt
+  cert-key: ${VERAISON_CERTS_DIR}/provisioning.key
 verification:
   listen-addr: 0.0.0.0:${VERIFICATION_PORT}
   protocol: https
-  cert: ${VERAISON_ROOT}/certs/verification.crt
-  cert-key: ${VERAISON_ROOT}/certs/verification.key
+  cert: ${VERAISON_CERTS_DIR}/verification.crt
+  cert-key: ${VERAISON_CERTS_DIR}/verification.key
 management:
   listen-addr: 0.0.0.0:${MANAGEMENT_PORT}
   protocol: https
-  cert: ${VERAISON_ROOT}/certs/management.crt
-  cert-key: ${VERAISON_ROOT}/certs/management.key
+  cert: ${VERAISON_CERTS_DIR}/management.crt
+  cert-key: ${VERAISON_CERTS_DIR}/management.key
 vts:
   server-addr: ${VTS_HOST}:${VTS_PORT}
   tls: true
-  cert: ${VERAISON_ROOT}/certs/vts.crt
-  cert-key: ${VERAISON_ROOT}/certs/vts.key
-  ca-certs: ${VERAISON_ROOT}/certs/rootCA.crt
+  cert: ${VERAISON_CERTS_DIR}/vts.crt
+  cert-key: ${VERAISON_CERTS_DIR}/vts.key
+  ca-certs: ${VERAISON_CERTS_DIR}/rootCA.crt
 ear-signer:
   alg: ES256
-  key: ${VERAISON_ROOT}/signing/skey.jwk
+  key: ${VERAISON_SIGNING_DIR}/skey.jwk
 plugin:
   backend: go-plugin
   go-plugin:
-    dir: ${VERAISON_ROOT}/plugins/
+    dir: ${VERAISON_PLUGINS_DIR}/
 ##############################################################################
 # The {ta,en,po}-store entries below configure the key-value stores for trust
 # anchors, and policies. They are configured to use the "sql" backend with
@@ -51,7 +51,7 @@ ta-store:
     max_connections: 10
 
     driver: sqlite3
-    datasource: ${VERAISON_ROOT}/stores/ta-store.sql
+    datasource: ${VERAISON_STORES_DIR}/ta-store.sql
 
     #driver: pgx
     #datasource: postgres://veraison:password@localhost:5432/veraison
@@ -66,7 +66,7 @@ en-store:
     max_connections: 10
 
     driver: sqlite3
-    datasource: ${VERAISON_ROOT}/stores/en-store.sql
+    datasource: ${VERAISON_STORES_DIR}/en-store.sql
 
     #driver: pgx
     #datasource: postgres://veraison:password@localhost:5432/veraison
@@ -81,7 +81,7 @@ po-store:
     max_connections: 10
 
     driver: sqlite3
-    datasource: ${VERAISON_ROOT}/stores/po-store.sql
+    datasource: ${VERAISON_STORES_DIR}/po-store.sql
 
     #driver: pgx
     #datasource: postgres://veraison:password@localhost:5432/veraison
@@ -105,7 +105,7 @@ auth:
 #  backend: keycloak
 #  host: localhost
 #  port: 11111
-#  ca-cert: ${VERAISON_ROOT}/certs/rootCA.crt
+#  ca-cert: ${VERAISON_CERTS_DIR}/rootCA.crt
 ##############################################################################
 
 # vim: set ft=yaml:

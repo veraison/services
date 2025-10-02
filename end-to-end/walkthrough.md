@@ -71,7 +71,7 @@ for the deployment sourced in your shell.
 source $VERAISON_SRC/deployments/docker/env.bash
 
 # For native deployment
-export VERAISON_ROOT=~/veraison-deployment # default location
+export VERAISON_ROOT=~/veraison-deployment/ # default location
 source $VERAISON_ROOT/env/env.bash
 
 ```
