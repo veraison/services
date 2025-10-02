@@ -3,6 +3,9 @@
 # directory (/tmp/veraison is the default for make build).
 FROM debian AS veraison-verification
 
+ARG VERSION=unknown
+ARG BUILD_TIME
+
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
         --assume-yes \
@@ -26,6 +29,17 @@ USER veraison
 WORKDIR /opt/veraison
 
 RUN mkdir logs
+
+# Generate installation metadata
+RUN echo "{\n\
+  \"version\": \"${VERSION}\",\n\
+  \"deployment_method\": \"docker\",\n\
+  \"install_time\": \"${BUILD_TIME}\",\n\
+  \"metadata\": {\n\
+    \"service\": \"verification\",\n\
+    \"image\": \"veraison/verification:${VERSION}\"\n\
+  }\n\
+}" > /opt/veraison/installation.json
 
 ADD --chown=veraison:nogroup config.yaml verification-service service-entrypoint \
     certs/verification.crt certs/verification.key ./

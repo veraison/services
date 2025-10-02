@@ -53,6 +53,29 @@ fi
 getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME} || true
 
 %post
+# Generate installation metadata
+METADATA_FILE="/%{_prefix}/share/veraison/installation.json"
+METADATA_DIR="$(dirname "$METADATA_FILE")"
+VERSION="%{version}"
+INSTALL_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ARCH="%{_arch}"
+
+mkdir -p "$METADATA_DIR"
+
+cat > "$METADATA_FILE" <<EOF
+{
+  "version": "${VERSION}",
+  "deployment_method": "rpm",
+  "install_time": "${INSTALL_TIME}",
+  "metadata": {
+    "package": "veraison",
+    "architecture": "${ARCH}"
+  }
+}
+EOF
+
+chmod 644 "$METADATA_FILE"
+
 /%{_prefix}/local/veraison/bin/veraison -f gen-service-certs localhost,@@-service,$(hostname -f)
 chown -R %{USERNAME}:%{GROUPNAME} /%{_prefix}/local/veraison/
 chmod 500 /%{_prefix}/local/veraison/certs/*.key
