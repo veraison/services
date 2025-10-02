@@ -22,6 +22,10 @@ func (o GasCartridge) GetSupportedMediaTypes() []string {
 	return []string{"tibanna gas"}
 }
 
+func (o GasCartridge) GetVersion() string {
+	return "1.0.0"
+}
+
 func (o GasCartridge) GetCapacity() int {
 	return 500
 }

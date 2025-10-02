@@ -48,6 +48,11 @@ func (s *StoreRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string
 	return nil
 }
 
+func (s *StoreRPCServer) GetVersion(args interface{}, resp *string) error {
+	*resp = s.Impl.GetVersion()
+	return nil
+}
+
 type SynthKeysArgs struct {
 	TenantID        string
 	EndorsementJSON []byte
@@ -181,6 +186,21 @@ func (c StoreRPCClient) GetSupportedMediaTypes() []string {
 	err = c.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
 	if err != nil {
 		return nil
+	}
+
+	return resp
+}
+
+func (c StoreRPCClient) GetVersion() string {
+	var (
+		err    error
+		resp   string
+		unused interface{}
+	)
+
+	err = c.client.Call("Plugin.GetVersion", &unused, &resp)
+	if err != nil {
+		return ""
 	}
 
 	return resp

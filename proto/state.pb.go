@@ -85,6 +85,7 @@ type ServiceState struct {
 	Status              ServiceStatus                  `protobuf:"varint,1,opt,name=status,proto3,enum=proto.ServiceStatus" json:"status,omitempty"`
 	ServerVersion       string                         `protobuf:"bytes,2,opt,name=server_version,json=server-version,proto3" json:"server_version,omitempty"`
 	SupportedMediaTypes map[string]*structpb.ListValue `protobuf:"bytes,3,rep,name=supported_media_types,json=supported-media-types,proto3" json:"supported_media_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	SchemeVersions      map[string]string              `protobuf:"bytes,4,rep,name=scheme_versions,json=scheme-versions,proto3" json:"scheme_versions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *ServiceState) Reset() {
@@ -136,6 +137,13 @@ func (x *ServiceState) GetServerVersion() string {
 func (x *ServiceState) GetSupportedMediaTypes() map[string]*structpb.ListValue {
 	if x != nil {
 		return x.SupportedMediaTypes
+	}
+	return nil
+}
+
+func (x *ServiceState) GetSchemeVersions() map[string]string {
+	if x != nil {
+		return x.SchemeVersions
 	}
 	return nil
 }

@@ -55,6 +55,11 @@ func (s *EndorsementRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]
 	return nil
 }
 
+func (s *EndorsementRPCServer) GetVersion(args interface{}, resp *string) error {
+	*resp = s.Impl.GetVersion()
+	return nil
+}
+
 func (s EndorsementRPCServer) Decode(args []byte, resp *[]byte) error {
 	var decodeArgs struct {
 		Data       []byte
@@ -143,6 +148,21 @@ func (c EndorsementRPCClient) GetSupportedMediaTypes() []string {
 	err = c.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
 	if err != nil {
 		return nil
+	}
+
+	return resp
+}
+
+func (c EndorsementRPCClient) GetVersion() string {
+	var (
+		err    error
+		resp   string
+		unused interface{}
+	)
+
+	err = c.client.Call("Plugin.GetVersion", &unused, &resp)
+	if err != nil {
+		return ""
 	}
 
 	return resp

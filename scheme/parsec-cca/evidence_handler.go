@@ -38,6 +38,10 @@ func (s EvidenceHandler) GetSupportedMediaTypes() []string {
 	return EvidenceMediaTypes
 }
 
+func (s EvidenceHandler) GetVersion() string {
+	return SchemeVersion
+}
+
 func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,

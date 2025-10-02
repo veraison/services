@@ -30,6 +30,10 @@ func (s StoreHandler) GetSupportedMediaTypes() []string {
 	return nil
 }
 
+func (s StoreHandler) GetVersion() string {
+	return SchemeVersion
+}
+
 func (s StoreHandler) SynthKeysFromRefValue(tenantID string, refVals *handler.Endorsement) ([]string, error) {
 	return synthKeysFromAttr(ScopeRefValues, tenantID, refVals.Attributes)
 }

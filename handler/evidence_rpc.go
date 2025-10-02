@@ -45,6 +45,11 @@ func (s *RPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) err
 	return nil
 }
 
+func (s *RPCServer) GetVersion(args interface{}, resp *string) error {
+	*resp = s.Impl.GetVersion()
+	return nil
+}
+
 type ExtractClaimsArgs struct {
 	Token        []byte
 	TrustAnchors []string
@@ -158,6 +163,21 @@ func (s *RPCClient) GetSupportedMediaTypes() []string {
 	if err != nil {
 		log.Errorf("Plugin.GetSupportedMediaTypes RPC call failed: %v", err)
 		return nil
+	}
+
+	return resp
+}
+
+func (s *RPCClient) GetVersion() string {
+	var (
+		resp   string
+		unused interface{}
+	)
+
+	err := s.client.Call("Plugin.GetVersion", &unused, &resp)
+	if err != nil {
+		log.Errorf("Plugin.GetVersion RPC call failed: %v", err) // nolint
+		return ""
 	}
 
 	return resp

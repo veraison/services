@@ -4,6 +4,7 @@ package parsec_tpm
 
 const (
 	SchemeName         = "PARSEC_TPM"
+	SchemeVersion      = "1.0.0"
 	EndorsementProfile = `"tag:github.com/parallaxsecond,2023-03-03:tpm"`
 )
 

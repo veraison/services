@@ -3,7 +3,8 @@
 package psa_iot
 
 const (
-	SchemeName = "PSA_IOT"
+	SchemeName    = "PSA_IOT"
+	SchemeVersion = "1.0.0"
 )
 
 var EndorsementMediaTypes = []string{

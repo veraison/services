@@ -109,3 +109,24 @@ func (o *GoPluginManager[I]) LookupByAttestationScheme(name string) (I, error) {
 func (o *GoPluginManager[I]) LookupByMediaType(mediaType string) (I, error) {
 	return GetGoPluginHandleByMediaTypeUsing[I](o.loader, mediaType)
 }
+
+func (o *GoPluginManager[I]) GetPluginVersion(name string) (string, error) {
+	pluginContext, ok := o.loader.loadedByName[name]
+	if !ok {
+		return "", ErrNotFound
+	}
+
+	return pluginContext.GetVersion(), nil
+}
+
+func (o *GoPluginManager[I]) GetSchemeVersion(scheme string) (string, error) {
+	for _, ictx := range o.loader.loadedByName {
+		if ictx.GetAttestationScheme() == scheme {
+			if _, ok := ictx.(*PluginContext[I]); ok {
+				return ictx.GetVersion(), nil
+			}
+		}
+	}
+
+	return "", ErrNotFound
+}

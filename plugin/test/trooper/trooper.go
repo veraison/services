@@ -22,6 +22,10 @@ func (o ImperialTrooper) GetSupportedMediaTypes() []string {
 	return []string{"blaster"}
 }
 
+func (o ImperialTrooper) GetVersion() string {
+	return "1.0.0"
+}
+
 func (o ImperialTrooper) Shoot() string {
 	return `blaster goes "pew, pew"`
 }

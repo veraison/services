@@ -25,6 +25,10 @@ func (s StoreHandler) GetSupportedMediaTypes() []string {
 	return nil
 }
 
+func (s StoreHandler) GetVersion() string {
+	return SchemeVersion
+}
+
 func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	return []string{"dice://"}, nil
 }

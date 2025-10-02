@@ -13,6 +13,7 @@ type IMook interface {
 	GetName() string
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() []string
+	GetVersion() string
 	Shoot() string
 }
 
@@ -65,6 +66,21 @@ func (o *MookRPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
+func (o *MookRPCClient) GetVersion() string {
+	var (
+		resp   string
+		unused interface{}
+	)
+
+	err := o.client.Call("Plugin.GetVersion", &unused, &resp)
+	if err != nil {
+		log.Printf("Plugin.GetVersion RPC call failed: %v", err) // nolint
+		return ""
+	}
+
+	return resp
+}
+
 func (o *MookRPCClient) Shoot() string {
 	var (
 		resp   string
@@ -96,6 +112,11 @@ func (o *MookRPCServer) GetAttestationScheme(args interface{}, resp *string) err
 
 func (o *MookRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = o.Impl.GetSupportedMediaTypes()
+	return nil
+}
+
+func (o *MookRPCServer) GetVersion(args interface{}, resp *string) error {
+	*resp = o.Impl.GetVersion()
 	return nil
 }
 

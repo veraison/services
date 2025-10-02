@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package tpm_enacttrust
 
-const SchemeName = "TPM_ENACTTRUST"
+const (
+	SchemeName    = "TPM_ENACTTRUST"
+	SchemeVersion = "1.0.0"
+)
 
 var (
 	EndorsementMediaTypes = []string{
