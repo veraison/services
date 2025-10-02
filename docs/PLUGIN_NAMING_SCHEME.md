@@ -37,7 +37,7 @@ Where:
 
 ### Examples:
 - `ARM_PSA_IOT` - ARM PSA IoT profile
-- `ARM_CCA` - ARM Confidential Compute Architecture
+- `CCA` - ARM Confidential Compute Architecture
 - `PARSEC_TPM` - Parsec TPM-based attestation
 - `TPM_ENACTTRUST` - TPM EnactTrust profile
 - `RIOT` - RIoT-based DICE attestation
