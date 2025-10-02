@@ -1,0 +1,169 @@
+Name:           veraison-services
+Version:        _VERSION_
+Release:        1%{?dist}
+Summary:        Veraison remote attestation server
+
+License:        Apache-2.0
+URL:            https://github.com/veraison/services
+Source0:        %{name}-%{version}.tar.gz
+
+Requires:       bash
+Requires:       sqlite > 3.0.0
+Requires:       jose
+
+BuildRequires:  git
+BuildRequires:  protobuf
+BuildRequires:  protobuf-devel
+BuildRequires:  gettext
+BuildRequires:  sqlite
+BuildRequires:  openssl
+BuildRequires:  jq
+BuildRequires:  golang >= 1.23.0
+BuildRequires:  jose
+
+%define debug_package %{nil}
+
+%global USERNAME veraison
+%global GROUPNAME veraison
+
+%global VTS_PORT 50051
+%global PROVISIONING_PORT 9443
+%global VERIFICATION_PORT 8443
+%global MANAGEMENT_PORT 10443
+%global VERAISON_HOST localhost
+
+%description
+This package provides provisioning, verification and management services to implement a remote attestation solution.
+
+%prep
+%setup -q -n %{name}-%{version}
+
+%build
+export VTS_PORT="%{VTS_PORT}"
+export PROVISIONING_PORT="%{PROVISIONING_PORT}"
+export VERIFICATION_PORT="%{VERIFICATION_PORT}"
+export MANAGEMENT_PORT="%{MANAGEMENT_PORT}"
+export VERAISON_HOST="%{VERAISON_HOST}"
+export VERAISON_BIN_SUBDIR="%{_bindir}"
+export VERAISON_CERTS_SUBDIR="%{_sysconfdir}/%{name}/certs"
+export VERAISON_CONFIG_SUBDIR="%{_sysconfdir}/%{name}/config"
+export VERAISON_ENV_SUBDIR="%{_sysconfdir}/%{name}/env"
+export VERAISON_LOGS_SUBDIR="%{_localstatedir}/log/%{name}"
+export VERAISON_PLUGINS_SUBDIR="%{_bindir}"
+export VERAISON_SIGNING_SUBDIR="%{_sysconfdir}/%{name}/signing"
+export VERAISON_STORES_SUBDIR="%{_datarootdir}/%{name}/stores"
+export VERAISON_SYSTEMD_SYS_SUBDIR="%{_unitdir}"
+export VERAISON_SYSTEMD_USER_SUBDIR="%{_userunitdir}"
+export VERAISON_TMUX_SUBDIR="%{_tmppath}"
+export VERAISON_LICENSE_SUBDIR="%{_datarootdir}/licenses/%{name}"
+export VERAISON_ROOT="/"
+export DEPLOYMENT_DEST="%{_builddir}/%{name}-%{version}/staging"
+export GOPATH=$(go env GOPATH)
+mkdir -p $GOPATH/bin
+export PATH=$GOPATH/bin:${PATH}
+go install google.golang.org/protobuf/cmd/protoc-gen-go
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+go install github.com/mitchellh/protoc-gen-go-json
+mkdir -p $DEPLOYMENT_DEST
+make -C deployments/native quick-deploy
+
+%install
+export DEPLOYMENT_DEST="%{_builddir}/%{name}-%{version}/staging"
+cp -a $DEPLOYMENT_DEST/* %{buildroot}/
+
+%files
+%defattr(0644,%{USERNAME},%{GROUPNAME},0755)
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/config
+%dir %{_sysconfdir}/%{name}/config/cocli
+%dir %{_sysconfdir}/%{name}/config/evcli
+%dir %{_sysconfdir}/%{name}/config/pocli
+%dir %{_sysconfdir}/%{name}/config/services
+%dir %{_sysconfdir}/%{name}/certs
+%dir %{_sysconfdir}/%{name}/signing
+%dir %{_datarootdir}/%{name}
+%dir %{_datarootdir}/%{name}/stores
+%dir %{_localstatedir}/log/%{name}
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/cocli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/evcli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/pocli
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/veraison
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/arm-cca.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-cca.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-tpm.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/psa.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/riot.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/tpm-enacttrust.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/management-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/provisioning-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/verification-service
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/vts-service
+%config(noreplace) %{_sysconfdir}/%{name}/config/cocli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/evcli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/pocli/config.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/config/services/config.yaml
+%{_datarootdir}/%{name}/stores/en-store.sql
+%{_datarootdir}/%{name}/stores/po-store.sql
+%{_datarootdir}/%{name}/stores/ta-store.sql
+%{_unitdir}/veraison-management.service
+%{_unitdir}/veraison-provisioning.service
+%{_unitdir}/veraison-verification.service
+%{_unitdir}/veraison-vts.service
+%{_userunitdir}/veraison-management.service
+%{_userunitdir}/veraison-provisioning.service
+%{_userunitdir}/veraison-verification.service
+%{_userunitdir}/veraison-vts.service
+%license %{_datarootdir}/licenses/%{name}/LICENSE
+%exclude %{_sysconfdir}/%{name}/certs/*
+%exclude %{_sysconfdir}/%{name}/env
+%exclude %{_sysconfdir}/%{name}/signing/*
+
+%pre
+if ! getent group %{GROUPNAME} >/dev/null 2>&1; then
+     groupadd --system %{GROUPNAME}
+fi
+if ! id -u %{USERNAME} >/dev/null 2>&1; then
+     useradd --system --shell /usr/sbin/nologin --gid %{GROUPNAME} \
+             --comment "Veraison User" %{USERNAME} --groups adm,%{GROUPNAME}
+fi
+getent group %{GROUPNAME} >/dev/null 2>&1 && usermod -a -G %{GROUPNAME} %{USERNAME}
+
+%post
+if [ ! -f %{_sysconfdir}/%{name}/certs/rootCA.crt ]; then
+    su %{USERNAME} -s "/usr/bin/bash" -c "%{_bindir}/veraison -f gen-service-certs localhost,@@-service,$(hostname -f)"
+fi
+if [ ! -f %{_sysconfdir}/%{name}/signing/skey.jwk ]; then
+    su %{USERNAME} -s "/usr/bin/bash" -c "%{_bindir}/veraison gen-signing-key"
+fi
+%{_bindir}/veraison -s start-services
+
+# Generate installation metadata
+METADATA_FILE="/%{_prefix}/share/veraison/installation.json"
+METADATA_DIR="$(dirname "$METADATA_FILE")"
+VERSION="%{version}"
+INSTALL_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ARCH="%{_arch}"
+
+mkdir -p "$METADATA_DIR"
+
+cat > "$METADATA_FILE" <<EOF
+{
+  "version": "${VERSION}",
+  "deployment_method": "rpm",
+  "install_time": "${INSTALL_TIME}",
+  "metadata": {
+    "package": "veraison-services",
+    "architecture": "${ARCH}"
+  }
+}
+EOF
+
+chmod 644 "$METADATA_FILE"
+
+%preun
+%{_bindir}/veraison -s stop-services
+%{_bindir}/veraison -s disable-services
+
+%changelog
+* Tue Jun 24 2025 Jagannathan Raman <jag.raman@@oracle.com> - 0.0.2506
+- build with RPM spec
