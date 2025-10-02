@@ -7,7 +7,7 @@
 		"endorsements": "test/inputs/psa-endorsements.json",
 		"policy": "test/policies/malformed.rego",
 		"expected": {
-			"error": "could not Eval policy: 1 error occurred: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^",
+			"error": "could not Eval policy: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^",
 			"outcome": null
 		}
 	},

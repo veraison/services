@@ -1,6 +1,6 @@
 # Go version that will be used to build the project. Due to the use of generics
-# within the project, it must be at least 1.22.
-ARG GO_VERSION=1.22
+# within the project, it must be at least 1.24.
+ARG GO_VERSION=1.24
 
 FROM golang:${GO_VERSION} AS veraison-builder
 

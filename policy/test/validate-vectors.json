@@ -2,7 +2,7 @@
 	{
 		"title": "malformed policy",
 		"policy": "test/policies/malformed.rego",
-		"error": "1 error occurred: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^"
+		"error": "1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^"
 	},
 	{
 		"title": "bad policy",

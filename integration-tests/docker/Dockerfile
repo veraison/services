@@ -1,4 +1,4 @@
-# Copyright 2023-2024 Contributors to the Veraison project.
+# Copyright 2023-2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 FROM python AS veraison-test
 
@@ -17,18 +17,11 @@ RUN apt-get update \
         jq \
         vim \
         sqlite3 \
+        jose \
     && apt-get clean \
     && apt-get autoremove --assume-yes \
     && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
     gem install cbor-diag
-
-# Note: unfortunately this does not get packaded as part of the distro (so
-# cannot be installed with apt), and the upstream only provide an amd64 deb, so
-# this will not work on arm64 platforms.
-RUN wget https://dl.step.sm/gh-release/cli/docs-cli-install/v0.23.1/step-cli_0.23.1_amd64.deb && \
-    dpkg -i step-cli_0.23.1_amd64.deb; \
-    rm step-cli_0.23.1_amd64.deb
-
 
 RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${TESTER_UID}" | cut -d: -f1); \
     groupdel -f $(cat /etc/group | awk -F: "\$3 == ${TESTER_GID}" | cut -d: -f1); \

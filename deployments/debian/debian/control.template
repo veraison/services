@@ -1,4 +1,4 @@
-Package: veraison
+Package: veraison-services
 Version: ${_VERAISON_VERSION}
 Maintainer: Veraison Project <veraison-project@confidentialcomputing.io>
 Architecture: amd64
