@@ -97,3 +97,22 @@ func (o *BuiltinManager[I]) LookupByAttestationScheme(scheme string) (I, error) 
 func (o *BuiltinManager[I]) LookupByMediaType(mediaType string) (I, error) {
 	return GetBuiltinHandleByMediaTypeUsing[I](o.loader, mediaType)
 }
+
+func (o *BuiltinManager[I]) GetPluginVersion(name string) (string, error) {
+	pluggable, ok := o.loader.loadedByName[name]
+	if !ok {
+		return "", plugin.ErrNotFound
+	}
+
+	return pluggable.GetVersion(), nil
+}
+
+func (o *BuiltinManager[I]) GetSchemeVersion(scheme string) (string, error) {
+	for _, p := range o.loader.loadedByName {
+		if _, ok := p.(I); ok && p.GetAttestationScheme() == scheme {
+			return p.GetVersion(), nil
+		}
+	}
+
+	return "", plugin.ErrNotFound
+}

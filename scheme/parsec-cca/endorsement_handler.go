@@ -31,6 +31,10 @@ func (o EndorsementHandler) GetSupportedMediaTypes() []string {
 	return EndorsementMediaTypes
 }
 
+func (o EndorsementHandler) GetVersion() string {
+	return SchemeVersion
+}
+
 func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []byte) (*handler.EndorsementHandlerResponse, error) {
 	extractor := &ParsecCcaExtractor{}
 

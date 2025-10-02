@@ -68,7 +68,11 @@ func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
 			loader.logger.Panicw("duplicate plugin name", "name", name)
 		}
 
-		loader.logger.Debugw("found plugin", "name", name)
+		loader.logger.Infow("loaded builtin plugin",
+			"name", name,
+			"scheme", p.GetAttestationScheme(),
+			"version", p.GetVersion(),
+		)
 		loader.loadedByName[name] = p
 
 		for _, mt := range p.GetSupportedMediaTypes() {

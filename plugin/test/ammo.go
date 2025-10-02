@@ -13,6 +13,7 @@ type IAmmo interface {
 	GetName() string
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() []string
+	GetVersion() string
 	GetCapacity() int
 }
 
@@ -65,6 +66,21 @@ func (o *AmmoRPCClient) GetSupportedMediaTypes() []string {
 	return resp
 }
 
+func (o *AmmoRPCClient) GetVersion() string {
+	var (
+		resp   string
+		unused interface{}
+	)
+
+	err := o.client.Call("Plugin.GetVersion", &unused, &resp)
+	if err != nil {
+		log.Printf("Plugin.GetVersion RPC call failed: %v", err) // nolint
+		return ""
+	}
+
+	return resp
+}
+
 func (o *AmmoRPCClient) GetCapacity() int {
 	var (
 		resp   int
@@ -96,6 +112,11 @@ func (o *AmmoRPCServer) GetAttestationScheme(args interface{}, resp *string) err
 
 func (o *AmmoRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
 	*resp = o.Impl.GetSupportedMediaTypes()
+	return nil
+}
+
+func (o *AmmoRPCServer) GetVersion(args interface{}, resp *string) error {
+	*resp = o.Impl.GetVersion()
 	return nil
 }
 

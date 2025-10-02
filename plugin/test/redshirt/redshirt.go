@@ -22,6 +22,10 @@ func (o RedShirt) GetSupportedMediaTypes() []string {
 	return []string{"phaser"}
 }
 
+func (o RedShirt) GetVersion() string {
+	return "1.0.0"
+}
+
 func (o RedShirt) Shoot() string {
 	return `phaser goes "zap"`
 }

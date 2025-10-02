@@ -44,4 +44,13 @@ type IManager[I IPluggable] interface {
 	// the specified name. If there is no such plugin, an error is
 	// returned.
 	LookupByAttestationScheme(name string) (I, error)
+
+	// GetPluginVersion returns the version string for a plugin identified
+	// by its name. If the plugin is not found, an error is returned.
+	GetPluginVersion(name string) (string, error)
+
+	// GetSchemeVersion returns the version string for the plugin that
+	// implements the specified attestation scheme. If no plugin implements
+	// the scheme, an error is returned.
+	GetSchemeVersion(scheme string) (string, error)
 }

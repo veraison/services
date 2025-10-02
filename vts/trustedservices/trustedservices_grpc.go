@@ -216,12 +216,23 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 		return nil, err
 	}
 
+	// Collect scheme versions
+	schemeVersions := make(map[string]string)
+	schemes := o.EvPluginManager.GetRegisteredAttestationSchemes()
+	for _, scheme := range schemes {
+		version, err := o.EvPluginManager.GetSchemeVersion(scheme)
+		if err == nil {
+			schemeVersions[scheme] = version
+		}
+	}
+
 	return &proto.ServiceState{
 		Status:        proto.ServiceStatus_SERVICE_STATUS_READY,
 		ServerVersion: config.Version,
 		SupportedMediaTypes: map[string]*structpb.ListValue{
 			"challenge-response/v1": mediaTypesList.AsListValue(),
 		},
+		SchemeVersions: schemeVersions,
 	}, nil
 }
 

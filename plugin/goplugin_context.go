@@ -21,6 +21,7 @@ type IPluginContext interface {
 	GetTypeName() string
 	GetPath() string
 	GetHandle() interface{}
+	GetVersion() string
 	Close()
 }
 
@@ -33,6 +34,8 @@ type PluginContext[I IPluggable] struct {
 	Name string
 	// Name of the attestatin scheme implemented by this plugin
 	Scheme string
+	// Version of this plugin implementation
+	Version string
 	// SupportedMediaTypes are the types of input this plugin can process.
 	// This is is the method by which a plugin is selected.
 	SupportedMediaTypes []string
@@ -61,6 +64,10 @@ func (o PluginContext[I]) GetPath() string {
 
 func (o PluginContext[I]) GetHandle() interface{} {
 	return o.Handle
+}
+
+func (o PluginContext[I]) GetVersion() string {
+	return o.Version
 }
 
 func (o PluginContext[I]) Close() {
@@ -121,6 +128,7 @@ func createPluginContext[I IPluggable](
 		Path:                path,
 		Name:                handle.GetName(),
 		Scheme:              handle.GetAttestationScheme(),
+		Version:             handle.GetVersion(),
 		SupportedMediaTypes: handle.GetSupportedMediaTypes(),
 		Handle:              handle,
 		client:              client,

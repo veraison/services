@@ -163,6 +163,13 @@ func DiscoverGoPluginUsing[I IPluggable](o *GoPluginLoader) error {
 		}
 		o.loadedByName[pluginName] = pluginContext
 
+		o.logger.Infow("loaded plugin",
+			"name", pluginName,
+			"scheme", pluginContext.GetAttestationScheme(),
+			"version", pluginContext.GetVersion(),
+			"path", path,
+		)
+
 		for _, mediaType := range pluginContext.SupportedMediaTypes {
 			if existing, ok := o.loadedByMediaType[mediaType]; ok {
 				return fmt.Errorf(
