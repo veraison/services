@@ -20,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "corim (CCA platform profile)"
+	return EndorsementHandlerName
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {

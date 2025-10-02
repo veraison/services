@@ -17,7 +17,7 @@ type StoreHandler struct {
 }
 
 func (s StoreHandler) GetName() string {
-	return "tpm-enacttrust-store-handler"
+	return StoreHandlerName
 }
 
 func (s StoreHandler) GetAttestationScheme() string {

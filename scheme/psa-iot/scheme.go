@@ -3,7 +3,13 @@
 package psa_iot
 
 const (
-	SchemeName = "PSA_IOT"
+	// SchemeName follows the format: <VENDOR>_<TECHNOLOGY>_<VARIANT>
+	SchemeName = "ARM_PSA_IOT"
+
+	// Plugin name constants following the format: veraison/<scheme>/<handler-type>
+	EvidenceHandlerName    = "veraison/psa-iot/evidence"
+	EndorsementHandlerName = "veraison/psa-iot/endorsement"
+	StoreHandlerName       = "veraison/psa-iot/store"
 )
 
 var EndorsementMediaTypes = []string{

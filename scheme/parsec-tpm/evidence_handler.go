@@ -47,7 +47,7 @@ type TaEndorsements struct {
 }
 
 func (s EvidenceHandler) GetName() string {
-	return "parsec-tpm-evidence-handler"
+	return EvidenceHandlerName
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {
@@ -62,7 +62,7 @@ func (s EvidenceHandler) ExtractClaims(
 	token *proto.AttestationToken,
 	trustAnchors []string,
 ) (map[string]interface{}, error) {
-	var evidence    tpm.Evidence
+	var evidence tpm.Evidence
 
 	err := evidence.FromCBOR(token.Data)
 	if err != nil {

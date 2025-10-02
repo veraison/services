@@ -2,7 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 package arm_cca
 
-const SchemeName = "ARM_CCA"
+const (
+	// SchemeName follows the format: <VENDOR>_<TECHNOLOGY>_<VARIANT>
+	SchemeName = "CCA"
+
+	// Plugin name constants following the format: veraison/<scheme>/<handler-type>
+	EvidenceHandlerName    = "veraison/arm-cca/evidence"
+	EndorsementHandlerName = "veraison/arm-cca/endorsement"
+	StoreHandlerName       = "veraison/arm-cca/store"
+)
 
 var (
 	EndorsementMediaTypes = []string{

@@ -3,8 +3,14 @@
 package parsec_cca
 
 const (
+	// SchemeName follows the format: <VENDOR>_<TECHNOLOGY>_<VARIANT>
 	SchemeName         = "PARSEC_CCA"
 	EndorsementProfile = `"tag:github.com/parallaxsecond,2023-03-03:cca"`
+
+	// Plugin name constants following the format: veraison/<scheme>/<handler-type>
+	EvidenceHandlerName    = "veraison/parsec-cca/evidence"
+	EndorsementHandlerName = "veraison/parsec-cca/endorsement"
+	StoreHandlerName       = "veraison/parsec-cca/store"
 )
 
 var EndorsementMediaTypes = []string{

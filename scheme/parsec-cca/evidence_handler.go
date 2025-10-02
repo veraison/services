@@ -27,7 +27,7 @@ const (
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
-	return "parsec-cca-evidence-handler"
+	return EvidenceHandlerName
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

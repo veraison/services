@@ -21,7 +21,7 @@ import (
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
-	return "cca-evidence-handler"
+	return EvidenceHandlerName
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

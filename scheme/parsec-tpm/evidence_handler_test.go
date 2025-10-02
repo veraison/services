@@ -204,7 +204,7 @@ func Test_AppraiseEvidence_ok(t *testing.T) {
 
 func Test_GetName_ok(t *testing.T) {
 	scheme := &EvidenceHandler{}
-	expectedName := "parsec-tpm-evidence-handler"
+	expectedName := EvidenceHandlerName
 	name := scheme.GetName()
 	assert.Equal(t, name, expectedName)
 }

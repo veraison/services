@@ -20,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "corim (TPM EnactTrust profile)"
+	return EndorsementHandlerName
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {

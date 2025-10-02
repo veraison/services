@@ -13,7 +13,7 @@ import (
 type StoreHandler struct{}
 
 func (s StoreHandler) GetName() string {
-	return "psa-store-handler"
+	return StoreHandlerName
 }
 
 func (s StoreHandler) GetAttestationScheme() string {

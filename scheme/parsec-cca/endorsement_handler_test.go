@@ -56,7 +56,7 @@ func TestDecoder_Close(t *testing.T) {
 
 func TestDecoder_GetName_ok(t *testing.T) {
 	d := &EndorsementHandler{}
-	expectedName := "corim (Parsec CCA profile)"
+	expectedName := EndorsementHandlerName
 	name := d.GetName()
 	assert.Equal(t, name, expectedName)
 }
