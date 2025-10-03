@@ -2,7 +2,7 @@
 
 ## The Basics
 
-Let's break down what a Realm Instance really is in everyday terms. Think of a Realm Instance like a secure container for your application - it's a special, isolated space where your code runs safely in Arm's Confidential Computing Architecture (CCA).
+Let's break down what a Realm Instance really is in everyday terms. Think of a Realm Instance like a secure container for your application - it's a special, isolated space where your code runs safely in a virtualized environment backed by security guarantees provided by Arm's Confidential Computing Architecture (CCA).
 
 ## Key Concepts: Building Blocks of a Realm Instance
 
