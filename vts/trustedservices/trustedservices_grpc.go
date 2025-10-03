@@ -442,7 +442,6 @@ func (o *GRPC) GetAttestation(
 
 	var multEndorsements []string
 	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-
 		endorsements, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 			return o.finalize(appraisal, err)
