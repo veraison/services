@@ -241,13 +241,13 @@ func (s *StoreRPCClient) GetTrustAnchorIDs(token *proto.AttestationToken) ([]str
 
 	data, err = json.Marshal(token)
 	if err != nil {
-		return []string{""}, fmt.Errorf("marshaling token: %w", err)
+		return nil, fmt.Errorf("marshaling token: %w", err)
 	}
 
 	err = s.client.Call("Plugin.GetTrustAnchorIDs", data, &resp)
 	if err != nil {
 		err = ParseError(err)
-		return []string{""}, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
+		return nil, fmt.Errorf("Plugin.GetTrustAnchorIDs RPC call failed: %w", err) // nolint
 	}
 
 	return resp, nil

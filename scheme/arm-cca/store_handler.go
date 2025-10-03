@@ -48,16 +48,16 @@ func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endo
 func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	evidence, err := ccatoken.DecodeAndValidateEvidenceFromCBOR(token.Data)
 	if err != nil {
-		return []string{""}, handler.BadEvidence(err)
+		return nil, handler.BadEvidence(err)
 	}
 
 	claims := evidence.PlatformClaims
 	if err != nil {
-		return []string{""}, err
+		return nil, err
 	}
 	taID, err := arm.GetTrustAnchorID(SchemeName, token.TenantId, claims)
 	if err != nil {
-		return []string{""}, err
+		return nil, err
 	}
 
 	return []string{taID}, nil
