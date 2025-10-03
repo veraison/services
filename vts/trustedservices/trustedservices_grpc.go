@@ -442,12 +442,6 @@ func (o *GRPC) GetAttestation(
 
 	var multEndorsements []string
 	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-		// Skip empty reference IDs (can occur when no software components are provisioned)
-		if refvalID == "" {
-			o.logger.Debugw("skipping empty reference ID", "refvalID", refvalID)
-			continue
-		}
-
 		endorsements, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 			return o.finalize(appraisal, err)
@@ -459,8 +453,14 @@ func (o *GRPC) GetAttestation(
 
 	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
+			var badErr handlermod.BadEvidenceError
+			claimStr := "integrity validation failed"
+			ok := errors.As(err, &badErr)
+			if ok {
+				claimStr += fmt.Sprintf(": %s", badErr.ToString())
+			}
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
-			appraisal.AddPolicyClaim("problem", "integrity validation failed")
+			appraisal.AddPolicyClaim("problem", claimStr)
 		}
 		return o.finalize(appraisal, err)
 	}

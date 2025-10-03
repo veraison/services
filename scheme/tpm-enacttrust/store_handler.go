@@ -43,7 +43,7 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 			strings.Join(EvidenceMediaTypes, ", "),
 			token.MediaType,
 		)
-		return []string{""}, err
+		return nil, err
 	}
 
 	var decoded Token
