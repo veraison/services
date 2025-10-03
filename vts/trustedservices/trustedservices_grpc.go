@@ -453,14 +453,8 @@ func (o *GRPC) GetAttestation(
 
 	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
-			var badErr handlermod.BadEvidenceError
-			claimStr := "integrity validation failed"
-			ok := errors.As(err, &badErr)
-			if ok {
-				claimStr += fmt.Sprintf(": %s", badErr.ToString())
-			}
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
-			appraisal.AddPolicyClaim("problem", claimStr)
+			appraisal.AddPolicyClaim("problem", "integrity validation failed")
 		}
 		return o.finalize(appraisal, err)
 	}

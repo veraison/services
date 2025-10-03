@@ -43,13 +43,13 @@ func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string
 
 	err := evidence.FromCBOR(token.Data)
 	if err != nil {
-		return nil, handler.BadEvidence(err)
+		return []string{""}, handler.BadEvidence(err)
 	}
 	claims := evidence.Pat.PlatformClaims
 
 	taID, err := arm.GetTrustAnchorID(SchemeName, token.TenantId, claims)
 	if err != nil {
-		return nil, err
+		return []string{""}, err
 	}
 
 	return []string{taID}, nil

@@ -38,14 +38,14 @@ func (s StoreHandler) SynthKeysFromTrustAnchor(tenantID string, ta *handler.Endo
 func (s StoreHandler) GetTrustAnchorIDs(token *proto.AttestationToken) ([]string, error) {
 	psaToken, err := psatoken.DecodeAndValidateEvidenceFromCOSE(token.Data)
 	if err != nil {
-		return nil, handler.BadEvidence(err)
+		return []string{""}, handler.BadEvidence(err)
 	}
 
 	claims := psaToken.Claims
 
 	taID, err := arm.GetTrustAnchorID(SchemeName, token.TenantId, claims)
 	if err != nil {
-		return nil, err
+		return []string{""}, err
 	}
 
 	return []string{taID}, nil
