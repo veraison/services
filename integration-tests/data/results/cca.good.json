@@ -11,7 +11,7 @@
       "sourced-data": 0,
       "storage-opaque": 2
     },
-    "ear.appraisal-policy-id": "policy:ARM_CCA",
+    "ear.appraisal-policy-id": "policy:CCA",
     "ear.veraison.annotated-evidence": {
       "cca-platform-challenge": "Bea1iETGoM0ZOCBpuv2w5JRmKjrc+P3hFHjpM5Ua8XkP9d5ceOPbESPaCiB6i2ZVbgoi8Z7mS9wviZU7azJVXw==",
       "cca-platform-config": "AQID",
@@ -50,7 +50,7 @@
     }
   },
   "CCA_REALM": {
-    "ear.appraisal-policy-id": "policy:ARM_CCA",
+    "ear.appraisal-policy-id": "policy:CCA",
     "ear.status": "warning",
     "ear.trustworthiness-vector": {
       "configuration": 0,
