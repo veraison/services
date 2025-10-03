@@ -442,7 +442,6 @@ func (o *GRPC) GetAttestation(
 
 	var multEndorsements []string
 	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-
 		endorsements, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
 			return o.finalize(appraisal, err)
@@ -507,12 +506,12 @@ func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
 	for _, taID := range id {
 		values, err := c.TaStore.Get(taID)
 		if err != nil {
-			return []string{""}, err
+			return nil, err
 		}
 
 		// For now, Veraison schemes only support one trust anchor per trustAnchorID
 		if len(values) != 1 {
-			return []string{""}, fmt.Errorf("found %d trust anchors, want 1", len(values))
+			return nil, fmt.Errorf("found %d trust anchors, want 1", len(values))
 		}
 		taValues = append(taValues, values[0])
 	}

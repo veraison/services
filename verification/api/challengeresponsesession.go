@@ -6,6 +6,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -64,6 +65,32 @@ func (o *Status) UnmarshalJSON(b []byte) error {
 	return o.FromString(s)
 }
 
+// URLSafeNonce is a wrapper around []byte that marshals/unmarshals using URL-safe base64
+type URLSafeNonce []byte
+
+func (n URLSafeNonce) MarshalJSON() ([]byte, error) {
+	if n == nil {
+		return []byte("null"), nil
+	}
+	encoded := base64.URLEncoding.EncodeToString(n)
+	return json.Marshal(encoded)
+}
+
+func (n *URLSafeNonce) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	
+	decoded, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+	
+	*n = URLSafeNonce(decoded)
+	return nil
+}
+
 type EvidenceBlob struct {
 	Type  string `json:"type"`
 	Value []byte `json:"value"`
@@ -72,7 +99,7 @@ type EvidenceBlob struct {
 type ChallengeResponseSession struct {
 	id       string
 	Status   Status        `json:"status"`
-	Nonce    []byte        `json:"nonce"`
+	Nonce    URLSafeNonce  `json:"nonce"`
 	Expiry   time.Time     `json:"expiry"`
 	Accept   []string      `json:"accept"`
 	Evidence *EvidenceBlob `json:"evidence,omitempty"`
