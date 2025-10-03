@@ -88,7 +88,7 @@ cp -a $DEPLOYMENT_DEST/* %{buildroot}/
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/evcli
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/pocli
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/veraison
-%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/arm-cca.plugin
+%attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/cca.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-cca.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/parsec-tpm.plugin
 %attr(0755, %{USERNAME}, %{GROUPNAME}) %{_bindir}/psa.plugin
