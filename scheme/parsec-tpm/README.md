@@ -45,7 +45,7 @@ Both fields support:
 
 ### CORIM Example
 
-To include vendor and model information in your CORIM manifest, add them as parameters in the verification key triple. Here are several examples:
+To include vendor and model information in your CORIM manifest, add them to the `environment.class` section (following standard CoRIM specification). Here are several examples:
 
 ```json
 {
@@ -55,7 +55,9 @@ To include vendor and model information in your CORIM manifest, add them as para
         "class": {
           "id": {
             "class-id": "cd1f0e55-26f9-460d-b9d8-f7fde171787c"
-          }
+          },
+          "vendor": "ACME Corp",
+          "model": "TPM-2000"
         },
         "instance": {
           "instance-id": {
@@ -66,11 +68,7 @@ To include vendor and model information in your CORIM manifest, add them as para
       },
       "key": [{
         "type": "pkix-base64-key",
-        "value": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw==",
-        "parameters": {
-          "vendor": "ACME Corp",
-          "model": "TPM-2000"
-        }
+        "value": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw=="
       }]
     }
   ]
@@ -82,35 +80,86 @@ Additional Examples:
 1. International Vendor (with Unicode characters):
 ```json
 {
-  "key": [{
-    "parameters": {
-      "vendor": "富士通株式会社",
-      "model": "FUJITSU TPM 2.0"
+  "comid.verification-keys": [
+    {
+      "environment": {
+        "class": {
+          "id": {
+            "class-id": "cd1f0e55-26f9-460d-b9d8-f7fde171787c"
+          },
+          "vendor": "富士通株式会社",
+          "model": "FUJITSU TPM 2.0"
+        },
+        "instance": {
+          "instance-id": {
+            "type": "ueid",
+            "value": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        }
+      },
+      "key": [{
+        "type": "pkix-base64-key",
+        "value": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw=="
+      }]
     }
-  }]
+  ]
 }
 ```
 
 2. Minimal Example (vendor only):
 ```json
 {
-  "key": [{
-    "parameters": {
-      "vendor": "Intel Corporation"
+  "comid.verification-keys": [
+    {
+      "environment": {
+        "class": {
+          "id": {
+            "class-id": "cd1f0e55-26f9-460d-b9d8-f7fde171787c"
+          },
+          "vendor": "Intel Corporation"
+        },
+        "instance": {
+          "instance-id": {
+            "type": "ueid",
+            "value": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        }
+      },
+      "key": [{
+        "type": "pkix-base64-key",
+        "value": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw=="
+      }]
     }
-  }]
+  ]
 }
 ```
 
 3. Complex Example (with special characters):
 ```json
 {
-  "key": [{
-    "parameters": {
-      "vendor": "Company & Co., Ltd.",
-      "model": "TPM.v2-Enhanced+"
+  "comid.verification-keys": [
+    {
+      "environment": {
+        "class": {
+          "id": {
+            "class-id": "cd1f0e55-26f9-460d-b9d8-f7fde171787c"
+          },
+          "vendor": "Company & Co., Ltd.",
+          "model": "TPM.v2-Enhanced+"
+        },
+        "instance": {
+          "instance-id": {
+            "type": "ueid",
+            "value": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        }
+      },
+      "key": [{
+        "type": "pkix-base64-key",
+        "value": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETKRFE_RwSXooI8DdatPOYg_uiKm2XrtT_uEMEvqQZrwJHHcfw0c3WVzGoqL3Y_Q6xkHFfdUVqS2WWkPdKO03uw=="
+      }]
     }
-  }]
+  ]
 }
 ```
 
@@ -136,4 +185,5 @@ When using vendor and model fields:
    - Test with various character encodings if using international names
 
 Note: The vendor and model fields are always optional and are meant for informational purposes only. The TPM's security validation is based solely on its cryptographic identity and measurements.
+```
 ```
