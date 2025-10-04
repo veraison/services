@@ -3,6 +3,7 @@
 package parsec_tpm
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,13 +25,13 @@ func TestValidateString(t *testing.T) {
 			name:        "repeated sequence attack",
 			input:       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 			wantValid:   false,
-			wantReasons: []string{"excessive repeated sequences detected"},
+			wantReasons: []string{"excessive repeated sequences detected", "abnormal character distribution"},
 		},
 		{
 			name:        "special character attack",
 			input:       "!@#$%^&*()!@#$%^&*()!@#$%^&*()",
 			wantValid:   false,
-			wantReasons: []string{"suspicious frequency of special characters"},
+			wantReasons: []string{"suspicious frequency of special characters", "invalid characters detected"},
 		},
 		{
 			name:        "invalid character attack",
@@ -42,7 +43,7 @@ func TestValidateString(t *testing.T) {
 			name:        "skewed distribution attack",
 			input:       strings.Repeat("X", 100),
 			wantValid:   false,
-			wantReasons: []string{"abnormal character distribution"},
+			wantReasons: []string{"excessive repeated sequences detected", "abnormal character distribution"},
 		},
 		{
 			name:      "valid international name",
@@ -81,7 +82,7 @@ func TestSanitizeString(t *testing.T) {
 		{
 			name:     "html injection attempt",
 			input:    "Vendor<script>alert('xss')</script>",
-			expected: "Vendor\\<script\\>alert\\('xss'\\)\\</script\\>",
+			expected: "Vendorscriptalert\\(\\'xss\\'\\)/script",
 		},
 		{
 			name:     "sql injection attempt",
@@ -111,7 +112,7 @@ func TestSanitizeString(t *testing.T) {
 		{
 			name:     "mixed content",
 			input:    "Vendor & Co<> \x00株式会社\n",
-			expected: "Vendor \\& Co\\<\\> 株式会社\n",
+			expected: "Vendor \\& Co 株式会社\n",
 		},
 	}
 

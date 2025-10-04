@@ -14,9 +14,6 @@ var (
 	// Common potentially dangerous characters that should be escaped or sanitized
 	dangerousChars = regexp.MustCompile(`[<>&'"{}()\\]`)
 	
-	// Pattern to detect repeated sequences (e.g., "aaaaa...")
-	repeatedSeq = regexp.MustCompile(`(.{3,}?)\1{10,}`)
-	
 	// Pattern to detect suspiciously high frequency of non-word chars
 	highFreqSpecials = regexp.MustCompile(`[\W]{20,}`)
 
@@ -38,8 +35,8 @@ func validateString(input string) ValidationResult {
 		Reasons: []string{},
 	}
 
-	// Check for repeated sequences (potential DoS)
-	if repeatedSeq.MatchString(input) {
+	// Check for repeated sequences (potential DoS) - simpler approach
+	if hasExcessiveRepetition(input) {
 		result.Valid = false
 		result.Reasons = append(result.Reasons, "excessive repeated sequences detected")
 	}
@@ -63,6 +60,32 @@ func validateString(input string) ValidationResult {
 	}
 
 	return result
+}
+
+// hasExcessiveRepetition checks for excessive repeated characters
+func hasExcessiveRepetition(input string) bool {
+	if len(input) < 30 {
+		return false
+	}
+	
+	maxRepeat := 0
+	currentRepeat := 1
+	var prevRune rune
+	
+	for i, r := range input {
+		if i > 0 && r == prevRune {
+			currentRepeat++
+			if currentRepeat > maxRepeat {
+				maxRepeat = currentRepeat
+			}
+		} else {
+			currentRepeat = 1
+		}
+		prevRune = r
+	}
+	
+	// If any character repeats more than 20 times consecutively, flag it
+	return maxRepeat > 20
 }
 
 // hasAbnormalDistribution checks if the string has an unusually skewed
@@ -137,8 +160,26 @@ func isForbiddenControl(r rune) bool {
 
 // aggressiveSanitize performs more strict sanitization for suspicious inputs
 func aggressiveSanitize(input string) string {
-	// Remove repeated sequences
-	input = repeatedSeq.ReplaceAllString(input, "$1")
+	// Remove excessive repetition by limiting consecutive identical characters
+	var builder strings.Builder
+	var prevRune rune
+	repeatCount := 0
+	
+	for i, r := range input {
+		if i > 0 && r == prevRune {
+			repeatCount++
+			// Allow up to 3 consecutive identical characters
+			if repeatCount < 3 {
+				builder.WriteRune(r)
+			}
+		} else {
+			repeatCount = 0
+			builder.WriteRune(r)
+		}
+		prevRune = r
+	}
+	
+	input = builder.String()
 
 	// Limit consecutive special characters
 	input = highFreqSpecials.ReplaceAllStringFunc(input, func(s string) string {
@@ -149,7 +190,7 @@ func aggressiveSanitize(input string) string {
 	})
 
 	// Keep only allowed characters
-	var builder strings.Builder
+	builder.Reset()
 	for _, r := range input {
 		if allowedChars.MatchString(string(r)) {
 			builder.WriteRune(r)
