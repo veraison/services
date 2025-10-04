@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
@@ -81,7 +82,7 @@ func (o CorimExtractor) TaExtractor(
 		return nil, fmt.Errorf("ak-pub does not appear to be a PEM key (%T)", akPub.Value)
 	}
 
-	taAttrs, err := makeTaAttrs(id, akPub)
+	taAttrs, err := makeTaAttrs(id, akPub, avk.Environment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
@@ -110,7 +111,7 @@ func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawM
 	return data, nil
 }
 
-func makeTaAttrs(id ID, key *comid.CryptoKey) (json.RawMessage, error) {
+func makeTaAttrs(id ID, key *comid.CryptoKey, env comid.Environment) (json.RawMessage, error) {
 	if id.instance == nil {
 		return nil, errors.New("instance not found in ID")
 	}
@@ -119,6 +120,27 @@ func makeTaAttrs(id ID, key *comid.CryptoKey) (json.RawMessage, error) {
 		"parsec-tpm.class-id":    id.class,
 		"parsec-tpm.instance-id": []byte(*id.instance),
 		"parsec-tpm.ak-pub":      key.String(),
+	}
+
+	// Extract optional vendor and model from environment.class
+	// Following CoRIM specification - vendor/model are stored in environment, not key parameters
+	if env.Class != nil {
+		if env.Class.Vendor != nil {
+			vendor := string(*env.Class.Vendor)
+			// Trim and validate
+			vendor = sanitizeAndValidate(vendor)
+			if vendor != "" {
+				attrs["parsec-tpm.vendor"] = vendor
+			}
+		}
+		if env.Class.Model != nil {
+			model := string(*env.Class.Model)
+			// Trim and validate
+			model = sanitizeAndValidate(model)
+			if model != "" {
+				attrs["parsec-tpm.model"] = model
+			}
+		}
 	}
 
 	data, err := json.Marshal(attrs)
@@ -187,4 +209,23 @@ func (o *ID) FromEnvironment(e comid.Environment) error {
 
 func (o *CorimExtractor) SetProfile(profile string) {
 	o.Profile = profile
+}
+
+// sanitizeAndValidate trims and validates vendor/model strings
+func sanitizeAndValidate(input string) string {
+	// Trim whitespace
+	trimmed := strings.TrimSpace(input)
+	
+	// Check length limit (1024 characters)
+	if len(trimmed) > 1024 {
+		return ""
+	}
+	
+	// If empty after trimming, return empty
+	if trimmed == "" {
+		return ""
+	}
+	
+	// Apply sanitization
+	return sanitizeString(trimmed)
 }
