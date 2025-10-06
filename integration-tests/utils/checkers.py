@@ -27,7 +27,24 @@ def save_result(response, scheme, evidence):
 
 
 def compare_to_expected_result(response, expected, verifier_key):
-    decoded_submods = _extract_submods(response, verifier_key)
+    # Handle Box objects (which Tavern uses internally)
+    if hasattr(response, 'to_dict'):
+        response_data = response.to_dict()
+    elif hasattr(response, '__dict__'):
+        response_data = response.__dict__
+    else:
+        response_data = response
+    
+    # If response_data has a 'json' method, use it; otherwise assume it's already the data
+    if hasattr(response_data, 'json'):
+        try:
+            decoded_submods = _extract_submods(response_data, verifier_key)
+        except (AttributeError, TypeError):
+            # If the response_data doesn't have a json() method or fails, 
+            # try to extract submods directly
+            decoded_submods = _extract_submods_from_dict(response_data, verifier_key)
+    else:
+        decoded_submods = _extract_submods_from_dict(response_data, verifier_key)
 
     with open(expected) as fh:
         expected_submods = json.load(fh)
@@ -98,6 +115,24 @@ def _extract_submods(response, key_file):
     try:
         result = response.json()["result"]
     except KeyError:
+        raise ValueError("Did not receive an attestation result.")
+
+    with open(key_file) as fh:
+        key = json.load(fh)
+
+    decoded = jwt.decode(result, key=key, algorithms=['ES256'])
+
+    return decoded["submods"]
+
+
+def _extract_submods_from_dict(response_data, key_file):
+    """Extract submods from a dictionary/Box object instead of a response object"""
+    try:
+        if isinstance(response_data, dict) and "result" in response_data:
+            result = response_data["result"]
+        else:
+            raise ValueError("Did not receive an attestation result.")
+    except (KeyError, TypeError):
         raise ValueError("Did not receive an attestation result.")
 
     with open(key_file) as fh:
