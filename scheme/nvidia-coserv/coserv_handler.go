@@ -164,7 +164,7 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 					}
 
 					rvQuad := coserv.RefValQuad{
-						Authorities: &[]comid.CryptoKey{*authority},
+						Authorities: comid.NewCryptoKeys().Add(authority),
 						RVTriple:    &triple,
 					}
 

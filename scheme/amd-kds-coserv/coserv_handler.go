@@ -94,7 +94,7 @@ func (s CoservProxyHandler) addTrustAnchorForInstance(i *coserv.StatefulInstance
 	}
 
 	akQuad := coserv.AKQuad{
-		Authorities: &[]comid.CryptoKey{*authority},
+		Authorities: comid.NewCryptoKeys().Add(authority),
 		AKTriple:    &triple,
 	}
 
