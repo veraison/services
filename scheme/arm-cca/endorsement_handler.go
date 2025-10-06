@@ -85,7 +85,7 @@ func (o EndorsementHandler) CoservRepackage(query string, resultSet []string) ([
 			}
 
 			rvq := &coserv.RefValQuad{
-				Authorities: &[]comid.CryptoKey{*authority},
+				Authorities: comid.NewCryptoKeys().Add(authority),
 				RVTriple:    rvt,
 			}
 
@@ -104,7 +104,7 @@ func (o EndorsementHandler) CoservRepackage(query string, resultSet []string) ([
 			}
 
 			akq := &coserv.AKQuad{
-				Authorities: &[]comid.CryptoKey{*authority},
+				Authorities: comid.NewCryptoKeys().Add(authority),
 				AKTriple:    akt,
 			}
 
