@@ -32,13 +32,15 @@ const (
 )
 
 var (
-	testSupportedMediaTypeA = `application/eat_cwt; profile=http://arm.com/psa/2.0.0`
-	testSupportedMediaTypeB = `application/eat_cwt; profile=PSA_IOT_PROFILE_1`
+	testSupportedMediaTypeA = `application/eat_cwt;profile=http://arm.com/psa/2.0.0`
+	testSupportedMediaTypeB = `application/eat_cwt;profile=http://arm.com/cca/ssd/1`
 	testSupportedMediaTypeC = `application/psa-attestation-token`
+	testSupportedMediaTypeD = `application/cca-ssd-evidence-token+cbor`
 	testSupportedMediaTypes = []string{
 		testSupportedMediaTypeA,
 		testSupportedMediaTypeB,
 		testSupportedMediaTypeC,
+		testSupportedMediaTypeD,
 	}
 	testSupportedMediaTypesString = strings.Join(testSupportedMediaTypes, ", ")
 	testUnsupportedMediaType      = "application/unknown-evidence-format+json"
@@ -72,10 +74,9 @@ var (
 		"application/cca-ssd-evidence-token+cbor"
 	],
 	"evidence": {
-		"type": "application/psa-attestation-token",
-		"value": "1234"
-	},
-	"id": "fc1af0d6-5ac2-11e9-a465-00505692002f"
+		"type": "application/eat_cwt;profile=http://arm.com/psa/2.0.0",
+		"value": "eyAiayI6ICJ2IiB9"
+	}
 }`
 	testCompleteSession = `{
 	"status": "complete",
@@ -83,11 +84,12 @@ var (
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
-		"application/psa-attestation-token"
+		"application/eat_cwt;profile=http://arm.com/cca/ssd/1",
+		"application/psa-attestation-token",
+		"application/cca-ssd-evidence-token+cbor"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
+		"type":"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
 		"value":"eyAiayI6ICJ2IiB9"
 	},
 	"result": "{}"
