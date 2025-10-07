@@ -33,6 +33,8 @@ func New(tenantID string, nonce []byte, scheme string) *Appraisal {
 		Result: ear.NewAttestationResult(scheme, config.Version, config.Developer),
 	}
 
+	// Store the nonce in the result using URL-safe base64 encoding, which is also what's used for
+	// the session nonce by the verification service.
 	encodedNonce := base64.URLEncoding.EncodeToString(nonce)
 	appraisal.Result.Nonce = &encodedNonce
 

@@ -45,13 +45,15 @@ var (
 	testJSONBody                  = `{ "k": "v" }`
 	testSession                   = `{
 	"status": "waiting",
-	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
-		"application/psa-attestation-token"
-	]
+		"application/eat_cwt;profile=http://arm.com/cca/ssd/1",
+		"application/psa-attestation-token",
+		"application/cca-ssd-evidence-token+cbor"
+	],
+	"id": "fc1af0d6-5ac2-11e9-a465-00505692002f"
 }`
 	testFailedProblem = `{
 	"type": "about:blank",
@@ -59,23 +61,25 @@ var (
 	"status": 500,
 	"detail": "error encountered while processing evidence"
 }`
-	testProcessingSession = `{
+		testProcessingSession = `{
 	"status": "processing",
-	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
-		"application/eat_cwt;profile=PSA_IOT_PROFILE_1",
-		"application/psa-attestation-token"
+		"application/eat_cwt;profile=http://arm.com/cca/ssd/1",
+		"application/psa-attestation-token",
+		"application/cca-ssd-evidence-token+cbor"
 	],
 	"evidence": {
-		"type":"application/eat_cwt; profile=http://arm.com/psa/2.0.0",
-		"value":"eyAiayI6ICJ2IiB9"
-	}
+		"type": "application/psa-attestation-token",
+		"value": "1234"
+	},
+	"id": "fc1af0d6-5ac2-11e9-a465-00505692002f"
 }`
 	testCompleteSession = `{
 	"status": "complete",
-	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=http://arm.com/psa/2.0.0",
@@ -289,10 +293,40 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Regexp(t, expectedLocationRE, w.Result().Header.Get("Location"))
-	assert.Equal(t, expectedNonce, body.Nonce)
+	assert.Equal(t, expectedNonce, []byte(body.Nonce))
 	assert.Nil(t, body.Evidence)
 	assert.Nil(t, body.Result)
 	assert.Equal(t, expectedSessionStatus, body.Status)
+}
+
+func TestURLSafeNonce_EncodingFormat(t *testing.T) {
+	// Test that nonces with characters that would be URL-unsafe in standard base64
+	// are properly encoded as URL-safe base64
+	testNonce := []byte{0x99, 0x5b, 0x9b, 0xaa, 0xd8, 0x37, 0x59, 0xae,
+		0x46, 0x4a, 0xbc, 0x77, 0x2f, 0xfd, 0x81, 0xf7,
+		0xd7, 0x10, 0x53, 0x66, 0xcc, 0x40, 0x55, 0x58,
+		0x50, 0x8f, 0x5a, 0x4e, 0x60, 0xd8, 0x8b, 0xae}
+
+	urlSafeNonce := URLSafeNonce(testNonce)
+	jsonBytes, err := json.Marshal(urlSafeNonce)
+	require.NoError(t, err)
+
+	jsonStr := string(jsonBytes)
+	t.Logf("Encoded nonce: %s", jsonStr)
+
+	// Should not contain URL-unsafe characters '+' or '/'
+	assert.NotContains(t, jsonStr, "+", "Nonce should not contain '+' character")
+	assert.NotContains(t, jsonStr, "/", "Nonce should not contain '/' character")
+
+	// Should contain URL-safe alternatives '_' and '-' instead
+	// Note: This specific test nonce should contain '_' character
+	assert.Contains(t, jsonStr, "_", "URL-safe nonce should contain '_' character")
+
+	// Test round-trip: unmarshal and compare
+	var unmarshaled URLSafeNonce
+	err = json.Unmarshal(jsonBytes, &unmarshaled)
+	require.NoError(t, err)
+	assert.Equal(t, testNonce, []byte(unmarshaled), "Round-trip encoding should preserve nonce data")
 }
 
 func TestHandler_NewChallengeResponse_NonceSizeParameter(t *testing.T) {

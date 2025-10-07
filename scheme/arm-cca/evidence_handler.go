@@ -75,6 +75,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 		return handler.BadEvidence(err)
 	}
 
+	// Expect the challenge in the CCA token to be base64url as the server's nonce is base64url.
+	// The challenge is extracted from the challenge-response session maintained by the server.
 	realmChallenge, err := ccaToken.RealmClaims.GetChallenge()
 	if err != nil {
 		return handler.BadEvidence(err)
@@ -88,9 +90,8 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 
 	if !bytes.Equal(realmChallenge, sessionNonce) {
 		return handler.BadEvidence(
-			"freshness: realm challenge (%s) does not match session nonce (%s)",
-			hex.EncodeToString(realmChallenge),
-			hex.EncodeToString(token.Nonce),
+			"freshness: realm challenge (%x) does not match session nonce (%x)",
+			realmChallenge, token.Nonce,
 		)
 	}
 

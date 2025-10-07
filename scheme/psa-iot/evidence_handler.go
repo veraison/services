@@ -63,12 +63,12 @@ func (s EvidenceHandler) ValidateEvidenceIntegrity(
 	if err != nil {
 		return handler.BadEvidence(err)
 	}
+
+	// Expect the nonce in the PSA token to be base64url as the server's nonce is base64url
 	if !bytes.Equal(psaNonce, token.Nonce) {
-		return handler.BadEvidence(
-			"freshness: psa-nonce (%s) does not match session nonce (%s)",
-			hex.EncodeToString(psaNonce),
-			hex.EncodeToString(token.Nonce),
-		)
+		return handler.BadEvidence("freshness: psa-nonce (%x) does not match session nonce (%x)",
+			psaNonce, token.Nonce,
+			)
 	}
 
 	pk, err := arm.GetPublicKeyFromTA(SchemeName, trustAnchors[0])

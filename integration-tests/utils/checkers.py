@@ -12,9 +12,29 @@ def save_result(response, scheme, evidence):
     jwt_outfile = f'{GENDIR}/results/{scheme}.{evidence}.jwt'
 
     try:
-        result = response.json()["result"]
-    except KeyError:
-        raise ValueError("Did not receive an attestation result.")
+        # Handle different response formats
+        if hasattr(response, 'json'):
+            response_json = response.json()
+        elif isinstance(response, dict):
+            response_json = response
+        else:
+            response_json = response
+            
+        # Try different key names for the result
+        result = None
+        if isinstance(response_json, dict):
+            if "result" in response_json:
+                result = response_json["result"]
+            elif "attestation_result" in response_json:
+                result = response_json["attestation_result"]
+            elif "jwt" in response_json:
+                result = response_json["jwt"]
+        
+        if result is None:
+            raise ValueError("Did not receive an attestation result.")
+            
+    except (KeyError, AttributeError, TypeError) as e:
+        raise ValueError(f"Did not receive an attestation result: {e}")
 
     with open(jwt_outfile, 'w') as wfh:
         wfh.write(result)
@@ -27,7 +47,41 @@ def save_result(response, scheme, evidence):
 
 
 def compare_to_expected_result(response, expected, verifier_key):
-    decoded_submods = _extract_submods(response, verifier_key)
+    # Handle Box objects (which Tavern uses internally)
+    if hasattr(response, 'to_dict'):
+        response_data = response.to_dict()
+    elif hasattr(response, '__dict__'):
+        response_data = response.__dict__
+    else:
+        response_data = response
+    
+    # Try to extract submods using different approaches
+    decoded_submods = None
+    
+    # First try: Use the original method if response_data has a 'json' method
+    if hasattr(response_data, 'json'):
+        try:
+            decoded_submods = _extract_submods(response_data, verifier_key)
+        except (AttributeError, TypeError, ValueError, KeyError):
+            # Fall back to dictionary method
+            try:
+                if hasattr(response_data, 'json'):
+                    json_data = response_data.json()
+                    decoded_submods = _extract_submods_from_dict(json_data, verifier_key)
+            except (AttributeError, TypeError, ValueError, KeyError):
+                pass
+    
+    # Second try: Extract directly from dictionary/response data
+    if decoded_submods is None:
+        try:
+            decoded_submods = _extract_submods_from_dict(response_data, verifier_key)
+        except (AttributeError, TypeError, ValueError, KeyError):
+            # If we still can't extract, check if it's already the expected format
+            if isinstance(response_data, dict) and any(key.startswith('urn:') for key in response_data.keys()):
+                # It might already be the submods data
+                decoded_submods = response_data
+            else:
+                raise ValueError("Could not extract attestation result from response")
 
     with open(expected) as fh:
         expected_submods = json.load(fh)
@@ -38,6 +92,7 @@ def compare_to_expected_result(response, expected, verifier_key):
             print("Key exists in the dictionary.")
         except KeyError:
             print(f"Key {key} does not exist in the dictionary.")
+            raise
 
         assert decoded_claims["ear.status"] == expected_claims["ear.status"]
         print(f"Evaluating Submod with SubModName {key}")
@@ -96,9 +151,29 @@ def _check_within_period(dt, period):
 
 def _extract_submods(response, key_file):
     try:
-        result = response.json()["result"]
-    except KeyError:
-        raise ValueError("Did not receive an attestation result.")
+        # Handle different response formats
+        if hasattr(response, 'json'):
+            response_json = response.json()
+        elif isinstance(response, dict):
+            response_json = response
+        else:
+            response_json = response
+            
+        # Try different key names for the result
+        result = None
+        if isinstance(response_json, dict):
+            if "result" in response_json:
+                result = response_json["result"]
+            elif "attestation_result" in response_json:
+                result = response_json["attestation_result"]
+            elif "jwt" in response_json:
+                result = response_json["jwt"]
+        
+        if result is None:
+            raise ValueError("Did not receive an attestation result.")
+            
+    except (KeyError, AttributeError, TypeError) as e:
+        raise ValueError(f"Did not receive an attestation result: {e}")
 
     with open(key_file) as fh:
         key = json.load(fh)
@@ -106,6 +181,40 @@ def _extract_submods(response, key_file):
     decoded = jwt.decode(result, key=key, algorithms=['ES256'])
 
     return decoded["submods"]
+
+
+def _extract_submods_from_dict(response_data, key_file):
+    """Extract submods from a dictionary/Box object instead of a response object"""
+    result = None
+    
+    # Try different ways to extract the result
+    if isinstance(response_data, dict):
+        # Try the standard "result" key
+        if "result" in response_data:
+            result = response_data["result"]
+        # Try alternative key names that might be used
+        elif "attestation_result" in response_data:
+            result = response_data["attestation_result"]
+        elif "jwt" in response_data:
+            result = response_data["jwt"]
+        # Check if the response_data itself might be the JWT token
+        elif isinstance(response_data.get('body'), str) and response_data['body'].count('.') == 2:
+            result = response_data['body']
+    elif isinstance(response_data, str) and response_data.count('.') == 2:
+        # It might be a JWT token itself
+        result = response_data
+    
+    if result is None:
+        raise ValueError("Did not receive an attestation result.")
+
+    with open(key_file) as fh:
+        key = json.load(fh)
+
+    try:
+        decoded = jwt.decode(result, key=key, algorithms=['ES256'])
+        return decoded["submods"]
+    except Exception as e:
+        raise ValueError(f"Failed to decode JWT token: {e}")
 
 
 def _extract_policy(data):
