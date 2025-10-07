@@ -47,7 +47,7 @@ type TaEndorsements struct {
 }
 
 func (s EvidenceHandler) GetName() string {
-	return "parsec-tpm-evidence-handler"
+	return "veraison/parsec-tpm/evidence"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

@@ -20,7 +20,7 @@ import (
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
-	return "psa-evidence-handler"
+	return "veraison/psa-iot/evidence"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

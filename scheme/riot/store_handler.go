@@ -14,7 +14,7 @@ type StoreHandler struct {
 }
 
 func (s StoreHandler) GetName() string {
-	return "riot-store-handler"
+	return "veraison/riot/store"
 }
 
 func (s StoreHandler) GetAttestationScheme() string {

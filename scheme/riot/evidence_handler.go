@@ -22,7 +22,7 @@ type EvidenceHandler struct {
 }
 
 func (s EvidenceHandler) GetName() string {
-	return "riot-evidence-handler"
+	return "veraison/riot/evidence"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

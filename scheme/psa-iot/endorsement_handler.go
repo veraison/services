@@ -20,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "corim (PSA profile)"
+	return "veraison/psa-iot/endorsement"
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {

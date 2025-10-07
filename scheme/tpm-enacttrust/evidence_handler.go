@@ -20,7 +20,7 @@ import (
 type EvidenceHandler struct{}
 
 func (s EvidenceHandler) GetName() string {
-	return "tpm-enacttrust-evidence-handler"
+	return "veraison/tpm-enacttrust/evidence"
 }
 
 func (s EvidenceHandler) GetAttestationScheme() string {

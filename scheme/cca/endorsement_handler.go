@@ -1,6 +1,6 @@
 // Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package arm_cca
+package cca
 
 import (
 	"mime"
@@ -20,7 +20,7 @@ func (o EndorsementHandler) Close() error {
 }
 
 func (o EndorsementHandler) GetName() string {
-	return "corim (CCA platform profile)"
+	return "veraison/cca/endorsement"
 }
 
 func (o EndorsementHandler) GetAttestationScheme() string {

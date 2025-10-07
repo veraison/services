@@ -13,7 +13,7 @@ import (
 type StoreHandler struct{}
 
 func (s StoreHandler) GetName() string {
-	return "psa-store-handler"
+	return "veraison/psa-iot/store"
 }
 
 func (s StoreHandler) GetAttestationScheme() string {

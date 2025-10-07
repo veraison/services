@@ -1,7 +1,7 @@
 // Copyright 2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package arm_cca
+package cca
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 type StoreHandler struct{}
 
 func (s StoreHandler) GetName() string {
-	return "cca-store-handler"
+	return "veraison/cca/store"
 }
 
 func (s StoreHandler) GetAttestationScheme() string {
