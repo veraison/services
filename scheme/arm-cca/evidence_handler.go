@@ -5,7 +5,6 @@ package arm_cca
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 

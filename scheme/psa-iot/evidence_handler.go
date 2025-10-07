@@ -4,7 +4,6 @@ package psa_iot
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
