@@ -1,0 +1,44 @@
+name: Generate Artifact Attestations
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    tags:
+      - 'v*'  # Run on version tags
+      - 'demo-*'  # Run on demo releases
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write  # Needed for GitHub OIDC token
+
+jobs:
+  generate-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate .deb package
+        run: make deb
+        
+      - name: Sign and generate attestation
+        uses: slsa-framework/slsa-github-generator@v1
+        with:
+          base64-subjects: ${{ steps.hash.outputs.hashes }}
+          provenance-trigger: 'tag'
+          
+      - name: Upload attestation
+        uses: actions/upload-artifact@v3
+        with:
+          name: attestations
+          path: |
+            *.intoto.jsonl
+            *.sig
+            
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.intoto.jsonl
+            *.sig
