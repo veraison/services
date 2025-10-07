@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate .deb package
-        run: make deb-package
+        run: make deb
         
       - name: Sign and generate attestation
         uses: slsa-framework/slsa-github-generator@v1
