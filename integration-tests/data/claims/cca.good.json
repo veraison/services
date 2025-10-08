@@ -35,7 +35,7 @@
     "cca-platform-hash-algo-id": "sha-256"
   },
   "cca-realm-delegated-token": {
-    "cca-realm-challenge": "byTWuWNaLIu/WOkIuU4Ewb+zroDN6+gyQkV4SZ/jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==",
+    "cca-realm-challenge": "byTWuWNaLIu_WOkIuU4Ewb-zroDN6-gyQkV4SZ_jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==",
     "cca-realm-personalization-value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA==",
     "cca-realm-initial-measurement": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
     "cca-realm-extensible-measurements": [
