@@ -1,8 +1,10 @@
 # What is a Realm Instance? A Developer's Guide
 
+> **Note:** This guide focuses specifically on Realm Instances in the context of Arm's Confidential Computing Architecture (CCA).
+
 ## The Basics
 
-Let's break down what a Realm Instance really is in everyday terms. Think of a Realm Instance like a secure container for your application - it's a special, isolated space where your code runs safely in a virtualized environment backed by security guarantees provided by Arm's Confidential Computing Architecture (CCA).
+Let's break down what a Realm Instance really is in everyday terms. Think of a Realm Instance like a secured VM for your application - it's a special, isolated space where your code runs safely in a virtualized environment backed by security guarantees provided by Arm's Confidential Computing Architecture (CCA).
 
 ## Key Concepts: Building Blocks of a Realm Instance
 
@@ -10,6 +12,7 @@ Let's break down what a Realm Instance really is in everyday terms. Think of a R
 
 Think of RIM as your Realm's birth certificate - it's the first and most fundamental piece of identity:
 - It's basically a hash (digest) of the code and optionally configuration of the Realm instance when it first starts up
+- Often includes a footprint of instance-specific data supplied to the realm
 - Works like a fingerprint - unique to your initial code setup
 - Helps others verify "Yes, this is exactly the code we expect to be running"
 - Every Realm Instance needs this - it's not optional
@@ -22,18 +25,19 @@ Think of RPV like a name tag for your Realm - it's optional, but super useful wh
 - With it? You can run multiple copies of the same code and configuration (like spinning up multiple web servers)
 - Perfect for when you need to scale up identical services but keep them separate
 
-### The Health Monitor: Realm Extensible Measurements (REM)
+### The Journey Tracker: Realm Extensible Measurements (REM)
 
-REMs are like ongoing health checks for your Realm:
-- Works like a fitness tracker with 4 different sensors (rem0 through rem3)
-- These are more like tripwire alarms than cameras - they can tell you when something went wrong, but not what (you need event logs for that)
-- Keeps tabs on what's happening inside your Realm as it runs
-- Helps spot if anything unexpected happens to your code
+REMs are like measurements recorded during a car journey or path choices made when following a map:
+- Works like a car's odometer and navigation system with 4 different measurement points (rem0 through rem3)
+- These are passive measurements rather than active policy enforcement - they record what happened, not control what happens
+- Like recording different routes taken or fuel consumption during a journey, REMs capture execution differences that a workload may have made in response to configuration it received
+- These measurements can affect the workload identity and help identify state received from users
 
 **Real-world usage examples:**
-- **Batch Processing**: When a workload needs to do identical jobs in parallel, multiple identical workloads are instantiated on a server with the same RIM, and REMs help monitor each instance's health
-- **Load Balancing**: Multiple web server instances with identical code but different RPVs, where REMs track the runtime behavior of each instance
-- **Security Monitoring**: REMs can detect if malicious code injection or unexpected modifications occur during runtime
+- **Configuration Response Tracking**: REMs record how a workload behaves differently based on the configuration it receives (like taking different code paths)
+- **User State Identification**: REMs can capture and identify some state or data received from users during runtime
+- **Execution Path Monitoring**: Like a GPS tracking different routes taken, REMs monitor the different execution paths your code follows
+- **Runtime Behavior Fingerprinting**: REMs create unique signatures based on how your code actually runs, not just how it starts
 
 ## Real-World Examples
 
@@ -85,6 +89,16 @@ Just like airport security, we have different levels of verification:
    - "All Clear": Everything matches and is running properly
    - "Startup Verified": Initial state is good, but still checking runtime
    - "Unknown": We don't recognize this code
+
+### Source of Truth: Where Reference Values Come From
+
+Just like a birth certificate is trusted because it comes from a government department, RIM reference values need to come from trusted sources where the Realm's initial code had a registration event:
+- **Software Release Events**: When code is officially released and signed
+- **Build System Attestations**: Automated systems that verify and record code builds
+- **Developer Registrations**: Trusted registration of code fingerprints during development
+- **Certificate Authorities**: Third-party validation of code authenticity
+
+Think of it like a chain of custody - each step in your code's journey from development to deployment needs to be documented and verifiable.
 
 ## Tips from the Trenches
 
