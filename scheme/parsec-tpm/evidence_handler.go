@@ -26,6 +26,10 @@ type SwAttr struct {
 	ClassID *string `json:"parsec-tpm.class-id"`
 	Digest  *[]byte `json:"parsec-tpm.digest"`
 	PCR     *uint   `json:"parsec-tpm.pcr"`
+	// Optional vendor information for the TPM
+	Vendor *string `json:"parsec-tpm.vendor,omitempty"`
+	// Optional model information for the TPM
+	Model *string `json:"parsec-tpm.model,omitempty"`
 }
 
 type Endorsements struct {

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/eat"
@@ -40,19 +39,19 @@ func (o CorimExtractor) RefValExtractor(
 				return nil, fmt.Errorf("measurement[%d]: %w", i, err)
 			}
 
-			for j, digest := range digests {
-				attrs, err := makeRefValAttrs(id.class, pcr, digest)
-				if err != nil {
-					return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
-				}
-
-				refval = &handler.Endorsement{
-					Scheme:     SchemeName,
-					Type:       handler.EndorsementType_REFERENCE_VALUE,
-					Attributes: attrs,
-				}
+		for j, digest := range digests {
+			attrs, err := makeRefValAttrs(id.class, pcr, digest, rv.Environment)
+			if err != nil {
+				return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
 			}
-			refVals = append(refVals, refval)
+
+			refval = &handler.Endorsement{
+				Scheme:     SchemeName,
+				Type:       handler.EndorsementType_REFERENCE_VALUE,
+				Attributes: attrs,
+			}
+		}
+		refVals = append(refVals, refval)
 		}
 	}
 
@@ -96,7 +95,7 @@ func (o CorimExtractor) TaExtractor(
 	return ta, nil
 }
 
-func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawMessage, error) {
+func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry, env comid.Environment) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
 		"parsec-tpm.class-id": class,
@@ -104,6 +103,18 @@ func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawM
 		"parsec-tpm.digest":   digest.HashValue,
 		"parsec-tpm.alg-id":   digest.HashAlgID,
 	}
+
+	// Extract optional vendor and model from environment.class
+	// Following CoRIM specification - vendor/model are stored in environment, not key parameters
+	if env.Class != nil {
+		if env.Class.Vendor != nil {
+			attrs["parsec-tpm.vendor"] = string(*env.Class.Vendor)
+		}
+		if env.Class.Model != nil {
+			attrs["parsec-tpm.model"] = string(*env.Class.Model)
+		}
+	}
+
 	data, err := json.Marshal(attrs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal reference value attributes: %w", err)
@@ -126,20 +137,10 @@ func makeTaAttrs(id ID, key *comid.CryptoKey, env comid.Environment) (json.RawMe
 	// Following CoRIM specification - vendor/model are stored in environment, not key parameters
 	if env.Class != nil {
 		if env.Class.Vendor != nil {
-			vendor := string(*env.Class.Vendor)
-			// Trim and validate
-			vendor = sanitizeAndValidate(vendor)
-			if vendor != "" {
-				attrs["parsec-tpm.vendor"] = vendor
-			}
+			attrs["parsec-tpm.vendor"] = string(*env.Class.Vendor)
 		}
 		if env.Class.Model != nil {
-			model := string(*env.Class.Model)
-			// Trim and validate
-			model = sanitizeAndValidate(model)
-			if model != "" {
-				attrs["parsec-tpm.model"] = model
-			}
+			attrs["parsec-tpm.model"] = string(*env.Class.Model)
 		}
 	}
 
@@ -209,23 +210,4 @@ func (o *ID) FromEnvironment(e comid.Environment) error {
 
 func (o *CorimExtractor) SetProfile(profile string) {
 	o.Profile = profile
-}
-
-// sanitizeAndValidate trims and validates vendor/model strings
-func sanitizeAndValidate(input string) string {
-	// Trim whitespace
-	trimmed := strings.TrimSpace(input)
-	
-	// Check length limit (1024 characters)
-	if len(trimmed) > 1024 {
-		return ""
-	}
-	
-	// If empty after trimming, return empty
-	if trimmed == "" {
-		return ""
-	}
-	
-	// Apply sanitization
-	return sanitizeString(trimmed)
 }
