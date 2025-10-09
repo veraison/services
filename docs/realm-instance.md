@@ -12,7 +12,6 @@ Let's break down what a Realm Instance really is in everyday terms. Think of a R
 
 Think of RIM as your Realm's birth certificate - it's the first and most fundamental piece of identity:
 - It's basically a hash (digest) of the code and optionally configuration of the Realm instance when it first starts up
-- Often includes a footprint of instance-specific data supplied to the realm
 - Works like a fingerprint - unique to your initial code setup
 - Helps others verify "Yes, this is exactly the code we expect to be running"
 - Every Realm Instance needs this - it's not optional
@@ -20,6 +19,7 @@ Think of RIM as your Realm's birth certificate - it's the first and most fundame
 ### The Name Tag: Realm Personalization Value (RPV)
 
 Think of RPV like a name tag for your Realm - it's optional, but super useful when you need it:
+- Often includes a footprint of instance-specific data supplied to the realm
 - It's like giving unique names to twins - same base code and configuration, however different identities
 - Without it? Your Realm is one-of-a-kind (like a custom-built tool)
 - With it? You can run multiple copies of the same code and configuration (like spinning up multiple web servers)
