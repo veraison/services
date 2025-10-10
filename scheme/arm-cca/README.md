@@ -1,6 +1,6 @@
-This directory contains packages implementing `arm-cca` (Arm Confidential Compute Architecture) attestation scheme.
+This directory contains packages implementing `cca` (Confidential Compute Architecture) attestation scheme.
 
-Arm CCA attestation scheme is a composite attestation scheme which comprises a CCA Platform Attestation & a Realm Attestation.
+CCA attestation scheme is a composite attestation scheme which comprises a CCA Platform Attestation & a Realm Attestation.
 
 Endorsement Store Interface for the CCA Platform and Realm Attestation Scheme is given below.
 
@@ -11,7 +11,7 @@ Endorsement Store Interface for the CCA Platform and Realm Attestation Scheme is
 #### Reference Value
 ```json
 {
-  "scheme": "ARM_CCA",
+  "scheme": "CCA",
   "type": "reference value",
   "subType": "platform.sw-component",
   "attributes": {
@@ -26,7 +26,7 @@ Endorsement Store Interface for the CCA Platform and Realm Attestation Scheme is
   }
 }
 {
-  "scheme": "ARM_CCA",
+  "scheme": "CCA",
   "type": "reference value",
   "subType": "platform.config",
   "attributes": {
@@ -42,7 +42,7 @@ Endorsement Store Interface for the CCA Platform and Realm Attestation Scheme is
 #### Trust Anchor
 ```json
 {
-  "scheme": "ARM_CCA",
+  "scheme": "CCA",
   "type": "trust anchor",
   "attributes": {
     "hw-model": "RoadRunner",
@@ -62,7 +62,7 @@ A Realm instance is uniquely identified by the values of Realm initial measureme
 
 ```json
 {
-  "scheme": "ARM_CCA",
+  "scheme": "CCA",
   "type": "REFERENCE_VALUE",
   "subType": "realm.reference-value",
   "attributes": {

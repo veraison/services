@@ -48,7 +48,7 @@
       ]
     }
   },
-  "CCA_REALM": {
+  "ARM_CCA_REALM": {
     "ear.status": "warning",
     "ear.trustworthiness-vector": {
       "configuration": 0,

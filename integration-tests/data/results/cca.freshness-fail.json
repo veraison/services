@@ -1,6 +1,6 @@
 {
-  "ARM_CCA": {
-    "ear.appraisal-policy-id": "policy:ARM_CCA",
+  "CCA": {
+    "ear.appraisal-policy-id": "policy:CCA",
     "ear.status": "contraindicated",
     "ear.trustworthiness-vector": {
       "configuration": 99,
