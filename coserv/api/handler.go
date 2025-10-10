@@ -4,24 +4,27 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/coserv/endorsementdistributor"
 	"github.com/veraison/services/log"
+	"github.com/veraison/services/proto"
 	"go.uber.org/zap"
 )
 
 var (
-	tenantID       = "0"
-	EdApiMediaType = "application/coserv+cbor"
-	errTodo        = errors.New("TODO")
+	tenantID  = "0"
+	CoservMTs = []string{
+		"application/coserv+cbor",
+		"application/coserv+cose",
+	}
 )
 
 type Handler struct {
@@ -39,7 +42,6 @@ func NewHandler(endorsementdistributor endorsementdistributor.IEndorsementDistri
 func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 	acceptable := []string{CoservDiscoveryMediaType, gin.MIMEJSON}
 
-	// TODO (tho) - add reportCBORProblem and use it here
 	if c.NegotiateFormat(acceptable...) == "" {
 		reportProblem(c,
 			http.StatusNotAcceptable,
@@ -49,7 +51,7 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 		return
 	}
 
-	profiles, err := o.EndorsementDistibutor.SupportedProfiles()
+	mediaTypes, err := o.EndorsementDistibutor.SupportedMediaTypes()
 	if err != nil {
 		reportProblem(c, http.StatusInternalServerError, err.Error())
 		return
@@ -57,25 +59,50 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 
 	var capabilities []Capability
 
-	for _, p := range profiles {
+	for _, mt := range mediaTypes {
 		c := Capability{
-			MediaType:       fmt.Sprint(EdApiMediaType, `; profile="`, p, `"`),
+			MediaType:       mt,
 			ArtifactSupport: []string{"collected"}, // only "collected" supported for now
 		}
 		capabilities = append(capabilities, c)
 	}
 
-	// TODO(tho)
-	// - keys (reuse EAR Signer?)
+	k, err := o.EndorsementDistibutor.GetPublicKey()
+	if err != nil {
+		reportProblem(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	keySet, err := toJWKKeySet(k)
+	if err != nil {
+		reportProblem(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	obj := NewCoservWellKnownInfo(
 		config.Version,
 		capabilities,
 		publicApiMap,
-		nil, // TODO keys
+		keySet,
 	)
 
 	c.Header("Content-Type", CoservDiscoveryMediaType)
 	c.JSON(http.StatusOK, obj)
+}
+
+func toJWKKeySet(k *proto.PublicKey) ([]jwk.Key, error) {
+	// if no CoSERV key is configured, return nil (omitempty will skip
+	// serialising the discovery object attribute)
+	if k == nil || k.Key == "" {
+		return nil, nil
+	}
+
+	jwkKey, err := jwk.ParseKey([]byte(k.Key))
+	if err != nil {
+		return nil, fmt.Errorf("parsing public key JWK: %w", err)
+	}
+
+	return []jwk.Key{jwkKey}, nil
 }
 
 func reportProblem(c *gin.Context, status int, details ...string) {
@@ -95,7 +122,6 @@ func reportProblem(c *gin.Context, status int, details ...string) {
 
 	log.Info(log.Named("api"), prob)
 
-	// encode to CBOR
 	b, err := cbor.Marshal(prob)
 	if err != nil {
 		log.Error(log.Named("api"), "failed to marshal problem details to CBOR", "error", err)
@@ -106,12 +132,12 @@ func reportProblem(c *gin.Context, status int, details ...string) {
 }
 
 func (o Handler) CoservRequest(c *gin.Context) {
-	offered := c.NegotiateFormat(EdApiMediaType)
-	if offered != EdApiMediaType {
+	offered := c.NegotiateFormat(CoservMTs...)
+	if offered != CoservMTs[0] && offered != CoservMTs[1] {
 		reportProblem(c,
 			http.StatusNotAcceptable,
-			fmt.Sprintf("the only supported output format is %s",
-				EdApiMediaType),
+			fmt.Sprintf("the only supported output formats are %s",
+				strings.Join(CoservMTs, " or ")),
 		)
 		return
 	}
@@ -135,14 +161,9 @@ func (o Handler) CoservRequest(c *gin.Context) {
 	res, err := o.EndorsementDistibutor.GetEndorsements(tenantID, coservQuery, mediaType)
 	if err != nil {
 		status := http.StatusBadRequest
-
-		if errors.Is(err, errTodo) {
-			status = http.StatusInternalServerError
-		}
-
 		reportProblem(c, status, err.Error())
 		return
 	}
 
-	c.Data(http.StatusOK, EdApiMediaType, res)
+	c.Data(http.StatusOK, mediaType, res)
 }

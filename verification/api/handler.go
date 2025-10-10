@@ -523,7 +523,6 @@ func (o *Handler) getKey() (jwk.Key, error) {
 	}
 
 	return key, nil
-
 }
 
 func (o *Handler) getVerificationMediaTypes() ([]string, error) {

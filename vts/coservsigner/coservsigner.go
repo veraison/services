@@ -9,11 +9,16 @@ import (
 )
 
 type Cfg struct {
+	Use bool   `mapstructure:"use"`
 	Key string `mapstructure:"key"`
 	Alg string `mapstructure:"alg"`
 }
 
 func New(v *viper.Viper, fs afero.Fs) (ICoservSigner, error) {
+	if !v.GetBool("use") {
+		return nil, nil
+	}
+
 	cfg := Cfg{}
 
 	configLoader := config.NewLoader(&cfg)

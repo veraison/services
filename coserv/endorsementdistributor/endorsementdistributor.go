@@ -45,8 +45,8 @@ func (ed *EndorsementDistributor) GetEndorsements(tenantID string, query string,
 	return res.ResultSet, nil
 }
 
-func (ed *EndorsementDistributor) SupportedProfiles() ([]string, error) {
-	res, err := ed.VTSClient.GetSupportedEndorsementProfiles(
+func (ed *EndorsementDistributor) SupportedMediaTypes() ([]string, error) {
+	res, err := ed.VTSClient.GetSupportedCoservMediaTypes(
 		context.Background(),
 		&emptypb.Empty{},
 	)
@@ -57,7 +57,24 @@ func (ed *EndorsementDistributor) SupportedProfiles() ([]string, error) {
 		return nil, fmt.Errorf("get supported endorsement profiles failed: %w", err)
 	}
 
-	log.Debugw("SupportedProfiles", "profiles", res.MediaTypes)
+	log.Debugw("GetSupportedCoservMediaTypes", "media types", res.MediaTypes)
 
 	return res.MediaTypes, nil
+}
+
+func (ed *EndorsementDistributor) GetPublicKey() (*proto.PublicKey, error) {
+	res, err := ed.VTSClient.GetCoservSigningPublicKey(
+		context.Background(),
+		&emptypb.Empty{},
+	)
+	if err != nil {
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			return nil, errors.New("no connection")
+		}
+		return nil, fmt.Errorf("get CoSERV signing public key failed: %w", err)
+	}
+
+	log.Debugw("GetPublicKey", "key", res)
+
+	return res, nil
 }

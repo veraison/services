@@ -66,5 +66,5 @@ fi
 
 curl https://localhost:11443/endorsement-distribution/v1/coserv/$q -s \
   --insecure \
-  --header 'Accept: application/coserv+cbor; profile="tag:arm.com,2023:cca_platform#1.0.0"' \
+  --header 'Accept: application/coserv+cose; profile="tag:arm.com,2023:cca_platform#1.0.0"' \
   | cbor-edn cbor2diag

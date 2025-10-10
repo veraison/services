@@ -51,5 +51,7 @@ service VTS {
 
   // endorsement distribution API
   rpc GetEndorsements(EndorsementQueryIn) returns (EndorsementQueryOut);
-  rpc GetSupportedEndorsementProfiles(google.protobuf.Empty) returns (MediaTypeList);
+  rpc GetSupportedCoservMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  // Returns the public key used to sign CoSERV results
+  rpc GetCoservSigningPublicKey(google.protobuf.Empty) returns (PublicKey);
 }

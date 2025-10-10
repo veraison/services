@@ -195,6 +195,19 @@ func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, op
 	return c.GetEARSigningPublicKey(ctx, in, opts...)
 }
 
+func (o *GRPC) GetCoservSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetCoservSigningPublicKey", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetCoservSigningPublicKey(ctx, in, opts...)
+}
+
 func (o *GRPC) GetEndorsements(
 	ctx context.Context, in *proto.EndorsementQueryIn, opts ...grpc.CallOption,
 ) (*proto.EndorsementQueryOut, error) {
@@ -210,11 +223,11 @@ func (o *GRPC) GetEndorsements(
 	return c.GetEndorsements(ctx, in, opts...)
 }
 
-func (o *GRPC) GetSupportedEndorsementProfiles(
+func (o *GRPC) GetSupportedCoservMediaTypes(
 	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
 ) (*proto.MediaTypeList, error) {
 	if err := o.EnsureConnection(); err != nil {
-		return nil, NewNoConnectionError("GetSupportedEndorsementProfiles", err)
+		return nil, NewNoConnectionError("GetSupportedCoservMediaTypes", err)
 	}
 
 	c := o.GetProvisionerClient()
@@ -222,7 +235,7 @@ func (o *GRPC) GetSupportedEndorsementProfiles(
 		return nil, ErrNoClient
 	}
 
-	mts, err := c.GetSupportedEndorsementProfiles(ctx, in, opts...)
+	mts, err := c.GetSupportedCoservMediaTypes(ctx, in, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ CoSERV result set signing process.  The supported directives are:
 
 ### `coserv-signer` configuration
 
+- `use`: boolean to indicate whether to use the CoSERV signer
 - `alg`: the [JWS algorithm](https://www.iana.org/assignments/jose/jose.xhtml#web-signature-encryption-algorithms)
 used for signing, e.g.: `ES256`, `RS512`.
 - `key`: URL with the location of the private key to be used with `alg`. The

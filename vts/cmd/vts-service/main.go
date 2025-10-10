@@ -17,6 +17,7 @@ import (
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
+	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/trustedservices"
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	subs, err := config.GetSubs(v, "ta-store", "en-store", "po-store",
-		"*po-agent", "plugin", "*vts", "ear-signer", "*logging")
+		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,13 +170,26 @@ func main() {
 		log.Fatalf("EAR signer initialization failed: %v", err)
 	}
 
+	var coservSigner coservsigner.ICoservSigner
+
+	if subs["coserv-signer"].GetBool("use") {
+		log.Info("loading CoSERV signer")
+		coservSigner, err = coservsigner.New(subs["coserv-signer"], afero.NewOsFs())
+		if err != nil {
+			log.Fatalf("CoSERV signer initialization failed: %v", err)
+		}
+
+		// CoSERV media types.
+		log.Info("TODO CoSERV profile types:")
+	}
+
 	log.Info("initializing service")
 	// from this point onwards taStore, enStore, evPluginManager,
 	// endPluginManager, storePluginManager, coservProxyPluginManager,
 	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
 		evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager,
-		policyManager, earSigner, log.Named("vts"))
+		policyManager, earSigner, coservSigner, log.Named("vts"))
 
 	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)

@@ -107,6 +107,14 @@ func (o *COSESigner) parseKey(raw []byte) error {
 		return err
 	}
 
+	if _, ok := k.(jwk.AsymmetricKey); !ok {
+		return fmt.Errorf("expected asymmetric key, got %T", k)
+	}
+
+	if !k.(jwk.AsymmetricKey).IsPrivate() {
+		return errors.New("expected private key, got public key")
+	}
+
 	o.Key = k
 	o.rawkey = raw
 
@@ -184,13 +192,27 @@ func getCryptoSigner(k map[string]string) (crypto.Signer, error) {
 		default:
 			return nil, errors.New("unsupported EC curve: " + k["crv"])
 		}
+
+		x, err := base64ToBigInt(k["x"])
+		if err != nil {
+			return nil, fmt.Errorf("decoding x coordinate: %w", err)
+		}
+		y, err := base64ToBigInt(k["y"])
+		if err != nil {
+			return nil, fmt.Errorf("decoding y coordinate: %w", err)
+		}
+		d, err := base64ToBigInt(k["d"])
+		if err != nil {
+			return nil, fmt.Errorf("decoding d coordinate: %w", err)
+		}
+
 		pkey := &ecdsa.PrivateKey{
 			PublicKey: ecdsa.PublicKey{
-				X:     mustBase64ToBigInt(k["x"]),
-				Y:     mustBase64ToBigInt(k["y"]),
+				X:     x,
+				Y:     y,
 				Curve: c,
 			},
-			D: mustBase64ToBigInt(k["d"]),
+			D: d,
 		}
 		return pkey, nil
 	}
@@ -198,10 +220,10 @@ func getCryptoSigner(k map[string]string) (crypto.Signer, error) {
 	return nil, errors.New("unsupported key type: " + k["kty"])
 }
 
-func mustBase64ToBigInt(s string) *big.Int {
+func base64ToBigInt(s string) (*big.Int, error) {
 	val, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return new(big.Int).SetBytes(val)
+	return new(big.Int).SetBytes(val), nil
 }

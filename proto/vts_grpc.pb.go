@@ -35,7 +35,9 @@ type VTSClient interface {
 	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 	// endorsement distribution API
 	GetEndorsements(ctx context.Context, in *EndorsementQueryIn, opts ...grpc.CallOption) (*EndorsementQueryOut, error)
-	GetSupportedEndorsementProfiles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	GetSupportedCoservMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	// Returns the public key used to sign CoSERV results
+	GetCoservSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 }
 
 type vTSClient struct {
@@ -109,9 +111,18 @@ func (c *vTSClient) GetEndorsements(ctx context.Context, in *EndorsementQueryIn,
 	return out, nil
 }
 
-func (c *vTSClient) GetSupportedEndorsementProfiles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+func (c *vTSClient) GetSupportedCoservMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
 	out := new(MediaTypeList)
-	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedEndorsementProfiles", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedCoservMediaTypes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *vTSClient) GetCoservSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error) {
+	out := new(PublicKey)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetCoservSigningPublicKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +145,9 @@ type VTSServer interface {
 	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	// endorsement distribution API
 	GetEndorsements(context.Context, *EndorsementQueryIn) (*EndorsementQueryOut, error)
-	GetSupportedEndorsementProfiles(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	// Returns the public key used to sign CoSERV results
+	GetCoservSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	mustEmbedUnimplementedVTSServer()
 }
 
@@ -163,8 +176,11 @@ func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.E
 func (UnimplementedVTSServer) GetEndorsements(context.Context, *EndorsementQueryIn) (*EndorsementQueryOut, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEndorsements not implemented")
 }
-func (UnimplementedVTSServer) GetSupportedEndorsementProfiles(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedEndorsementProfiles not implemented")
+func (UnimplementedVTSServer) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedCoservMediaTypes not implemented")
+}
+func (UnimplementedVTSServer) GetCoservSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCoservSigningPublicKey not implemented")
 }
 func (UnimplementedVTSServer) mustEmbedUnimplementedVTSServer() {}
 
@@ -305,20 +321,38 @@ func _VTS_GetEndorsements_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VTS_GetSupportedEndorsementProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VTS_GetSupportedCoservMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VTSServer).GetSupportedEndorsementProfiles(ctx, in)
+		return srv.(VTSServer).GetSupportedCoservMediaTypes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.VTS/GetSupportedEndorsementProfiles",
+		FullMethod: "/proto.VTS/GetSupportedCoservMediaTypes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VTSServer).GetSupportedEndorsementProfiles(ctx, req.(*emptypb.Empty))
+		return srv.(VTSServer).GetSupportedCoservMediaTypes(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VTS_GetCoservSigningPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetCoservSigningPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetCoservSigningPublicKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetCoservSigningPublicKey(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -359,8 +393,12 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VTS_GetEndorsements_Handler,
 		},
 		{
-			MethodName: "GetSupportedEndorsementProfiles",
-			Handler:    _VTS_GetSupportedEndorsementProfiles_Handler,
+			MethodName: "GetSupportedCoservMediaTypes",
+			Handler:    _VTS_GetSupportedCoservMediaTypes_Handler,
+		},
+		{
+			MethodName: "GetCoservSigningPublicKey",
+			Handler:    _VTS_GetCoservSigningPublicKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
