@@ -12,7 +12,7 @@ schemes.
 
 Currently the following schemes are implemented:
 
-- `cca` Confidential Compute Architecture attestation.
+- `arm-cca` ARM Confidential Compute Architecture attestation.
 - `psa-iot`: Arm Platform Security Architecture attestation.
 - `riot`: [RIoT based DICE](https://trustedcomputinggroup.org/work-groups/dice-architectures/)-compatible
   attestation (note: this does not implement any specific DICE architecture).

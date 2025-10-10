@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 .DEFAULT_GOAL := test
 
-GOPKG := github.com/veraison/services/scheme/cca
+GOPKG := github.com/veraison/services/scheme/arm-cca
 SRCS := $(wildcard *.go)
 
 SUBDIR += plugin

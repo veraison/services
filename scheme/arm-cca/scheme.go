@@ -1,8 +1,8 @@
 // Copyright 2024-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package cca
+package arm_cca
 
-const SchemeName = "CCA"
+const SchemeName = "ARM_CCA"
 
 var (
 	EndorsementMediaTypes = []string{

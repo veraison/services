@@ -5,7 +5,7 @@ import (
 
         scheme1 "github.com/veraison/services/scheme/parsec-cca"
         scheme2 "github.com/veraison/services/scheme/riot"
-        scheme3 "github.com/veraison/services/scheme/cca"
+        scheme3 "github.com/veraison/services/scheme/arm-cca"
         scheme4 "github.com/veraison/services/scheme/tpm-enacttrust"
         scheme5 "github.com/veraison/services/scheme/parsec-tpm"
         scheme6 "github.com/veraison/services/scheme/psa-iot"

@@ -49,7 +49,7 @@
       ]
     }
   },
-  "CCA_REALM": {
+  "ARM_CCA_REALM": {
     "ear.appraisal-policy-id": "policy:CCA",
     "ear.status": "warning",
     "ear.trustworthiness-vector": {

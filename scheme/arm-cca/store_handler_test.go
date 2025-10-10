@@ -1,7 +1,7 @@
-// Copyright 2023-2024 Contributors to the Veraison project.
+// Copyright 2022-2024 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package cca
+package arm_cca
 
 import (
 	"encoding/json"
@@ -36,7 +36,7 @@ func Test_GetTrustAnchorIDs_ok(t *testing.T) {
 		Nonce:    testNonce,
 	}
 
-	expectedTaID := []string{"CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"}
+	expectedTaID := []string{"ARM_CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"}
 
 	scheme := &StoreHandler{}
 
@@ -52,7 +52,7 @@ func Test_SynthKeysFromTrustAnchor_ok(t *testing.T) {
 	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
-	expectedKey := "CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+	expectedKey := "ARM_CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
 
 	scheme := &StoreHandler{}
 	key_list, err := scheme.SynthKeysFromTrustAnchor("1", &endors)
@@ -68,7 +68,7 @@ func Test_SynthKeysFromRefValue_ok(t *testing.T) {
 	var endors handler.Endorsement
 	err = json.Unmarshal(endorsementsBytes, &endors)
 	require.NoError(t, err)
-	expectedKey := "CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+	expectedKey := "ARM_CCA://1/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 	scheme := &StoreHandler{}
 	key_list, err := scheme.SynthKeysFromRefValue("1", &endors)
@@ -80,8 +80,8 @@ func Test_GetReferenceIDs_ok(t *testing.T) {
 	var ta []string
 	var claims map[string]interface{}
 	expectedRefValID := []string{
-		"CCA://1/AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
-		"CCA://1/Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
+		"ARM_CCA://1/AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+		"ARM_CCA://1/Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
 	}
 	evidenceBytes, err := os.ReadFile("test/evidence/extracted-claims.json")
 	require.NoError(t, err)
