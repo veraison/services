@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -168,7 +168,7 @@ func newSession(nonce []byte, supportedMediaTypes []string, ttl time.Duration) (
 	session := &ChallengeResponseSession{
 		id:     id.String(),
 		Status: StatusWaiting, // start in waiting status
-		Nonce:  nonce,
+		Nonce:  URLSafeNonce(nonce),
 		Expiry: time.Now().Add(ttl), // RFC3339 format, with sub-second precision added if present
 		Accept: supportedMediaTypes,
 	}
@@ -394,7 +394,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// reported if something in the verifier or the connection goes wrong.
 	// Any problems with the evidence are expected to be reported via the
 	// attestation result.
-	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
+	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, []byte(session.Nonce),
 		evidence, mediaType)
 	if err != nil {
 		o.logger.Error(err)
