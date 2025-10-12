@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package provisioner
@@ -83,4 +83,20 @@ func (p *Provisioner) SubmitEndorsements(tenantID string, data []byte, mt string
 
 func (p *Provisioner) GetVTSState() (*proto.ServiceState, error) {
 	return p.VTSClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+}
+
+func (p *Provisioner) GetEndorsements(keyPrefix string, endorsementType string) (*proto.GetEndorsementsResponse, error) {
+	req := &proto.GetEndorsementsRequest{
+		KeyPrefix:       keyPrefix,
+		EndorsementType: endorsementType,
+	}
+	return p.VTSClient.GetEndorsements(context.Background(), req)
+}
+
+func (p *Provisioner) DeleteEndorsements(key string, endorsementType string) (*proto.DeleteEndorsementsResponse, error) {
+	req := &proto.DeleteEndorsementsRequest{
+		Key:             key,
+		EndorsementType: endorsementType,
+	}
+	return p.VTSClient.DeleteEndorsements(context.Background(), req)
 }

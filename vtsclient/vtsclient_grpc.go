@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package vtsclient
 
@@ -180,6 +180,36 @@ func (o *GRPC) EnsureConnection() error {
 	o.Connection = conn
 
 	return nil
+}
+
+func (o *GRPC) GetEndorsements(
+	ctx context.Context, in *proto.GetEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.GetEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetEndorsements", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetEndorsements(ctx, in, opts...)
+}
+
+func (o *GRPC) DeleteEndorsements(
+	ctx context.Context, in *proto.DeleteEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.DeleteEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("DeleteEndorsements", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.DeleteEndorsements(ctx, in, opts...)
 }
 
 func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {

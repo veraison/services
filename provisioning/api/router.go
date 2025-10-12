@@ -12,7 +12,7 @@ import (
 var publicApiMap = make(map[string]string)
 
 const (
-	provisioningPath           = "/endorsement-provisioning/v1"
+	provisioningPath                 = "/endorsement-provisioning/v1"
 	getWellKnownProvisioningInfoPath = "/.well-known/veraison/provisioning"
 )
 
@@ -30,6 +30,11 @@ func NewRouter(handler IHandler, authorizer auth.IAuthorizer) *gin.Engine {
 	provGroup.POST("submit", handler.Submit)
 	publicApiMap["provisioningSubmit"] = path.Join(provisioningPath, "submit")
 
+	provGroup.GET("endorsements", handler.GetEndorsements)
+	publicApiMap["provisioningGetEndorsements"] = path.Join(provisioningPath, "endorsements")
+
+	provGroup.DELETE("endorsements", handler.DeleteEndorsements)
+	publicApiMap["provisioningDeleteEndorsements"] = path.Join(provisioningPath, "endorsements")
 
 	return router
 }
