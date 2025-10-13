@@ -128,6 +128,7 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
 
     if scheme == 'psa' and nonce:
         claims_file = f'{GENDIR}/claims/{scheme}.{evidence}.json'
+        # Use nonce directly as URL-safe base64 to match verification API
         update_json(
                 f'data/claims/{scheme}.{evidence}.json',
                 {f'{scheme}-nonce': nonce},
@@ -135,11 +136,10 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
                 )
     elif scheme == 'cca' and nonce:
         claims_file = f'{GENDIR}/claims/{scheme}.{evidence}.json'
-        # convert nonce from base64url to base64
-        translated_nonce = nonce.replace('-', '+').replace('_', '/')
+        # Use nonce directly as URL-safe base64 to match verification API
         update_json(
                 f'data/claims/{scheme}.{evidence}.json',
-                {'cca-realm-delegated-token': {f'cca-realm-challenge': translated_nonce}},
+                {'cca-realm-delegated-token': {f'cca-realm-challenge': nonce}},
                 claims_file,
                 )
     else:

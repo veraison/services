@@ -38,6 +38,7 @@ def compare_to_expected_result(response, expected, verifier_key):
             print("Key exists in the dictionary.")
         except KeyError:
             print(f"Key {key} does not exist in the dictionary.")
+            raise
 
         assert decoded_claims["ear.status"] == expected_claims["ear.status"]
         print(f"Evaluating Submod with SubModName {key}")
