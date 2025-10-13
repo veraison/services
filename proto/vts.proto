@@ -35,6 +35,35 @@ message PublicKey {
   string key = 1;
 }
 
+message GetEndorsementsRequest {
+  // Optional key prefix to filter endorsements. If empty, returns all endorsements.
+  string key_prefix = 1;
+  // Type of endorsement to retrieve: "trust-anchor", "reference-value", or "all"
+  string endorsement_type = 2;
+}
+
+message EndorsementEntry {
+  string key = 1;
+  repeated string values = 2;
+}
+
+message GetEndorsementsResponse {
+  repeated EndorsementEntry endorsements = 1;
+  Status status = 2;
+}
+
+message DeleteEndorsementsRequest {
+  // Key or key prefix to delete
+  string key = 1;
+  // Type of endorsement to delete: "trust-anchor", "reference-value", or "all"
+  string endorsement_type = 2;
+}
+
+message DeleteEndorsementsResponse {
+  int32 deleted_count = 1;
+  Status status = 2;
+}
+
 // Client interface for the Veraison Trusted Services component.
 // protolint:disable MAX_LINE_LENGTH
 service VTS {
@@ -48,6 +77,12 @@ service VTS {
 
   rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
   rpc SubmitEndorsements(SubmitEndorsementsRequest) returns (SubmitEndorsementsResponse);
+
+  // Returns endorsements (trust anchors and/or reference values) based on the provided filter
+  rpc GetEndorsements(GetEndorsementsRequest) returns (GetEndorsementsResponse);
+
+  // Deletes endorsements (trust anchors and/or reference values) based on the provided key
+  rpc DeleteEndorsements(DeleteEndorsementsRequest) returns (DeleteEndorsementsResponse);
 
   // Returns the public key used to sign evidence.
   rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);

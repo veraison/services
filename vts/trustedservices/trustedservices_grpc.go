@@ -119,7 +119,7 @@ func (o *GRPC) Init(
 
 	cfg := GRPCConfig{
 		ServerAddress: DefaultVTSAddr,
-		UseTLS: true,
+		UseTLS:        true,
 	}
 
 	loader := config.NewLoader(&cfg)
@@ -292,6 +292,167 @@ func submitEndorsementErrorResponse(err error) *proto.SubmitEndorsementsResponse
 			ErrorDetail: fmt.Sprintf("%v", err),
 		},
 	}
+}
+
+func (o *GRPC) GetEndorsements(ctx context.Context, req *proto.GetEndorsementsRequest) (*proto.GetEndorsementsResponse, error) {
+	o.logger.Debugw("GetEndorsements", "key-prefix", req.KeyPrefix, "type", req.EndorsementType)
+
+	var endorsements []*proto.EndorsementEntry
+	endorsementType := strings.ToLower(req.EndorsementType)
+
+	// Default to "all" if not specified
+	if endorsementType == "" {
+		endorsementType = "all"
+	}
+
+	// Get endorsements from trust anchor store
+	if endorsementType == "trust-anchor" || endorsementType == "all" {
+		taEndorsements, err := o.getEndorsementsFromStore(o.TaStore, req.KeyPrefix)
+		if err != nil {
+			return &proto.GetEndorsementsResponse{
+				Status: &proto.Status{
+					Result:      false,
+					ErrorDetail: fmt.Sprintf("error retrieving trust anchors: %v", err),
+				},
+			}, nil
+		}
+		endorsements = append(endorsements, taEndorsements...)
+	}
+
+	// Get endorsements from reference value store
+	if endorsementType == "reference-value" || endorsementType == "all" {
+		enEndorsements, err := o.getEndorsementsFromStore(o.EnStore, req.KeyPrefix)
+		if err != nil {
+			return &proto.GetEndorsementsResponse{
+				Status: &proto.Status{
+					Result:      false,
+					ErrorDetail: fmt.Sprintf("error retrieving reference values: %v", err),
+				},
+			}, nil
+		}
+		endorsements = append(endorsements, enEndorsements...)
+	}
+
+	return &proto.GetEndorsementsResponse{
+		Endorsements: endorsements,
+		Status: &proto.Status{
+			Result: true,
+		},
+	}, nil
+}
+
+func (o *GRPC) getEndorsementsFromStore(store kvstore.IKVStore, keyPrefix string) ([]*proto.EndorsementEntry, error) {
+	var entries []*proto.EndorsementEntry
+
+	keys, err := store.GetKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range keys {
+		// Filter by prefix if specified
+		if keyPrefix != "" && !strings.HasPrefix(key, keyPrefix) {
+			continue
+		}
+
+		values, err := store.Get(key)
+		if err != nil {
+			o.logger.Warnw("error getting values for key", "key", key, "error", err)
+			continue
+		}
+
+		entries = append(entries, &proto.EndorsementEntry{
+			Key:    key,
+			Values: values,
+		})
+	}
+
+	return entries, nil
+}
+
+func (o *GRPC) DeleteEndorsements(ctx context.Context, req *proto.DeleteEndorsementsRequest) (*proto.DeleteEndorsementsResponse, error) {
+	o.logger.Debugw("DeleteEndorsements", "key", req.Key, "type", req.EndorsementType)
+
+	if req.Key == "" {
+		return &proto.DeleteEndorsementsResponse{
+			DeletedCount: 0,
+			Status: &proto.Status{
+				Result:      false,
+				ErrorDetail: "key is required",
+			},
+		}, nil
+	}
+
+	endorsementType := strings.ToLower(req.EndorsementType)
+
+	// Default to "all" if not specified
+	if endorsementType == "" {
+		endorsementType = "all"
+	}
+
+	var totalDeleted int32
+
+	// Delete from trust anchor store
+	if endorsementType == "trust-anchor" || endorsementType == "all" {
+		deleted, err := o.deleteEndorsementsFromStore(o.TaStore, req.Key)
+		if err != nil {
+			return &proto.DeleteEndorsementsResponse{
+				DeletedCount: 0,
+				Status: &proto.Status{
+					Result:      false,
+					ErrorDetail: fmt.Sprintf("error deleting trust anchors: %v", err),
+				},
+			}, nil
+		}
+		totalDeleted += deleted
+	}
+
+	// Delete from reference value store
+	if endorsementType == "reference-value" || endorsementType == "all" {
+		deleted, err := o.deleteEndorsementsFromStore(o.EnStore, req.Key)
+		if err != nil {
+			return &proto.DeleteEndorsementsResponse{
+				DeletedCount: totalDeleted,
+				Status: &proto.Status{
+					Result:      false,
+					ErrorDetail: fmt.Sprintf("error deleting reference values: %v", err),
+				},
+			}, nil
+		}
+		totalDeleted += deleted
+	}
+
+	o.logger.Infow("deleted endorsements", "count", totalDeleted, "key", req.Key)
+
+	return &proto.DeleteEndorsementsResponse{
+		DeletedCount: totalDeleted,
+		Status: &proto.Status{
+			Result: true,
+		},
+	}, nil
+}
+
+func (o *GRPC) deleteEndorsementsFromStore(store kvstore.IKVStore, keyPattern string) (int32, error) {
+	var deleted int32
+
+	keys, err := store.GetKeys()
+	if err != nil {
+		return 0, err
+	}
+
+	for _, key := range keys {
+		// Match exact key or prefix
+		if key == keyPattern || strings.HasPrefix(key, keyPattern) {
+			err := store.Del(key)
+			if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
+				o.logger.Warnw("error deleting key", "key", key, "error", err)
+				continue
+			}
+			deleted++
+		}
+	}
+
+	return deleted, nil
 }
 
 func (o *GRPC) addRefValues(ctx context.Context, refVal *handler.Endorsement) error {
