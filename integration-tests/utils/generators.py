@@ -97,7 +97,7 @@ def generate_expected_result_from_response(response, scheme, expected):
     elif scheme == 'cca' and nonce:
         update_json(
                 infile,
-                {"CCA_REALM": {'ear.veraison.annotated-evidence': {f'cca-realm-challenge': nonce}}},
+                {"ARM_CCA_REALM": {'ear.veraison.annotated-evidence': {f'cca-realm-challenge': nonce}}},
                 outfile,
                 )
     else:

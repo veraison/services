@@ -1,5 +1,5 @@
 {
-  "scheme": "ARM_CCA",
+  "scheme": "CCA",
   "type": "VERIFICATION_KEY",
   "attributes": {
     "hw-model": "RoadRunner",
