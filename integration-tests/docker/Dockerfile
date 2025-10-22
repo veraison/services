@@ -23,8 +23,18 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
     gem install cbor-diag
 
-RUN userdel -f $(cat /etc/passwd | awk -F: "\$3 == ${TESTER_UID}" | cut -d: -f1); \
-    groupdel -f $(cat /etc/group | awk -F: "\$3 == ${TESTER_GID}" | cut -d: -f1); \
+# Note: unfortunately this does not get packaged as part of the distro (so
+# cannot be installed with apt), and the upstream only provide an amd64 deb, so
+# this will not work on arm64 platforms.
+RUN wget https://dl.step.sm/gh-release/cli/docs-cli-install/v0.23.1/step-cli_0.23.1_amd64.deb && \
+    dpkg -i step-cli_0.23.1_amd64.deb; \
+    rm step-cli_0.23.1_amd64.deb
+
+
+RUN user_to_del=$(awk -F: "\$3 == ${TESTER_UID} {print \$1}" /etc/passwd) && \
+    [ -n "$user_to_del" ] && userdel -f "$user_to_del" || true && \
+    group_to_del=$(awk -F: "\$3 == ${TESTER_GID} {print \$1}" /etc/group) && \
+    [ -n "$group_to_del" ] && groupdel -f "$group_to_del" || true && \
     groupadd -g ${TESTER_GID} tavern && \
     groupadd -g 616 veraison && \
     useradd -m -u ${TESTER_UID} -g tavern -G veraison \
