@@ -1204,8 +1204,8 @@ github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGr
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/ugorji/go/codec v1.2.11 h1:BMaWp1Bb6fHwEtbplGBGJ498wD+LKlNSl25MjdZY4dU=
 github.com/ugorji/go/codec v1.2.11/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
-github.com/veraison/ccatoken v1.3.1 h1:zUHXr2mPprxMYv5Mm2mumxzQZ3I9wy7QGayXqa9Rv/E=
-github.com/veraison/ccatoken v1.3.1/go.mod h1:vMqdbW4H/8A3oT+24qssuIK3Aefy06XqzTELGg+gWAg=
+github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4 h1:t2GQueIc1SrErZpprs2ll9ETaXln/nOCPVRq7OejzfQ=
+github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4/go.mod h1:vMqdbW4H/8A3oT+24qssuIK3Aefy06XqzTELGg+gWAg=
 github.com/veraison/cmw v0.2.0 h1:BWEvwZnD4nn5osq6XwQpTRcGxwV+Su4t6ytdAbVXAJY=
 github.com/veraison/cmw v0.2.0/go.mod h1:OiYKk1t6/Fmmg30ZpSMzi4nKr5kt3374sNTkgxC5BDs=
 github.com/veraison/corim v1.1.3-0.20251002172919-3c18c66c77b0 h1:rl3ANdIHIStRQEYVhU0BaNc87j0W38iWqTwu0HYcuMA=
