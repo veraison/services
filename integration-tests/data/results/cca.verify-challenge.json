@@ -12,7 +12,7 @@
       "storage-opaque": 2
     },
     "ear.veraison.annotated-evidence": {
-      "cca-platform-challenge": "Bea1iETGoM0ZOCBpuv2w5JRmKjrc+P3hFHjpM5Ua8XkP9d5ceOPbESPaCiB6i2ZVbgoi8Z7mS9wviZU7azJVXw==",
+      "cca-platform-challenge": "5QHHS9edCpI1N1heeR7DUBI+gaqXUB34EkQCITSCxVM=",
       "cca-platform-config": "AQID",
       "cca-platform-hash-algo-id": "sha-256",
       "cca-platform-implementation-id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
@@ -61,6 +61,7 @@
       "storage-opaque": 0
     },
     "ear.veraison.annotated-evidence": {
+      "cca-realm-profile": "tag:arm.com,2023:realm#1.0.0",
       "cca-realm-challenge": "byTWuWNaLIu/WOkIuU4Ewb+zroDN6+gyQkV4SZ/jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==",
       "cca-realm-extensible-measurements": [
         "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
@@ -71,8 +72,8 @@
       "cca-realm-hash-algo-id": "sha-256",
       "cca-realm-initial-measurement": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
       "cca-realm-personalization-value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA==",
-      "cca-realm-public-key": "BIL70TKptcOWh5+7FTQNkFCXjlXHnVJ5oroOlYVPN+IM0vZPO3K1cLvXc+7iznaEJe31Re2+if+v4OlrvUbicPIHlsRIuY2vRqdk0nRC5ubthPjOyBfm7ManHTo959Z+zQ==",
-      "cca-realm-public-key-hash-algo-id": "sha-512"
+      "cca-realm-public-key": "pAECIAIhWDCC+9EyqbXDloefuxU0DZBQl45Vx51SeaK6DpWFTzfiDNL2TztytXC713Pu4s52hCUiWDDt9UXtvon/r+Dpa71G4nDyB5bESLmNr0anZNJ0Qubm7YT4zsgX5uzGpx06PefWfs0=",
+      "cca-realm-public-key-hash-algo-id": "sha-256"
     }
   }
 }
