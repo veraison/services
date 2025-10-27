@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -381,4 +381,176 @@ func TestHandler_GetWellKnownProvisioningInfo_UnsupportedAccept(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_GetEndorsements_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	expectedEndorsements := []*proto.EndorsementEntry{
+		{
+			Key:    "test-key-1",
+			Values: []string{"value1", "value2"},
+		},
+		{
+			Key:    "test-key-2",
+			Values: []string{"value3"},
+		},
+	}
+
+	expectedResp := &proto.GetEndorsementsResponse{
+		Endorsements: expectedEndorsements,
+		Status: &proto.Status{
+			Result: true,
+		},
+	}
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		GetEndorsements(gomock.Eq(""), gomock.Eq("all")).
+		Return(expectedResp, nil)
+
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodGet, "/endorsement-provisioning/v1/endorsements", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Result().Header.Get("Content-Type"))
+
+	var body proto.GetEndorsementsResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, len(expectedEndorsements), len(body.Endorsements))
+}
+
+func TestHandler_GetEndorsements_WithFilter(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	expectedResp := &proto.GetEndorsementsResponse{
+		Endorsements: []*proto.EndorsementEntry{
+			{
+				Key:    "prefix-key-1",
+				Values: []string{"value1"},
+			},
+		},
+		Status: &proto.Status{
+			Result: true,
+		},
+	}
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		GetEndorsements(gomock.Eq("prefix"), gomock.Eq("trust-anchor")).
+		Return(expectedResp, nil)
+
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodGet, "/endorsement-provisioning/v1/endorsements?key-prefix=prefix&type=trust-anchor", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_GetEndorsements_InvalidType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodGet, "/endorsement-provisioning/v1/endorsements?type=invalid", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_DeleteEndorsements_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	expectedResp := &proto.DeleteEndorsementsResponse{
+		DeletedCount: 2,
+		Status: &proto.Status{
+			Result: true,
+		},
+	}
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		DeleteEndorsements(gomock.Eq("test-key"), gomock.Eq("all")).
+		Return(expectedResp, nil)
+
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodDelete, "/endorsement-provisioning/v1/endorsements?key=test-key", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var body proto.DeleteEndorsementsResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, int32(2), body.DeletedCount)
+}
+
+func TestHandler_DeleteEndorsements_MissingKey(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodDelete, "/endorsement-provisioning/v1/endorsements", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_DeleteEndorsements_Error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		DeleteEndorsements(gomock.Eq("test-key"), gomock.Eq("all")).
+		Return(nil, errors.New("test error"))
+
+	h := NewHandler(dm, log.Named("test"))
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodDelete, "/endorsement-provisioning/v1/endorsements?key=test-key", http.NoBody)
+
+	u := auth.NewPassthroughAuthorizer(log.Named("auth"))
+	NewRouter(h, u).ServeHTTP(w, g.Request)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
