@@ -9,6 +9,7 @@ import (
 	"reflect"
 
 	"github.com/veraison/corim/comid"
+	// "github.com/veraison/corim/comid/psa"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/scheme/common/arm/platform"
 )
@@ -25,7 +26,7 @@ func (o CorimExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endo
 		var refVal *handler.Endorsement
 		var err error
 
-		if o.Profile != "http://arm.com/psa/iot/1" {
+		if o.Profile != "http://arm.com/psa/iot/1" && o.Profile != "tag:arm.com,2025:psa#1.0.0" {
 			return nil, fmt.Errorf(
 				"incorrect profile: %s for Scheme PSA_IOT",
 				o.Profile,
@@ -59,6 +60,13 @@ func (o CorimExtractor) RefValExtractor(rvs comid.ValueTriples) ([]*handler.Endo
 				if err != nil {
 					return nil, fmt.Errorf("unable to extract measurement at index %d, %w", i, err)
 				}
+			// TODO: Uncomment when PSA profile dependency is available
+			// case psa.PSASoftwareComponentType:
+			// 	var swCompAttrs platform.SwCompAttributes
+			// 	refVal, err = o.extractMeas(&swCompAttrs, m, classAttrs)
+			// 	if err != nil {
+			// 		return nil, fmt.Errorf("unable to extract PSA software component measurement at index %d, %w", i, err)
+			// 	}
 			default:
 				return nil, fmt.Errorf("unknown measurement key: %T", reflect.TypeOf(m.Key))
 			}
