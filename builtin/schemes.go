@@ -1,8 +1,11 @@
+// Copyright 2022-2025 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
 package builtin
 
 import (
 	"github.com/veraison/services/plugin"
 
+	scheme8 "github.com/veraison/services/scheme/amd-kds-coserv"
 	scheme3 "github.com/veraison/services/scheme/arm-cca"
 	scheme7 "github.com/veraison/services/scheme/nvidia-coserv"
 	scheme1 "github.com/veraison/services/scheme/parsec-cca"
@@ -31,4 +34,5 @@ var plugins = []plugin.IPluggable{
 	&scheme6.EndorsementHandler{},
 	&scheme6.StoreHandler{},
 	&scheme7.CoservProxyHandler{},
+	&scheme8.CoservProxyHandler{},
 }
