@@ -32,5 +32,9 @@ vts:
 ear-signer:
   alg: ES256
   key: ./skey.jwk
+coserv-signer:
+  use: true
+  alg: ES256
+  key: ./skey.jwk
 logging:
   level: debug

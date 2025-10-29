@@ -621,7 +621,7 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 }
 
 func (o *GRPC) GetCoservSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
-	// If CoSERV is not enabled, return an error.
+	// If CoSERV is not enabled, return an empty key.
 	if o.CoservSigner == nil {
 		return &proto.PublicKey{Key: ""}, nil
 	}
