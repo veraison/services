@@ -70,7 +70,7 @@ func main() {
 		log.Fatalf("Could not initialize VTS client: %v", err)
 	}
 
-	vtsState, err := vtsClient.GetServiceState(context.TODO(), &emptypb.Empty{})
+	vtsState, err := vtsClient.GetServiceState(context.Background(), &emptypb.Empty{})
 	if err == nil {
 		if vtsState.Status == proto.ServiceStatus_SERVICE_STATUS_READY {
 			log.Infow("vts connection established", "server-version",

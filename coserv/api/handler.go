@@ -6,6 +6,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/fxamacker/cbor/v2"
@@ -32,7 +33,10 @@ type Handler struct {
 	EndorsementDistibutor endorsementdistributor.IEndorsementDistributor
 }
 
-func NewHandler(endorsementdistributor endorsementdistributor.IEndorsementDistributor, logger *zap.SugaredLogger) Handler {
+func NewHandler(
+	endorsementdistributor endorsementdistributor.IEndorsementDistributor,
+	logger *zap.SugaredLogger,
+) Handler {
 	return Handler{
 		EndorsementDistibutor: endorsementdistributor,
 		Logger:                logger,
@@ -133,7 +137,7 @@ func reportProblem(c *gin.Context, status int, details ...string) {
 
 func (o Handler) CoservRequest(c *gin.Context) {
 	offered := c.NegotiateFormat(CoservMTs...)
-	if offered != CoservMTs[0] && offered != CoservMTs[1] {
+	if !slices.Contains(CoservMTs, offered) {
 		reportProblem(c,
 			http.StatusNotAcceptable,
 			fmt.Sprintf("the only supported output formats are %s",
