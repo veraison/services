@@ -2,11 +2,8 @@ This directory contains packages implementing support of specific attestation
 schemes.
 
 > [!NOTE]
-> When adding (or removing) a scheme, please update `../builtin/scheme.gen.go`
-> to include the appropriate entries. This can be done automatically using
-> `../scripts/gen-schemes` script (see `../builtin/Makefile`) or by manually
-> editing the file. The script takes a long time to execute, so unless multiple
-> schemes are being added/moved/deleted, manual editing may be easier.
+> When adding (or removing) a scheme, please update `../builtin/schemes.go`
+> to include the appropriate entries.
 
 ## Current Schemes
 
