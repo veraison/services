@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package parsec_cca
 
@@ -65,4 +65,8 @@ func (s StoreHandler) GetRefValueIDs(
 		return nil, fmt.Errorf("claims do not contain platform map: %v", claims)
 	}
 	return arm.GetPlatformReferenceIDs(SchemeName, tenantID, platformClaimsMap)
+}
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
 }

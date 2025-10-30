@@ -79,6 +79,17 @@ func (s EndorsementRPCServer) Decode(args []byte, resp *[]byte) error {
 	return nil
 }
 
+type CoservRepackageArgs struct {
+	Query     string
+	ResultSet []string
+}
+
+func (s EndorsementRPCServer) CoservRepackage(args CoservRepackageArgs, resp *[]byte) (err error) {
+	*resp, err = s.Impl.CoservRepackage(args.Query, args.ResultSet)
+
+	return err
+}
+
 /*
   RPC client
   (plugin caller side)
@@ -181,4 +192,14 @@ func (c EndorsementRPCClient) Decode(data []byte, mediaType string, caCertPool [
 	}
 
 	return &resp, nil
+}
+
+func (c EndorsementRPCClient) CoservRepackage(query string, resultSet []string) (resp []byte, err error) {
+	args := CoservRepackageArgs{Query: query, ResultSet: resultSet}
+
+	if err = c.client.Call("Plugin.CoservRepackage", args, &resp); err != nil {
+		return nil, fmt.Errorf("Plugin.CoservRepackage RPC call failed: %w", ParseError(err))
+	}
+
+	return resp, nil
 }

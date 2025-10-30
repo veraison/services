@@ -2,11 +2,8 @@ This directory contains packages implementing support of specific attestation
 schemes.
 
 > [!NOTE]
-> When adding (or removing) a scheme, please update `../builtin/scheme.gen.go`
-> to include the appropriate entries. This can be done automatically using
-> `../scripts/gen-schemes` script (see `../builtin/Makefile`) or by manually
-> editing the file. The script takes a long time to execute, so unless multiple
-> schemes are being added/moved/deleted, manual editing may be easier.
+> When adding (or removing) a scheme, please update `../builtin/schemes.go`
+> to include the appropriate entries.
 
 ## Current Schemes
 
@@ -31,10 +28,14 @@ Currently the following schemes are implemented:
 > for how to convert them to the new framework.
 
 Supporting a new attestation scheme requires defining how to provision
-endorsements (if any) by implementing [`IEndorsementHandler`](../handler/iendorsementhandler.go),
-how to process evidence tokens by implementing [`IEvidenceHandler`](../handler/ievidencehandler.go) and
-how to create and obtain scheme-specific keys used to store and retrieve endorsements and trust anchors
-by implementing [`IStoreHandler`](../handler/istorehandler.go).
+endorsements (if any) by implementing
+[`IEndorsementHandler`](../handler/iendorsementhandler.go), how to process
+evidence tokens by implementing
+[`IEvidenceHandler`](../handler/ievidencehandler.go), how to create and obtain
+scheme-specific keys used to store and retrieve endorsements and trust anchors
+by implementing [`IStoreHandler`](../handler/istorehandler.go), and how to
+handle CoSERV queries by implementing
+[`ICoservProxyHandler`](../handler/icoservproxyhandler.go).
 
 Finally, an executable should be created that [registers](../handler/plugin.go)
 and serves them.
@@ -65,10 +66,17 @@ type MyStoreHandler struct {}
 // Implementation of IStoreHandler for MyStoreHandler
 // ...
 
+type MyCoservProxyHandler struct {}
+
+// ...
+// Implementation of ICoservProxyHandler for MyCoservProxyHandler
+// ...
+
 func main() {
 	handler.RegisterEndorsementHandler(&MyEndorsementHandler{})
 	handler.RegisterEvidenceHandler(&MyEvidenceHandler{})
 	handler.RegisterStoreHandler(&MyStoreHandler{})
+	handler.RegisterCoservProxyHandler(&MyCoservProxyHandler{})
 
 	plugin.Serve()
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package tpm_enacttrust
@@ -115,4 +115,8 @@ func tpmEnactTrustLookupKey(tenantID, nodeID string) string {
 	}
 
 	return u.String()
+}
+
+func (s StoreHandler) SynthCoservQueryKeys(tenantID string, query string) ([]string, error) {
+	return []string{"TODO"}, nil
 }

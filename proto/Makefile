@@ -8,6 +8,8 @@ PROTOSRCS += evidence.proto
 PROTOSRCS += appraisal_context.proto
 PROTOSRCS += state.proto
 PROTOSRCS += vts.proto
+PROTOSRCS += status.proto
+PROTOSRCS += endorsement_query.proto
 
 lint-hook-pre: protogen
 	protolint lint $(PROTOSRCS)

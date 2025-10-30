@@ -24,4 +24,9 @@ type IEndorsementHandler interface {
 
 	// Decode the endorsements from the provided []byte with specified media type.
 	Decode(data []byte, mediaType string, caCertPool []byte) (*EndorsementHandlerResponse, error)
+
+	// CoservRepackage reformats the supplied result set, appends it to the
+	// supplied CoSERV query and returns the resulting CoSERV as a CBOR-encoded
+	// byte buffer.
+	CoservRepackage(coservQuery string, resultSet []string) ([]byte, error)
 }

@@ -12,6 +12,7 @@ SHELL = /bin/bash
 
 SUBDIR += builtin
 SUBDIR += config
+SUBDIR += coserv
 SUBDIR += handler
 SUBDIR += kvstore
 SUBDIR += log
@@ -49,6 +50,11 @@ IGNORE_COVERAGE += github.com/veraison/services/verification/verifier
 IGNORE_COVERAGE += github.com/veraison/services/vts/cmd/vts-service
 IGNORE_COVERAGE += github.com/veraison/services/vts/trustedservices
 IGNORE_COVERAGE += github.com/veraison/services/vtsclient
+IGNORE_COVERAGE += github.com/veraison/services/coserv/api
+IGNORE_COVERAGE += github.com/veraison/services/coserv/cmd/coserv-service
+IGNORE_COVERAGE += github.com/veraison/services/scheme/amd-kds-coserv
+IGNORE_COVERAGE += github.com/veraison/services/scheme/nvidia-coserv
+IGNORE_COVERAGE += github.com/veraison/services/scheme/arm-cca
 
 include mk/cover.mk
 
