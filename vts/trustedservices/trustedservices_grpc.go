@@ -761,6 +761,8 @@ func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQuer
 			if err != nil {
 				return getEndorsementsError(fmt.Errorf("could not sign CoSERV response: %w", err)), nil
 			}
+		} else {
+			return getEndorsementsError(errors.New("no CoSERV signer configured")), nil
 		}
 	}
 
