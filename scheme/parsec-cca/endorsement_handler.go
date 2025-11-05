@@ -52,5 +52,5 @@ func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []b
 }
 
 func (o EndorsementHandler) CoservRepackage(coservQuery string, resultSet []string) ([]byte, error) {
-	return nil, errors.New("TODO")
+	return nil, errors.New("Parsec CCA CoservRepackage not implemented")
 }

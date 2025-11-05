@@ -82,15 +82,15 @@ func callRimService(rimid *string) (*RimServiceResponse, error) {
 
 func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *coserv.StatefulClass, results *coserv.ResultSet) error {
 	if *c.Class.Vendor != "NVIDIA" {
-		return fmt.Errorf("vendors other than NVIDIA not supported by this proxy plug-in")
+		return errors.New("vendors other than NVIDIA not supported by this proxy plug-in")
 	}
 
 	if c.Measurements != nil {
-		return fmt.Errorf("NVIDIA CoSERV proxy plug-in does not expect stateful class environments")
+		return errors.New("NVIDIA CoSERV proxy plug-in does not expect stateful class environments")
 	}
 
 	if c.Class.Model == nil {
-		return fmt.Errorf("no Model field supplied in NVIDIA class environment")
+		return errors.New("no Model field supplied in NVIDIA class environment")
 	}
 
 	rimid := c.Class.Model
