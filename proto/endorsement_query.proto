@@ -12,11 +12,12 @@ option go_package = "github.com/veraison/services/proto";
 message EndorsementQueryIn {
   // media type (including profile)
   string media_type = 1;
-  // base64url-encoded CoSERV
+  // base64url-encoded CoSERV query
   string query = 2;
 }
 
 message EndorsementQueryOut {
   Status status = 1;
+  // CBOR-encoded CoSERV result set
   bytes result_set = 2;
 }

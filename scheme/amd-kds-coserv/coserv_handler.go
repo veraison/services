@@ -129,7 +129,7 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 	// Begin with an empty result set
 	coservResult := *coserv.NewResultSet()
 
-	// Loop over all of the class environments in the query, and call the AMD KDS cloud service for each one.
+	// Loop over all of the instance environments in the query, and call the AMD KDS cloud service for each one.
 	for _, i := range *q.Query.EnvironmentSelector.Instances {
 		err := s.addTrustAnchorForInstance(&i, &coservResult)
 		if err != nil {

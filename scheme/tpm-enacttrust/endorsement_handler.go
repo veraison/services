@@ -53,5 +53,5 @@ func (o EndorsementHandler) Decode(data []byte, mediaType string, caCertPool []b
 }
 
 func (o EndorsementHandler) CoservRepackage(coservQuery string, resultSet []string) ([]byte, error) {
-	return nil, errors.New("TODO")
+	return nil, errors.New("TPM-EnactTrust CoservRepackage not implemented")
 }

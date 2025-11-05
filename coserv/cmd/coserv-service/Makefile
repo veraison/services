@@ -1,4 +1,4 @@
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2025 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 .DEFAULT_GOAL := all
