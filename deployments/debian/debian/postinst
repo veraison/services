@@ -24,5 +24,28 @@ if [ "$1" = "configure" ]; then
 
 	chmod 0500 /opt/veraison/certs/*.key
 
+	# Generate installation metadata
+	METADATA_FILE="/usr/share/veraison/installation.json"
+	METADATA_DIR="$(dirname "$METADATA_FILE")"
+	VERSION="$(dpkg-query -W -f='${Version}' veraison 2>/dev/null || echo 'unknown')"
+	INSTALL_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+	ARCH="$(dpkg --print-architecture)"
+
+	mkdir -p "$METADATA_DIR"
+
+	cat > "$METADATA_FILE" <<EOF
+{
+  "version": "${VERSION}",
+  "deployment_method": "deb",
+  "install_time": "${INSTALL_TIME}",
+  "metadata": {
+    "package": "veraison",
+    "architecture": "${ARCH}"
+  }
+}
+EOF
+
+	chmod 644 "$METADATA_FILE"
+
 	/opt/veraison/bin/veraison -s start-services
 fi
