@@ -182,6 +182,36 @@ func (o *GRPC) EnsureConnection() error {
 	return nil
 }
 
+func (o *GRPC) GetEndorsements(
+	ctx context.Context, in *proto.GetEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.GetEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetEndorsements", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetEndorsements(ctx, in, opts...)
+}
+
+func (o *GRPC) DeleteEndorsements(
+	ctx context.Context, in *proto.DeleteEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.DeleteEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("DeleteEndorsements", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.DeleteEndorsements(ctx, in, opts...)
+}
+
 func (o *GRPC) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.PublicKey, error) {
 	if err := o.EnsureConnection(); err != nil {
 		return nil, NewNoConnectionError("GetEARSigningPublicKey", err)
