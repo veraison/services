@@ -32,47 +32,62 @@ var testBadNonce = []byte{
 	0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18,
 }
 
+type sevSnpEvidence struct {
+	FileName  string
+	MediaType string
+}
+
+var testEvidenceList = []sevSnpEvidence{
+	{"test/sevsnp-ratsd-token", EvidenceMediaTypeRATSd},
+	{"test/sevsnp-tsm-report.json", EvidenceMediaTypeTSMJson},
+	{"test/sevsnp-tsm-report.cbor", EvidenceMediaTypeTSMCbor},
+}
+
 func Test_ExtractClaims_ok(t *testing.T) {
-	tokenBytes, err := os.ReadFile("test/sevsnp-ratsd-token")
-	require.NoError(t, err)
+	for _, evidence := range testEvidenceList {
+		tokenBytes, err := os.ReadFile(evidence.FileName)
+		require.NoError(t, err)
 
-	taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
-	require.NoError(t, err)
+		taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
+		require.NoError(t, err)
 
-	handler := &EvidenceHandler{}
+		handler := &EvidenceHandler{}
 
-	token := proto.AttestationToken{
-		TenantId:  "0",
-		Data:      tokenBytes,
-		MediaType: EvidenceMediaTypeRATSd,
-		Nonce:     testNonce,
+		token := proto.AttestationToken{
+			TenantId:  "0",
+			Data:      tokenBytes,
+			MediaType: evidence.MediaType,
+			Nonce:     testNonce,
+		}
+		ta := string(taEndValBytes)
+		_, err = handler.ExtractClaims(&token, []string{ta})
+
+		require.NoError(t, err)
 	}
-	ta := string(taEndValBytes)
-	_, err = handler.ExtractClaims(&token, []string{ta})
-
-	require.NoError(t, err)
 }
 
 func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
-	tokenBytes, err := os.ReadFile("test/sevsnp-ratsd-token")
-	require.NoError(t, err)
+	for _, evidence := range testEvidenceList {
+		tokenBytes, err := os.ReadFile(evidence.FileName)
+		require.NoError(t, err)
 
-	taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
-	require.NoError(t, err)
+		taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
+		require.NoError(t, err)
 
-	handler := &EvidenceHandler{}
+		handler := &EvidenceHandler{}
 
-	token := proto.AttestationToken{
-		TenantId:  "0",
-		Data:      tokenBytes,
-		MediaType: EvidenceMediaTypeRATSd,
-		Nonce:     testNonce,
+		token := proto.AttestationToken{
+			TenantId:  "0",
+			Data:      tokenBytes,
+			MediaType: evidence.MediaType,
+			Nonce:     testNonce,
+		}
+
+		ta := string(taEndValBytes)
+		err = handler.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
+
+		assert.NoError(t, err)
 	}
-
-	ta := string(taEndValBytes)
-	err = handler.ValidateEvidenceIntegrity(&token, []string{ta}, nil)
-
-	assert.NoError(t, err)
 }
 
 func Test_ValidateEvidenceIntegrity_BadTA(t *testing.T) {
@@ -120,41 +135,43 @@ func Test_ValidateEvidenceIntegrity_BadNonce(t *testing.T) {
 }
 
 func Test_AppraiseEvidence_ok(t *testing.T) {
-	tokenBytes, err := os.ReadFile("test/sevsnp-ratsd-token")
-	require.NoError(t, err)
+	for _, evidence := range testEvidenceList {
+		tokenBytes, err := os.ReadFile(evidence.FileName)
+		require.NoError(t, err)
 
-	taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
-	require.NoError(t, err)
+		taEndValBytes, err := os.ReadFile("test/ta-endorsement.json")
+		require.NoError(t, err)
 
-	handler := &EvidenceHandler{}
+		handler := &EvidenceHandler{}
 
-	token := proto.AttestationToken{
-		TenantId:  "0",
-		Data:      tokenBytes,
-		MediaType: EvidenceMediaTypeRATSd,
-		Nonce:     testNonce,
+		token := proto.AttestationToken{
+			TenantId:  "0",
+			Data:      tokenBytes,
+			MediaType: evidence.MediaType,
+			Nonce:     testNonce,
+		}
+		ta := string(taEndValBytes)
+		claims, err := handler.ExtractClaims(&token, []string{ta})
+		require.NoError(t, err)
+
+		claimsJson, err := json.Marshal(claims)
+		require.NoError(t, err)
+
+		var ec proto.EvidenceContext
+		ec.TenantId = "0"
+		ec.TrustAnchorIds = []string{"SEVSNP://ARK-Genoa"}
+		ec.ReferenceIds = []string{"SEVSNP://0/7699e6ac12ccdfd1dfac70e649ce1f046cb2afbb003438f4cdddfe2ccbe182fa5ffbe8dcdb930454324e10c52c788980"}
+		err = json.Unmarshal(claimsJson, &ec.Evidence)
+		require.NoError(t, err)
+
+		endorsementsBytes, err := os.ReadFile("test/refval-endorsement.json")
+		require.NoError(t, err)
+
+		result, err := handler.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
+		require.NoError(t, err)
+
+		attestation := result.Submods["SEVSNP"]
+
+		assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 	}
-	ta := string(taEndValBytes)
-	claims, err := handler.ExtractClaims(&token, []string{ta})
-	require.NoError(t, err)
-
-	claimsJson, err := json.Marshal(claims)
-	require.NoError(t, err)
-
-	var ec proto.EvidenceContext
-	ec.TenantId = "0"
-	ec.TrustAnchorIds = []string{"SEVSNP://ARK-Genoa"}
-	ec.ReferenceIds = []string{"SEVSNP://0/7699e6ac12ccdfd1dfac70e649ce1f046cb2afbb003438f4cdddfe2ccbe182fa5ffbe8dcdb930454324e10c52c788980"}
-	err = json.Unmarshal(claimsJson, &ec.Evidence)
-	require.NoError(t, err)
-
-	endorsementsBytes, err := os.ReadFile("test/refval-endorsement.json")
-	require.NoError(t, err)
-
-	result, err := handler.AppraiseEvidence(&ec, []string{string(endorsementsBytes)})
-	require.NoError(t, err)
-
-	attestation := result.Submods["SEVSNP"]
-
-	assert.Equal(t, ear.TrustTierAffirming, *attestation.Status)
 }
