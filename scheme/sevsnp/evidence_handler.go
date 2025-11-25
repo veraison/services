@@ -35,6 +35,8 @@ var (
 	ErrNoProvisionedRV       = errors.New("reference value unavailable for attester")
 	ErrBadSigningKey         = errors.New("bad signing key in attestation report")
 	ErrMismatchedReportedTCB = errors.New("reported TCB in evidence doesn't match reference")
+	ErrReferenceMissingSVN   = errors.New("reference doesn't have SVN")
+	ErrEvidenceMissingSVN    = errors.New("evidence doesn't have SVN")
 )
 
 const (
@@ -397,12 +399,12 @@ func compareMeasurements(refM comid.Measurement, evM comid.Measurement) bool {
 
 func compareTcb(refM comid.Measurement, evM comid.Measurement) bool {
 	if refM.Val.SVN == nil {
-		log.Errorf("reference doesn't have SVN")
+		log.Errorf("%w", ErrReferenceMissingSVN)
 		return false
 	}
 
 	if evM.Val.SVN == nil {
-		log.Errorf("evidence doesn't have SVN")
+		log.Errorf("%w", ErrEvidenceMissingSVN)
 		return false
 	}
 
