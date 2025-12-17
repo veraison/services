@@ -4,6 +4,8 @@ set -o pipefail
 set -eu
 
 A=${A?must be set in the environment to one of rv or ta}
+HOST=${HOST:-localhost}
+FMT=${FMT:-cbor}
 
 base64url_encode() {
   if [ "$(uname)" == "Darwin" ]
@@ -64,7 +66,7 @@ elif [ "${A}" == "ta" ]; then
   q=$(ta_query)
 fi
 
-curl https://localhost:11443/endorsement-distribution/v1/coserv/$q -s \
+curl https://${HOST}:11443/endorsement-distribution/v1/coserv/$q -s \
   --insecure \
-  --header 'Accept: application/coserv+cose; profile="tag:arm.com,2023:cca_platform#1.0.0"' \
+  --header "Accept: application/coserv+${FMT}; profile=\"tag:arm.com,2023:cca_platform#1.0.0\"" \
   | cbor-edn cbor2diag
