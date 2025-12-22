@@ -39,19 +39,19 @@ func (o CorimExtractor) RefValExtractor(
 				return nil, fmt.Errorf("measurement[%d]: %w", i, err)
 			}
 
-			for j, digest := range digests {
-				attrs, err := makeRefValAttrs(id.class, pcr, digest)
-				if err != nil {
-					return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
-				}
-
-				refval = &handler.Endorsement{
-					Scheme:     SchemeName,
-					Type:       handler.EndorsementType_REFERENCE_VALUE,
-					Attributes: attrs,
-				}
+		for j, digest := range digests {
+			attrs, err := makeRefValAttrs(id.class, pcr, digest, rv.Environment)
+			if err != nil {
+				return nil, fmt.Errorf("measurement[%d].digest[%d]: %w", i, j, err)
 			}
-			refVals = append(refVals, refval)
+
+			refval = &handler.Endorsement{
+				Scheme:     SchemeName,
+				Type:       handler.EndorsementType_REFERENCE_VALUE,
+				Attributes: attrs,
+			}
+		}
+		refVals = append(refVals, refval)
 		}
 	}
 
@@ -81,7 +81,7 @@ func (o CorimExtractor) TaExtractor(
 		return nil, fmt.Errorf("ak-pub does not appear to be a PEM key (%T)", akPub.Value)
 	}
 
-	taAttrs, err := makeTaAttrs(id, akPub)
+	taAttrs, err := makeTaAttrs(id, akPub, avk.Environment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trust anchor raw public key: %w", err)
 	}
@@ -95,7 +95,7 @@ func (o CorimExtractor) TaExtractor(
 	return ta, nil
 }
 
-func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawMessage, error) {
+func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry, env comid.Environment) (json.RawMessage, error) {
 
 	var attrs = map[string]interface{}{
 		"parsec-tpm.class-id": class,
@@ -103,6 +103,18 @@ func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawM
 		"parsec-tpm.digest":   digest.HashValue,
 		"parsec-tpm.alg-id":   digest.HashAlgID,
 	}
+
+	// Extract optional vendor and model from environment.class
+	// Following CoRIM specification - vendor/model are stored in environment, not key parameters
+	if env.Class != nil {
+		if env.Class.Vendor != nil {
+			attrs["parsec-tpm.vendor"] = string(*env.Class.Vendor)
+		}
+		if env.Class.Model != nil {
+			attrs["parsec-tpm.model"] = string(*env.Class.Model)
+		}
+	}
+
 	data, err := json.Marshal(attrs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal reference value attributes: %w", err)
@@ -110,7 +122,7 @@ func makeRefValAttrs(class string, pcr uint64, digest swid.HashEntry) (json.RawM
 	return data, nil
 }
 
-func makeTaAttrs(id ID, key *comid.CryptoKey) (json.RawMessage, error) {
+func makeTaAttrs(id ID, key *comid.CryptoKey, env comid.Environment) (json.RawMessage, error) {
 	if id.instance == nil {
 		return nil, errors.New("instance not found in ID")
 	}
@@ -119,6 +131,17 @@ func makeTaAttrs(id ID, key *comid.CryptoKey) (json.RawMessage, error) {
 		"parsec-tpm.class-id":    id.class,
 		"parsec-tpm.instance-id": []byte(*id.instance),
 		"parsec-tpm.ak-pub":      key.String(),
+	}
+
+	// Extract optional vendor and model from environment.class
+	// Following CoRIM specification - vendor/model are stored in environment, not key parameters
+	if env.Class != nil {
+		if env.Class.Vendor != nil {
+			attrs["parsec-tpm.vendor"] = string(*env.Class.Vendor)
+		}
+		if env.Class.Model != nil {
+			attrs["parsec-tpm.model"] = string(*env.Class.Model)
+		}
 	}
 
 	data, err := json.Marshal(attrs)
