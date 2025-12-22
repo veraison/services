@@ -8,6 +8,7 @@ package proto
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -31,6 +32,10 @@ type VTSClient interface {
 	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 	GetSupportedProvisioningMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 	SubmitEndorsements(ctx context.Context, in *SubmitEndorsementsRequest, opts ...grpc.CallOption) (*SubmitEndorsementsResponse, error)
+	// Returns endorsements (trust anchors and/or reference values) based on the provided filter
+	GetEndorsements(ctx context.Context, in *GetEndorsementsRequest, opts ...grpc.CallOption) (*GetEndorsementsResponse, error)
+	// Deletes endorsements (trust anchors and/or reference values) based on the provided key
+	DeleteEndorsements(ctx context.Context, in *DeleteEndorsementsRequest, opts ...grpc.CallOption) (*DeleteEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 	// endorsement distribution API
@@ -93,6 +98,24 @@ func (c *vTSClient) SubmitEndorsements(ctx context.Context, in *SubmitEndorsemen
 	return out, nil
 }
 
+func (c *vTSClient) GetEndorsements(ctx context.Context, in *GetEndorsementsRequest, opts ...grpc.CallOption) (*GetEndorsementsResponse, error) {
+	out := new(GetEndorsementsResponse)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetEndorsements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *vTSClient) DeleteEndorsements(ctx context.Context, in *DeleteEndorsementsRequest, opts ...grpc.CallOption) (*DeleteEndorsementsResponse, error) {
+	out := new(DeleteEndorsementsResponse)
+	err := c.cc.Invoke(ctx, "/proto.VTS/DeleteEndorsements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *vTSClient) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error) {
 	out := new(PublicKey)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetEARSigningPublicKey", in, out, opts...)
@@ -141,6 +164,10 @@ type VTSServer interface {
 	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error)
+	// Returns endorsements (trust anchors and/or reference values) based on the provided filter
+	GetEndorsements(context.Context, *GetEndorsementsRequest) (*GetEndorsementsResponse, error)
+	// Deletes endorsements (trust anchors and/or reference values) based on the provided key
+	DeleteEndorsements(context.Context, *DeleteEndorsementsRequest) (*DeleteEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	// endorsement distribution API
@@ -169,6 +196,12 @@ func (UnimplementedVTSServer) GetSupportedProvisioningMediaTypes(context.Context
 }
 func (UnimplementedVTSServer) SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitEndorsements not implemented")
+}
+func (UnimplementedVTSServer) GetEndorsements(context.Context, *GetEndorsementsRequest) (*GetEndorsementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEndorsements not implemented")
+}
+func (UnimplementedVTSServer) DeleteEndorsements(context.Context, *DeleteEndorsementsRequest) (*DeleteEndorsementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteEndorsements not implemented")
 }
 func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEARSigningPublicKey not implemented")
@@ -285,6 +318,42 @@ func _VTS_SubmitEndorsements_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VTS_GetEndorsements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEndorsementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetEndorsements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetEndorsements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetEndorsements(ctx, req.(*GetEndorsementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VTS_DeleteEndorsements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteEndorsementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).DeleteEndorsements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/DeleteEndorsements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).DeleteEndorsements(ctx, req.(*DeleteEndorsementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VTS_GetEARSigningPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -383,6 +452,14 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitEndorsements",
 			Handler:    _VTS_SubmitEndorsements_Handler,
+		},
+		{
+			MethodName: "GetEndorsements",
+			Handler:    _VTS_GetEndorsements_Handler,
+		},
+		{
+			MethodName: "DeleteEndorsements",
+			Handler:    _VTS_DeleteEndorsements_Handler,
 		},
 		{
 			MethodName: "GetEARSigningPublicKey",

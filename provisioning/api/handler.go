@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2025 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -23,6 +23,8 @@ var (
 type IHandler interface {
 	Submit(c *gin.Context)
 	GetWellKnownProvisioningInfo(c *gin.Context)
+	GetEndorsements(c *gin.Context)
+	DeleteEndorsements(c *gin.Context)
 }
 
 type Handler struct {
@@ -218,4 +220,112 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 
 	c.Header("Content-Type", capability.WellKnownMediaType)
 	c.JSON(http.StatusOK, obj)
+}
+
+func (o *Handler) GetEndorsements(c *gin.Context) {
+	// Get query parameters
+	keyPrefix := c.Query("key-prefix")
+	endorsementType := c.Query("type")
+
+	// Default to "all" if type is not specified
+	if endorsementType == "" {
+		endorsementType = "all"
+	}
+
+	// Validate endorsement type
+	validTypes := map[string]bool{
+		"all":             true,
+		"trust-anchor":    true,
+		"reference-value": true,
+	}
+	if !validTypes[endorsementType] {
+		ReportProblem(c,
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid endorsement type: %s. Must be one of: all, trust-anchor, reference-value", endorsementType),
+		)
+		return
+	}
+
+	o.logger.Debugw("GetEndorsements", "key-prefix", keyPrefix, "type", endorsementType)
+
+	resp, err := o.Provisioner.GetEndorsements(keyPrefix, endorsementType)
+	if err != nil {
+		o.logger.Errorw("get endorsements failed", "error", err)
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("error retrieving endorsements: %v", err),
+		)
+		return
+	}
+
+	if resp.Status != nil && !resp.Status.Result {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("get endorsements failed: %s", resp.Status.ErrorDetail),
+		)
+		return
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, resp)
+}
+
+func (o *Handler) DeleteEndorsements(c *gin.Context) {
+	// Get query parameter or path parameter
+	key := c.Query("key")
+	if key == "" {
+		key = c.Param("key")
+	}
+
+	if key == "" {
+		ReportProblem(c,
+			http.StatusBadRequest,
+			"key parameter is required",
+		)
+		return
+	}
+
+	endorsementType := c.Query("type")
+
+	// Default to "all" if type is not specified
+	if endorsementType == "" {
+		endorsementType = "all"
+	}
+
+	// Validate endorsement type
+	validTypes := map[string]bool{
+		"all":             true,
+		"trust-anchor":    true,
+		"reference-value": true,
+	}
+	if !validTypes[endorsementType] {
+		ReportProblem(c,
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid endorsement type: %s. Must be one of: all, trust-anchor, reference-value", endorsementType),
+		)
+		return
+	}
+
+	o.logger.Debugw("DeleteEndorsements", "key", key, "type", endorsementType)
+
+	resp, err := o.Provisioner.DeleteEndorsements(key, endorsementType)
+	if err != nil {
+		o.logger.Errorw("delete endorsements failed", "error", err)
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("error deleting endorsements: %v", err),
+		)
+		return
+	}
+
+	if resp.Status != nil && !resp.Status.Result {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("delete endorsements failed: %s", resp.Status.ErrorDetail),
+		)
+		return
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, resp)
 }
