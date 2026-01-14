@@ -42,6 +42,7 @@ service VTS {
   // vector, etc -- for the provided attestation token data.
   rpc GetAttestation(AttestationToken) returns (AppraisalContext);
   rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  rpc GetCompositeAttestation(AttestationToken) returns (AppraisalContext);
 
   rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
   rpc SubmitEndorsements(SubmitEndorsementsRequest) returns (SubmitEndorsementsResponse);

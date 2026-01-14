@@ -106,6 +106,21 @@ func (o *GRPC) GetAttestation(
 	return c.GetAttestation(ctx, in, opts...)
 }
 
+func (o *GRPC) GetCompositeAttestation(
+	ctx context.Context, in *proto.AttestationToken, opts ...grpc.CallOption,
+) (*proto.AppraisalContext, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetCompositeAttestation", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetCompositeAttestation(ctx, in, opts...)
+}
+
 func (o *GRPC) GetSupportedVerificationMediaTypes(
 	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
 ) (*proto.MediaTypeList, error) {

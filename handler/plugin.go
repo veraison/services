@@ -33,3 +33,10 @@ func RegisterCoservProxyHandler(i ICoservProxyHandler) {
 		panic(err)
 	}
 }
+
+func RegisterComponentVerifierClientHandler(i IComponentVerifierClientHandler) {
+	err := plugin.RegisterImplementation("component-verifier-client-handler", i, ComponentVerifierClientHandlerRPC)
+	if err != nil {
+		panic(err)
+	}
+}

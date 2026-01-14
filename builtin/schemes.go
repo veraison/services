@@ -13,6 +13,7 @@ import (
 	scheme6 "github.com/veraison/services/scheme/psa-iot"
 	scheme2 "github.com/veraison/services/scheme/riot"
 	scheme4 "github.com/veraison/services/scheme/tpm-enacttrust"
+	scheme9 "github.com/veraison/services/scheme/veraison-client"
 )
 
 var plugins = []plugin.IPluggable{
@@ -35,4 +36,5 @@ var plugins = []plugin.IPluggable{
 	&scheme6.StoreHandler{},
 	&scheme7.CoservProxyHandler{},
 	&scheme8.CoservProxyHandler{},
+	&scheme9.ComponentVerifierClientHandler{},
 }
