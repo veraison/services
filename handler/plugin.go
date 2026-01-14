@@ -13,6 +13,13 @@ func RegisterCoservProxyHandler(i ICoservProxyHandler) {
 	}
 }
 
+func RegisterComponentVerifierClientHandler(i IComponentVerifierClientHandler) {
+	err := plugin.RegisterImplementation("component-verifier-client-handler", i, ComponentVerifierClientHandlerRPC)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func RegisterSchemeHandler(i ISchemeHandler) {
 	err := plugin.RegisterImplementation("scheme-handler", i, SchemeHandlerRPC)
 	if err != nil {

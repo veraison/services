@@ -184,3 +184,5 @@ require (
 	modernc.org/sqlite v1.38.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+require github.com/pkg/errors v0.9.1

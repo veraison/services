@@ -15,6 +15,7 @@ import (
 	scheme2 "github.com/veraison/services/scheme/riot"
 	scheme7 "github.com/veraison/services/scheme/sevsnp"
 	scheme4 "github.com/veraison/services/scheme/tpm-enacttrust"
+	scheme10 "github.com/veraison/services/scheme/veraison-client"
 )
 
 var plugins = []plugin.IPluggable{
@@ -27,4 +28,5 @@ var plugins = []plugin.IPluggable{
 	handler.MustNewSchemeImplementationWrapper(scheme7.Descriptor, scheme7.NewImplementation()),
 	&scheme8.CoservProxyHandler{},
 	&scheme9.CoservProxyHandler{},
+	&scheme10.ComponentVerifierClientHandler{},
 }

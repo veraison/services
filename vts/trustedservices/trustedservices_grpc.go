@@ -346,6 +346,38 @@ func (o *GRPC) decodeAndValidateUnsignedCorim(data []byte) (*corim.UnsignedCorim
 	return corim.UnmarshalAndValidateUnsignedCorimFromCBOR(data)
 }
 
+func (o *GRPC) GetCompositeAttestation(
+	ctx context.Context,
+	token *proto.AttestationToken,
+) (*proto.AppraisalContext, error) {
+	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
+		"tenant-id", token.TenantId)
+
+	// TODO(tho)
+	//
+	//	lead_verifier(CE, ce-type, n) -> CAR {
+	//		// lookup CE parser
+	//		parser = ce_parsers_table[ce-type]
+	//
+	//		// tokenise the composite evidence
+	//		{CE_i, ce_i-type, label_i} = parser(CE)
+	//
+	//		// walk the items in the composite evidence
+	//		foreach c, t, l in {CE_i, ce_i-type, label_i}:
+	//			client = dispatch_table[ce_i-type]
+	//			if !client:
+	//				EAR[label_i] = { raw-evidence: c, status: unknown }
+	//			else:
+	//				EAR[label_i] = client(c, n)
+	//
+	//		CAR = make_car(EAR, lead_verifier_signing_key)
+	//
+	//		return CAR
+	//	}
+
+	return nil, errors.New("not implemented")
+}
+
 func (o *GRPC) GetAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
@@ -517,6 +549,15 @@ func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empt
 func (c *GRPC) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
 	mts := c.SchemePluginManager.GetRegisteredMediaTypesByCategory("provisioning")
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
+}
+
+func (c *GRPC) GetSupportedCompositeEvidenceMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
+	// TODO(tho) get supported composite evidence media types.
+	//
+	// Note: this does not go though the plugin manager as usual; it's a core
+	// VTS capability that depends on the available composite evidence parsers.
+
+	return nil, errors.New("not implemented")
 }
 
 func (c *GRPC) assembleCoservMediaTypes(mts []string, filter string) []string {

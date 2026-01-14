@@ -14,6 +14,8 @@ SUBDIR += tpm-enacttrust
 SUBDIR += amd-kds-coserv
 SUBDIR += nvidia-coserv
 
+SUBDIR += veraison-client
+
 clean: ; $(RM) -rf ./bin
 
 include ../mk/subdir.mk
