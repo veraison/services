@@ -1,7 +1,5 @@
-# Copyright 2021-2025 Contributors to the Veraison project.
+# Copyright 2021-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-
-export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 # There will be one plugin built for each scheme. Removing this definition will
 # cause a separate plugin to be built for each handler interface (endorsement,
