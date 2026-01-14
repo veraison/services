@@ -11,6 +11,7 @@ SUBDIR += parsec-cca
 SUBDIR += nvidia-coserv
 SUBDIR += amd-kds-coserv
 SUBDIR += sevsnp
+SUBDIR += veraison-client
 
 clean: ; $(RM) -rf ./bin
 
