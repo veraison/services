@@ -19,3 +19,23 @@ type ComponentEvidence struct {
 	parentLabel string // label of the parent component evidence (empty for root)
 	depth       uint   // depth in the component evidence tree (0 for root)
 }
+
+func (e ComponentEvidence) GetMediaType() string {
+	return e.mediaType
+}
+
+func (e ComponentEvidence) GetLabel() string {
+	return e.label
+}
+
+func (e ComponentEvidence) GetevidenceData() []byte {
+	return e.data
+}
+
+func (e ComponentEvidence) GetParentLabel() string {
+	return e.parentLabel
+}
+
+func (e ComponentEvidence) GetDepth() uint {
+	return e.depth
+}

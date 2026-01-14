@@ -62,6 +62,7 @@ func main() {
 	log.Info("loading attestation schemes")
 	var schemePluginManager plugin.IManager[handler.ISchemeHandler]
 	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	var lvPluginManager plugin.IManager[handler.IComponentVerifierClientHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
@@ -85,6 +86,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
 		}
+
 		coservProxyPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
 			loader,
 			"coserv-proxy-handler",
@@ -93,6 +95,16 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create coserv PluginManagerWithLoader: %v", err)
 		}
+
+		lvPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"lead-verifier-handler",
+			log.Named("plugin"),
+			handler.ComponentVerifierClientHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create lead verifier PluginManagerWithLoader: %v", err)
+		}
+
 	case "builtin":
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
@@ -100,17 +112,26 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create builtin loader: %v", err)
 		}
+
 		schemePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ISchemeHandler](
 			loader, log.Named("builtin"),
 			"scheme-handler")
 		if err != nil {
 			log.Fatalf("could not create store BuiltinManagerWithLoader: %v", err)
 		}
+
 		coservProxyPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ICoservProxyHandler](
 			loader, log.Named("builtin"),
 			"coserv-handler")
 		if err != nil {
 			log.Fatalf("could not create coserv BuiltinManagerWithLoader: %v", err)
+		}
+
+		lvPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IComponentVerifierClientHandler](
+			loader, log.Named("builtin"),
+			"lead-verifier-handler")
+		if err != nil {
+			log.Fatalf("could not create lead verifier PluginManagerWithLoader: %v", err)
 		}
 	default:
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
@@ -128,6 +149,11 @@ func main() {
 
 	log.Info("CoSERV Proxy media types:")
 	for _, mt := range coservProxyPluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
+	}
+
+	log.Info("Lead Verifier media types:")
+	for _, mt := range lvPluginManager.GetRegisteredMediaTypes() {
 		log.Info("\t", mt)
 	}
 
@@ -151,11 +177,11 @@ func main() {
 	}
 
 	log.Info("initializing service")
-	// from this point onwards taStore, enStore, evPluginManager,
-	// endPluginManager, storePluginManager, coservProxyPluginManager,
+	// from this point onwards enStore, evPluginManager,
+	// endPluginManager, storePluginManager, coservProxyPluginManager, lvPluginManager
 	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(enStore,
-		schemePluginManager, coservProxyPluginManager,
+		schemePluginManager, coservProxyPluginManager, lvPluginManager,
 		policyManager, earSigner, coservSigner, log.Named("vts"))
 
 	if err = vts.Init(subs["vts"]); err != nil {
