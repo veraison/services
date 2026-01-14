@@ -69,6 +69,7 @@ func main() {
 	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
 	var storePluginManager plugin.IManager[handler.IStoreHandler]
 	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	var lvPluginManager plugin.IManager[handler.IComponentVerifierClientHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
@@ -114,6 +115,16 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create coserv PluginManagerWithLoader: %v", err)
 		}
+
+		lvPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+			loader,
+			"lead-verifier-handler",
+			log.Named("plugin"),
+			handler.ComponentVerifierClientHandlerRPC)
+		if err != nil {
+			log.Fatalf("could not create lead verifier PluginManagerWithLoader: %v", err)
+		}
+
 	} else if config.SchemeLoader == "builtin" {
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
@@ -145,6 +156,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create coserv BuiltinManagerWithLoader: %v", err)
 		}
+		lvPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IComponentVerifierClientHandler](
+			loader, log.Named("builtin"),
+			"lead-verifier-handler")
+		if err != nil {
+			log.Fatalf("could not create lead verifier PluginManagerWithLoader: %v", err)
+		}
 	} else {
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
@@ -161,6 +178,11 @@ func main() {
 
 	log.Info("CoSERV Proxy media types:")
 	for _, mt := range coservProxyPluginManager.GetRegisteredMediaTypes() {
+		log.Info("\t", mt)
+	}
+
+	log.Info("Lead Verifier media types:")
+	for _, mt := range lvPluginManager.GetRegisteredMediaTypes() {
 		log.Info("\t", mt)
 	}
 
@@ -185,13 +207,13 @@ func main() {
 
 	log.Info("initializing service")
 	// from this point onwards taStore, enStore, evPluginManager,
-	// endPluginManager, storePluginManager, coservProxyPluginManager,
+	// endPluginManager, storePluginManager, coservProxyPluginManager, lvPluginManager
 	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(taStore, enStore,
-		evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager,
-		policyManager, earSigner, coservSigner, log.Named("vts"))
+		evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager, lvPluginManager,
+		policyManager, earSigner, coservSigner, nil, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager); err != nil {
+	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager, lvPluginManager); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

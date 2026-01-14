@@ -31,6 +31,7 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/compositeevidenceparser"
 	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
@@ -55,6 +56,7 @@ type GRPCConfig struct {
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
+	DispatchTable string   `mapstructure:"dispatch-table" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -64,21 +66,22 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore                  kvstore.IKVStore
-	EnStore                  kvstore.IKVStore
-	EvPluginManager          plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
-	StorePluginManager       plugin.IManager[handler.IStoreHandler]
-	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
-	PolicyManager            *policymanager.PolicyManager
-	EarSigner                earsigner.IEarSigner
-	CoservSigner             coservsigner.ICoservSigner
-	CACertsPEM               [][]byte
+	TaStore                   kvstore.IKVStore
+	EnStore                   kvstore.IKVStore
+	EvPluginManager           plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager          plugin.IManager[handler.IEndorsementHandler]
+	StorePluginManager        plugin.IManager[handler.IStoreHandler]
+	CoservProxyPluginManager  plugin.IManager[handler.ICoservProxyHandler]
+	LeadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler]
+	PolicyManager             *policymanager.PolicyManager
+	EarSigner                 earsigner.IEarSigner
+	CoservSigner              coservsigner.ICoservSigner
+	CACertsPEM                [][]byte
 
-	Server *grpc.Server
-	Socket net.Listener
-
-	logger *zap.SugaredLogger
+	Server                 *grpc.Server
+	Socket                 net.Listener
+	LeadVerifierDispatcher *Dispatcher
+	logger                 *zap.SugaredLogger
 
 	proto.UnimplementedVTSServer
 }
@@ -89,22 +92,26 @@ func NewGRPC(
 	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
 	storePluginManager plugin.IManager[handler.IStoreHandler],
 	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
+	leadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
+	leadVerifierDispatcher *Dispatcher,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:                  taStore,
-		EnStore:                  enStore,
-		EvPluginManager:          evidencePluginManager,
-		EndPluginManager:         endorsementPluginManager,
-		StorePluginManager:       storePluginManager,
-		CoservProxyPluginManager: coservProxyPluginManager,
-		PolicyManager:            policyManager,
-		EarSigner:                earSigner,
-		CoservSigner:             coservSigner,
-		logger:                   logger,
+		TaStore:                   taStore,
+		EnStore:                   enStore,
+		EvPluginManager:           evidencePluginManager,
+		EndPluginManager:          endorsementPluginManager,
+		StorePluginManager:        storePluginManager,
+		CoservProxyPluginManager:  coservProxyPluginManager,
+		LeadVerifierPluginManager: leadVerifierPluginManager,
+		PolicyManager:             policyManager,
+		EarSigner:                 earSigner,
+		CoservSigner:              coservSigner,
+		LeadVerifierDispatcher:    leadVerifierDispatcher,
+		logger:                    logger,
 	}
 }
 
@@ -123,6 +130,7 @@ func (o *GRPC) Init(
 	endorsementManager plugin.IManager[handler.IEndorsementHandler],
 	storeManager plugin.IManager[handler.IStoreHandler],
 	coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
+	leadVerifierManager plugin.IManager[handler.IComponentVerifierClientHandler],
 ) error {
 	var err error
 
@@ -140,6 +148,7 @@ func (o *GRPC) Init(
 	o.EndPluginManager = endorsementManager
 	o.StorePluginManager = storeManager
 	o.CoservProxyPluginManager = coservProxyManager
+	o.LeadVerifierPluginManager = leadVerifierManager
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -175,6 +184,13 @@ func (o *GRPC) Init(
 		}
 
 		opts = append(opts, grpc.Creds(creds))
+	}
+
+	if cfg.DispatchTable != "" {
+		o.LeadVerifierDispatcher, err = NewDispatcher(cfg.DispatchTable)
+		if err != nil {
+			return err
+		}
 	}
 
 	server := grpc.NewServer(opts...)
@@ -402,27 +418,55 @@ func (o *GRPC) GetCompositeAttestation(
 	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	// TODO(tho)
-	//
-	//	lead_verifier(CE, ce-type, n) -> CAR {
-	//		// lookup CE parser
-	//		parser = ce_parsers_table[ce-type]
-	//
-	//		// tokenise the composite evidence
-	//		{CE_i, ce_i-type, label_i} = parser(CE)
-	//
-	//		// walk the items in the composite evidence
-	//		foreach c, t, l in {CE_i, ce_i-type, label_i}:
-	//			client = dispatch_table[ce_i-type]
-	//			if !client:
-	//				EAR[label_i] = { raw-evidence: c, status: unknown }
-	//			else:
-	//				EAR[label_i] = client(c, n)
-	//
-	//		CAR = make_car(EAR, lead_verifier_signing_key)
-	//
-	//		return CAR
-	//	}
+	// TODO Use the Plugin for the Composite Attester to get the details of Scheme
+	var stHandler handler.IStoreHandler
+
+	mainAppraisal, err := o.initEvidenceContext(stHandler, token)
+	if err != nil {
+		return o.finalize(mainAppraisal, err)
+	}
+
+	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fecth parser from received MediaType: %s, %w", token.MediaType, err)
+	}
+
+	evs, err := p.Parse(token.Data)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse Composite Evidence for the MediaType: %s, %w", token.MediaType, err)
+	}
+
+	// TODO use the parallel mechanism in subsequent change, to handle this. For now sequential invocation is fine
+	for i, ev := range evs {
+		mt := ev.GetMediaType()
+		clientName, err := o.LeadVerifierDispatcher.LookupClientNameFromMediaType(mt)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get component verifier client name at index: %d, media type: %s, %w", i, mt, err)
+		}
+		cfg, err := o.LeadVerifierDispatcher.LookupClientCfgFromMediaType(mt)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get component verifier client config component evidence at index: %d, media type: %s, %w", i, mt, err)
+		}
+
+		client, err := o.LeadVerifierPluginManager.LookupByName(clientName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to lookup client for: %s, at index: %d, for media type: %s, %w", clientName, i, mt, err)
+		}
+
+		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, cfg)
+		if err != nil {
+			return o.finalize(mainAppraisal, err)
+		}
+
+		var apprUnit *ear.AttestationResult = &ear.AttestationResult{}
+		if err := apprUnit.UnmarshalJSON(ar); err != nil {
+			return o.finalize(mainAppraisal, err)
+		}
+
+		if err = aggregatePartialAttestationResults(mainAppraisal.Result, apprUnit); err != nil {
+			return o.finalize(mainAppraisal, err)
+		}
+	}
 
 	// XXX(tho) temporary stub
 	return &proto.AppraisalContext{
@@ -946,4 +990,17 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 	}
 
 	return allPEM.Bytes(), nil
+}
+
+func aggregatePartialAttestationResults(aggregate *ear.AttestationResult, apprUnit *ear.AttestationResult) (err error) {
+	// Will add richer semantics for Verifier Appraisal from Composite here
+	// In the first iteration, we just loop over the individual subMods for Appraisal and append it into overall
+	for name, mod := range apprUnit.Submods {
+		_, ok := aggregate.Submods[name]
+		if ok {
+			return fmt.Errorf("component appraisal already exists in the overall appraisal for the submod: %s", name)
+		}
+		aggregate.Submods[name] = mod
+	}
+	return nil
 }

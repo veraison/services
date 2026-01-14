@@ -29,6 +29,8 @@ vts:
   cert-key: ../../../deployments/docker/src/certs/vts.key
   ca-certs:
       - ../../../deployments/docker/src/certs/rootCA.crt
+  dispatch-table:
+      - ./dispatch-table.json
 ear-signer:
   alg: ES256
   key: ./skey.jwk
