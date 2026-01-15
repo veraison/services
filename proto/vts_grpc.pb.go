@@ -29,6 +29,9 @@ type VTSClient interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	// Returns the supported composite evidence formats (e.g., application/cmw+cbor)
+	GetSupportedCompositeEvidenceMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	// Returns the attestation result of the composite evidence appraisal
 	GetCompositeAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
 	GetSupportedProvisioningMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 	SubmitEndorsements(ctx context.Context, in *SubmitEndorsementsRequest, opts ...grpc.CallOption) (*SubmitEndorsementsResponse, error)
@@ -70,6 +73,15 @@ func (c *vTSClient) GetAttestation(ctx context.Context, in *AttestationToken, op
 func (c *vTSClient) GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
 	out := new(MediaTypeList)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedVerificationMediaTypes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *vTSClient) GetSupportedCompositeEvidenceMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error) {
+	out := new(MediaTypeList)
+	err := c.cc.Invoke(ctx, "/proto.VTS/GetSupportedCompositeEvidenceMediaTypes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +161,9 @@ type VTSServer interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	// Returns the supported composite evidence formats (e.g., application/cmw+cbor)
+	GetSupportedCompositeEvidenceMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	// Returns the attestation result of the composite evidence appraisal
 	GetCompositeAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
 	GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error)
@@ -174,6 +189,9 @@ func (UnimplementedVTSServer) GetAttestation(context.Context, *AttestationToken)
 }
 func (UnimplementedVTSServer) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedVerificationMediaTypes not implemented")
+}
+func (UnimplementedVTSServer) GetSupportedCompositeEvidenceMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportedCompositeEvidenceMediaTypes not implemented")
 }
 func (UnimplementedVTSServer) GetCompositeAttestation(context.Context, *AttestationToken) (*AppraisalContext, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCompositeAttestation not implemented")
@@ -259,6 +277,24 @@ func _VTS_GetSupportedVerificationMediaTypes_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VTSServer).GetSupportedVerificationMediaTypes(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VTS_GetSupportedCompositeEvidenceMediaTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).GetSupportedCompositeEvidenceMediaTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/GetSupportedCompositeEvidenceMediaTypes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).GetSupportedCompositeEvidenceMediaTypes(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -407,6 +443,10 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSupportedVerificationMediaTypes",
 			Handler:    _VTS_GetSupportedVerificationMediaTypes_Handler,
+		},
+		{
+			MethodName: "GetSupportedCompositeEvidenceMediaTypes",
+			Handler:    _VTS_GetSupportedCompositeEvidenceMediaTypes_Handler,
 		},
 		{
 			MethodName: "GetCompositeAttestation",

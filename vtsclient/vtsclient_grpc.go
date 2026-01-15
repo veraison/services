@@ -121,6 +121,21 @@ func (o *GRPC) GetCompositeAttestation(
 	return c.GetCompositeAttestation(ctx, in, opts...)
 }
 
+func (o *GRPC) GetSupportedCompositeEvidenceMediaTypes(
+	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
+) (*proto.MediaTypeList, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("GetSupportedCompositeEvidenceMediaTypes", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.GetSupportedCompositeEvidenceMediaTypes(ctx, in, opts...)
+}
+
 func (o *GRPC) GetSupportedVerificationMediaTypes(
 	ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption,
 ) (*proto.MediaTypeList, error) {

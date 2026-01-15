@@ -42,6 +42,10 @@ service VTS {
   // vector, etc -- for the provided attestation token data.
   rpc GetAttestation(AttestationToken) returns (AppraisalContext);
   rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+
+  // Returns the supported composite evidence formats (e.g., application/cmw+cbor)
+  rpc GetSupportedCompositeEvidenceMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
+  // Returns the attestation result of the composite evidence appraisal
   rpc GetCompositeAttestation(AttestationToken) returns (AppraisalContext);
 
   rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
