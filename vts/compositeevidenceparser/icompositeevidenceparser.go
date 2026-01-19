@@ -10,8 +10,9 @@ type ICompositeEvidenceParser interface {
 }
 
 type ComponentEvidence struct {
-	label     string
-	data      []byte
-	mediaType string
-	parent    string // label of the parent component evidence (empty for root)
+	label       string // label for the component evidence
+	data        []byte // component evidence payload
+	mediaType   string // media type of the component evidence
+	parentLabel string // label of the parent component evidence (empty for root)
+	depth       uint   // depth in the component evidence tree (0 for root)
 }
