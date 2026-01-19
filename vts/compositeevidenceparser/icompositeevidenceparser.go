@@ -13,4 +13,5 @@ type ComponentEvidence struct {
 	label     string
 	data      []byte
 	mediaType string
+	parent    string // label of the parent component evidence (empty for root)
 }
