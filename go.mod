@@ -186,3 +186,5 @@ require (
 )
 
 require github.com/pkg/errors v0.9.1
+
+require github.com/veraison/apiclient v0.4.0

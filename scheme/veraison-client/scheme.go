@@ -6,7 +6,5 @@ package veraisonclient
 const SchemeName = "VERAISON_CLIENT"
 
 var (
-	VeraisonClientMediaTypes = []string{
-		`application/eat+cwt; profile="TODO"`,
-	}
+	VeraisonClientMediaTypes = []string{}
 )
