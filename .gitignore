@@ -5,6 +5,7 @@
 *.so
 *.dylib
 *.bkp
+coserv/cmd/coserv-service/coserv-service
 policy/cmd/polcli/polcli
 protogen
 provisioning/cmd/provisioning-service/provisioning-service
