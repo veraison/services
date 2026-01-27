@@ -1,0 +1,2 @@
+dbms: sqlite
+dsn: file:///opt/veraison/stores/vts/store.sql

@@ -57,6 +57,7 @@ def compare_to_expected_result(response, expected, verifier_key):
             assert decoded_claims["ear.veraison.policy-claims"] == \
                 expected_claims["ear.veraison.policy-claims"]
 
+
 def check_policy(response, active, name, rules_file):
     policy = _extract_policy(response.json())
 

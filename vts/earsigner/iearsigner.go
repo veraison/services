@@ -1,10 +1,10 @@
-// Copyright 2023-2025 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package earsigner
 
 import (
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/veraison/ear"
 )
 

@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package management
@@ -39,18 +39,18 @@ func CreatePolicyManagerFromConfig(v *viper.Viper, name string) (*PolicyManager,
 		return nil, err
 	}
 
-	var pluginManager plugin.IManager[handler.IEvidenceHandler]
+	var pluginManager plugin.IManager[handler.ISchemeHandler]
 
 	if config.SchemeLoader == "plugins" { // nolint:gocritic
 		pluginManager, err = plugin.CreateGoPluginManager(
 			subs["plugin"], log.Named("plugin"),
-			"evidence-handler", handler.EvidenceHandlerRPC)
+			"scheme-handler", handler.SchemeHandlerRPC)
 		if err != nil {
 			log.Fatalf("plugin manager initialization failed: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
-		pluginManager, err = builtin.CreateBuiltinManager[handler.IEvidenceHandler](
-			subs["plugin"], log.Named("builtin"), "evidence-handler")
+		pluginManager, err = builtin.CreateBuiltinManager[handler.ISchemeHandler](
+			subs["plugin"], log.Named("builtin"), "scheme-handler")
 		if err != nil {
 			log.Fatalf("scheme manager initialization failed: %v", err)
 		}

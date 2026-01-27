@@ -4,12 +4,12 @@ logging:
   level: debug  # valid levels: error, warning, info, debug
 provisioning:
   listen-addr: 0.0.0.0:9443
-  protocol: https
+  protocol: http
   cert: ../../../deployments/docker/src/certs/provisioning.crt
   cert-key: ../../../deployments/docker/src/certs/provisioning.key
 vts:
   server-addr: localhost:50051
-  tls: true
+  tls: false
   ca-certs:
       - ../../../deployments/docker/src/certs/rootCA.crt
 # vim: set ft=yaml:

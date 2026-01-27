@@ -1,11 +1,11 @@
+# Copyright 2021 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 
-ifndef COMBINED_PLUGINS
-  SUBDIR += endorsement-handler
-  SUBDIR += evidence-handler
-  SUBDIR += store-handler
-else
-  SUBDIR += combined
-endif
+PLUGIN := ../../bin/scheme-psa-iot.plugin
+GOPKG := github.com/veraison/services/scheme/psa-iot
+SRCS := main.go
 
 include ../../../mk/common.mk
-include ../../../mk/subdir.mk
+include ../../../mk/plugin.mk
+include ../../../mk/lint.mk
+include ../../../mk/test.mk

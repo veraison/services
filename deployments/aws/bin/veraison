@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 # pyright: reportOptionalMemberAccess=false
 # pyright: reportOptionalSubscript=false
 # pyright: reportOperatorIssue=false
@@ -18,6 +20,7 @@ import socket
 import stat
 import string
 import sys
+import tempfile
 import time
 from asyncio.subprocess import Process, PIPE
 from collections import defaultdict
@@ -1503,13 +1506,28 @@ class CreateSentinelImageCommand(BaseCommand):
                 '../misc/sentinel-commands',
             )),
         )
+        parser.add_argument(
+            '-P', '--package',
+            default='github.com/veraison/corim-store/cmd/corim-store',
+        )
+        parser.add_argument( '-R', '--rev', default='9e4ba68b')
         parser.add_argument('-T', '--instance-type')
 
     def run(self, args):
-        command_create_image(self, args, 'sentinel',
-                             {
-                                 'command_dispatcher_path': args.dispatcher,
-                             })
+        dir = tempfile.mkdtemp()
+        try: 
+            run_in_shell(f"GOBIN={dir} go install {args.package}@{args.rev}", args.verbose)
+            path = os.path.join(dir, 'corim-store')
+            self.logger.debug(f'installed corim-store: {path}')
+
+            command_create_image(self, args, 'sentinel',
+                                 {
+                                     'corim_store_exe_path': path,
+                                     'command_dispatcher_path': args.dispatcher,
+                                 })
+        finally:
+            self.logger.debug(f'deleting: {dir}')
+            shutil.rmtree(dir)
 
 
 class DeleteImageCommand(BaseCommand):

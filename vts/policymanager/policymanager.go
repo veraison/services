@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policymanager
 
@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
@@ -34,11 +35,10 @@ func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*Polic
 
 func (o *PolicyManager) Evaluate(
 	ctx context.Context,
-	scheme string,
-	appraisal *appraisal.Appraisal,
-	endorsements []string,
+	appraisalContext *appraisal.Context,
+	endorsements []*comid.ValueTriple,
 ) error {
-	policyKey := o.getPolicyKey(appraisal)
+	policyKey := o.getPolicyKey(appraisalContext)
 
 	pol, err := o.getPolicy(policyKey)
 	if err != nil {
@@ -50,36 +50,36 @@ func (o *PolicyManager) Evaluate(
 		return err
 	}
 
-	appraisalContext := map[string]interface{}{
-		"nonce": appraisal.Result.Nonce,
+	sessionContext := map[string]any{
+		"nonce": appraisalContext.Result.Nonce,
 	}
 
-	for submod, submodAppraisal := range appraisal.Result.Submods {
+	for submodName, submodAppraisal := range appraisalContext.Result.Submods {
 		evaluated, err := o.Agent.Evaluate(
 			ctx,
+			sessionContext,
 			appraisalContext,
-			scheme,
 			pol,
-			submod,
+			submodName,
 			submodAppraisal,
-			appraisal.EvidenceContext,
 			endorsements,
 		)
 		if err != nil {
 			return err
 		}
-		appraisal.Result.Submods[submod] = evaluated
+		appraisalContext.Result.Submods[submodName] = evaluated
 	}
-	if err := appraisal.UpdatePolicyID(pol); err != nil {
+
+	if err := appraisalContext.UpdatePolicyID(pol.UUID.String()); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *PolicyManager) getPolicyKey(a *appraisal.Appraisal) policy.PolicyKey {
+func (o *PolicyManager) getPolicyKey(a *appraisal.Context) policy.PolicyKey {
 	return policy.PolicyKey{
-		TenantId: a.EvidenceContext.TenantId,
+		TenantId: a.Evidence.TenantID,
 		Scheme:   a.Scheme,
 		Name:     o.Agent.GetBackendName(),
 	}

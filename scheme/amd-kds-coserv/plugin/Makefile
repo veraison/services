@@ -1,8 +1,11 @@
-ifndef COMBINED_PLUGINS
-  SUBDIR += coserv-handler
-else
-  SUBDIR += combined
-endif
+# Copyright 2025 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+
+PLUGIN := ../../bin/coserv-amd-kds.plugin
+GOPKG := github.com/veraison/services/scheme/amd-kds-coserv
+SRCS := main.go
 
 include ../../../mk/common.mk
-include ../../../mk/subdir.mk
+include ../../../mk/plugin.mk
+include ../../../mk/lint.mk
+include ../../../mk/test.mk

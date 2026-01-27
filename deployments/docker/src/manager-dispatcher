@@ -13,23 +13,21 @@ _host_root=/opt/veraison/hostroot
 function stores() {
     local query=${1:-.}
 
-    echo "TRUST ANCHORS:"
-    echo "--------------"
-    sqlite3 $_stores_dir/ta-store.sql 'select distinct kv_val from kvstore' | jq "$query"
-
+    echo "ENDORSEMENTS & TRUST ANCHORS:"
+    echo "-----------------------------"
+    $_utils_dir/corim-store list triples
     echo ""
 
-    echo "ENDORSEMENTS:"
-    echo "-------------"
-    sqlite3 $_stores_dir/en-store.sql 'select distinct kv_val from kvstore' | jq "$query"
+    echo "POLICIES:"
+    echo "---------"
+    sqlite3 $_stores_dir/po-store.sql 'select distinct kv_val from kvstore' | jq "$query"
 
     echo ""
 }
 
 function clear_stores() {
-    sqlite3 $_stores_dir/en-store.sql 'delete from kvstore'
     sqlite3 $_stores_dir/po-store.sql 'delete from kvstore'
-    sqlite3 $_stores_dir/ta-store.sql 'delete from kvstore'
+    $_utils_dir/corim-store db clear
 }
 
 function logs() {
@@ -66,6 +64,13 @@ function pocli() {
     local -a args
     for arg in "$@"; do args+=("'$arg'"); done
     local cmd="$_utils_dir/pocli ${args[@]}"
+    /bin/bash -c "$cmd"
+}
+
+function corim_store() {
+    local -a args
+    for arg in "$@"; do args+=("'$arg'"); done
+    local cmd="$_utils_dir/corim-store ${args[@]}"
     /bin/bash -c "$cmd"
 }
 

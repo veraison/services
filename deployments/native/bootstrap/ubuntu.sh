@@ -14,4 +14,4 @@ sudo ln -s /usr/lib/go-${go_ver}/bin/gofmt /usr/local/bin/gofmt
 go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 go install github.com/mitchellh/protoc-gen-go-json@latest
-
+go install github.com/veraison/corim-store/cmd/corim-store@latest

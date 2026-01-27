@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 
 if [ "$1" = "remove" ]; then
 	[ -z "$VERAISON_USER" ] && VERAISON_USER=veraison

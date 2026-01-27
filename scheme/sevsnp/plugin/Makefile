@@ -1,13 +1,11 @@
-# Copyright 2025 Contributors to the Veraison project.
+# Copyright 2025-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-ifndef COMBINED_PLUGINS
-  SUBDIR += endorsement-handler
-  SUBDIR += evidence-handler
-  SUBDIR += store-handler
-else
-  SUBDIR += combined
-endif
+PLUGIN := ../../bin/scheme-sevsnp.plugin
+GOPKG := github.com/veraison/services/scheme/sevsnp
+SRCS := main.go
 
 include ../../../mk/common.mk
-include ../../../mk/subdir.mk
+include ../../../mk/plugin.mk
+include ../../../mk/lint.mk
+include ../../../mk/test.mk

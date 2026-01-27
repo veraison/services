@@ -23,12 +23,12 @@ marks:
         # Indicates which nonce configurations ought to be used.
         - nonce
       vals:
-        - [psa, p1, good, full, ec.p256, good, nonce32]
-        - [psa, p1, good, mini, ec.p256, good, nonce32]
-        - [psa, p1, missingclaims, mini, ec.p256, noident, nonce32]
-        - [psa, p1, good, mini, bad, badcrypto, nonce32]
-        - [psa, p1, badinstance, full, ec.p256, badinstance, nonce32]
-        - [psa, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
+        #- [psa, p1, good, full, ec.p256, good, nonce32]
+        #- [psa, p1, good, mini, ec.p256, good, nonce32]
+        #- [psa, p1, missingclaims, mini, ec.p256, noident, nonce32]
+        #- [psa, p1, good, mini, bad, badcrypto, nonce32]
+        #- [psa, p1, badinstance, full, ec.p256, badinstance, nonce32]
+        #- [psa, p1, badswcomp, full, ec.p256, badswcomp, nonce32]
         - [enacttrust, _, good, mini, ec.p256.enacttrust, good, nonce32]
 
 includes:

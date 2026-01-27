@@ -5,26 +5,20 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ../../../scheme/bin/
-ta-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /tmp/ta-store.sql
-en-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /tmp/en-store.sql
 po-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: /tmp/po-store.sql
+store:
+  dbms: sqlite3
+  dsn: file::memory:?cache=shared
+  trace-sql: false
 po-agent:
   backend: opa
 vts:
   server-addr: 127.0.0.1:50051
-  tls: true
+  tls: false
   cert: ../../../deployments/docker/src/certs/vts.crt
   cert-key: ../../../deployments/docker/src/certs/vts.key
   ca-certs:

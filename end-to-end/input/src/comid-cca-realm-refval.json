@@ -19,13 +19,6 @@
       "reference-values": [
         {
           "environment": {
-            "class": {
-              "id": {
-                "type": "uuid",
-                "value": "CD1F0E55-26F9-460D-B9D8-F7FDE171787C"
-              },
-              "vendor": "Workload Client Ltd"
-            },
             "instance": {
               "type": "bytes",
               "value": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw=="

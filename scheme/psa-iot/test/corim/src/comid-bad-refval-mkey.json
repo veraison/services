@@ -1,0 +1,48 @@
+{
+  "tag-identity": {
+    "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "psa.impl-id",
+              "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
+            }
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "BL",
+                "version": "2.1.0",
+                "signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs="
+              }
+            },
+            "value": {
+              "digests": [
+                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "uint",
+              "value": 6
+            },
+            "value": {
+              "digests": [
+                "sha-256:o6XnFfDMV0pzw/m+u2vCTzL/1bZ7OHJEwskJ2neaFHg="
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

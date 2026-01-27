@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package plugin
 
@@ -35,7 +35,7 @@ type PluginContext[I IPluggable] struct {
 	Scheme string
 	// SupportedMediaTypes are the types of input this plugin can process.
 	// This is is the method by which a plugin is selected.
-	SupportedMediaTypes []string
+	SupportedMediaTypes map[string][]string
 	// Handle is actual RPC interface to the plugin implementation.
 	Handle I
 

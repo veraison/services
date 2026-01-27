@@ -49,9 +49,11 @@ def run_command(command: str, action: str) -> int:
 
 
 def clear_stores():
-    for prefix in ['en', 'po', 'ta']:
-        command = f"sqlite3 /opt/veraison/stores/vts/{prefix}-store.sql 'delete from kvstore'"
-        run_command(command, f'clear {prefix} store')
+    run_command('corim-store db clear', 'clear CoRIM store')
+    run_command(
+        "sqlite3 /opt/veraison/stores/vts/po-store.sql 'delete from kvstore'",
+        'clear policy store',
+    )
 
 
 def get_access_token(test, role):
