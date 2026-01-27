@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policy
 
@@ -37,14 +37,14 @@ func (o EvaluateTestVector) Run(t *testing.T, ctx context.Context, pa *OPA) {
 	evidenceMap, err := jsonFileToMap(o.EvidencePath)
 	require.NoError(t, err)
 
-	endorsements, err := jsonFileToStringSlice(o.EndorsementsPath)
+	endorsements, err := jsonFileToMapSlice(o.EndorsementsPath)
 	require.NoError(t, err)
 
 	policy, err := os.ReadFile(o.PolicyPath)
 	require.NoError(t, err)
 
-	res, err := pa.Evaluate(ctx, map[string]interface{}{}, o.Scheme, string(policy),
-		resultMap, evidenceMap["evidence"].(map[string]interface{}), endorsements)
+	res, err := pa.Evaluate(ctx, map[string]any{}, o.Scheme, string(policy),
+		resultMap, evidenceMap["evidence"].(map[string]any), endorsements)
 	if o.Expected.Error == "" {
 		require.NoError(t, err)
 	} else {
@@ -109,6 +109,7 @@ func Test_OPA_Evaluate(t *testing.T) {
 	for _, v := range vectors {
 		fmt.Printf("running %q\n", v.Title)
 		v.Run(t, ctx, pa)
+
 	}
 
 }
@@ -134,13 +135,13 @@ func Test_OPA_Validate(t *testing.T) {
 	}
 }
 
-func jsonFileToMap(path string) (map[string]interface{}, error) {
+func jsonFileToMap(path string) (map[string]any, error) {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 
 	err = json.Unmarshal(bytes, &result)
 	if err != nil {
@@ -150,7 +151,7 @@ func jsonFileToMap(path string) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func jsonFileToResultMap(path string) (map[string]interface{}, error) {
+func jsonFileToResultMap(path string) (map[string]any, error) {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -165,22 +166,21 @@ func jsonFileToResultMap(path string) (map[string]interface{}, error) {
 	return result.AsMap(), nil
 }
 
-func jsonFileToStringSlice(path string) ([]string, error) {
+func jsonFileToMapSlice(path string) ([]map[string]any, error) {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []string
-	err = json.Unmarshal(bytes, &result)
-	if err != nil {
+	var ret []map[string]any
+	if err = json.Unmarshal(bytes, &ret); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return ret, nil
 }
 
-func getUpdateMap(ar *ear.AttestationResult) map[string]interface{} {
+func getUpdateMap(ar *ear.AttestationResult) map[string]any {
 	if ar == nil {
 		return nil
 	}
@@ -189,9 +189,9 @@ func getUpdateMap(ar *ear.AttestationResult) map[string]interface{} {
 
 	app := ar.Submods["test"]
 
-	return map[string]interface{}{
+	return map[string]any{
 		"ear.status": &status,
-		"ear.trustworthiness-vector": map[string]interface{}{
+		"ear.trustworthiness-vector": map[string]any{
 			"instance-identity": app.TrustVector.InstanceIdentity,
 			"configuration":     app.TrustVector.Configuration,
 			"executables":       app.TrustVector.Executables,

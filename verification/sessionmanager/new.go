@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package sessionmanager
 
@@ -11,7 +11,6 @@ import (
 	"github.com/veraison/services/config"
 )
 
-
 const DefaultBackend = "ttlcache"
 
 type cfg struct {
@@ -21,7 +20,7 @@ type cfg struct {
 
 func (o cfg) Validate() error {
 	supportedBackends := map[string]bool{
-		"ttlcache": true,
+		"ttlcache":  true,
 		"memcached": true,
 	}
 

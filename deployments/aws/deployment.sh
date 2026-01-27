@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 set -ueo pipefail
 
 _error='\e[0;31mERROR\e[0m'

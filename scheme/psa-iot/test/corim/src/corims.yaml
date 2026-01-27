@@ -1,0 +1,21 @@
+corim: corim-psa
+outdir: ..
+workdir: ../__build
+comids:
+  psa-valid:
+    - comid-psa-refval
+    - comid-psa-ta
+  psa-bad-class:
+    - comid-bad-class
+  psa-bad-instance:
+    - comid-bad-instance
+  psa-bad-ta-no-instance:
+    - comid-bad-ta-no-instance
+  psa-bad-refval-instance:
+    - comid-bad-refval-instance
+  psa-bad-ta-cert:
+    - comid-bad-ta-cert
+  psa-bad-refval-mkey:
+    - comid-bad-refval-mkey
+  psa-bad-refval-mval:
+    - comid-bad-refval-mval

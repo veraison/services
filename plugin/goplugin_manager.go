@@ -1,9 +1,10 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package plugin
 
 import (
 	"errors"
+	"slices"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -74,12 +75,7 @@ func (o *GoPluginManager[I]) Close() error {
 
 func (o *GoPluginManager[I]) IsRegisteredMediaType(mediaType string) bool {
 	mts := o.GetRegisteredMediaTypes()
-	for _, mt := range mts {
-		if mt == mediaType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(mts, mediaType)
 }
 
 func (o *GoPluginManager[I]) GetRegisteredMediaTypes() []string {
@@ -88,6 +84,21 @@ func (o *GoPluginManager[I]) GetRegisteredMediaTypes() []string {
 	for mtName, pc := range o.loader.loadedByMediaType {
 		if _, ok := pc.GetHandle().(I); ok {
 			registeredMediatTypes = append(registeredMediatTypes, mtName)
+		}
+	}
+
+	return registeredMediatTypes
+}
+
+func (o *GoPluginManager[I]) GetRegisteredMediaTypesByCategory(category string) []string {
+	var registeredMediatTypes []string
+
+	for _, pc := range o.loader.loadedByName {
+		if pluggable, ok := pc.GetHandle().(I); ok {
+			mts, ok := pluggable.GetSupportedMediaTypes()[category]
+			if ok {
+				registeredMediatTypes = append(registeredMediatTypes, mts...)
+			}
 		}
 	}
 

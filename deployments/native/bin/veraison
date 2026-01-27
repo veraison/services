@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2025 Contributors to the Veraison project.
+# Copyright 2025-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck disable=SC2155,SC2086
 set -e
@@ -30,13 +30,14 @@ _launchd_ns="com.veraison-project"
 
 function init_sqlite_stores() {
 	_check_installed sqlite3
+	_check_installed corim-store
 
 	local stores_dir=${1:-${_stores_dir}}
 
-	for t in en ta po; do
-		echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
-		    $_sqlite "${stores_dir}/${t}-store.sql"
-	done
+        echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
+            $_sqlite "${stores_dir}/po-store.sql"
+
+        corim_store db init
 }
 
 function generate_signing_key() {
@@ -247,15 +248,9 @@ function show_stores() {
 
 	local query=${1:-.}
 
-	echo "TRUST ANCHORS:"
-	echo "--------------"
-	$_sqlite "${_stores_dir}/ta-store.sql" 'SELECT DISTINCT kv_val FROM kvstore' | jq "$query"
-
-	echo ""
-
-	echo "ENDORSEMENTS:"
-	echo "-------------"
-	$_sqlite "${_stores_dir}/en-store.sql" 'SELECT DISTINCT kv_val FROM kvstore' | jq "$query"
+	echo "ENDORSEMENTS & TRUST ANCHORS:"
+	echo "-----------------------------"
+	corim_store list triples
 
 	echo ""
 
@@ -269,9 +264,9 @@ function show_stores() {
 function clear_stores() {
 	_check_installed sqlite3
 
-	$_sqlite "${_stores_dir}/en-store.sql" 'DELETE FROM kvstore'
 	$_sqlite "${_stores_dir}/po-store.sql" 'DELETE FROM kvstore'
-	$_sqlite "${_stores_dir}/ta-store.sql" 'DELETE FROM kvstore'
+        corim_store db clear
+
 }
 
 function enable_launchd_services() {
@@ -494,6 +489,15 @@ function pocli() {
 	fi
 
 	${_bin_dir}/pocli --config ${_config_dir}/pocli/config.yaml "$@"
+}
+
+function corim_store() {
+	if [[ ! -f ${_bin_dir}/corim-store ]]; then
+		echo -e "$_error: corim-store not in deployment."
+		exit 1
+	fi
+
+	${_bin_dir}/corim-store --config ${_config_dir}/corim-store/config.yaml "$@"
 }
 
 function help() {
@@ -1001,6 +1005,9 @@ case $command in
 		;;
 	pocli)
 		pocli "$@"
+		;;
+	corim-store)
+		corim_store "$@"
 		;;
 	*)
 		echo -e "$_error: unexpected command: \"$command\" (use -h for help)"

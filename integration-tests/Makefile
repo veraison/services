@@ -35,7 +35,7 @@ image: .built/image
 	      $(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token/gen-token
 	mkdir -p $(TESTER_CONTEXT)
 	cp $(SCHEME_DIR)tpm-enacttrust/test/cmd/gen-token/gen-token $(TESTER_CONTEXT)/gen-enacttrust-token
-	cp $(DEPLOY_DEST)/utils/{cocli,evcli} $(TESTER_CONTEXT)/
+	cp $(DEPLOY_DEST)/utils/{cocli,evcli,corim-store,corim-store-config.yaml} $(TESTER_CONTEXT)/
 	cp $(DEPLOY_DEST)/certs/rootCA.crt $(TESTER_CONTEXT)/
 	cp $(THIS_DIR)docker/* $(TESTER_CONTEXT)/
 	docker build -t veraison/test $(TESTER_CONTEXT) \

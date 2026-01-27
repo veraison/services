@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package sessionmanager
 
@@ -16,4 +16,3 @@ var (
 	testTTL, _      = time.ParseDuration("1m30s")
 	testShortTTL, _ = time.ParseDuration("1s")
 )
-

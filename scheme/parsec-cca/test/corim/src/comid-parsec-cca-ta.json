@@ -1,0 +1,40 @@
+{
+  "tag-identity": {
+    "id": "EEE06F93-E982-4DBC-9585-620A816C2E59"
+  },
+  "entities": [
+    {
+      "name": "Parsec",
+      "regid": "https://github.com/parallaxsecond",
+      "roles": [
+        "tagCreator",
+        "creator",
+        "maintainer"
+      ]
+    }
+  ],
+  "triples": {
+    "attester-verification-keys": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "psa.impl-id",
+              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+            }
+          },
+          "instance": {
+            "type": "ueid",
+            "value": "AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"
+          }
+        },
+        "verification-keys": [
+          {
+            "type": "pkix-base64-key",
+            "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMKBCTNIcKUSDii11ySs3526iDZ8A\niTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==\n-----END PUBLIC KEY-----"
+          }
+        ]
+      }
+    ]
+  }
+}

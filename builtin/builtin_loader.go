@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package builtin
 
@@ -52,6 +52,19 @@ func (o *BuiltinLoader) GetRegisteredMediaTypes() []string {
 	return mediaTypes
 }
 
+func (o *BuiltinLoader) GetRegisteredMediaTypesByCategory(category string) []string {
+	var mediaTypes []string // nolint:prealloc
+
+	for _, pluggable := range o.loadedByMediaType {
+		mts, ok := pluggable.GetSupportedMediaTypes()[category]
+		if ok {
+			mediaTypes = append(mediaTypes, mts...)
+		}
+	}
+
+	return mediaTypes
+}
+
 func DiscoverBuiltin[I plugin.IPluggable]() error {
 	return DiscoverBuiltinUsing[I](defaultBuiltinLoader)
 }
@@ -71,15 +84,17 @@ func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
 		loader.logger.Debugw("found plugin", "name", name)
 		loader.loadedByName[name] = p
 
-		for _, mt := range p.GetSupportedMediaTypes() {
-			if existing, ok := loader.loadedByMediaType[mt]; ok {
-				loader.logger.Panicw("media type handled by two plugins",
-					"media-type", mt,
-					"plugin1", existing.GetName(), "plugin2", name)
-			}
+		for _, mts := range p.GetSupportedMediaTypes() {
+			for _, mt := range mts {
+				if existing, ok := loader.loadedByMediaType[mt]; ok {
+					loader.logger.Panicw("media type handled by two plugins",
+						"media-type", mt,
+						"plugin1", existing.GetName(), "plugin2", name)
+				}
 
-			loader.logger.Debugw("media type handled", "media-type", mt, "name", name)
-			loader.loadedByMediaType[mt] = p
+				loader.logger.Debugw("media type handled", "media-type", mt, "name", name)
+				loader.loadedByMediaType[mt] = p
+			}
 		}
 	}
 

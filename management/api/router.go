@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -40,7 +40,7 @@ func NewRouter(handler Handler, authorizer auth.IAuthorizer) *gin.Engine {
 
 	manageGroup.POST("policies/:scheme/deactivate", handler.DeactivateAll)
 	publicApiMap["deactivatePolicies"] = path.Join(managementPath,
-						"policies/:scheme/deactivate")
+		"policies/:scheme/deactivate")
 
 	manageGroup.GET("policies/:scheme", handler.GetPolicies)
 	publicApiMap["getPolicies"] = path.Join(managementPath, "policies/:scheme")

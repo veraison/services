@@ -1,4 +1,4 @@
-# Copyright 2023-2024 Contributors to the Veraison project.
+# Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
@@ -56,6 +56,7 @@ def compare_to_expected_result(response, expected, verifier_key):
         if "ear.veraison.policy-claims" in expected_claims:
             assert decoded_claims["ear.veraison.policy-claims"] == \
                 expected_claims["ear.veraison.policy-claims"]
+
 
 def check_policy(response, active, name, rules_file):
     policy = _extract_policy(response.json())

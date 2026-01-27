@@ -1,0 +1,14 @@
+corim: corim-cca-realm
+outdir: ..
+workdir: ../__build_realm
+comids:
+  cca-realm-valid:
+    - comid-cca-realm-refval
+  cca-realm-bad-instance:
+    - comid-cca-realm-bad-instance
+  cca-realm-bad-no-instance:
+    - comid-cca-realm-bad-no-instance
+  cca-realm-bad-no-integ-regs:
+    - comid-cca-realm-bad-no-integ-regs
+  cca-realm-bad-no-raw-value:
+    - comid-cca-realm-bad-no-raw-value

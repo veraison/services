@@ -7,9 +7,6 @@ SRCS := $(wildcard *.go)
 
 SUBDIR += plugin
 
-# auto-generated
-COPYRIGHT_FLAGS += --ignore */test_vectors.go
-
 include ../../mk/common.mk
 include ../../mk/lint.mk
 include ../../mk/pkg.mk

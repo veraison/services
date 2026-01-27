@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022-2024 Contributors to the Veraison project.
+# Copyright 2022-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 SCHEME=${SCHEME:-psa}
@@ -13,11 +13,11 @@ function provision() {
     case $SCHEME  in
         psa)
             local corim_file=$THIS_DIR/input/psa-endorsements.cbor
-            local media_type="application/corim-unsigned+cbor; profile=\"http://arm.com/psa/iot/1\""
+            local media_type="application/rim+cbor; profile=\"http://arm.com/psa/iot/1\""
             ;;
         cca)
             local corim_file=$THIS_DIR/input/cca-endorsements.cbor
-            local media_type="application/corim-unsigned+cbor; profile=\"http://arm.com/cca/ssd/1\""
+            local media_type="application/rim+cbor; profile=\"http://arm.com/cca/ssd/1\""
             ;;
         *)
             echo "ERROR: bad SCHEME: $SCHEME"

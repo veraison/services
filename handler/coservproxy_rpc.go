@@ -1,8 +1,9 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/rpc"
 
@@ -37,9 +38,12 @@ func (s *CoservProxyRPCServer) GetAttestationScheme(args interface{}, resp *stri
 	return nil
 }
 
-func (s *CoservProxyRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
-	*resp = s.Impl.GetSupportedMediaTypes()
-	return nil
+func (s *CoservProxyRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]byte) error {
+	var err error
+	mts := s.Impl.GetSupportedMediaTypes()
+
+	*resp, err = json.Marshal(mts)
+	return err
 }
 
 type GetEndorsementArgs struct {
@@ -86,10 +90,10 @@ func (c *CoservProxyRPCClient) GetAttestationScheme() string {
 	return resp
 }
 
-func (c *CoservProxyRPCClient) GetSupportedMediaTypes() []string {
+func (c *CoservProxyRPCClient) GetSupportedMediaTypes() map[string][]string {
 	var (
-		resp   []string
-		unused interface{}
+		resp   []byte
+		unused any
 	)
 
 	err := c.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
@@ -98,7 +102,12 @@ func (c *CoservProxyRPCClient) GetSupportedMediaTypes() []string {
 		return nil
 	}
 
-	return resp
+	var ret map[string][]string
+	if err := json.Unmarshal(resp, &ret); err != nil {
+		log.Error(err)
+	}
+
+	return ret
 }
 
 func (c *CoservProxyRPCClient) GetEndorsements(

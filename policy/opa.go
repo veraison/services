@@ -1,11 +1,10 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policy
 
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -41,17 +40,20 @@ func (o *OPA) GetName() string {
 
 func (o *OPA) Evaluate(
 	ctx context.Context,
-	sessionContext map[string]interface{},
+	sessionContext map[string]any,
 	scheme string,
 	policy string,
-	result map[string]interface{},
-	evidence map[string]interface{},
-	endorsements []string,
+	result map[string]any,
+	evidence map[string]any,
+	endorsements []map[string]any,
 ) (map[string]interface{}, error) {
 
-	input, err := constructInput(scheme, sessionContext, result, evidence, endorsements)
-	if err != nil {
-		return nil, fmt.Errorf("could not construct policy input: %w", err)
+	input := map[string]any{
+		"scheme":       scheme,
+		"session":      sessionContext,
+		"result":       result,
+		"evidence":     evidence,
+		"endorsements": endorsements,
 	}
 
 	rego := rego.New(
@@ -93,34 +95,6 @@ func (o *OPA) Validate(ctx context.Context, policy string) error {
 }
 
 func (o *OPA) Close() {
-}
-
-func constructInput(
-	scheme string,
-	sessionContext map[string]interface{},
-	result map[string]interface{},
-	evidence map[string]interface{},
-	endorsementStrings []string,
-) (map[string]interface{}, error) {
-	var endorsements []map[string]interface{} // nolint:prealloc
-
-	for i, es := range endorsementStrings {
-		var e map[string]interface{}
-
-		if err := json.Unmarshal([]byte(es), &e); err != nil {
-			return nil, fmt.Errorf("endorsement %d is not valid JSON: %w", i, err)
-		}
-
-		endorsements = append(endorsements, e)
-	}
-
-	return map[string]interface{}{
-		"scheme":       scheme,
-		"session":      sessionContext,
-		"result":       result,
-		"evidence":     evidence,
-		"endorsements": endorsements,
-	}, nil
 }
 
 func processUpdateValue(value interface{}) (map[string]interface{}, error) {

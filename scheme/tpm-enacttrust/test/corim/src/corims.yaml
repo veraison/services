@@ -1,0 +1,21 @@
+corim: corim-enacttrust
+outdir: ..
+workdir: ../__build
+comids:
+  enacttrust-valid:
+    - comid-enacttrust-refval
+    - comid-enacttrust-ta
+  enacttrust-bad-instance:
+    - comid-bad-instance
+  enacttrust-bad-multiple-keys:
+    - comid-bad-multiple-keys
+  enacttrust-bad-no-digest:
+    - comid-bad-no-digest
+  enacttrust-bad-no-instance:
+    - comid-bad-no-instance
+  enacttrust-bad-class:
+    - comid-bad-class
+  enacttrust-bad-multiple-measurements:
+    - comid-bad-multiple-measurements
+  enacttrust-bad-multiple-digests:
+    - comid-bad-multiple-digests
