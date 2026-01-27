@@ -4,6 +4,9 @@
 package compositeevidenceparser
 
 type ICompositeEvidenceParser interface {
+	// SupportedMediaTypes returns a list of supported Collection Media Types
+	// supported by the Parser
+	SupportedMediaTypes() []string
 	// Parse returns a list of component evidence payloads together with
 	// relevant identifying metadata.
 	Parse(evidence []byte) ([]ComponentEvidence, error)

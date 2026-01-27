@@ -1,0 +1,20 @@
+{
+  "__cmwc_t":"tag:ietf.org,2024:X",
+  "murmurless":{
+    "__cmwc_t":"tag:ietf.org,2024:Y",
+    "polyscopic":[
+      "application/eat-ucs+json",
+      h'7B226561745F6E6F6E6365223A202E2E2E7D',
+      4
+    ]
+  },
+  "bretwaldadom":[
+    "application/eat-ucs+cbor",
+    h'A10A'
+  ],
+  "photoelectrograph":[
+    "application/eat-ucs+cbor",
+    h'827818',
+    4
+  ]
+}
