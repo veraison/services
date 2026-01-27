@@ -22,6 +22,7 @@ __pycache__
 __debug_bin*
 management/cmd/management-service/management-service
 coserv/cmd/coserv-service/coserv-service
+__build*
 
 # Test binary, built with `go test -c`
 *.test

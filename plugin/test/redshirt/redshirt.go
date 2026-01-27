@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -18,8 +18,8 @@ func (o RedShirt) GetAttestationScheme() string {
 	return "star-trek"
 }
 
-func (o RedShirt) GetSupportedMediaTypes() []string {
-	return []string{"phaser"}
+func (o RedShirt) GetSupportedMediaTypes() map[string][]string {
+	return map[string][]string{"mook": {"phaser"}}
 }
 
 func (o RedShirt) Shoot() string {

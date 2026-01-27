@@ -39,11 +39,12 @@ WORKDIR /opt/veraison
 RUN mkdir -p /home/manager/.config/pocli && \
     mkdir -p /home/manager/.config/cocli
 
-ADD --chown=manager:nogroup utils/evcli utils/cocli utils/pocli ./utils/
+ADD --chown=manager:nogroup utils/evcli utils/cocli utils/pocli utils/corim-store ./utils/
 ADD --chown=manager:nogroup manager-dispatcher ./
 ADD --chown=manager:nogroup utils/cocli-config.yaml /home/manager/.config/cocli/config.yaml
 ADD --chown=manager:nogroup utils/evcli-config.yaml /home/manager/.config/evcli/config.yaml
 ADD --chown=manager:nogroup utils/pocli-config.yaml /home/manager/.config/pocli/config.yaml
+ADD --chown=manager:nogroup utils/corim-store-config.yaml /home/manager/.config/corim-store.yaml
 
 ENTRYPOINT ["/opt/veraison/manager-dispatcher"]
 CMD ["help"]

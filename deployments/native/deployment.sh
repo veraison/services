@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2024-2025 Contributors to the Veraison project.
+# Copyright 2024-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck disable=SC2155,SC2086
 
@@ -223,13 +223,17 @@ function init_signing_key() {
 }
 
 function init_sqlite_stores() {
-	${DEPLOYMENT_BIN_DIR}/veraison init-sqlite-stores ${DEPLOYMENT_STORES_DIR}
+        ${DEPLOYMENT_BIN_DIR}/corim-store --dsn ${DEPLOYMENT_STORES_DIR}/store.sql db init
+
+        echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
+            sqlite3 "${DEPLOYMENT_STORES_DIR}/po-store.sql"
 }
 
 function init_clients() {
-	_init_client evcli github.com/veraison/evcli/v2@0d3a093
+	_init_client evcli github.com/veraison/evcli/v2@v2.1.0
 	_init_client cocli github.com/veraison/cocli@8ebd64c1
 	_init_client pocli github.com/veraison/pocli@2fa24ea3
+	_init_client corim-store github.com/veraison/corim-store/cmd/corim-store@9e4ba68b
 }
 
 function quick_init_all(){
@@ -247,8 +251,8 @@ function quick_init_all(){
 	create_deployment $bins_mode
 	init_certs  $cnk_mode $template $root_cert_path $root_cert_key_path
 	init_signing_key $cnk_mode
-	init_sqlite_stores
 	init_clients
+	init_sqlite_stores
 }
 
 function setup_keycloak() {
@@ -484,7 +488,9 @@ function _gen_certs() {
 		_f="-f"
 	fi
 
-	${DEPLOYMENT_BIN_DIR}/veraison $_f gen-service-certs $template \
+	export VERAISON_CERTS_DIR=${DEPLOYMENT_CERTS_DIR}
+	export VERAISON_SIGNING_DIR=${DEPLOYMENT_SIGNING_DIR}
+        ${SRC_BIN_DIR}/veraison $_f gen-service-certs $template \
 		$root_cert_path $root_key_path
 }
 
@@ -498,7 +504,9 @@ function _gen_signing_key() {
 		_f="-f"
 	fi
 
-	${DEPLOYMENT_BIN_DIR}/veraison $_f gen-signing-key
+	export VERAISON_CERTS_DIR=${DEPLOYMENT_CERTS_DIR}
+	export VERAISON_SIGNING_DIR=${DEPLOYMENT_SIGNING_DIR}
+	${SRC_BIN_DIR}/veraison $_f gen-signing-key
 }
 
 function _deploy_services_config() {

@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package nvidiacoserv
@@ -44,8 +44,8 @@ func (s CoservProxyHandler) GetAttestationScheme() string {
 	return SchemeName
 }
 
-func (s CoservProxyHandler) GetSupportedMediaTypes() []string {
-	return CoservMediaTypes
+func (s CoservProxyHandler) GetSupportedMediaTypes() map[string][]string {
+	return map[string][]string{"coserv": CoservMediaTypes}
 }
 
 func callRimService(rimid *string) (*RimServiceResponse, error) {

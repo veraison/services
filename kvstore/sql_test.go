@@ -1,4 +1,4 @@
-// Copyright 2021-2024 Contributors to the Veraison project.
+// Copyright 2021-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -162,7 +162,7 @@ func TestSQL_Get_key_not_found(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT kv_val FROM endorsement WHERE kv_key = ?"))
 	e.WithArgs("ninja")
@@ -183,7 +183,7 @@ func TestSQL_Get_broken_invariant_null_val_panic(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	rows := sqlmock.NewRows([]string{"kv_val"})
 	rows.AddRow(nil)
@@ -211,7 +211,7 @@ func TestSQL_Get_ok(t *testing.T) {
 	e.WithArgs("key")
 	e.WillReturnRows(rows)
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	vals, err := s.Get("key")
 	assert.NoError(t, err)
@@ -234,7 +234,7 @@ func TestSQL_GetKeys_ok(t *testing.T) {
 	e := mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT kv_key FROM endorsement"))
 	e.WillReturnRows(rows)
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	keys, err := s.GetKeys()
 	assert.NoError(t, err)
@@ -250,7 +250,7 @@ func TestSQL_Set_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	emptyKey := ""
 
@@ -265,7 +265,7 @@ func TestSQL_Set_bad_val(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	invalidJSON := ""
 
@@ -280,7 +280,7 @@ func TestSQL_Set_db_layer_delete_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	dbErrorString := "a DB error"
 
@@ -304,7 +304,7 @@ func TestSQL_Set_db_layer_insert_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	dbErrorString := "a DB error"
 
@@ -329,7 +329,7 @@ func TestSQL_Set_ok(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE kv_key = ?")).
@@ -353,7 +353,7 @@ func TestSQL_Del_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	emptyKey := ""
 
@@ -368,7 +368,7 @@ func TestSQL_Del_db_layer_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	dbErrorString := "a DB error"
 
@@ -391,7 +391,7 @@ func TestSQL_Del_ok(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE kv_key = ?"))
 	e.WithArgs(testKey)
@@ -410,7 +410,7 @@ func TestSQL_Del_key_not_found(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	e := mock.ExpectExec(regexp.QuoteMeta("DELETE FROM endorsement WHERE kv_key = ?"))
 	e.WithArgs(testKey)
@@ -432,7 +432,7 @@ func TestSQL_Add_empty_key(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	emptyKey := ""
 
@@ -447,7 +447,7 @@ func TestSQL_Add_bad_val(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	invalidJSON := ""
 
@@ -462,7 +462,7 @@ func TestSQL_Add_db_layer_failure(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	dbErrorString := "a DB error"
 
@@ -485,7 +485,7 @@ func TestSQL_Add_ok(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	s := SQL{TableName: "endorsement", DB: db, Placeholder:sq.Question}
+	s := SQL{TableName: "endorsement", DB: db, Placeholder: sq.Question}
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO endorsement (kv_key,kv_val) VALUES (?,?)")).
 		WithArgs(testKey, testVal).

@@ -1,0 +1,38 @@
+{
+  "lang": "en-GB",
+  "tag-identity": {
+    "id": "f659d510-3698-4b52-9dc6-39a0dd620998"
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "oid",
+              "value": "1.3.6.1.4.1.3704.3.1"
+            }
+          },
+          "instance": {
+            "type": "bytes",
+            "value": "exWEyUx6QmFkstsRmJA9sGhbf1/avfQtTamBsN5SHR1dXYqRkyu7wbE/XVyuRacwRlfZqdAcUMQ1Zw8FYqWXCw=="
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "oid",
+              "value": "1.3.6.1.4.1.3704.3.1"
+            },
+            "value": {
+              "svn": {
+                "type": "exact-value",
+                "value": 6059311823650291722
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

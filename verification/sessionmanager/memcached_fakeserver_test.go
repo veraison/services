@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 // note: this has been taken nearly verbatim from https://github.com/bradfitz/gomemcache
-//       the only change being the package directive, and some comment change
-//       to pacify lint
+//
+//	the only change being the package directive, and some comment change
+//	to pacify lint
 package sessionmanager
 
 import (
@@ -35,8 +36,9 @@ import (
 )
 
 var (
-	crlf            = []byte("\r\n")
+	crlf = []byte("\r\n")
 )
+
 type testServer struct {
 	mu      sync.Mutex
 	m       map[string]serverItem
@@ -126,7 +128,7 @@ func (c *testConn) handleRequestLine(line string) bool {
 			}
 			fmt.Fprintf(c.bw, "VALUE %s %d %d %d\r\n", key, item.flags, len(item.data), item.casUniq)
 			c.bw.Write(item.data) // nolint: errcheck
-			c.bw.Write(crlf) // nolint: errcheck
+			c.bw.Write(crlf)      // nolint: errcheck
 		}
 		return c.reply("END")
 	}

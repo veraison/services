@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 set -eo pipefail
 
 _error='\e[0;31mERROR\e[0m'
@@ -6,7 +8,6 @@ _this_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 _deb_src=${_this_dir}/debian
 _repo_root=$(realpath "${_this_dir}/../..")
 _version=$("${_repo_root}/scripts/get-veraison-version")
-
 
 function bootstrap() {
 	"${_repo_root}/deployments/native/deployment.sh" bootstrap

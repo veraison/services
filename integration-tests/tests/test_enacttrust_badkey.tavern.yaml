@@ -34,4 +34,4 @@ stages:
       status_code: 200
       json:
         status: failed
-        failure-reason: 'submit endorsement returned error: submit endorsements failed: RPC server returned error: plugin "corim (TPM EnactTrust profile)" returned error: CBOR decoding failed: did not see unsigned CoRIM tag'
+        failure-reason: 'submit endorsement returned error: submit endorsements failed: did not see unsigned CoRIM tag'

@@ -1,0 +1,27 @@
+{
+  "lang": "en-GB",
+  "tag-identity": {
+    "id": "366D0A0A-5988-45ED-8488-2F2A544F6242",
+    "version": 0
+  },
+  "triples": {
+    "attester-verification-keys": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "psa.impl-id",
+              "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
+            }
+          }
+        },
+        "verification-keys": [
+          {
+            "type": "pkix-base64-key",
+            "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Vwqe7hy3O8Ypa+BUETLUjBNU3rEXVUyt9XHR7HJWLG7XTKQd9i1kVRXeBPDLFnfYru1/euxRnJM7H9UoFDLdA==\n-----END PUBLIC KEY-----"
+          }
+        ]
+      }
+    ]
+  }
+}

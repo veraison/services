@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package builtin
 
@@ -71,15 +71,30 @@ func (o *BuiltinManager[I]) IsRegisteredMediaType(mediaType string) bool {
 }
 
 func (o *BuiltinManager[I]) GetRegisteredMediaTypes() []string {
-	var registeredMediatTypes []string
+	var registeredMediaTypes []string
 
-	for mtName, mt := range o.loader.loadedByMediaType {
-		if _, ok := mt.(I); ok {
-			registeredMediatTypes = append(registeredMediatTypes, mtName)
+	for mtName, pc := range o.loader.loadedByMediaType {
+		if _, ok := pc.(I); ok {
+			registeredMediaTypes = append(registeredMediaTypes, mtName)
 		}
 	}
 
-	return registeredMediatTypes
+	return registeredMediaTypes
+}
+
+func (o *BuiltinManager[I]) GetRegisteredMediaTypesByCategory(category string) []string {
+	var registeredMediaTypes []string
+
+	for _, pc := range o.loader.loadedByName {
+		if pluggable, ok := pc.(I); ok {
+			mts, ok := pluggable.GetSupportedMediaTypes()[category]
+			if ok {
+				registeredMediaTypes = append(registeredMediaTypes, mts...)
+			}
+		}
+	}
+
+	return registeredMediaTypes
 }
 
 func (o *BuiltinManager[I]) GetRegisteredAttestationSchemes() []string {

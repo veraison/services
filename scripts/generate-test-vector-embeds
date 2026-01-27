@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+import logging
+import os
+import sys
+import string
+from datetime import datetime
+import textwrap
+from typing import TextIO
+
+
+log_colors = {
+    'DEBUG':    '\033[0;37m', # Gray ] ("closing" bracket to satisfy Vim indent calc.)
+    'INFO':     '\033[0;32m', # Green ]
+    'WARNING':  '\033[0;33m', # Yellow ]
+    'ERROR':    '\033[0;31m', # Red ]
+    'CRITICAL': '\033[1;31m', # Bold Red ]
+}
+reset = '\033[0m' # ]
+
+class LogFormatter(logging.Formatter):
+    def format(self, record):
+        color = log_colors.get(record.levelname, reset)
+        record.levelname = f'{color}{record.levelname:>8s}{reset}'
+        return super().format(record)
+
+handler = logging.StreamHandler()
+handler.setFormatter(LogFormatter('%(levelname)-8s: %(message)s'))
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+
+
+preamble='''
+// Copyright {year} Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+package {package}
+
+// NOTE: this file is generated. DO NOT EDIT
+
+import _ "embed"
+
+var (
+'''
+
+postamble='''
+)
+'''
+
+
+def write_preamble(wfh: TextIO, package: str):
+    wfh.write(preamble.format(
+        year=datetime.now().year,
+        package=package,
+    ).lstrip())
+
+
+def write_postamble(wfh: TextIO):
+    wfh.write(postamble.lstrip())
+
+
+to_replace = string.punctuation + string.whitespace
+trans_table = str.maketrans(to_replace, '-' * len(to_replace))
+
+
+def generate_variable_name(path: str, use_ext: bool, use_path: bool) -> str:
+    if not path:
+        raise ValueError('empty path')
+
+    parts = path.split(os.sep) if use_path else [path.split(os.sep)[-1]]
+
+    if use_ext:
+        root, ext = os.path.splitext(parts[-1])
+        parts = parts[:-1] + [root, ext[1:]]
+    else:
+        parts[-1] = os.path.splitext(parts[-1])[0]
+
+    parts = [p.lower() for part in parts for p in part.translate(trans_table).split('-') if p]
+    parts = [parts[0]] + [p.capitalize() for p in parts[1:]]
+
+    return ''.join(parts)
+
+
+help='''
+Generate a Go file embedding specified inputs as []byte variables.
+'''
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=help,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        'paths',
+        nargs='+',
+        metavar='PATH',
+        help='path(s) to files to be embeded',
+    )
+    parser.add_argument(
+        '-o', '--output',
+        help='path to output file (default: STDOUT)',
+    )
+    parser.add_argument(
+        '-p', '--package',
+        default='test',
+        help='Go package name used in the output',
+    )
+    parser.add_argument(
+        '-E', '--extensions-in-names',
+        action='store_true',
+        help=textwrap.dedent('''
+        if true, input file extensions will be used in forming the variable
+        name; the default behavoir is to omit the extension. This is needed
+        if the test vectors feature files that only differ in their extension.
+        ''').strip(),
+    )
+    parser.add_argument(
+        '-P', '--paths-in-names',
+        action='store_true',
+        help=textwrap.dedent('''
+        if true, the entire path of specified input files will be used in
+        forming the variable name; the default behavoir is to only use the
+        basename. This is needed if the test vectors feature files with
+        the same names that reside in different directories.
+        ''').strip(),
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='enable debug output',
+    )
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    outpath = os.getcwd()
+    wfh = sys.stdout
+    if args.output:
+        logger.info(f'generating {args.output}...')
+        outpath = os.path.dirname(args.output)
+        wfh = open(args.output, 'w')
+    else:
+        logger.info('generating STDOUT...')
+
+    try:
+        write_preamble(wfh, args.package)
+
+        for i, path in enumerate(args.paths):
+            logger.info(f'processing {path}...')
+            if not os.path.isfile(path):
+                raise ValueError(f'not a file: {path}')
+
+            relpath = os.path.relpath(path, outpath)
+            logger.debug(f'  relpath: {relpath}')
+
+            var_name = generate_variable_name(
+                relpath,
+                args.extensions_in_names,
+                args.paths_in_names,
+            )
+            logger.debug(f'  var_name: {var_name}')
+
+            if i:
+                wfh.write('\n')
+
+            wfh.write(f'\t//go:embed {relpath}\n')
+            wfh.write(f'\t{var_name} []byte\n')
+
+        write_postamble(wfh)
+        logger.info('done.')
+
+    except Exception as e:
+        logger.critical(e)
+        sys.exit(1)
+    finally:
+        if args.output:
+            logger.debug(f'closing {args.output}')
+            wfh.close()
+
+
+if __name__ == '__main__':
+    main()

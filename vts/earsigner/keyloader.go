@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package earsigner
 
@@ -18,7 +18,7 @@ func NewKeyLoader(fs afero.Fs) *KeyLoader {
 	return &KeyLoader{
 		loaders: map[string]IKeyLoader{
 			"file": NewFileKeyLoader(fs),
-			"aws": NewAwsKeyLoader(context.TODO()),
+			"aws":  NewAwsKeyLoader(context.TODO()),
 		},
 	}
 }
@@ -29,7 +29,7 @@ func (o KeyLoader) Load(location *url.URL) ([]byte, error) {
 	if location.Scheme == "" {
 		scheme = "file"
 	} else {
-		scheme =  location.Scheme
+		scheme = location.Scheme
 	}
 
 	actualLoader, ok := o.loaders[scheme]

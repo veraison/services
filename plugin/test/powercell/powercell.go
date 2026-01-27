@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -18,8 +18,8 @@ func (o PowerCell) GetAttestationScheme() string {
 	return "star-trek"
 }
 
-func (o PowerCell) GetSupportedMediaTypes() []string {
-	return []string{"plasma"}
+func (o PowerCell) GetSupportedMediaTypes() map[string][]string {
+	return map[string][]string{"ammo": {"plasma"}}
 }
 
 func (o PowerCell) GetCapacity() int {

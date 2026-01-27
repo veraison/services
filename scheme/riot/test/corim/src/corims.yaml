@@ -1,0 +1,14 @@
+corim: corim-riot
+outdir: ..
+workdir: ../__build
+comids:
+  riot-valid:
+    - comid-riot-ta
+  riot-bad-refvals:
+    - comid-bad-refvals
+  riot-bad-no-vendor:
+    - comid-bad-no-vendor
+  riot-bad-wrong-vendor:
+    - comid-bad-wrong-vendor
+  riot-bad-wrong-key-type:
+    - comid-bad-wrong-key-type

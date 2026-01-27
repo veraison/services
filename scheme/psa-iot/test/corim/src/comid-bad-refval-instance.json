@@ -1,0 +1,42 @@
+{
+  "lang": "en-GB",
+  "tag-identity": {
+    "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "psa.impl-id",
+              "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
+            }
+          },
+          "instance": {
+            "type": "ueid",
+            "value": "Ac7rrnuJJ6MiflMDz14PH3s0u1Qq1yUKwD+83jbsLxUI"
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "psa.refval-id",
+              "value": {
+                "label": "ARoT",
+                "version": "0.1.4",
+                "signer-id": "rLsRx+TaIXIFUjzkzhokWuGiOa48a/2eeHH35di66Gs="
+              }
+            },
+            "value": {
+              "digests": [
+                "sha-256:o6XnFfDMV0pzw/m+u2vCTzL/1bZ7OHJEwskJ2neaFHg="
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022-2023 Contributors to the Veraison project.
+# Copyright 2022-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 set -o pipefail

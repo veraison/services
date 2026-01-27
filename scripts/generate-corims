@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+import json
+import logging
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+import textwrap
+from typing import Optional, Union
+
+
+log_colors = {
+    'DEBUG':    '\033[0;37m', # Gray ] ("closing" bracket to satisfy Vim indent calc.)
+    'INFO':     '\033[0;32m', # Green ]
+    'WARNING':  '\033[0;33m', # Yellow ]
+    'ERROR':    '\033[0;31m', # Red ]
+    'CRITICAL': '\033[1;31m', # Bold Red ]
+}
+reset = '\033[0m' # ]
+
+class LogFormatter(logging.Formatter):
+    def format(self, record):
+        color = log_colors.get(record.levelname, reset)
+        record.levelname = f'{color}{record.levelname:>8s}{reset}'
+        return super().format(record)
+
+handler = logging.StreamHandler()
+handler.setFormatter(LogFormatter('%(levelname)-8s: %(message)s'))
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+
+
+try:
+    import yaml
+except ImportError:
+    logging.error('please install pyyaml (e.g. "pip install pyyaml")')
+    sys.exit(1)
+
+if not shutil.which('cocli'):
+    logging.error(
+        'please install cocli and ensure it is in PATH: '
+        'go install github.com/veraison/cocli@latest && export PATH=$PATH:${GOPATH:-$HOME/go}/bin'
+    )
+    sys.exit(1)
+
+
+class CoMIDSet:
+
+    def __init__(
+        self,
+        name: str,
+        paths: list[str],
+        sign: Optional[bool] = None,
+        key: Optional[str] = None,
+    ):
+        self.name = name
+        self.paths = paths
+        self.should_sign = sign
+        self.key = key
+
+
+class BuildSpec:
+    '''
+    A build spec that describes how one or more CoRIMs based on the same CoRIM
+    template (effectively, the same profile) can be built from one or more
+    CoMID sets.
+    '''
+
+    @staticmethod
+    def load(path: str) -> BuildSpec:
+        '''Load the spec from the specified file.'''
+        root = os.path.dirname(path)
+
+        with open(path) as fh:
+            fields = yaml.safe_load(fh)
+
+        comid_specs = fields.pop('comids')
+        if not comid_specs:
+            raise ValueError(f'no CoMIDs in spec')
+
+        comids = [CoMIDSet(k, **(v if hasattr(v, 'items') else {'paths': v})) for k, v in comid_specs.items()]
+        return BuildSpec(root, comid_sets=comids, **fields)
+
+    def __init__(
+        self,
+        root: str,
+        corim: str,
+        comid_sets: list[CoMIDSet],
+        outdir: str,
+        workdir: str = '/tmp/create-corim-workdir',
+        sign: bool = False,
+        key: Optional[str] = None,
+        meta: Optional[str] = None,
+    ):
+        self.root = resolve(root)
+        self.corim_path = corim
+        self.comid_sets = comid_sets
+        self.outdir = resolve(root, outdir)
+        self.workdir = resolve(root, workdir)
+        self.should_sign = sign
+        self.key = key
+        self.meta = meta
+
+    def build(self):
+        '''
+        Build the spec, generating a CoRIM for every CoMID set.
+        '''
+        if os.path.exists(self.workdir):
+            logging.debug('removing existing working directory...')
+            shutil.rmtree(self.workdir)
+        logging.debug(f'creating working directory {self.workdir}...')
+        os.mkdir(self.workdir)
+
+        for i, comid_set in enumerate(self.comid_sets, 1):
+            logging.info(f'building {comid_set.name}...')
+            corim_template_path = self.instantiate_corim_template(i)
+            comid_paths = self.build_comids(comid_set)
+
+            should_sign = self.should_sign if comid_set.should_sign is None else comid_set.should_sign
+            key_path = self.key if comid_set.key is None else comid_set.key
+
+            if should_sign and key_path is None:
+                raise ValueError(f'comid set {comid_set.name} must be signed by no key specified')
+            else:
+                key_path = None
+
+            self.build_corim(comid_set.name, corim_template_path, comid_paths, key_path)
+
+    def instantiate_corim_template(self, index: int):
+        '''
+        creates a CoRIM JSON "template" for cocli in the working directory by
+        using template in the build spec's corim_path, and replacing the last
+        six bytes (the last dash-separated segment in string representation)
+        of the corim-id UUID with the specified index.
+        '''
+        corim_path = self.corim_path
+        if not corim_path.endswith('.json'):
+            corim_path += '.json'
+
+        corim_path =  resolve(self.root, corim_path)
+        name_root = os.path.splitext(os.path.basename(corim_path))[0]
+        outpath = resolve(self.workdir, f'{name_root}-{index:02d}.json')
+
+        logging.debug(f'creating corim template {outpath} from {corim_path}...')
+
+        with open(corim_path) as fh:
+            corim_spec = json.load(fh)
+
+        uuid = corim_spec.get('corim-id', '00000000-0000-0000-0000-0000000000000')
+        corim_spec['corim-id'] = uuid.rsplit('-', 1)[0] + f'-00000000000{index:02d}'
+
+        with open(outpath, 'w') as wfh:
+            json.dump(corim_spec, wfh)
+
+        return outpath
+
+    def build_comids(self, comid_set: CoMIDSet) -> list[Path]:
+        '''Compile indidual CoMIDs into CBOR.'''
+        ret = []
+        for comid_template_path in comid_set.paths:
+            if not comid_template_path.endswith('.json'):
+                comid_template_path += '.json'
+
+            name_root = os.path.splitext(os.path.basename(comid_template_path))[0]
+            if not name_root.startswith('comid-'):
+                name_root = f'comid-{name_root}'
+
+            comid_template_path = resolve(self.root, comid_template_path)
+            outpath = resolve(self.workdir, f'{name_root}.cbor')
+            logging.debug(f'compiling {outpath}...')
+            self.cocli(f'comid create -t "{comid_template_path}" -o "{self.workdir}"')
+            ret.append(outpath)
+
+        return ret
+
+    def build_corim(
+        self,
+        name_root: str,
+        corim_template_path: Union[Path, str],
+        comid_paths: list[Path],
+        signing_key: Optional[Path | str],
+    ):
+        '''Compile CoRIM into CBOR.'''
+        if not name_root.startswith('corim-'):
+            name_root = f'corim-{name_root}'
+
+        if not name_root.endswith('.cbor'):
+            name_root = f'{name_root}.cbor'
+
+        outpath = os.path.join(self.outdir, f'unsigned-{name_root}' if signing_key else name_root)
+        logging.debug(f'compiling {outpath}...')
+
+        cmd = f'corim create -t "{corim_template_path}" -o "{outpath}"'
+        for path in comid_paths:
+            cmd = f'{cmd} -m {path}'
+
+        self.cocli(cmd)
+
+        if signing_key:
+            self.ensure_meta()
+
+            signed_path = os.path.join(self.outdir, f'signed-{name_root}' if signing_key else name_root)
+            logging.info(f'signing {outpath}...')
+            self.cocli(f'corim sign -f "{outpath}" -k "{signing_key}" -m "{self.meta}" -o "{signed_path}"')
+
+    def cocli(self, command):
+        '''Run the specified cocli (sub-)command.'''
+        logging.debug(f'  cocli {command}')
+        args = ['cocli'] + shlex.split(command)
+        result = subprocess.run(
+            args,
+            cwd=self.root,
+            text=True,
+            stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                logging.debug(f'  {line}')
+        else:
+            logging.error(f'cocli {command}')
+            for line in result.stdout.split('\n'):
+                logging.error(f'  {line}')
+            raise RuntimeError('cocli failed')
+
+    def ensure_meta(self):
+        '''Ensure a meta file exists, creating one if it doesn't.'''
+        if not self.meta:
+            meta_path = resolve(self.workdir, 'meta.json')
+            now = datetime.now()
+            with open(meta_path, 'w') as wfh:
+                json.dump({
+                    'signer': {'name': 'veraison-services-test-case-generator'},
+                    'validity': {
+                        'not-before': now.isoformat(),
+                        'not-after': now.replace(year=now.year+100).isoformat(),
+                    },
+                }, wfh)
+            self.meta = meta_path
+
+
+def resolve(*parts: Union[Path, str]) -> Path:
+    '''wrapper around Path.resolve()'''
+    if not parts:
+        raise ValueError('must specify at least one path segment')
+    return Path(*parts).resolve(strict=False)
+
+
+def discover_specs(path: str) -> list[str]:
+    '''
+    Discover and return a list of YAML "spec" files that contain instructions
+    on how CoRIMs ought to be built.
+
+    If the path specified points to a file, that file is assumed to be the
+    spec. If the path is a directory, that directory is recursively traversed,
+    locating all files ending with "corims.yaml".
+    '''
+    if os.path.isfile(path):
+        return [path]
+
+    if not os.path.isdir(path):
+        logging.error(f'not a valid path: {path}')
+        sys.exit(1)
+
+    logging.info("discovering corim.yaml's...")
+    ret = []
+    for root, _, files in os.walk(path):
+        for file in files:
+            if file.endswith('corims.yaml'):
+                ret.append(os.path.join(root, file))
+
+    return ret
+
+
+help='''
+Generate CoRIMs based on a YAML specification.
+'''
+
+epilog='''
+SPECIFICATION
+
+A specification is A YAML document with the following top-level entries:
+
+  corim: path, relative to the spec, of the CoRIM JSON template (.json
+         extension can optionally be omitted). If the template contains the
+         "corim-id" entry, the segment (last six bytes) of this UUID will be
+         automatically, ovewritten with an auto-incrementing index for each
+         CoMID set (see below), starting at 1.
+
+ outdir: path, relative to the spec, of the output directory into which the
+         created CoRIM(s) will be written
+
+workdir: (optional) working directory (will be created) where intemediate
+         artifacts (compiled CoMIDs, populated CoRIM template, etc) will be
+         located. WARNING: if this directory exists, its prior contents will
+         be DELETED. If not specified, /tmp/create-corim-workdir will be used.
+
+   sign: (optional) boolean flag indicating whether a signed version of the
+         CoRIM will also be created. May be overridden on per-CoMID set level
+         (see below). If true, then the name of the unsigned CoRIM will be
+         prefixed with "unsigned-" and the signed CoRIM with "signed-". If this
+         is true then a key (see below) MUST also be specified. If not
+         specified, false is assumed.
+
+    key: (required when sign is true) path, relative to the spec, of the key
+         file that will be used to sign CoRIMs, if sign (see above) is true. If
+         sign is false, this will be ignored. May be overridden on per-CoMID
+         set level (see bellow). The key must be in a format understood by
+         cocli.
+
+   meta: (optonal) path, relative to the spec, of the JSON description that will
+         be used to generate the Meta entry when signing the CoRIM. If sign (see
+         above) is false, this will be ignored. If sign is true, and meta, is not
+         specified, an entry will instead be generated by the script.
+
+ comids: a mapping of names to CoMID sets (see next section). The name will be
+         used as the root of the name of the generated CoRIM. The CoRIM will
+         use the template specified by corim (see above) for top-level entries,
+         and will contain CoMIDs specified by the set.
+
+COMID SETS
+
+A CoMID set is either a map or a list describing the CoMIDs that will be used
+to create a CoRIM. If it is a map, it may contain the following entries:
+
+  paths: a list of paths, relative to the spec, of the CoMID JSON templates
+         (.json extension can optionally be omitted). This is the only required
+         parameter.
+
+   sign: (optional) overrides the global sign value (see above) for this set
+
+    key: (optional) overrides the global key value (see above) for this set
+
+If a CoMID set is a list, it will be treated as a map with just the paths entry.
+
+EXAMPLE
+
+    corim: corim-cca
+    outdir: ..
+    workdir: ../__build
+    sign: true
+    key: ../ec384.jwk
+    comids:
+      cca-platform:
+        - comid-cca-platform-refval
+        - comid-cca-platform-ta
+      cca-realm:
+        sign: false
+        paths:
+          - comid-cca-realm-refval
+
+'''
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=help,
+        epilog=epilog,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        'path',
+        help=textwrap.dedent('''
+        path to the spec or a directry; if a directory, it will be scanned recusively
+        finding and processing all files ending with "corims.yaml"
+        ''').strip(),
+    )
+    parser.add_argument('-v', '--verbose', action='store_true', help='enable debug output')
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    spec_files = discover_specs(args.path)
+    if not spec_files:
+        logging.error("no corim.yaml's found")
+        sys.exit(1)
+
+    for spec_path in spec_files:
+        logging.info(f'processing {spec_path}...')
+        try:
+            spec = BuildSpec.load(spec_path)
+        except Exception as e:
+            logging.critical(f'could not load spec: {e}')
+            sys.exit(1)
+
+        try:
+            spec.build()
+        except Exception as e:
+            logging.critical(f'could not build spec: {e}')
+            sys.exit(1)
+
+    logging.info('done.')
+
+
+if __name__ == '__main__':
+    main()

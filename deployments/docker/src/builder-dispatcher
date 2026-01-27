@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2024 Contributors to the Veraison project.
+# Copyright 2024-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck disable=SC2155,SC2086
 # This script is the entry point for the builder docker container.
@@ -46,6 +46,7 @@ function deploy() {
     cp $gobin/evcli $DEPLOY_DIR/utils/
     cp $gobin/cocli $DEPLOY_DIR/utils/
     cp $gobin/pocli $DEPLOY_DIR/utils/
+    cp $gobin/corim-store $DEPLOY_DIR/utils/
 
     echo "creating config"
     set -a
@@ -56,12 +57,12 @@ function deploy() {
     cat $BUILD_DIR/deployments/docker/src/cocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/cocli-config.yaml
     cat $BUILD_DIR/deployments/docker/src/evcli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/evcli-config.yaml
     cat $BUILD_DIR/deployments/docker/src/pocli-config.yaml.template | envsubst > $DEPLOY_DIR/utils/pocli-config.yaml
+    cat $BUILD_DIR/deployments/docker/src/corim-store-config.yaml.template | envsubst > $DEPLOY_DIR/utils/corim-store-config.yaml
 
     echo "initializing stores"
-    for t in en ta po; do
-        echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
-            sqlite3 $DEPLOY_DIR/stores/$t-store.sql
-    done
+    echo "CREATE TABLE IF NOT EXISTS kvstore ( kv_key text NOT NULL, kv_val text NOT NULL );" | \
+        sqlite3 $DEPLOY_DIR/stores/po-store.sql
+    $DEPLOY_DIR/utils/corim-store --dsn file://$DEPLOY_DIR/stores/store.sql db init
 }
 
 function clean() {

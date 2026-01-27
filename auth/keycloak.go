@@ -1,10 +1,10 @@
-// Copyright 2023-2024 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package auth
 
 import (
-	"crypto/x509"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"flag"
 	"fmt"
@@ -20,11 +20,11 @@ import (
 )
 
 type keycloakCfg struct {
-	Backend   string   `mapstructure:"backend"`
-	Host      string   `mapstructure:"host"`
-	Port      string   `mapstructure:"port"`
-	Realm     string   `mapstructure:"realm"`
-	CACert  string   `mapstructure:"ca-cert"`
+	Backend string `mapstructure:"backend"`
+	Host    string `mapstructure:"host"`
+	Port    string `mapstructure:"port"`
+	Realm   string `mapstructure:"realm"`
+	CACert  string `mapstructure:"ca-cert"`
 }
 
 type KeycloakAuthorizer struct {
@@ -43,9 +43,9 @@ func (o *KeycloakAuthorizer) Init(v *viper.Viper, logger *zap.SugaredLogger) err
 	flag.Parse()
 
 	cfg := keycloakCfg{
-		Host:  "localhost",
-		Port:  "11111",
-		Realm: "veraison",
+		Host:   "localhost",
+		Port:   "11111",
+		Realm:  "veraison",
 		CACert: "[unset]",
 	}
 

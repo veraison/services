@@ -1,4 +1,0 @@
-["{\"scheme\":\"PARSEC_TPM\",\"type\":\"REFERENCE_VALUE\",\"attributes\":{\"parsec-tpm.alg-id\":1,\"parsec-tpm.class-id\":\"YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\",\"parsec-tpm.digest\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"parsec-tpm.pcr\":1}}",
- "{\"scheme\":\"PARSEC_TPM\",\"type\":\"REFERENCE_VALUE\",\"attributes\":{\"parsec-tpm.alg-id\":1,\"parsec-tpm.class-id\":\"YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\",\"parsec-tpm.digest\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"parsec-tpm.pcr\":2}}",
- "{\"scheme\":\"PARSEC_TPM\",\"type\":\"REFERENCE_VALUE\",\"attributes\":{\"parsec-tpm.alg-id\":1,\"parsec-tpm.class-id\":\"YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\",\"parsec-tpm.digest\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"parsec-tpm.pcr\":3}}"
-]

@@ -45,7 +45,8 @@ RUN pip install --upgrade pip &&  \
                 python-jose==3.3.0 \
                 ipdb==0.13.11
 
-ADD gen-enacttrust-token evcli cocli run-tests /home/tavern/.local/bin/
+ADD gen-enacttrust-token evcli cocli corim-store run-tests /home/tavern/.local/bin/
+ADD corim-store-config.yaml /home/tavern/.config/corim-store.yaml
 ADD bashrc /home/tavern/.bashrc
 
 ENTRYPOINT ["/home/tavern/.local/bin/run-tests"]

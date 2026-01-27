@@ -1,9 +1,11 @@
-# Copyright 2023-2024 Contributors to the Veraison project.
+# Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 import ast
 import json
 import os
 import shutil
+import tempfile
+import uuid
 
 from util import update_json, run_command
 
@@ -225,6 +227,8 @@ def generate_corim(corim_template, comid_templates, output_path):
     comid_files = [os.path.join(output_dir, '.'.join([os.path.splitext(name)[0], 'cbor']))
                    for name in map(os.path.basename, comid_templates)]
 
+    corim_template = substitute_random_corim_id(corim_template)
+
     corim_create_cmd = ' '.join(
             [f'cocli corim create --output {output_path} --template={corim_template}'] +
             [f'--comid={cf}' for cf in comid_files]
@@ -272,7 +276,23 @@ def generate_cca_evidence_token(claims_file, iak_file, rak_file, token_file):
                     f"--iak={iak_file} --rak={rak_file} --token={token_file}"
     run_command(evcli_command, 'generate CCA token')
 
+
 def generate_enacttrust_evidence_token(claims_file, key_file, token_file, badnode):
     bn_flag = '-bad-node' if badnode else ''
     gentoken_command = f"gen-enacttrust-token {bn_flag} -key {key_file} -out {token_file} {claims_file}"
     run_command(gentoken_command, 'generate EnactTrust token')
+
+
+def substitute_random_corim_id(path):
+    with open(path, 'r') as fh:
+        data = json.load(fh)
+
+    if 'corim-id' not in data:
+        raise ValueError(f'did not see corim-id in {path}')
+
+    data['corim-id'] = str(uuid.uuid4())
+
+    with tempfile.NamedTemporaryFile(delete=False, mode='w') as tf:
+        json.dump(data, tf)
+        return tf.name
+

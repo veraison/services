@@ -20,6 +20,13 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 go install github.com/mitchellh/protoc-gen-go-json@latest
 ```
 
+`corim-store` executable is used to initialized the endorsements store. This
+can also be installed via Go:
+
+```bash
+go install github.com/veraison/corim-store/cmd/corim-store@latest
+```
+
 You will need GNU `make` (at least version 3.81) to drive the build process.
 
 The deployment script is written for `bash` shell, and relies on `envsubst`

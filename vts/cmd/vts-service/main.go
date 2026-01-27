@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -13,13 +13,13 @@ import (
 	"github.com/veraison/services/builtin"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/handler"
-	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
+	"github.com/veraison/services/vts/store"
 	"github.com/veraison/services/vts/trustedservices"
 )
 
@@ -31,24 +31,19 @@ func main() {
 		log.Fatalf("could not read config: %v", err)
 	}
 
-	subs, err := config.GetSubs(v, "ta-store", "en-store", "po-store",
+	subs, err := config.GetSubs(v, "store", "po-store",
 		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer", "*logging")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	classifiers := map[string]interface{}{"service": "vts"}
+	classifiers := map[string]any{"service": "vts"}
 	if err := log.Init(subs["logging"], classifiers); err != nil {
 		log.Fatalf("could not configure logging: %v", err)
 	}
 
 	log.Info("initializing stores")
-	taStore, err := kvstore.New(subs["ta-store"], log.Named("ta-store"))
-	if err != nil {
-		log.Fatalf("trust anchor store initialisation failed: %v", err)
-	}
-
-	enStore, err := kvstore.New(subs["en-store"], log.Named("en-store"))
+	enStore, err := store.New(subs["store"], log.Named("store"))
 	if err != nil {
 		log.Fatalf("endorsement store initialization failed: %v", err)
 	}
@@ -65,16 +60,16 @@ func main() {
 	}
 
 	log.Info("loading attestation schemes")
-	var evPluginManager plugin.IManager[handler.IEvidenceHandler]
-	var endPluginManager plugin.IManager[handler.IEndorsementHandler]
-	var storePluginManager plugin.IManager[handler.IStoreHandler]
+	var schemePluginManager plugin.IManager[handler.ISchemeHandler]
 	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
 
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
 		log.Fatalf("could not get subs: %v", err)
 	}
-	if config.SchemeLoader == "plugins" { // nolint:gocritic
+
+	switch config.SchemeLoader {
+	case "plugins":
 		loader, err := plugin.CreateGoPluginLoader(
 			psubs["go-plugin"].AllSettings(),
 			log.Named("plugin"))
@@ -82,27 +77,11 @@ func main() {
 			log.Fatalf("could not create plugin loader: %v", err)
 		}
 
-		evPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
+		schemePluginManager, err = plugin.CreateGoPluginManagerWithLoader(
 			loader,
-			"evidence-handler",
+			"scheme-handler",
 			log.Named("plugin"),
-			handler.EvidenceHandlerRPC)
-		if err != nil {
-			log.Fatalf("could not create evidence PluginManagerWithLoader: %v", err)
-		}
-		endPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
-			loader,
-			"endorsement-handler",
-			log.Named("plugin"),
-			handler.EndorsementHandlerRPC)
-		if err != nil {
-			log.Fatalf("could not create endorsement PluginManagerWithLoader: %v", err)
-		}
-		storePluginManager, err = plugin.CreateGoPluginManagerWithLoader(
-			loader,
-			"store-handler",
-			log.Named("plugin"),
-			handler.StoreHandlerRPC)
+			handler.SchemeHandlerRPC)
 		if err != nil {
 			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
 		}
@@ -114,28 +93,16 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create coserv PluginManagerWithLoader: %v", err)
 		}
-	} else if config.SchemeLoader == "builtin" {
+	case "builtin":
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
 			log.Named("builtin"))
 		if err != nil {
 			log.Fatalf("could not create builtin loader: %v", err)
 		}
-		evPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEvidenceHandler](
+		schemePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ISchemeHandler](
 			loader, log.Named("builtin"),
-			"evidence-handler")
-		if err != nil {
-			log.Fatalf("could not create evidence BuiltinManagerWithLoader: %v", err)
-		}
-		endPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementHandler](
-			loader, log.Named("builtin"),
-			"endorsement-handler")
-		if err != nil {
-			log.Fatalf("could not create endorsement BuiltinManagerWithLoader: %v", err)
-		}
-		storePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IStoreHandler](
-			loader, log.Named("builtin"),
-			"store-handler")
+			"scheme-handler")
 		if err != nil {
 			log.Fatalf("could not create store BuiltinManagerWithLoader: %v", err)
 		}
@@ -145,17 +112,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create coserv BuiltinManagerWithLoader: %v", err)
 		}
-	} else {
+	default:
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
 	}
 
-	log.Info("Evidence media types:")
-	for _, mt := range evPluginManager.GetRegisteredMediaTypes() {
+	log.Info("Provisioning media types:")
+	for _, mt := range schemePluginManager.GetRegisteredMediaTypesByCategory("provisioning") {
 		log.Info("\t", mt)
 	}
 
-	log.Info("Endorsement media types:")
-	for _, mt := range endPluginManager.GetRegisteredMediaTypes() {
+	log.Info("Verification media types:")
+	for _, mt := range schemePluginManager.GetRegisteredMediaTypesByCategory("verification") {
 		log.Info("\t", mt)
 	}
 
@@ -187,11 +154,11 @@ func main() {
 	// from this point onwards taStore, enStore, evPluginManager,
 	// endPluginManager, storePluginManager, coservProxyPluginManager,
 	// policyManager and earSigner are owned by vts
-	vts := trustedservices.NewGRPC(taStore, enStore,
-		evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager,
+	vts := trustedservices.NewGRPC(enStore,
+		schemePluginManager, coservProxyPluginManager,
 		policyManager, earSigner, coservSigner, log.Named("vts"))
 
-	if err = vts.Init(subs["vts"], evPluginManager, endPluginManager, storePluginManager, coservProxyPluginManager); err != nil {
+	if err = vts.Init(subs["vts"]); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}
 

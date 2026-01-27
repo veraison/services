@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -51,9 +51,9 @@ func main() {
 
 	cfg := cfg{
 		ListenAddr: DefaultListenAddr,
-		Protocol: "https",
-		Cert: "[unset]",
-		CertKey: "[unset]",
+		Protocol:   "https",
+		Cert:       "[unset]",
+		CertKey:    "[unset]",
 	}
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(subs["management"]); err != nil {

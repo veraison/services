@@ -1,8 +1,9 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test // nolint:dupl
 
 import (
+	"encoding/json"
 	"log"
 	"net/rpc"
 
@@ -12,7 +13,7 @@ import (
 type IMook interface {
 	GetName() string
 	GetAttestationScheme() string
-	GetSupportedMediaTypes() []string
+	GetSupportedMediaTypes() map[string][]string
 	Shoot() string
 }
 
@@ -23,7 +24,7 @@ type MookRPCClient struct {
 func (o *MookRPCClient) GetName() string {
 	var (
 		resp   string
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetName", &unused, &resp)
@@ -38,7 +39,7 @@ func (o *MookRPCClient) GetName() string {
 func (o *MookRPCClient) GetAttestationScheme() string {
 	var (
 		resp   string
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetAttestationScheme", &unused, &resp)
@@ -50,10 +51,10 @@ func (o *MookRPCClient) GetAttestationScheme() string {
 	return resp
 }
 
-func (o *MookRPCClient) GetSupportedMediaTypes() []string {
+func (o *MookRPCClient) GetSupportedMediaTypes() map[string][]string {
 	var (
-		resp   []string
-		unused interface{}
+		resp   []byte
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
@@ -62,13 +63,18 @@ func (o *MookRPCClient) GetSupportedMediaTypes() []string {
 		return nil
 	}
 
-	return resp
+	var res map[string][]string
+	if err := json.Unmarshal(resp, &res); err != nil {
+		panic(err)
+	}
+
+	return res
 }
 
 func (o *MookRPCClient) Shoot() string {
 	var (
 		resp   string
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.Shoot", &unused, &resp)
@@ -84,31 +90,34 @@ type MookRPCServer struct {
 	Impl IMook
 }
 
-func (o *MookRPCServer) GetName(args interface{}, resp *string) error {
+func (o *MookRPCServer) GetName(args any, resp *string) error {
 	*resp = o.Impl.GetName()
 	return nil
 }
 
-func (o *MookRPCServer) GetAttestationScheme(args interface{}, resp *string) error {
+func (o *MookRPCServer) GetAttestationScheme(args any, resp *string) error {
 	*resp = o.Impl.GetAttestationScheme()
 	return nil
 }
 
-func (o *MookRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
-	*resp = o.Impl.GetSupportedMediaTypes()
-	return nil
+func (o *MookRPCServer) GetSupportedMediaTypes(args any, resp *[]byte) error {
+	var err error
+
+	*resp, err = json.Marshal(o.Impl.GetSupportedMediaTypes())
+
+	return err
 }
 
-func (o *MookRPCServer) Shoot(args interface{}, resp *string) error {
+func (o *MookRPCServer) Shoot(args any, resp *string) error {
 	*resp = o.Impl.Shoot()
 	return nil
 }
 
-func GetMookClient(c *rpc.Client) interface{} {
+func GetMookClient(c *rpc.Client) any {
 	return &MookRPCClient{client: c}
 }
 
-func GetMookServer(i IMook) interface{} {
+func GetMookServer(i IMook) any {
 	return &MookRPCServer{Impl: i}
 }
 
