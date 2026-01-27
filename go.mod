@@ -37,7 +37,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
-	github.com/veraison/cmw v0.2.0
+	github.com/veraison/cmw v0.3.0
 	github.com/veraison/corim v1.1.3-0.20251002172919-3c18c66c77b0
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
