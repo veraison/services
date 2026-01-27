@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package plugin
 
@@ -163,18 +163,20 @@ func DiscoverGoPluginUsing[I IPluggable](o *GoPluginLoader) error {
 		}
 		o.loadedByName[pluginName] = pluginContext
 
-		for _, mediaType := range pluginContext.SupportedMediaTypes {
-			if existing, ok := o.loadedByMediaType[mediaType]; ok {
-				return fmt.Errorf(
-					"plugins %q [%s] and %q [%s] both provides support for %q",
-					existing.GetName(),
-					existing.GetPath(),
-					pluginContext.GetName(),
-					pluginContext.GetPath(),
-					mediaType,
-				)
+		for _, mediaTypes := range pluginContext.SupportedMediaTypes {
+			for _, mediaType := range mediaTypes {
+				if existing, ok := o.loadedByMediaType[mediaType]; ok {
+					return fmt.Errorf(
+						"plugins %q [%s] and %q [%s] both provides support for %q",
+						existing.GetName(),
+						existing.GetPath(),
+						pluginContext.GetName(),
+						pluginContext.GetPath(),
+						mediaType,
+					)
+				}
+				o.loadedByMediaType[mediaType] = pluginContext
 			}
-			o.loadedByMediaType[mediaType] = pluginContext
 		}
 	}
 

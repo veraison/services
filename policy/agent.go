@@ -1,15 +1,17 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/viper"
+	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -68,14 +70,18 @@ func (o *Agent) GetBackendName() string {
 // overwrite the result status or any of the values in the result trust vector.
 func (o *Agent) Evaluate(
 	ctx context.Context,
-	sessionContext map[string]interface{},
-	scheme string,
+	sessionContext map[string]any,
+	appraisalContext *appraisal.Context,
 	policy *Policy,
 	submod string,
 	appraisal *ear.Appraisal,
-	evidence *proto.EvidenceContext,
-	endorsements []string,
+	endorsements []*comid.ValueTriple,
 ) (*ear.Appraisal, error) {
+
+	endorsementMaps, err := endorsementsToMaps(endorsements)
+	if err != nil {
+		return nil, err
+	}
 
 	resultMap := appraisal.AsMap()
 	appraisalUpdated := false
@@ -83,11 +89,11 @@ func (o *Agent) Evaluate(
 	updatedByPolicy, err := o.Backend.Evaluate(
 		ctx,
 		sessionContext,
-		scheme,
+		appraisalContext.Scheme,
 		policy.Rules,
 		resultMap,
-		evidence.Evidence.AsMap(),
-		endorsements,
+		appraisalContext.Claims,
+		endorsementMaps,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not evaluate policy: %w", err)
@@ -152,4 +158,24 @@ func (o *Agent) GetBackend() IBackend {
 
 func (o *Agent) Close() {
 	o.Backend.Close()
+}
+
+func endorsementsToMaps(endorsemetTriples []*comid.ValueTriple) ([]map[string]any, error) {
+	ret := make([]map[string]any, len(endorsemetTriples))
+
+	for i, et := range endorsemetTriples {
+		endorsementJSON, err := json.Marshal(et)
+		if err != nil {
+			return nil, fmt.Errorf("endorsement at index %d: %w", i, err)
+		}
+
+		var endorsement map[string]any
+		if err := json.Unmarshal(endorsementJSON, &endorsement); err != nil {
+			return nil, fmt.Errorf("endorsement at index %d: %w", i, err)
+		}
+
+		ret[i] = endorsement
+	}
+
+	return ret, nil
 }

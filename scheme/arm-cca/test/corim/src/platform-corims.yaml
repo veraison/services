@@ -1,0 +1,25 @@
+corim: corim-cca-platform
+outdir: ..
+workdir: ../__build_platform
+comids:
+  cca-platform-valid:
+    - comid-cca-platform-refval
+    - comid-cca-platform-ta
+  cca-platform-bad-no-class:
+    - comid-cca-platform-bad-no-class
+  cca-platform-bad-ta-no-instance:
+    - comid-cca-platform-bad-ta-no-instance
+  cca-platform-bad-ta-instance:
+    - comid-cca-platform-bad-ta-instance
+  cca-platform-bad-ta-cert:
+    - comid-cca-platform-bad-ta-cert
+  cca-platform-bad-refval-instance:
+    - comid-cca-platform-bad-refval-instance
+  cca-platform-bad-refval-no-mkey:
+    - comid-cca-platform-bad-refval-no-mkey
+  cca-platform-bad-refval-mkey:
+    - comid-cca-platform-bad-refval-mkey
+  cca-platform-bad-refval-no-digests:
+    - comid-cca-platform-bad-refval-no-digests
+  cca-platform-bad-refval-no-raw-value:
+    - comid-cca-platform-bad-refval-no-raw-value

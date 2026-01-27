@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2026 Contributors to the Veraison project.
+# SPDX-License-Identifier: Apache-2.0
 
 # VERAISON_BUILD_VERSION, if set, overrides version from Git
 if [[ "$VERAISON_BUILD_VERSION" != "" ]]; then

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package log
 
@@ -45,12 +45,12 @@ var supportedEncodings = map[string]bool{
 	"json":    true,
 }
 
-//  Fully exposing encoder configuration in Veraison config is going to be a
-//  lot of hassle (need to provide mapstructure serialisation for all the
-//  underlying encoders; and, arguably, would be unwieldy for the end-user. On
-//  the other hand, it may be useful to have different formatting in different
-//  contexts. As a middle ground, allow selecting between pre-defined formats
-//  in the config rather than exposing all the individual settings.
+// Fully exposing encoder configuration in Veraison config is going to be a
+// lot of hassle (need to provide mapstructure serialisation for all the
+// underlying encoders; and, arguably, would be unwieldy for the end-user. On
+// the other hand, it may be useful to have different formatting in different
+// contexts. As a middle ground, allow selecting between pre-defined formats
+// in the config rather than exposing all the individual settings.
 var encoderConfigs = map[string]zapcore.EncoderConfig{
 	"production":  zap.NewProductionEncoderConfig(),
 	"development": zap.NewDevelopmentEncoderConfig(),

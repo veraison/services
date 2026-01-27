@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package earsigner
 
@@ -24,7 +24,9 @@ func NewAwsKeyLoader(c context.Context) *AwsKeyLoader {
 }
 
 // Load the key from the specified URL. The url must be in the following format:
-//    aws:<region>/<secret-name>
+//
+//	aws:<region>/<secret-name>
+//
 // Where <region> is the AWS region (e.g. eu-west-1), and <secret-name> is the
 // name under which the key is stored in the AWS Secrets Manager
 func (o AwsKeyLoader) Load(location *url.URL) ([]byte, error) {
@@ -42,7 +44,7 @@ func (o AwsKeyLoader) Load(location *url.URL) ([]byte, error) {
 	client := secretsmanager.NewFromConfig(config)
 
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(name),
+		SecretId:     aws.String(name),
 		VersionStage: aws.String("AWSCURRENT"),
 	}
 

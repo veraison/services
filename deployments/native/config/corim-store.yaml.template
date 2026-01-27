@@ -1,0 +1,2 @@
+dbms: sqlite
+dsn: file://${VERAISON_STORES_DIR}/store.sql

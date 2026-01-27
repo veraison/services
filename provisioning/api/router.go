@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -12,7 +12,7 @@ import (
 var publicApiMap = make(map[string]string)
 
 const (
-	provisioningPath           = "/endorsement-provisioning/v1"
+	provisioningPath                 = "/endorsement-provisioning/v1"
 	getWellKnownProvisioningInfoPath = "/.well-known/veraison/provisioning"
 )
 
@@ -29,7 +29,6 @@ func NewRouter(handler IHandler, authorizer auth.IAuthorizer) *gin.Engine {
 
 	provGroup.POST("submit", handler.Submit)
 	publicApiMap["provisioningSubmit"] = path.Join(provisioningPath, "submit")
-
 
 	return router
 }

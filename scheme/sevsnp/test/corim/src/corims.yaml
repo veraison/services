@@ -1,0 +1,15 @@
+corim: corim-sevsnp
+outdir: ..
+workdir: ../__build
+comids:
+  sevsnp-valid:
+    - comid-sevsnp-refval
+    - comid-sevsnp-ta
+  sevsnp-bad-ta-no-vendor:
+    - comid-bad-ta-no-vendor
+  sevsnp-bad-ta-no-model:
+    - comid-bad-ta-no-model
+  sevsnp-bad-refval-no-key:
+    - comid-bad-refval-no-key
+  sevsnp-bad-refval-key:
+    - comid-bad-refval-key

@@ -1,4 +1,4 @@
-# Copyright 2023-2024 Contributors to the Veraison project.
+# Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 import os
 
@@ -107,9 +107,9 @@ def _set_cca_content_types(test, variables):
     profile = test.test_vars['profile']
     corim_type = test.test_vars.get('corim_type', 'unsigned')
     ev_content_types = test.common_vars['evidence-content-types']
-    
+
     variables['evidence-content-type'] = ev_content_types[f'{scheme}.{profile}']
-    
+
     # Set platform and realm content types
     if corim_type == 'signed':
         # Use signed content types
@@ -117,5 +117,5 @@ def _set_cca_content_types(test, variables):
         variables['realm-en-content-type'] = 'application/rim+cose; profile="http://arm.com/cca/realm/1"'
     else:
         # Use unsigned content types
-        variables['platform-en-content-type'] = 'application/corim-unsigned+cbor; profile="http://arm.com/cca/ssd/1"'
-        variables['realm-en-content-type'] = 'application/corim-unsigned+cbor; profile="http://arm.com/cca/realm/1"'
+        variables['platform-en-content-type'] = 'application/rim+cbor; profile="http://arm.com/cca/ssd/1"'
+        variables['realm-en-content-type'] = 'application/rim+cbor; profile="http://arm.com/cca/realm/1"'

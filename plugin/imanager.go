@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package plugin
 
@@ -22,6 +22,10 @@ type IManager[I IPluggable] interface {
 	// GetRegisteredMediaTypes returns a []string of media types that have
 	// been registered with the manager by discovered plugins.
 	GetRegisteredMediaTypes() []string
+
+	// GetRegisteredMediaTypesByCategory returns a []string of media types
+	// that have been registered with the manager by discovered plugins.
+	GetRegisteredMediaTypesByCategory(category string) []string
 
 	// GetRegisteredAttestationSchemes returns a []string of names for
 	// schemes that have been registered with the manager by discovered

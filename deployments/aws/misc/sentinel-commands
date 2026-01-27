@@ -1,12 +1,17 @@
 #!/opt/veraison/venv/bin/python
 import argparse
+import asyncio
 import inspect
 import logging
 import json
+import os
+import pathlib
 import shutil
 import sys
+from asyncio.subprocess import Process, PIPE
 
 import psycopg2
+import yaml
 from psycopg2.errors import DuplicateDatabase
 
 
@@ -22,27 +27,15 @@ COLOR_RESET = '\x1b[0m'
 
 
 PGSQL_SETUP = '''
-CREATE TABLE IF NOT EXISTS endorsements (
-   kv_key TEXT NOT NULL,
-   kv_val TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS trust_anchors (
-    kv_key TEXT NOT NULL,
-    kv_val TEXT NOT NULL
-);
 CREATE TABLE IF NOT EXISTS policies (
     kv_key TEXT NOT NULL,
     kv_val TEXT NOT NULL
 );
 
-CREATE INDEX ON endorsements(kv_key);
-CREATE INDEX ON trust_anchors(kv_key);
 CREATE INDEX ON policies(kv_key);
 '''
 
 CLEAR_STORES = '''
-DELETE FROM endorsements;
-DELETE FROM trust_anchors;
 DELETE FROM policies;
 '''
 
@@ -156,7 +149,27 @@ class SetupRdsCommand(BaseCommand):
         finally:
             con.close()
 
-        self.logger.debug('updating cache with DB connection settings...')
+        self.logger.info('configuring corim-store client...')
+        corim_store_settings = {
+            'dbms': 'pg',
+            'dsn': f'postgres://veraison:{args.password}@{args.host}:{args.port}/veraison?sslmode=disable',
+            'trace-sql': False,
+        }
+        self.logger.debug(f'corim-store settings: {corim_store_settings}')
+
+        config_dir = os.path.expanduser('~/.config')
+        pathlib.Path(config_dir).mkdir(parents=True, exist_ok=True)
+
+        config_file = os.path.join(config_dir, 'corim-store.yaml')
+        self.logger.debug(f'writing {config_file}...')
+        with open(config_file, 'w') as wfh:
+            yaml.dump(corim_store_settings, wfh)
+
+        self.logger.info('initializing corim-store...')
+        exit_code, _, stderr = run_in_shell('corim-store db init', args.verbose)
+        if exit_code:
+            raise RuntimeError(stderr)
+
         self.logger.info('done.')
 
 
@@ -174,26 +187,15 @@ class CheckStoresCommand(BaseCommand):
     def run(self, args):
         con_line = (f'host={args.host} port={args.port} dbname=veraison '
                     f'user=veraison password={args.password}')
-
         self.logger.debug(f'RDS connection settings: {con_line}')
+
+        exit_code, stdout, stderr = run_in_shell('corim-store list triples', args.verbose)
+        if exit_code:
+            raise RuntimeError(stderr)
+        print(stdout)
+
         with psycopg2.connect(con_line) as con:
             with con.cursor() as cur:
-                print(f'{COLOR_GREEN}TRUST ANCHORS:\n--------------{COLOR_RESET}')
-                cur.execute('SELECT * FROM trust_anchors')
-                for key, value in cur.fetchall():
-                    print(key)
-                    parsed = json.loads(value)
-                    print(json.dumps(parsed, indent=4, sort_keys=True))
-                    print()
-
-                print(f'{COLOR_GREEN}ENDORSEMENTS:\n-------------{COLOR_RESET}')
-                cur.execute('SELECT * FROM endorsements')
-                for key, value in cur.fetchall():
-                    print(key)
-                    parsed = json.loads(value)
-                    print(json.dumps(parsed, indent=4, sort_keys=True))
-                    print()
-
                 print(f'{COLOR_GREEN}POLICIES:\n---------{COLOR_RESET}')
                 cur.execute('SELECT * FROM policies')
                 for key, value in cur.fetchall():
@@ -206,18 +208,20 @@ class ClearStoresCommand(BaseCommand):
     name = 'clear-stores'
     desc = 'clear the contents of deployment\'s sqlite3 stores'
 
-
     def update_arguments(self, parser):
         parser.add_argument('host')
         parser.add_argument('port', type=int)
         parser.add_argument('password')
 
-
     def run(self, args):
         con_line = (f'host={args.host} port={args.port} dbname=veraison '
                     f'user=veraison password={args.password}')
-
         self.logger.debug(f'RDS connection settings: {con_line}')
+
+        exit_code, _, stderr = run_in_shell('corim-store db clear', args.verbose)
+        if exit_code:
+            raise RuntimeError(stderr)
+
         with psycopg2.connect(con_line) as con:
             with con.cursor() as cur:
                 self.logger.info('clearing stores...')
@@ -228,6 +232,44 @@ class ClearStoresCommand(BaseCommand):
                     self.logger.debug(sql_statement)
                     cur.execute(sql_statement)
                 self.logger.info('done.')
+
+
+def run_in_shell(cmd, should_log):
+    logger = logging.getLogger('shell')
+    if should_log:
+        logger.setLevel(logging.DEBUG)
+
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(_run_in_shell_teed(cmd, logger))
+    finally:
+        loop.close()
+
+
+async def _run_in_shell_teed(cmd, logger):
+    process: Process = await asyncio.create_subprocess_shell(
+            cmd, stdout=PIPE, stderr=PIPE, cwd=os.getcwd())
+
+    stdout_buf, stderr_buf = [], []
+    tasks = {
+        asyncio.Task(process.stdout.readline()): (process.stdout, stdout_buf), # pyright: ignore[reportOptionalMemberAccess]
+        asyncio.Task(process.stderr.readline()): (process.stderr, stderr_buf), # pyright: ignore[reportOptionalMemberAccess]
+    }
+
+    while tasks:
+        done, _ = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED)  # pyright: ignore[reportCallIssue]
+        for future in done:
+            stream, buf = tasks.pop(future)
+            line = future.result()
+            if line:
+                line = line.decode()
+                buf.append(line)
+                logger.debug(line.rstrip('\n'))
+                tasks[asyncio.Task(stream.readline())] = stream, buf  # pyright: ignore[reportOptionalMemberAccess]
+
+    rc = await process.wait()
+    return rc, ''.join(stdout_buf), ''.join(stderr_buf)
 
 
 if __name__ == '__main__':

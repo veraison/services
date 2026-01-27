@@ -1,9 +1,0 @@
-{
-  "scheme": "PARSEC_TPM",
-  "type": "VERIFICATION_KEY",
-  "attributes": {
-    "parsec-tpm.ak-pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMKBCTNIcKUSDii11ySs3526iDZ8A\niTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==\n-----END PUBLIC KEY-----",
-    "parsec-tpm.class-id": 12456,
-    "parsec-tpm.instance-id": "AagIEsUMYDNxd1p5UuAACkxJGfJf9rcUZ/oyRFHDcAxn"
-  }
-}

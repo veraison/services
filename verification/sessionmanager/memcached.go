@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package sessionmanager
 
@@ -55,8 +55,8 @@ func (o *Memcached) SetSession(
 	ttl time.Duration,
 ) error {
 	item := &memcache.Item{
-		Key: makeKey(id, tenant),
-		Value: session,
+		Key:        makeKey(id, tenant),
+		Value:      session,
 		Expiration: int32(ttl.Seconds()),
 	}
 	return o.client.Set(item)

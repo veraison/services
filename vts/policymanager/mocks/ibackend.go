@@ -48,10 +48,10 @@ func (mr *MockIBackendMockRecorder) Close() *gomock.Call {
 }
 
 // Evaluate mocks base method.
-func (m *MockIBackend) Evaluate(ctx context.Context, sessionContext map[string]interface{}, scheme, policy string, result, evidence map[string]interface{}, endorsements []string) (map[string]interface{}, error) {
+func (m *MockIBackend) Evaluate(ctx context.Context, sessionContext map[string]any, scheme, policy string, result, evidence map[string]any, endorsements []map[string]any) (map[string]any, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Evaluate", ctx, sessionContext, scheme, policy, result, evidence, endorsements)
-	ret0, _ := ret[0].(map[string]interface{})
+	ret0, _ := ret[0].(map[string]any)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
