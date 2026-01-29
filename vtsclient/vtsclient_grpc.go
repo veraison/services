@@ -277,7 +277,8 @@ func normalizeMediaTypeList(mts *proto.MediaTypeList) *proto.MediaTypeList {
 	var nmts []string // nolint:prealloc
 
 	for _, mt := range mts.GetMediaTypes() {
-		nmt, err := api.NormalizeMediaType(mt)
+		dropParams := false
+		nmt, err := api.NormalizeMediaType(mt, dropParams)
 		if err != nil {
 			// skip invalid media type
 			continue

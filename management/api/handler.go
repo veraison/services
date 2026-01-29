@@ -256,6 +256,7 @@ func (o Handler) GetManagementWellKnownInfo(c *gin.Context) {
 	obj, err := capability.NewWellKnownInfoObj(
 		nil, // key
 		nil, // media types
+		nil, // composite evidence media types
 		o.Manager.SupportedSchemes,
 		config.Version,
 		"SERVICE_STATUS_READY",

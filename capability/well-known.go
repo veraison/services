@@ -11,12 +11,13 @@ const (
 )
 
 type WellKnownInfo struct {
-	PublicKey    jwk.Key           `json:"ear-verification-key,omitempty"`
-	MediaTypes   []string          `json:"media-types,omitempty"`
-	Schemes      []string          `json:"attestation-schemes,omitempty"`
-	Version      string            `json:"version"`
-	ServiceState string            `json:"service-state"`
-	ApiEndpoints map[string]string `json:"api-endpoints"`
+	PublicKey                   jwk.Key           `json:"ear-verification-key,omitempty"`
+	MediaTypes                  []string          `json:"media-types,omitempty"`
+	CompositeEvidenceMediaTypes []string          `json:"composite-evidence-media-types,omitempty"`
+	Schemes                     []string          `json:"attestation-schemes,omitempty"`
+	Version                     string            `json:"version"`
+	ServiceState                string            `json:"service-state"`
+	ApiEndpoints                map[string]string `json:"api-endpoints"`
 }
 
 var ssTrans = map[string]string{
@@ -38,6 +39,7 @@ func ServiceStateToAPI(ss string) string {
 func NewWellKnownInfoObj(
 	key jwk.Key,
 	mediaTypes []string,
+	compositeEvidenceMediaTypes []string,
 	schemes []string,
 	version string,
 	serviceState string,
@@ -45,12 +47,13 @@ func NewWellKnownInfoObj(
 ) (*WellKnownInfo, error) {
 	// MUST be kept in sync with proto/state.proto
 	obj := &WellKnownInfo{
-		PublicKey:    key,
-		MediaTypes:   mediaTypes,
-		Schemes:      schemes,
-		Version:      version,
-		ServiceState: ServiceStateToAPI(serviceState),
-		ApiEndpoints: endpoints,
+		PublicKey:                   key,
+		MediaTypes:                  mediaTypes,
+		CompositeEvidenceMediaTypes: compositeEvidenceMediaTypes,
+		Schemes:                     schemes,
+		Version:                     version,
+		ServiceState:                ServiceStateToAPI(serviceState),
+		ApiEndpoints:                endpoints,
 	}
 
 	return obj, nil

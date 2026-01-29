@@ -8,10 +8,16 @@ import "mime"
 // parameters) and returns it in normalized form, i.e., with lowercase type,
 // subtype and, optionally, parameter name.  An error is returned if the
 // supplied media type is invalid.
-func NormalizeMediaType(mt string) (string, error) {
+// If dropParams is true, any parameters in the supplied media type are
+// discarded in the returned normalized media type.
+func NormalizeMediaType(mt string, dropParams bool) (string, error) {
 	m, p, err := mime.ParseMediaType(mt)
 	if err != nil {
 		return "", err
+	}
+
+	if dropParams {
+		p = nil
 	}
 
 	return mime.FormatMediaType(m, p), nil
