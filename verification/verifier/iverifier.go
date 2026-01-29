@@ -10,6 +10,9 @@ type IVerifier interface {
 	GetVTSState() (*proto.ServiceState, error)
 	GetPublicKey() (*proto.PublicKey, error)
 	IsSupportedMediaType(mt string) (bool, error)
+	IsSupportedCompositeEvidenceMediaType(mt string) (bool, error)
 	SupportedMediaTypes() ([]string, error)
+	SupportedCompositeEvidenceMediaTypes() ([]string, error)
 	ProcessEvidence(tenantID string, nonce []byte, data []byte, mt string) ([]byte, error)
+	ProcessCompositeEvidence(tenantID string, nonce []byte, data []byte, mt string) ([]byte, error)
 }

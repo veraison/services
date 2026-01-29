@@ -424,7 +424,10 @@ func (o *GRPC) GetCompositeAttestation(
 	//		return CAR
 	//	}
 
-	return nil, errors.New("not implemented")
+	// XXX(tho) temporary stub
+	return &proto.AppraisalContext{
+		Result: []byte(`{ "hello": "composite-attestation" }`),
+	}, nil
 }
 
 func (o *GRPC) GetAttestation(
@@ -588,7 +591,13 @@ func (c *GRPC) GetSupportedCompositeEvidenceMediaTypes(context.Context, *emptypb
 	// Note: this does not go though the plugin manager as usual; it's a core
 	// VTS capability that depends on the available composite evidence parsers.
 
-	return nil, errors.New("not implemented")
+	// XXX(tho) temporary hard-coded list
+	return &proto.MediaTypeList{MediaTypes: []string{
+		"application/cmw+json",
+		"application/cmw+cbor",
+		"application/cmw+cose",
+		"application/cmw+jws",
+	}}, nil
 }
 
 func (c *GRPC) assembleCoservMediaTypes(mts []string, filter string) []string {
