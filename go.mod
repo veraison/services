@@ -159,6 +159,7 @@ require (
 	github.com/google/go-sev-guest v0.14.1
 	github.com/jraman567/go-gen-ref v1.2.3
 	github.com/pkg/errors v0.9.1
+	github.com/veraison/apiclient v0.4.0
 	github.com/veraison/ratsd v0.0.0-20251002182229-94bebd610d15
 )
 

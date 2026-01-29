@@ -6,6 +6,13 @@
 GOPKG := github.com/veraison/services/scheme/veraison-client
 SRCS := $(wildcard *.go)
 
+INTERFACES := iveraisonchallengeresponseclient.go
+INTERFACES += iveraisondiscoveryclient.go
+
+MOCKPKG := mocks
+
+lint-hook-pre: _mocks
+
 SUBDIR += plugin
 
 include ../../mk/common.mk
