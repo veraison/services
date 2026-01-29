@@ -64,16 +64,17 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore                  kvstore.IKVStore
-	EnStore                  kvstore.IKVStore
-	EvPluginManager          plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
-	StorePluginManager       plugin.IManager[handler.IStoreHandler]
-	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
-	PolicyManager            *policymanager.PolicyManager
-	EarSigner                earsigner.IEarSigner
-	CoservSigner             coservsigner.ICoservSigner
-	CACertsPEM               [][]byte
+	TaStore                   kvstore.IKVStore
+	EnStore                   kvstore.IKVStore
+	EvPluginManager           plugin.IManager[handler.IEvidenceHandler]
+	EndPluginManager          plugin.IManager[handler.IEndorsementHandler]
+	StorePluginManager        plugin.IManager[handler.IStoreHandler]
+	CoservProxyPluginManager  plugin.IManager[handler.ICoservProxyHandler]
+	LeadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler]
+	PolicyManager             *policymanager.PolicyManager
+	EarSigner                 earsigner.IEarSigner
+	CoservSigner              coservsigner.ICoservSigner
+	CACertsPEM                [][]byte
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -425,6 +426,14 @@ func (o *GRPC) GetCompositeAttestation(
 	//	}
 
 	return nil, errors.New("not implemented")
+}
+
+func (o *GRPC) GetSupportedCompositeEvidenceMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
+
+	// Look for all parsers
+	// Invoke each Parsers to get the Collection MediaTypes
+	// return it inside MediaTypeList
+	return nil, nil
 }
 
 func (o *GRPC) GetAttestation(
