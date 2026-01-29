@@ -325,6 +325,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// read content-type and check against supported attestation formats
 	mediaType := c.Request.Header.Get("Content-Type")
 
+	// Here we only deal with CMW records and tags (i.e., monads).
 	if isCMW(mediaType) {
 		var w cmw.CMW
 
@@ -336,8 +337,6 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 			return
 		}
 
-		// Here we only deal with CMW records and tags.  Collection CMWs are
-		// dealt with in the non-exceptional path.
 		if w.GetKind() == cmw.KindMonad {
 			mediaType, err = w.GetMonadType()
 			if err != nil {
@@ -357,7 +356,7 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 		}
 	}
 
-	isSupported, err := o.Verifier.IsSupportedMediaType(mediaType)
+	isSupportedMediaType, err := o.Verifier.IsSupportedMediaType(mediaType)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Unwrap(err) == verifier.ErrInputParam {
@@ -367,6 +366,19 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 		ReportProblem(c, status, fmt.Sprintf("could not check media type with verifier: %v", err))
 		return
 	}
+
+	isSupportedCompositeEvidenceMediaType, err := o.Verifier.IsSupportedCompositeEvidenceMediaType(mediaType)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Unwrap(err) == verifier.ErrInputParam {
+			status = http.StatusBadRequest
+		}
+
+		ReportProblem(c, status, fmt.Sprintf("could not check composite evidence media type with verifier: %v", err))
+		return
+	}
+
+	isSupported := isSupportedMediaType || isSupportedCompositeEvidenceMediaType
 
 	if !isSupported {
 		supportedMediaTypes, err := o.Verifier.SupportedMediaTypes()
@@ -378,6 +390,18 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 			)
 			return
 		}
+
+		supportedCompositeEvidenceMediaTypes, err := o.Verifier.SupportedCompositeEvidenceMediaTypes()
+		if err != nil {
+			ReportProblem(c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("could not get supported composite evidence media types from verifier: %v",
+					err),
+			)
+			return
+		}
+
+		supportedMediaTypes = append(supportedMediaTypes, supportedCompositeEvidenceMediaTypes...)
 
 		c.Header("Accept", strings.Join(supportedMediaTypes, ", "))
 		ReportProblem(c,
@@ -411,8 +435,18 @@ func (o *Handler) SubmitEvidence(c *gin.Context) {
 	// reported if something in the verifier or the connection goes wrong.
 	// Any problems with the evidence are expected to be reported via the
 	// attestation result.
-	attestationResult, err := o.Verifier.ProcessEvidence(tenantID, session.Nonce,
-		evidence, mediaType)
+	// Depending on the media type (collection vs non-collection), we invoke
+	// the appropriate verifier backend (lead verifier vs component verifier).
+	var attestationResult []byte
+
+	if isSupportedMediaType {
+		attestationResult, err = o.Verifier.ProcessEvidence(tenantID, session.Nonce,
+			evidence, mediaType)
+	} else if isSupportedCompositeEvidenceMediaType {
+		attestationResult, err = o.Verifier.ProcessCompositeEvidence(tenantID, session.Nonce,
+			evidence, mediaType)
+	}
+
 	if err != nil {
 		o.logger.Error(err)
 		session.SetStatus(StatusFailed)
@@ -474,10 +508,26 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
-			fmt.Sprintf("could not get media types form verifier: %v", err),
+			fmt.Sprintf("could not get media types from verifier: %v", err),
 		)
 		return
 	}
+
+	// In lead-verifier mode, we need to get the supported collection media types
+	// from the verifier as well, to be able to create sessions that can accept
+	// composite evidence.
+	supportedCollectionMediaTypes, err := o.Verifier.SupportedCompositeEvidenceMediaTypes()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("could not get collection media types from verifier: %v", err),
+		)
+		return
+	}
+
+	// Note that if the node is not a lead-verifier, the supported collection
+	// media types list is empty, which makes the following a no-op.
+	supportedMediaTypes = append(supportedMediaTypes, supportedCollectionMediaTypes...)
 
 	id, session, err := newSession(nonce, supportedMediaTypes, ConfigSessionTTL)
 	if err != nil {
@@ -529,15 +579,20 @@ func (o *Handler) getVerificationMediaTypes() ([]string, error) {
 	return o.Verifier.SupportedMediaTypes()
 }
 
+func (o *Handler) getSupportedCompositeEvidenceMediaTypes() ([]string, error) {
+	return o.Verifier.SupportedCompositeEvidenceMediaTypes()
+}
+
 func (o *Handler) getVerificationServerVersionAndState() (string, string, error) {
 	vtsState, err := o.Verifier.GetVTSState()
 	if err != nil {
 		return "", "", err
 	}
+
 	version := vtsState.ServerVersion
 	state := vtsState.Status.String()
-	return version, state, nil
 
+	return version, state, nil
 }
 
 func getVerificationEndpoints() map[string]string {
@@ -574,6 +629,16 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 		return
 	}
 
+	// Get verification composite evidence media types
+	compositeEvidenceMediaTypes, err := o.getSupportedCompositeEvidenceMediaTypes()
+	if err != nil {
+		ReportProblem(c,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
 	// Get verification server version and state
 	version, state, err := o.getVerificationServerVersionAndState()
 	if err != nil {
@@ -588,7 +653,7 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 	endpoints := getVerificationEndpoints()
 
 	// Get final object with well known information
-	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, nil, version, state, endpoints)
+	obj, err := capability.NewWellKnownInfoObj(key, mediaTypes, compositeEvidenceMediaTypes, nil, version, state, endpoints)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,

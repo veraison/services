@@ -31,12 +31,37 @@ func (o *Verifier) GetVTSState() (*proto.ServiceState, error) {
 }
 
 func (o *Verifier) IsSupportedMediaType(mt string) (bool, error) {
-	mt, err := api.NormalizeMediaType(mt)
+	dropParams := false
+	mt, err := api.NormalizeMediaType(mt, dropParams)
 	if err != nil {
 		return false, fmt.Errorf("%w: validation failed for %s (%v)", ErrInputParam, mt, err)
 	}
 
 	mts, err := o.VTSClient.GetSupportedVerificationMediaTypes(
+		context.Background(),
+		&emptypb.Empty{},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	for _, v := range mts.MediaTypes {
+		if v == mt {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (o *Verifier) IsSupportedCompositeEvidenceMediaType(mt string) (bool, error) {
+	dropParams := true
+	mt, err := api.NormalizeMediaType(mt, dropParams)
+	if err != nil {
+		return false, fmt.Errorf("%w: validation failed for %s (%v)", ErrInputParam, mt, err)
+	}
+
+	mts, err := o.VTSClient.GetSupportedCompositeEvidenceMediaTypes(
 		context.Background(),
 		&emptypb.Empty{},
 	)
@@ -91,4 +116,50 @@ func (o *Verifier) ProcessEvidence(
 
 func (o *Verifier) GetPublicKey() (*proto.PublicKey, error) {
 	return o.VTSClient.GetEARSigningPublicKey(context.Background(), &emptypb.Empty{})
+}
+
+func (o *Verifier) ProcessCompositeEvidence(
+	tenantID string,
+	nonce []byte,
+	data []byte,
+	mt string,
+) ([]byte, error) {
+	token := &proto.AttestationToken{
+		TenantId:  tenantID,
+		Data:      data,
+		MediaType: mt,
+		Nonce:     nonce,
+	}
+
+	appraisalCtx, err := o.VTSClient.GetCompositeAttestation(
+		context.Background(),
+		token,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return appraisalCtx.Result, nil
+}
+
+func (o *Verifier) SupportedCompositeEvidenceMediaTypes() ([]string, error) {
+	// TODO(tho) remove hardcoded list and uncomment gRPC call once VTS supports it
+	return []string{}, nil
+
+	// return []string{
+	// 	"application/cmw+cbor",
+	// 	"application/cmw+cose",
+	// 	"application/cmw+json",
+	// 	"application/cmw+jws",
+	// }, nil
+
+	// mts, err := o.VTSClient.GetSupportedCompositeEvidenceMediaTypes(
+	// 	context.Background(),
+	// 	&emptypb.Empty{},
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return mts.GetMediaTypes(), nil
 }

@@ -32,18 +32,40 @@ const (
 )
 
 var (
-	testSupportedMediaTypeA = `application/eat_cwt; profile="http://arm.com/psa/2.0.0"`
-	testSupportedMediaTypeB = `application/eat_cwt; profile="PSA_IOT_PROFILE_1"`
-	testSupportedMediaTypeC = `application/psa-attestation-token`
-	testSupportedMediaTypes = []string{
+	testSupportedCompositeMediaTypeA = `application/cmw+json; profile="cmw-collection-v1"`
+	testSupportedCompositeMediaTypeB = `application/cmw+cose; profile="cmw-collection-v2"`
+	testSupportedMediaTypeA          = `application/eat_cwt; profile="http://arm.com/psa/2.0.0"`
+	testSupportedMediaTypeB          = `application/eat_cwt; profile="PSA_IOT_PROFILE_1"`
+	testSupportedMediaTypeC          = `application/psa-attestation-token`
+	testSupportedMediaTypes          = []string{
 		testSupportedMediaTypeA,
 		testSupportedMediaTypeB,
 		testSupportedMediaTypeC,
 	}
 	testSupportedMediaTypesString = strings.Join(testSupportedMediaTypes, ", ")
 	testUnsupportedMediaType      = "application/unknown-evidence-format+json"
-	testJSONBody                  = `{ "k": "v" }`
-	testSession                   = `{
+	testJSONCollectionBody        = `{
+  "__cmwc_t": "tag:ietf.org,2024:X",
+  "bretwaldadom": [
+    "application/eat-ucs+cbor",
+    "oQo"
+  ],
+  "murmurless": {
+    "__cmwc_t": "tag:ietf.org,2024:Y",
+    "polyscopic": [
+      "application/eat-ucs+json",
+      "eyJlYXRfbm9uY2UiOiAuLi59",
+      4
+    ]
+  },
+  "photoelectrograph": [
+    "application/eat-ucs+cbor",
+    "gngY",
+    4
+  ]
+}`
+	testJSONBody = `{ "k": "v" }`
+	testSession  = `{
 	"status": "waiting",
 	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
@@ -85,6 +107,21 @@ var (
 	"evidence": {
 		"type":"application/eat_cwt; profile=\"http://arm.com/psa/2.0.0\"",
 		"value":"eyAiayI6ICJ2IiB9"
+	},
+	"result": "{}"
+}`
+	testCompleteSessionWithCompositeEvidence = `{
+	"status": "complete",
+	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
+	"expiry": "2022-07-13T13:50:24.520525+01:00",
+	"accept": [
+		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
+		"application/eat_cwt;profile=\"PSA_IOT_PROFILE_1\"",
+		"application/psa-attestation-token"
+	],
+	"evidence": {
+		"type":"application/cmw+json; profile=\"cmw-collection-v1\"",
+		"value":"ewogICJfX2Ntd2NfdCI6ICJ0YWc6aWV0Zi5vcmcsMjAyNDpYIiwKICAiYnJldHdhbGRhZG9tIjogWwogICAgImFwcGxpY2F0aW9uL2VhdC11Y3MrY2JvciIsCiAgICAib1FvIgogIF0sCiAgIm11cm11cmxlc3MiOiB7CiAgICAiX19jbXdjX3QiOiAidGFnOmlldGYub3JnLDIwMjQ6WSIsCiAgICAicG9seXNjb3BpYyI6IFsKICAgICAgImFwcGxpY2F0aW9uL2VhdC11Y3MranNvbiIsCiAgICAgICJleUpsWVhSZmJtOXVZMlVpT2lBdUxpNTkiLAogICAgICA0CiAgICBdCiAgfSwKICAicGhvdG9lbGVjdHJvZ3JhcGgiOiBbCiAgICAiYXBwbGljYXRpb24vZWF0LXVjcytjYm9yIiwKICAgICJnbmdZIiwKICAgIDQKICBdCn0="
 	},
 	"result": "{}"
 }`
@@ -222,6 +259,9 @@ func TestHandler_NewChallengeResponse_NoNonceParameters(t *testing.T) {
 	v.EXPECT().
 		SupportedMediaTypes().
 		Return(testSupportedMediaTypes, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
 
 	h := NewHandler(sm, v)
 
@@ -262,6 +302,9 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	v.EXPECT().
 		SupportedMediaTypes().
 		Return(testSupportedMediaTypes, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
 
 	h := NewHandler(sm, v)
 
@@ -308,6 +351,9 @@ func TestHandler_NewChallengeResponse_NonceSizeParameter(t *testing.T) {
 	v.EXPECT().
 		SupportedMediaTypes().
 		Return(testSupportedMediaTypes, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
 
 	h := NewHandler(sm, v)
 
@@ -364,6 +410,9 @@ func TestHandler_NewChallengeResponse_SetSessionFailure(t *testing.T) {
 	v.EXPECT().
 		SupportedMediaTypes().
 		Return(testSupportedMediaTypes, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
 
 	h := NewHandler(sm, v)
 
@@ -445,6 +494,12 @@ func TestHandler_SubmitEvidence_unsupported_evidence_format(t *testing.T) {
 	v.EXPECT().
 		IsSupportedMediaType(testUnsupportedMediaType).
 		Return(false, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testUnsupportedMediaType).
+		Return(false, nil)
 
 	h := NewHandler(sm, v)
 
@@ -486,6 +541,9 @@ func TestHandler_SubmitEvidence_bad_session_id_url(t *testing.T) {
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
 
 	h := NewHandler(sm, v)
 
@@ -531,6 +589,9 @@ func TestHandler_SubmitEvidence_session_not_found(t *testing.T) {
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
 
 	h := NewHandler(sm, v)
 
@@ -613,6 +674,9 @@ func TestHandler_SubmitEvidence_process_evidence_failed(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
+	v.EXPECT().
 		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, errors.New(vmErr))
 
@@ -633,7 +697,7 @@ func TestHandler_SubmitEvidence_process_evidence_failed(t *testing.T) {
 	assert.JSONEq(t, expectedBody, string(body))
 }
 
-func TestHandler_SubmitEvidence_process_ok_sync(t *testing.T) {
+func TestHandler_SubmitEvidence_process_ok_sync(t *testing.T) { // nolint:dupl
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -655,6 +719,9 @@ func TestHandler_SubmitEvidence_process_ok_sync(t *testing.T) {
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
 	v.EXPECT().
 		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return([]byte(testResult), nil)
@@ -698,6 +765,9 @@ func TestHandler_SubmitEvidence_process_ok_async(t *testing.T) {
 	v.EXPECT().
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
 	v.EXPECT().
 		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return(nil, nil)
@@ -949,6 +1019,9 @@ func TestHandler_GetWellKnownVerificationInfo_ok(t *testing.T) {
 		SupportedMediaTypes().
 		Return(supportedMediaTypes, nil)
 	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
+	v.EXPECT().
 		GetVTSState().
 		Return(&testGoodServiceState, nil)
 
@@ -1059,6 +1132,9 @@ func TestHandler_GetWellKnownVerificationInfo_GetVTSState_fail(t *testing.T) {
 		SupportedMediaTypes().
 		Return(supportedMediaTypes, nil)
 	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return([]string{}, nil)
+	v.EXPECT().
 		GetVTSState().
 		Return(nil, errors.New("blah"))
 
@@ -1142,6 +1218,9 @@ func TestHandler_SubmitEvidence_good_CMW(t *testing.T) {
 		IsSupportedMediaType(testSupportedMediaTypeA).
 		Return(true, nil)
 	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedMediaTypeA).
+		Return(false, nil)
+	v.EXPECT().
 		ProcessEvidence(tenantID, testNonce, []byte(testJSONBody), testSupportedMediaTypeA).
 		Return([]byte(testResult), nil)
 
@@ -1196,6 +1275,103 @@ func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
 
 	var body problems.DefaultProblem
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_SubmitEvidence_process_composite_ok_sync(t *testing.T) { // nolint:dupl
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	pathOK := path.Join(testSessionBaseURL, testUUIDString)
+
+	expectedCode := http.StatusOK
+	expectedType := ChallengeResponseSessionMediaType
+	expectedBody := testCompleteSessionWithCompositeEvidence
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+	sm.EXPECT().
+		GetSession(testUUID, tenantID).
+		Return([]byte(testSession), nil)
+	sm.EXPECT().
+		SetSession(testUUID, tenantID, gomock.Any(), ConfigSessionTTL).
+		Return(nil)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		IsSupportedMediaType(testSupportedCompositeMediaTypeA).
+		Return(false, nil)
+	v.EXPECT().
+		IsSupportedCompositeEvidenceMediaType(testSupportedCompositeMediaTypeA).
+		Return(true, nil)
+	v.EXPECT().
+		ProcessCompositeEvidence(tenantID, testNonce, []byte(testJSONCollectionBody), testSupportedCompositeMediaTypeA).
+		Return([]byte(testResult), nil)
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodPost, pathOK, strings.NewReader(testJSONCollectionBody))
+	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
+	req.Header.Set("Content-Type", testSupportedCompositeMediaTypeA)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	body := w.Body.Bytes()
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.JSONEq(t, expectedBody, string(body))
+}
+
+func TestHandler_GetWellKnownVerificationInfo_with_composite_ok(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	supportedMediaTypes := []string{testSupportedMediaTypeA, testSupportedMediaTypeB, testSupportedMediaTypeC}
+	supportedCompositeMediaTypes := []string{testSupportedCompositeMediaTypeA, testSupportedCompositeMediaTypeB}
+
+	sm := mock_deps.NewMockISessionManager(ctrl)
+
+	v := mock_deps.NewMockIVerifier(ctrl)
+	v.EXPECT().
+		GetPublicKey().
+		Return(&testKey, nil)
+	v.EXPECT().
+		SupportedMediaTypes().
+		Return(supportedMediaTypes, nil)
+	v.EXPECT().
+		SupportedCompositeEvidenceMediaTypes().
+		Return(supportedCompositeMediaTypes, nil)
+	v.EXPECT().
+		GetVTSState().
+		Return(&testGoodServiceState, nil)
+
+	expectedCode := http.StatusOK
+	expectedType := capability.WellKnownMediaType
+	expectedBody := capability.WellKnownInfo{
+		MediaTypes:                  supportedMediaTypes,
+		CompositeEvidenceMediaTypes: supportedCompositeMediaTypes,
+		Version:                     testGoodServiceState.ServerVersion,
+		ServiceState:                capability.ServiceStateToAPI(testGoodServiceState.Status.String()),
+		ApiEndpoints:                publicApiMap,
+	}
+
+	h := NewHandler(sm, v)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(http.MethodGet, "/.well-known/veraison/verification", http.NoBody)
+	req.Header.Add("Accept", expectedType)
+
+	NewRouter(h).ServeHTTP(w, req)
+
+	var body capability.WellKnownInfo
+	bytes := w.Body.Bytes()
+	_ = json.Unmarshal(bytes, &body)
 
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
