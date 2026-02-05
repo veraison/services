@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policymanager
 
@@ -48,7 +48,7 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store, Logger: log.Named("test")},
 		Agent: agent}
 
-	polKey := pm.getPolicyKey(appraisal)
+	polKey := pm.getPolicyKey(appraisal.EvidenceContext.TenantId, appraisal.Scheme)
 	assert.Equal(t, "0:TPM_ENACTTRUST:opa", polKey.String())
 
 	pol, err := pm.getPolicy(polKey)
@@ -82,7 +82,7 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 
 	pm := &PolicyManager{Store: &policy.Store{KVStore: store}, Agent: agent}
 
-	polKey := pm.getPolicyKey(appraisal)
+	polKey := pm.getPolicyKey(appraisal.EvidenceContext.TenantId, appraisal.Scheme)
 	assert.Equal(t, "0:TPM_ENACTTRUST:opa", polKey.String())
 
 	_, err = pm.getPolicy(polKey)
@@ -129,6 +129,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
 	ar := ear.NewAttestationResult("test", "test", "test")
 	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar, Scheme: "TPM_ENACTTRUST"}
+	ap.Endorsements = endorsements
 
 	polID := "policy:TPM_ENACTTRUST"
 	tier := ear.TrustTierAffirming
@@ -140,7 +141,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Evaluate(
 			context.TODO(),
 			gomock.Any(),
-			"test",
+			"TPM_ENACTTRUST",
 			gomock.Any(),
 			gomock.Any(),
 			ar.Submods["test"],
@@ -153,7 +154,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Agent:  agent,
 		logger: log.Named("manager"),
 	}
-	err := pm.Evaluate(context.TODO(), "test", ap, endorsements)
+	err := pm.Evaluate(context.TODO(), ap)
 	require.NoError(t, err)
 }
 
@@ -174,17 +175,17 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	}
 	endorsements := []string{"h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="}
 	ar := ear.NewAttestationResult("test", "test", "test")
-	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar, Scheme: "TPM_ENACTTRUST"}
+	ap := &appraisal.Appraisal{EvidenceContext: ec, Result: ar, Scheme: "TPM_ENACTTRUST", Endorsements: endorsements}
 	expectedErr := errors.New("could not evaluate policy: policy returned bad update")
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), "test", gomock.Any(), gomock.Any(), ar.Submods["test"], ec, endorsements).Return(nil, expectedErr)
+	agent.EXPECT().Evaluate(context.TODO(), gomock.Any(), "TPM_ENACTTRUST", gomock.Any(), gomock.Any(), ar.Submods["test"], ec, endorsements).Return(nil, expectedErr)
 	pm := &PolicyManager{
 		Store:  &policy.Store{KVStore: store, Logger: log.Named("store")},
 		Agent:  agent,
 		logger: log.Named("manager"),
 	}
-	err := pm.Evaluate(context.TODO(), "test", ap, endorsements)
+	err := pm.Evaluate(context.TODO(), ap)
 	assert.ErrorIs(t, err, expectedErr)
 
 }

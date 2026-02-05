@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policymanager
 
@@ -32,13 +32,12 @@ func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*Polic
 	return pm, nil
 }
 
+// XXX(tho) revisit coupling between appraisal and policy manager
 func (o *PolicyManager) Evaluate(
 	ctx context.Context,
-	scheme string,
 	appraisal *appraisal.Appraisal,
-	endorsements []string,
 ) error {
-	policyKey := o.getPolicyKey(appraisal)
+	policyKey := o.getPolicyKey(appraisal.EvidenceContext.TenantId, appraisal.Scheme)
 
 	pol, err := o.getPolicy(policyKey)
 	if err != nil {
@@ -58,12 +57,12 @@ func (o *PolicyManager) Evaluate(
 		evaluated, err := o.Agent.Evaluate(
 			ctx,
 			appraisalContext,
-			scheme,
+			appraisal.Scheme,
 			pol,
 			submod,
 			submodAppraisal,
 			appraisal.EvidenceContext,
-			endorsements,
+			appraisal.Endorsements,
 		)
 		if err != nil {
 			return err
@@ -77,10 +76,10 @@ func (o *PolicyManager) Evaluate(
 	return nil
 }
 
-func (o *PolicyManager) getPolicyKey(a *appraisal.Appraisal) policy.PolicyKey {
+func (o *PolicyManager) getPolicyKey(tenantID string, scheme string) policy.PolicyKey {
 	return policy.PolicyKey{
-		TenantId: a.EvidenceContext.TenantId,
-		Scheme:   a.Scheme,
+		TenantId: tenantID,
+		Scheme:   scheme,
 		Name:     o.Agent.GetBackendName(),
 	}
 }
