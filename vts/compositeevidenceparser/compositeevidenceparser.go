@@ -14,7 +14,10 @@ var mtToCeParser = map[string]ICompositeEvidenceParser{
 	"application/cmw-collection+json": &cmwParser{},
 }
 
-func GetParserFromMediaType(mt string) (ICompositeEvidenceParser, error) {
+var supportedParserNames = []string{"cmw_parser"}
+
+// GetCEParserFromMediaType rturns a valid Composite Evidence Parser from Media Type
+func GetCEParserFromMediaType(mt string) (ICompositeEvidenceParser, error) {
 	// Check if its a valid mediaType
 	if _, _, err := mime.ParseMediaType(mt); err != nil {
 		return nil, fmt.Errorf("bad media type: %w", err)
@@ -23,6 +26,11 @@ func GetParserFromMediaType(mt string) (ICompositeEvidenceParser, error) {
 	case "application/cmw-collection+cbor", "application/cmw-collection+json":
 		return mtToCeParser[mt], nil
 	default:
-		return nil, fmt.Errorf("unsupported media type:%s", mt)
+		return nil, fmt.Errorf("unsupported media type: %s", mt)
 	}
+}
+
+// GetSupportedParsers returns the list of supported Parser names
+func GetSupportedParsers() []string {
+	return supportedParserNames
 }
