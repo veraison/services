@@ -181,6 +181,12 @@ func (o *GRPC) Init(
 		opts = append(opts, grpc.Creds(creds))
 	}
 
+	if cfg.DispatchTable != "" {
+		if err := LoadDispatchTable(cfg.DispatchTable); err != nil {
+			return err
+		}
+	}
+
 	server := grpc.NewServer(opts...)
 	proto.RegisterVTSServer(server, o)
 
