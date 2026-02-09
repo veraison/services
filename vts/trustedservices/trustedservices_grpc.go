@@ -55,6 +55,7 @@ type GRPCConfig struct {
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
 	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
+	DispatchTable string   `mapstructure:"dispatch-table" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -88,6 +89,7 @@ func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
 	evidencePluginManager plugin.IManager[handler.IEvidenceHandler],
 	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
+	leadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler],
 	storePluginManager plugin.IManager[handler.IStoreHandler],
 	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
 	policyManager *policymanager.PolicyManager,
@@ -96,16 +98,17 @@ func NewGRPC(
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:                  taStore,
-		EnStore:                  enStore,
-		EvPluginManager:          evidencePluginManager,
-		EndPluginManager:         endorsementPluginManager,
-		StorePluginManager:       storePluginManager,
-		CoservProxyPluginManager: coservProxyPluginManager,
-		PolicyManager:            policyManager,
-		EarSigner:                earSigner,
-		CoservSigner:             coservSigner,
-		logger:                   logger,
+		TaStore:                   taStore,
+		EnStore:                   enStore,
+		EvPluginManager:           evidencePluginManager,
+		EndPluginManager:          endorsementPluginManager,
+		LeadVerifierPluginManager: leadVerifierPluginManager,
+		StorePluginManager:        storePluginManager,
+		CoservProxyPluginManager:  coservProxyPluginManager,
+		PolicyManager:             policyManager,
+		EarSigner:                 earSigner,
+		CoservSigner:              coservSigner,
+		logger:                    logger,
 	}
 }
 
