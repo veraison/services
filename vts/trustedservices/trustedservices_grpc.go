@@ -31,6 +31,7 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/compositeevidenceparser"
 	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
@@ -412,27 +413,68 @@ func (o *GRPC) GetCompositeAttestation(
 	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	// TODO(tho)
-	//
-	//	lead_verifier(CE, ce-type, n) -> CAR {
-	//		// lookup CE parser
-	//		parser = ce_parsers_table[ce-type]
-	//
-	//		// tokenise the composite evidence
-	//		{CE_i, ce_i-type, label_i} = parser(CE)
-	//
-	//		// walk the items in the composite evidence
-	//		foreach c, t, l in {CE_i, ce_i-type, label_i}:
-	//			client = dispatch_table[ce_i-type]
-	//			if !client:
-	//				EAR[label_i] = { raw-evidence: c, status: unknown }
-	//			else:
-	//				EAR[label_i] = client(c, n)
-	//
-	//		CAR = make_car(EAR, lead_verifier_signing_key)
-	//
-	//		return CAR
-	//	}
+	/****************/
+	// For Master Plugin at the start to track the context
+	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
+	if err != nil {
+		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+		appraisal.AddPolicyClaim("problem", "could not resolve media type")
+		return o.finalize(appraisal, err)
+	}
+
+	scheme := handler.GetAttestationScheme()
+	stHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	if err != nil {
+		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+		appraisal.AddPolicyClaim("problem", "could not resolve scheme name")
+		return o.finalize(appraisal, err)
+	}
+
+	masterAppraisal, err := o.initEvidenceContext(stHandler, token)
+	if err != nil {
+		return o.finalize(masterAppraisal, err)
+	}
+
+	/******************/
+	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fecth parser from received MediaType: %s, %w", token.MediaType, err)
+	}
+
+	evs, err := p.Parse(token.Data)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse Composite Evidence for the MediaType: %s, %w", token.MediaType, err)
+	}
+
+	for i, ev := range evs {
+		var clientCfg []byte
+		mt := ev.GetMediaType()
+		client, err := o.LeadVerifierPluginManager.LookupByMediaType(mt)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get component verifier client for component evidence at index: %d, media type: %s, %w", i, mt, err)
+		}
+
+		// TO DO Check if this is ear.Appraisal or ear.AttestationResults
+		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, clientCfg)
+
+		if err != nil {
+			appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
+			appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+			appraisal.AddPolicyClaim("problem", "could not appraise component evidence")
+			aggregatePartialAttestationResults(masterAppraisal.Result, appraisal.Result)
+			return o.finalize(appraisal, err)
+		}
+		var compAR *ear.AttestationResult = &ear.AttestationResult{}
+		if err := compAR.UnmarshalJSON(ar); err != nil {
+			// finalise appraisal
+		}
+		masterAppraisal.Result, err = aggregatePartialAttestationResults(masterAppraisal.Result, compAR)
+		if err != nil {
+			//finalise appraisal
+		}
+	}
 
 	return nil, errors.New("not implemented")
 }
@@ -946,4 +988,10 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 	}
 
 	return allPEM.Bytes(), nil
+}
+
+// TO DO THis Function should be in EAR Library
+func aggregatePartialAttestationResults(overall *ear.AttestationResult, apprInput *ear.AttestationResult) (appraisal *ear.AttestationResult, err error) {
+
+	return nil, nil
 }

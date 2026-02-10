@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/veraison/services/handler"
 )
 
 type clientDetails struct {
@@ -31,4 +33,9 @@ func LoadDispatchTable(fp string) error {
 		return fmt.Errorf("error unmarshalling dispatch table: %w", err)
 	}
 	return nil
+}
+
+func GetComponentVerifierFromMediaType(mt string) (handler.IComponentVerifierClientHandler, error) {
+
+	return nil, nil
 }
