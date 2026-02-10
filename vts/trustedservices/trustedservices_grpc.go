@@ -78,10 +78,10 @@ type GRPC struct {
 	CoservSigner              coservsigner.ICoservSigner
 	CACertsPEM                [][]byte
 
-	Server *grpc.Server
-	Socket net.Listener
-
-	logger *zap.SugaredLogger
+	Server     *grpc.Server
+	Socket     net.Listener
+	Dispatcher *Dispatcher
+	logger     *zap.SugaredLogger
 
 	proto.UnimplementedVTSServer
 }
@@ -96,6 +96,7 @@ func NewGRPC(
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
+	lvDispatcher *Dispatcher,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
@@ -183,7 +184,8 @@ func (o *GRPC) Init(
 	}
 
 	if cfg.DispatchTable != "" {
-		if err := LoadDispatchTable(cfg.DispatchTable); err != nil {
+		o.Dispatcher, err = NewDispatcher(cfg.DispatchTable)
+		if err != nil {
 			return err
 		}
 	}
@@ -437,7 +439,6 @@ func (o *GRPC) GetCompositeAttestation(
 		return o.finalize(masterAppraisal, err)
 	}
 
-	/******************/
 	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fecth parser from received MediaType: %s, %w", token.MediaType, err)
@@ -455,6 +456,10 @@ func (o *GRPC) GetCompositeAttestation(
 		if err != nil {
 			return nil, fmt.Errorf("unable to get component verifier client for component evidence at index: %d, media type: %s, %w", i, mt, err)
 		}
+
+		scheme := client.GetAttestationScheme()
+		clientCfg, err = o.Dispatcher.GetClientConfigFromClientName(scheme)
+		// Check Error
 
 		// TO DO Check if this is ear.Appraisal or ear.AttestationResults
 		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, clientCfg)
