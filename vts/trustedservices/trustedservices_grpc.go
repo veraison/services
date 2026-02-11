@@ -90,9 +90,9 @@ func NewGRPC(
 	taStore, enStore kvstore.IKVStore,
 	evidencePluginManager plugin.IManager[handler.IEvidenceHandler],
 	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
-	leadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler],
 	storePluginManager plugin.IManager[handler.IStoreHandler],
 	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
+	leadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
@@ -104,9 +104,9 @@ func NewGRPC(
 		EnStore:                   enStore,
 		EvPluginManager:           evidencePluginManager,
 		EndPluginManager:          endorsementPluginManager,
-		LeadVerifierPluginManager: leadVerifierPluginManager,
 		StorePluginManager:        storePluginManager,
 		CoservProxyPluginManager:  coservProxyPluginManager,
+		LeadVerifierPluginManager: leadVerifierPluginManager,
 		PolicyManager:             policyManager,
 		EarSigner:                 earSigner,
 		CoservSigner:              coservSigner,
@@ -129,6 +129,7 @@ func (o *GRPC) Init(
 	endorsementManager plugin.IManager[handler.IEndorsementHandler],
 	storeManager plugin.IManager[handler.IStoreHandler],
 	coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
+	leadVerifierProxyManager plugin.IManager[handler.IComponentVerifierClientHandler],
 ) error {
 	var err error
 
@@ -146,6 +147,7 @@ func (o *GRPC) Init(
 	o.EndPluginManager = endorsementManager
 	o.StorePluginManager = storeManager
 	o.CoservProxyPluginManager = coservProxyManager
+	o.LeadVerifierPluginManager = leadVerifierProxyManager
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress

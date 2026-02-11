@@ -16,6 +16,7 @@ type ITrustedServices interface {
 		endorsementManager plugin.IManager[handler.IEndorsementHandler],
 		storeManager plugin.IManager[handler.IStoreHandler],
 		coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
+		lvManager plugin.IManager[handler.IComponentVerifierClientHandler],
 	) error
 	Close() error
 	Run() error
