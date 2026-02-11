@@ -450,19 +450,22 @@ func (o *GRPC) GetCompositeAttestation(
 	}
 
 	for i, ev := range evs {
-		var clientCfg []byte
 		mt := ev.GetMediaType()
-		client, err := o.LeadVerifierPluginManager.LookupByMediaType(mt)
+		clientName, err := o.Dispatcher.LookupClientNameFromMediaType(mt)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get component verifier client for component evidence at index: %d, media type: %s, %w", i, mt, err)
+			return nil, fmt.Errorf("unable to get component verifier client name at index: %d, media type: %s, %w", i, mt, err)
+		}
+		cfg, err := o.Dispatcher.LookupClientCfgFromMediaType(mt)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get component verifier client config component evidence at index: %d, media type: %s, %w", i, mt, err)
 		}
 
-		scheme := client.GetAttestationScheme()
-		clientCfg, err = o.Dispatcher.GetClientConfigFromClientName(scheme)
-		// Check Error
+		client, err := o.LeadVerifierPluginManager.LookupByName(clientName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to lookup client for: %s, at index: %d, for media type: %s, %w", clientName, i, mt, err)
+		}
 
-		// TO DO Check if this is ear.Appraisal or ear.AttestationResults
-		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, clientCfg)
+		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, cfg)
 
 		if err != nil {
 			appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
