@@ -50,6 +50,7 @@ type IHandler interface {
 type Handler struct {
 	SessionManager sessionmanager.ISessionManager
 	Verifier       verifier.IVerifier
+	InstallInfo    *InstallationInfo
 
 	logger *zap.SugaredLogger
 }

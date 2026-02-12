@@ -171,6 +171,9 @@ function create_deployment() {
 
 	_deploy_env
 
+	# Generate installation metadata
+	_generate_installation_metadata
+
 	if [[ $_force_systemd == true ]]; then
 		_deploy_systemd_units
 	elif [[ $_force_launchd == true ]]; then
@@ -463,6 +466,27 @@ function _deploy_launchd_units() {
 		cat ${SRC_LAUNCHD_DIR}/com.veraison-project.${service}.plist.template | envsubst > \
 			${DEPLOYMENT_LAUNCHD_DIR}/com.veraison-project.${service}.plist
 	done
+}
+
+function _generate_installation_metadata() {
+	local metadata_file="${DEPLOYMENT_DEST}/installation.json"
+	local version=$(cd ${ROOT_DIR} && git describe --tags --always 2>/dev/null || echo "unknown")
+	local install_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+	
+	cat > "${metadata_file}" <<EOF
+{
+  "version": "${version}",
+  "deployment_method": "native",
+  "install_time": "${install_time}",
+  "metadata": {
+    "deployment_dest": "${DEPLOYMENT_DEST}",
+    "platform": "$(uname -s)"
+  }
+}
+EOF
+
+	chmod 644 "${metadata_file}"
+	echo "Installation metadata written to ${metadata_file}"
 }
 
 
