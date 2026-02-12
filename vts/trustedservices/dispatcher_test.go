@@ -16,7 +16,7 @@ func TestNewDispatcher_ok(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestLookupClientNameFromMediaType_ok(t *testing.T) {
+func TestLookupClientNameFromMediaType_OK(t *testing.T) {
 	// Initial condition
 	fp := "testdata/dispatch-table.json"
 	d, err := NewDispatcher(fp)
@@ -47,7 +47,7 @@ func TestLookupClientNameFromMediaType_NOK(t *testing.T) {
 	assert.EqualError(t, err, expError)
 }
 
-func TestLookupClientCfgFromMediaType_ok1(t *testing.T) {
+func TestLookupClientCfgFromMediaType_OK(t *testing.T) {
 	var cfg ClientConfig
 	// Initial condition
 	fp := "testdata/dispatch-table.json"
@@ -66,4 +66,22 @@ func TestLookupClientCfgFromMediaType_ok1(t *testing.T) {
 		assert.Equal(t, cert, cfg.CACerts[i])
 	}
 	assert.Equal(t, cfg.Insecure, exp.Insecure)
+}
+
+func TestLookupClientCfgFromMediaType_NOK(t *testing.T) {
+	// Initial condition
+	fp := "testdata/dispatch-table.json"
+	d, err := NewDispatcher(fp)
+	require.NoError(t, err)
+	expError := "unable to lookup client config for media type: application/vnd.veraison.tsm-report+cbor; provider=remote"
+	mt := "application/vnd.veraison.tsm-report+cbor; provider=remote"
+	_, err = d.LookupClientCfgFromMediaType(mt)
+	require.NotNil(t, err)
+	assert.EqualError(t, err, expError)
+
+	d = &Dispatcher{}
+	_, err = d.LookupClientCfgFromMediaType(mt)
+	expError = "no client data to look for"
+	require.NotNil(t, err)
+	assert.EqualError(t, err, expError)
 }
