@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+// TO DO The structure ClientData (Line 13 to Line 19) should be moved to a common location,
+// where it should be accesible in code here as well, as Clients, decoding the cfgData
 type ClientData struct {
 	Type     string   `json:"type"`
 	Url      string   `json:"url"`
@@ -16,10 +18,13 @@ type ClientData struct {
 	CaCerts  []string `json:"ca-certs"`
 	Hints    []string `json:"hints"`
 }
+
+// Representation of Client Configuration as read from the Dispatch File
 type CfgData struct {
 	ClientInfo map[string]ClientData
 }
 
+// Per Client Configuration data - to be passed to the Client Plugin Handler
 type ClientConfig struct {
 	DiscoveryURL string   `json:"url"`
 	CACerts      []string `json:"ca_certs,omitempty"`
@@ -27,19 +32,19 @@ type ClientConfig struct {
 	crURL        string   // the challenge-response URL is discovered dynamically
 }
 
-type ClientDetails struct {
+type ClientInfo struct {
 	Name string       // name of the Client, mapping to Scheme Name, Type in ClientData
 	cfg  ClientConfig // Client Configuration
 }
 
-// Dispatcher stores, Client Details per Component MediaTypes
+// Dispatcher stores, Client Details per supported component MediaTypes
 // This enables efficient lookup
 type Dispatcher struct {
-	Client map[string]ClientDetails
+	Client map[string]ClientInfo
 }
 
 func NewDispatcher(fp string) (*Dispatcher, error) {
-	dt := &Dispatcher{Client: make(map[string]ClientDetails)}
+	dt := &Dispatcher{Client: make(map[string]ClientInfo)}
 
 	cd, err := loadcfgData(fp)
 	if err != nil {
@@ -65,6 +70,9 @@ func loadcfgData(fp string) (*CfgData, error) {
 	for k, val := range jmap {
 		var cd ClientData
 		err = json.Unmarshal(val, &cd)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding client data for client: %s, from file %s: %w", k, fp, err)
+		}
 		cfg.ClientInfo[k] = cd
 		if len(cd.Hints) == 0 {
 			return nil, errors.New("no Hints provided")
@@ -87,13 +95,15 @@ func (d *Dispatcher) createDispatcher(cd *CfgData) error {
 }
 
 func (d *Dispatcher) createTableEntriesfromCfgData(data *ClientData) error {
-	mts := data.Hints
-	var cl ClientDetails
+	var cl ClientInfo
 	cl.Name = data.Type
 	cl.cfg.DiscoveryURL = data.Url
 	cl.cfg.CACerts = make([]string, len(data.CaCerts))
+	cl.cfg.crURL = data.Url
+	cl.cfg.Insecure = data.Insecure
 	copy(cl.cfg.CACerts, data.CaCerts)
-
+	// Hints is a list of MediaTypes supported by the individual client
+	mts := data.Hints
 	for _, mt := range mts {
 		d.Client[mt] = cl
 	}
