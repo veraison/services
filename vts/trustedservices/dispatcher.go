@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -13,8 +13,8 @@ type ClientData struct {
 	Type     string   `json:"type"`
 	Url      string   `json:"url"`
 	Insecure bool     `json:"in-secure"`
-	CaCerts  []string `json:"caCerts"`
-	Hints    []string `json:"hint"`
+	CaCerts  []string `json:"ca-certs"`
+	Hints    []string `json:"hints"`
 }
 type CfgData struct {
 	ClientInfo map[string]ClientData
@@ -66,7 +66,11 @@ func loadcfgData(fp string) (*CfgData, error) {
 		var cd ClientData
 		err = json.Unmarshal(val, &cd)
 		cfg.ClientInfo[k] = cd
+		if len(cd.Hints) == 0 {
+			return nil, errors.New("no Hints provided")
+		}
 	}
+
 	return cfg, nil
 }
 
@@ -89,6 +93,7 @@ func (d *Dispatcher) createTableEntriesfromCfgData(data *ClientData) error {
 	cl.cfg.DiscoveryURL = data.Url
 	cl.cfg.CACerts = make([]string, len(data.CaCerts))
 	copy(cl.cfg.CACerts, data.CaCerts)
+
 	for _, mt := range mts {
 		d.Client[mt] = cl
 	}

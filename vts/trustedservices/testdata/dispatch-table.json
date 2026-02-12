@@ -1,0 +1,16 @@
+{
+  "vrsn-local": {
+    "type": "veraison-client", 
+    "url": "https://localhost:8443",
+    "insecure": true,
+    "ca-certs": [ "../../../deployments/docker/src/certs/rootCA.crt" ],
+    "hints": [ "application/vnd.veraison.tsm-report+cbor; provider=arm_cca",  "application/vnd.veraison.tsm-report+cbor; provider=arm_psa" ]  
+  },
+    "vrsn-testl": {
+    "type": "veraison-remote", 
+    "url": "806.442.98.1:8443",
+    "insecure": true,
+    "ca-certs": [ "../../../deployments/docker/src/certs/rootCA.crt" ],
+    "hints": [ "application/vnd.veraison.tsm-report+cbor; provider=sev-snp", "application/vnd.veraison.tsm-report+cbor; provider=intel-tdx" ]  
+  }
+}
