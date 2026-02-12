@@ -14,7 +14,7 @@ import (
 type ClientData struct {
 	Type     string   `json:"type"`
 	Url      string   `json:"url"`
-	Insecure bool     `json:"in-secure"`
+	Insecure bool     `json:"insecure"`
 	CaCerts  []string `json:"ca-certs"`
 	Hints    []string `json:"hints"`
 }
@@ -99,7 +99,7 @@ func (d *Dispatcher) createTableEntriesfromCfgData(data *ClientData) error {
 	cl.Name = data.Type
 	cl.cfg.DiscoveryURL = data.Url
 	cl.cfg.CACerts = make([]string, len(data.CaCerts))
-	cl.cfg.crURL = data.Url
+	cl.cfg.crURL = ""
 	cl.cfg.Insecure = data.Insecure
 	copy(cl.cfg.CACerts, data.CaCerts)
 	// Hints is a list of MediaTypes supported by the individual client
@@ -112,7 +112,7 @@ func (d *Dispatcher) createTableEntriesfromCfgData(data *ClientData) error {
 
 func (d *Dispatcher) LookupClientNameFromMediaType(mt string) (name string, err error) {
 	if d.Client == nil {
-		return "", errors.New("no client information to look for")
+		return "", errors.New("no client data to look for")
 	}
 	data, ok := d.Client[mt]
 	if !ok {
@@ -124,7 +124,7 @@ func (d *Dispatcher) LookupClientNameFromMediaType(mt string) (name string, err 
 
 func (d *Dispatcher) LookupClientCfgFromMediaType(mt string) ([]byte, error) {
 	if d.Client == nil {
-		return nil, errors.New("no client information to look for")
+		return nil, errors.New("no client data to look for")
 	}
 	data, ok := d.Client[mt]
 	if !ok {
@@ -137,15 +137,4 @@ func (d *Dispatcher) LookupClientCfgFromMediaType(mt string) ([]byte, error) {
 		return nil, fmt.Errorf("unable to marshal client configuration %w", err)
 	}
 	return jc, nil
-}
-
-func (d *CfgData) lookupClientInfoFromMediaType(mt string) (*ClientData, error) {
-	for _, val := range d.ClientInfo {
-		for _, media := range val.Hints {
-			if mt == media {
-				return &val, nil
-			}
-		}
-	}
-	return nil, fmt.Errorf("unable to locate client information for media type: %s", mt)
 }
