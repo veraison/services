@@ -417,7 +417,6 @@ func (o *GRPC) GetCompositeAttestation(
 	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	/****************/
 	// For Master Plugin at the start to track the context
 	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
@@ -476,13 +475,13 @@ func (o *GRPC) GetCompositeAttestation(
 			aggregatePartialAttestationResults(masterAppraisal.Result, appraisal.Result)
 			return o.finalize(appraisal, err)
 		}
-		var compAR *ear.AttestationResult = &ear.AttestationResult{}
-		if err := compAR.UnmarshalJSON(ar); err != nil {
-			// finalise appraisal
+		var apprUnit *ear.AttestationResult = &ear.AttestationResult{}
+		if err := apprUnit.UnmarshalJSON(ar); err != nil {
+			return o.finalize(masterAppraisal, err)
 		}
-		masterAppraisal.Result, err = aggregatePartialAttestationResults(masterAppraisal.Result, compAR)
+		masterAppraisal.Result, err = aggregatePartialAttestationResults(masterAppraisal.Result, apprUnit)
 		if err != nil {
-			//finalise appraisal
+			return o.finalize(masterAppraisal, err)
 		}
 	}
 
@@ -1001,7 +1000,15 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 }
 
 // TO DO THis Function should be in EAR Library
-func aggregatePartialAttestationResults(overall *ear.AttestationResult, apprInput *ear.AttestationResult) (appraisal *ear.AttestationResult, err error) {
+func aggregatePartialAttestationResults(aggregate *ear.AttestationResult, apprUnit *ear.AttestationResult) (overall *ear.AttestationResult, err error) {
 
-	return nil, nil
+	// In the first iteration, we just loop over the individual subMods for Appraisal and append it into overall
+	for name, mod := range apprUnit.Submods {
+		_, ok := aggregate.Submods[name]
+		if ok {
+			return aggregate, fmt.Errorf("component appraisal already exists in the overall appraisal for the submod: %s", name)
+		}
+		aggregate.Submods[name] = mod
+	}
+	return overall, nil
 }
