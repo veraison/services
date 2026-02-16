@@ -467,14 +467,10 @@ func (o *GRPC) GetCompositeAttestation(
 		}
 
 		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, cfg)
-
 		if err != nil {
-			appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
-			appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
-			appraisal.AddPolicyClaim("problem", "could not appraise component evidence")
-			aggregatePartialAttestationResults(masterAppraisal.Result, appraisal.Result)
-			return o.finalize(appraisal, err)
+			return o.finalize(masterAppraisal, err)
 		}
+
 		var apprUnit *ear.AttestationResult = &ear.AttestationResult{}
 		if err := apprUnit.UnmarshalJSON(ar); err != nil {
 			return o.finalize(masterAppraisal, err)
