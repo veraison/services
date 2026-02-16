@@ -9,8 +9,6 @@ import (
 	"os"
 )
 
-// TO DO The structure ClientData (Line 13 to Line 19) should be moved to a common location,
-// where it should be accesible in code here as well, as Clients, decoding the cfgData
 type ClientData struct {
 	Type     string   `json:"type"`
 	Url      string   `json:"url"`
@@ -25,11 +23,14 @@ type CfgData struct {
 }
 
 // Per Client Configuration data - to be passed to the Client Plugin Handler
+// TO DO The structure ClientData (Line 13 to Line 19) should be moved to a common location,
+// where it should be accesible in code here as well, as Clients, decoding the cfgData
+
 type ClientConfig struct {
 	DiscoveryURL string   `json:"url"`
 	CACerts      []string `json:"ca_certs,omitempty"`
 	Insecure     bool     `json:"insecure,omitempty"`
-	crURL        string   // the challenge-response URL is discovered dynamically
+	crURL        string
 }
 
 type ClientInfo struct {
@@ -95,13 +96,18 @@ func (d *Dispatcher) createDispatcher(cd *CfgData) error {
 }
 
 func (d *Dispatcher) createTableEntriesfromCfgData(data *ClientData) error {
-	var cl ClientInfo
-	cl.Name = data.Type
-	cl.cfg.DiscoveryURL = data.Url
-	cl.cfg.CACerts = make([]string, len(data.CaCerts))
-	cl.cfg.crURL = ""
-	cl.cfg.Insecure = data.Insecure
-	copy(cl.cfg.CACerts, data.CaCerts)
+	cfg := ClientConfig{
+		DiscoveryURL: data.Url,
+		crURL:        "",
+		CACerts:      make([]string, len(data.CaCerts)),
+		Insecure:     data.Insecure,
+	}
+	copy(cfg.CACerts, data.CaCerts)
+	cl := ClientInfo{
+		Name: data.Type,
+		cfg:  cfg,
+	}
+
 	// Hints is a list of MediaTypes supported by the individual client
 	mts := data.Hints
 	for _, mt := range mts {
