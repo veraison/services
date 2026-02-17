@@ -35,18 +35,6 @@ func validateTrustAnchorEnvironment(env *comid.Environment) error {
 }
 
 func validateReferenceValueEnvironment(env *comid.Environment) error {
-	if env.Class == nil {
-		return errors.New("missing class")
-	}
-
-	if env.Class.ClassID == nil {
-		return errors.New("missing class ID")
-	}
-
-	if env.Class.ClassID.Type() != comid.OIDType {
-		return fmt.Errorf("class ID: expected OID, got %s", env.Class.ClassID.Type())
-	}
-
 	if env.Instance ==  nil {
 		return errors.New("missing instance")
 	}

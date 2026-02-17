@@ -123,21 +123,30 @@ func (o *Implementation) GetReferenceValueIDs(
 	trustAnchors []*comid.KeyTriple,
 	claims map[string]any,
 ) ([]*comid.Environment, error) {
-	evCorim, err := transformClaimsToCorim(claims)
+	evMeasurements, err := transformClaimsToMeasurementsMap(claims)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
 
-	var ret []*comid.Environment // nolint:prealloc
-	rvIter, iterErr := evCorim.IterRefVals()
-	for refVal := range rvIter {
-		ret = append(ret, &refVal.Environment)
-	}
-	if err := iterErr(); err != nil {
-		return nil, handler.BadEvidence(err)
+	mea, ok := evMeasurements[mKeyMeasurement]
+	if !ok {
+		return nil, handler.BadEvidence("could not find measurement (%d) in evidence", mKeyMeasurement)
 	}
 
-	return ret, nil
+	if mea.Val.Digests == nil {
+		return nil, errors.New("no Digests in evidence Measurement")
+	}
+
+	instance, err := comid.NewBytesInstance((*mea.Val.Digests)[0].HashValue)
+	if err != nil {
+		return nil, err
+	}
+
+	return []*comid.Environment{
+		{
+			Instance: instance,
+		},
+	}, err
 }
 
 func (o *Implementation) ExtractClaims(
