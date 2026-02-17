@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -70,7 +70,7 @@ type GRPC struct {
 	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
 	StorePluginManager       plugin.IManager[handler.IStoreHandler]
 	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
-	PolicyManager            *policymanager.PolicyManager
+	PolicyManager            policymanager.IPolicyManager
 	EarSigner                earsigner.IEarSigner
 	CoservSigner             coservsigner.ICoservSigner
 	CACertsPEM               [][]byte
@@ -89,7 +89,7 @@ func NewGRPC(
 	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
 	storePluginManager plugin.IManager[handler.IStoreHandler],
 	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
-	policyManager *policymanager.PolicyManager,
+	policyManager policymanager.IPolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
 	logger *zap.SugaredLogger,
@@ -395,106 +395,159 @@ func (o *GRPC) addTrustAnchor(
 	return nil
 }
 
-func (o *GRPC) GetAttestation(
-	ctx context.Context,
+func (o *GRPC) getAttestation(
 	token *proto.AttestationToken,
-) (*proto.AppraisalContext, error) {
-	o.logger.Infow("get attestation", "media-type", token.MediaType,
-		"tenant-id", token.TenantId)
+) (*appraisal.Appraisal, error) {
+	o.logger.Infow("get attestation", "media-type", token.MediaType, "tenant-id", token.TenantId)
 
-	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
+	// lookup evidence handler from media type
+	evidenceHandler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
 	if err != nil {
+		// internal error
 		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
-		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
+		appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
 		appraisal.AddPolicyClaim("problem", "could not resolve media type")
-		return o.finalize(appraisal, err)
+
+		return appraisal, err
 	}
 
-	scheme := handler.GetAttestationScheme()
-	stHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	attestationScheme := evidenceHandler.GetAttestationScheme()
+
+	// lookup store handler from attestation scheme
+	storeHandler, err := o.StorePluginManager.LookupByAttestationScheme(attestationScheme)
 	if err != nil {
+		// internal error
 		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
-		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
-		appraisal.AddPolicyClaim("problem", "could not resolve scheme name")
-		return o.finalize(appraisal, err)
+		appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
+		appraisal.AddPolicyClaim("problem", fmt.Sprintf("could not resolve scheme name %q", attestationScheme))
+
+		return appraisal, err
 	}
 
-	appraisal, err := o.initEvidenceContext(stHandler, token)
+	// initialize appraisal context
+	appraisal := appraisal.New(token.TenantId, token.Nonce, attestationScheme)
+
+	// get trust anchor IDs for this evidence
+	taIDs, err := storeHandler.GetTrustAnchorIDs(token)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		// XXX(tho) - this calling convention is only documented for
+		// IEvidenceHandler. If this is expected to be the convention for all
+		// kinds of handlers, it should be made explicit.
+		if errors.Is(err, handlermod.BadEvidenceError{}) {
+			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+			appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
+		} else {
+			appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
+			appraisal.AddPolicyClaim("problem", fmt.Sprintf("loading TA identifiers: %v", err))
+		}
+
+		return appraisal, err
 	}
 
-	tas, err := o.getTrustAnchors(appraisal.EvidenceContext.TrustAnchorIds)
+	// lookup trust anchors from store
+	tas, err := o.getTrustAnchors(taIDs)
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
-			err = handlermod.BadEvidence("no trust anchor for %s",
-				appraisal.EvidenceContext.TrustAnchorIds)
+			err = handlermod.BadEvidence("no trust anchor for %s", taIDs)
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
+		} else {
+			appraisal.SetAllClaims(ear.VerifierMalfunctionClaim)
+			appraisal.AddPolicyClaim("problem", err.Error())
 		}
-		return o.finalize(appraisal, err)
+
+		return appraisal, err
 	}
 
-	claims, err := handler.ExtractClaims(token, tas)
+	// update appraisal context with trust anchor IDs
+	appraisal.SetTrustAnchorIDs(taIDs)
+
+	// get the claims-set from the evidence
+	claims, err := evidenceHandler.ExtractClaims(token, tas)
 	if err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.AddPolicyClaim("problem", err.Error())
 		}
-		return o.finalize(appraisal, err)
+		// XXX(tho) early returns should set an appropriate EAR failure claim
+		// XXX(tho) else branch: consider setting a policy claim here
+		return appraisal, err
 	}
 
-	referenceIDs, err := stHandler.GetRefValueIDs(token.TenantId, tas, claims)
+	referenceIDs, err := storeHandler.GetRefValueIDs(token.TenantId, tas, claims)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		// XXX(tho) early returns should set an appropriate EAR failure claim
+		// XXX(tho) else branch: consider setting a policy claim here
+		return appraisal, err
 	}
 
-	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(claims)
+	appraisal.SetReferenceIDs(referenceIDs)
+
+	claimsSet, err := structpb.NewStruct(claims)
 	if err != nil {
-		err = fmt.Errorf("unserializable claims in result: %w", err)
-		return o.finalize(appraisal, err)
+		// XXX(tho) early returns should set an appropriate EAR failure claim
+		return appraisal, fmt.Errorf("unserializable claims in result: %w", err)
 	}
 
-	appraisal.EvidenceContext.ReferenceIds = referenceIDs
+	appraisal.SetEvidenceClaims(claimsSet)
 
 	o.logger.Debugw("constructed evidence context",
-		"software-id", appraisal.EvidenceContext.ReferenceIds,
-		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorIds)
+		"software-id", appraisal.EvidenceContext.GetReferenceIds(),
+		"trust-anchor-id", appraisal.EvidenceContext.GetTrustAnchorIds())
 
-	var multEndorsements []string
-	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
+	var endorsements []string
 
-		endorsements, err := o.EnStore.Get(refvalID)
+	for _, refvalID := range appraisal.GetReferenceIDs() {
+		endorsement, err := o.EnStore.Get(refvalID)
 		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-			return o.finalize(appraisal, err)
+			// XXX(tho) early returns should set an appropriate EAR failure claim
+			return appraisal, err
 		}
 
-		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
-		multEndorsements = append(multEndorsements, endorsements...)
+		o.logger.Debugw("obtained endorsements", "endorsements", endorsement)
+		endorsements = append(endorsements, endorsement...)
 	}
 
-	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
+	appraisal.SetEndorsements(endorsements)
+
+	if err = evidenceHandler.ValidateEvidenceIntegrity(token, tas, endorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
-			var badErr handlermod.BadEvidenceError
+			var badEvidenceErr handlermod.BadEvidenceError
 			claimStr := "integrity validation failed"
-			ok := errors.As(err, &badErr)
-			if ok {
-				claimStr += fmt.Sprintf(": %s", badErr.ToString())
+			if ok := errors.As(err, &badEvidenceErr); ok {
+				claimStr += fmt.Sprintf(": %s", badEvidenceErr.ToString())
 			}
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", claimStr)
 		}
-		return o.finalize(appraisal, err)
+		// XXX(tho) early returns should set an appropriate EAR failure claim
+		// XXX(tho) else branch: consider setting a policy claim here
+		return appraisal, err
 	}
 
-	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, multEndorsements)
+	result, err := evidenceHandler.AppraiseEvidence(appraisal.EvidenceContext, appraisal.Endorsements)
+	if err != nil {
+		// XXX(tho) early returns should set an appropriate EAR failure claim
+		return appraisal, err
+	}
+
+	appraisal.SetResultWithNonce(result, token.Nonce)
+
+	return appraisal, nil
+}
+
+func (o *GRPC) GetAttestation(
+	ctx context.Context,
+	token *proto.AttestationToken,
+) (*proto.AppraisalContext, error) {
+	appraisal, err := o.getAttestation(token)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
-	appraisedResult.Nonce = appraisal.Result.Nonce
-	appraisal.Result = appraisedResult
+
+	// XXX(tho) policy ID should have been already initalised in appraisal.New()...
 	appraisal.InitPolicyID()
 
-	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, multEndorsements)
+	err = o.PolicyManager.Evaluate(ctx, appraisal)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -502,23 +555,6 @@ func (o *GRPC) GetAttestation(
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
 
 	return o.finalize(appraisal, nil)
-}
-
-func (c *GRPC) initEvidenceContext(
-	handler handler.IStoreHandler,
-	token *proto.AttestationToken,
-) (*appraisal.Appraisal, error) {
-	var err error
-
-	appraisal := appraisal.New(token.TenantId, token.Nonce, handler.GetAttestationScheme())
-	appraisal.EvidenceContext.TrustAnchorIds, err = handler.GetTrustAnchorIDs(token)
-
-	if errors.Is(err, handlermod.BadEvidenceError{}) {
-		appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
-		appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
-	}
-
-	return appraisal, err
 }
 
 func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
@@ -772,6 +808,14 @@ func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQuer
 	}, nil
 }
 
+// finalize prepares the final appraisal context to be returned to the client.
+// The EAR is signed using the verifier private key.
+//
+// The error parameter indicates whether there was an error during the
+// attestation process. If a non-nil error is supplied, it is classified as a
+// verifier malfunction - unless it's of type "bad evidence", in which case it
+// is logged and the error is cleared because we assume the relevant claim has
+// been already set in the attestation result.
 func (o *GRPC) finalize(
 	appraisal *appraisal.Appraisal,
 	err error,
