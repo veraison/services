@@ -1,0 +1,7 @@
+corim: corim-parsec-cca
+outdir: ..
+workdir: ../__build
+comids:
+  parsec-cca-valid:
+    - comid-parsec-cca-refval
+    - comid-parsec-cca-ta

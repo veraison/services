@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -44,11 +44,11 @@ func main() {
 	}
 	cfg := cfg{
 		ListenAddr: DefaultListenAddr,
-		Protocol: "https",
+		Protocol:   "https",
 	}
 
 	subs, err := config.GetSubs(v, "*vts", "*verifier", "*verification", "*logging",
-				"*sessionmanager")
+		"*sessionmanager")
 	if err != nil {
 		log.Fatalf("Could not read config: %v", err)
 	}

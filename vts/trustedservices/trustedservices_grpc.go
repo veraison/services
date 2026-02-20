@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package trustedservices
 
@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -22,12 +23,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/veraison/corim-store/pkg/model"
+	corimstore "github.com/veraison/corim-store/pkg/store"
+	"github.com/veraison/corim/comid"
+	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/handler"
 	handlermod "github.com/veraison/services/handler"
-	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
@@ -40,6 +43,8 @@ import (
 // should be (also) serviceID
 // should be passed as a parameter
 const DummyTenantID = "0"
+
+var ErrMeasurementsNotSupported = errors.New("measurements in CoSERV queries are not supported")
 
 // Supported parameters:
 //
@@ -64,16 +69,13 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	TaStore                  kvstore.IKVStore
-	EnStore                  kvstore.IKVStore
-	EvPluginManager          plugin.IManager[handler.IEvidenceHandler]
-	EndPluginManager         plugin.IManager[handler.IEndorsementHandler]
-	StorePluginManager       plugin.IManager[handler.IStoreHandler]
-	CoservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	Store                    *corimstore.Store
+	SchemePluginManager      plugin.IManager[handlermod.ISchemeHandler]
+	CoservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler]
 	PolicyManager            *policymanager.PolicyManager
 	EarSigner                earsigner.IEarSigner
 	CoservSigner             coservsigner.ICoservSigner
-	CACertsPEM               [][]byte
+	rootCerts                *x509.CertPool
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -84,22 +86,17 @@ type GRPC struct {
 }
 
 func NewGRPC(
-	taStore, enStore kvstore.IKVStore,
-	evidencePluginManager plugin.IManager[handler.IEvidenceHandler],
-	endorsementPluginManager plugin.IManager[handler.IEndorsementHandler],
-	storePluginManager plugin.IManager[handler.IStoreHandler],
-	coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler],
+	store *corimstore.Store,
+	schemePluginManager plugin.IManager[handlermod.ISchemeHandler],
+	coservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		TaStore:                  taStore,
-		EnStore:                  enStore,
-		EvPluginManager:          evidencePluginManager,
-		EndPluginManager:         endorsementPluginManager,
-		StorePluginManager:       storePluginManager,
+		Store:                    store,
+		SchemePluginManager:      schemePluginManager,
 		CoservProxyPluginManager: coservProxyPluginManager,
 		PolicyManager:            policyManager,
 		EarSigner:                earSigner,
@@ -119,10 +116,6 @@ func (o *GRPC) Run() error {
 
 func (o *GRPC) Init(
 	v *viper.Viper,
-	evidenceManager plugin.IManager[handler.IEvidenceHandler],
-	endorsementManager plugin.IManager[handler.IEndorsementHandler],
-	storeManager plugin.IManager[handler.IStoreHandler],
-	coservProxyManager plugin.IManager[handler.ICoservProxyHandler],
 ) error {
 	var err error
 
@@ -135,11 +128,6 @@ func (o *GRPC) Init(
 	if err := loader.LoadFromViper(v); err != nil {
 		return err
 	}
-
-	o.EvPluginManager = evidenceManager
-	o.EndPluginManager = endorsementManager
-	o.StorePluginManager = storeManager
-	o.CoservProxyPluginManager = coservProxyManager
 
 	if cfg.ListenAddress != "" {
 		o.ServerAddress = cfg.ListenAddress
@@ -155,17 +143,11 @@ func (o *GRPC) Init(
 
 	var opts []grpc.ServerOption
 
-	var certsPEM [][]byte
-	if len(cfg.CACerts) > 0 {
-		var err error
-		certsPEM, err = LoadCACerts(cfg.CACerts)
-		if err != nil {
-			return err
-		}
-	} else {
-		certsPEM = [][]byte{}
+	o.logger.Info("loading root CA certs")
+	o.rootCerts, err = LoadCACerts(cfg.CACerts)
+	if err != nil {
+		return err
 	}
-	o.CACertsPEM = certsPEM
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
@@ -191,28 +173,16 @@ func (o *GRPC) Close() error {
 		o.Server.GracefulStop()
 	}
 
-	if err := o.EvPluginManager.Close(); err != nil {
-		o.logger.Errorf("evidence plugin manager shutdown failed: %v", err)
-	}
-
-	if err := o.EndPluginManager.Close(); err != nil {
-		o.logger.Errorf("endorsement plugin manager shutdown failed: %v", err)
-	}
-
-	if err := o.StorePluginManager.Close(); err != nil {
-		o.logger.Errorf("store plugin manager shutdown failed: %v", err)
+	if err := o.SchemePluginManager.Close(); err != nil {
+		o.logger.Errorf("scheme plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.CoservProxyPluginManager.Close(); err != nil {
 		o.logger.Errorf("coserv plugin manager shutdown failed: %v", err)
 	}
 
-	if err := o.TaStore.Close(); err != nil {
-		o.logger.Errorf("trust anchor store closure failed: %v", err)
-	}
-
-	if err := o.EnStore.Close(); err != nil {
-		o.logger.Errorf("endorsement store closure failed: %v", err)
+	if err := o.Store.Close(); err != nil {
+		o.logger.Errorf("store closure failed: %v", err)
 	}
 
 	if err := o.EarSigner.Close(); err != nil {
@@ -229,7 +199,7 @@ func (o *GRPC) Close() error {
 }
 
 func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceState, error) {
-	mediaTypes := o.EvPluginManager.GetRegisteredMediaTypes()
+	mediaTypes := o.SchemePluginManager.GetRegisteredMediaTypes()
 
 	mediaTypesList, err := proto.NewStringList(mediaTypes)
 	if err != nil {
@@ -245,56 +215,75 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 	}, nil
 }
 
-func (o *GRPC) SubmitEndorsements(ctx context.Context, req *proto.SubmitEndorsementsRequest) (*proto.SubmitEndorsementsResponse, error) {
+func (o *GRPC) SubmitEndorsements(
+	ctx context.Context,
+	req *proto.SubmitEndorsementsRequest,
+) (*proto.SubmitEndorsementsResponse, error) {
 	o.logger.Debugw("SubmitEndorsements", "media-type", req.MediaType)
 
-	handlerPlugin, err := o.EndPluginManager.LookupByMediaType(req.MediaType)
+	mt, mtParams, err := mime.ParseMediaType(req.MediaType)
 	if err != nil {
 		return nil, err
 	}
+	profile := mtParams["profile"]
 
-	// Serialize the CA cert pool for transmission if it's a signed CoRIM
-	var caCertPoolBytes []byte
-	mt, _, err := mime.ParseMediaType(req.MediaType)
-	if err != nil {
-		return nil, err
-	}
-	if mt == "application/rim+cose" && len(o.CACertsPEM) != 0 {
-		var err error
-		caCertPoolBytes, err = SerializeCertPEMBytes(o.CACertsPEM)
+	var uc *corim.UnsignedCorim
+	switch mt {
+	case "application/rim+cose":
+		uc, err = o.decodeAndValidateSignedCorim(req.Data)
 		if err != nil {
-			return nil, err
+			return submitEndorsementErrorResponse(err), nil
 		}
+	case "application/rim+cbor":
+		uc, err = o.decodeAndValidateUnsignedCorim(req.Data)
+		if err != nil {
+			return submitEndorsementErrorResponse(err), nil
+		}
+	default:
+		err = fmt.Errorf("unsupported media type: %s", req.MediaType)
+		return submitEndorsementErrorResponse(err), nil
 	}
 
-	rsp, err := handlerPlugin.Decode(req.Data, req.MediaType, caCertPoolBytes)
+	if uc.Profile == nil {
+		return nil, errors.New("profile not set in CoRIM")
+	}
+
+	ucProfile, err := uc.Profile.Get()
 	if err != nil {
+		return nil, fmt.Errorf("invalid profile in CoRIM: %v", uc.Profile)
+	}
+
+	o.logger.Debugw("    CoRIM profile", "profile", ucProfile)
+
+	if ucProfile != profile {
+		err := fmt.Errorf(
+			"CoRIM profile (%s) does not match media type profile (%s)",
+			ucProfile,
+			profile,
+		)
+		o.logger.Warn(err.Error())
+		return nil, err
+	}
+
+	handlerPlugin, err := o.SchemePluginManager.LookupByMediaType(req.MediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := handlerPlugin.ValidateCorim(uc)
+	if err != nil {
+		return nil, err
+	} else if !resp.IsValid {
+		return submitEndorsementErrorResponse(resp.Error()), nil
+	}
+
+	label := fmt.Sprintf("%s/%s", DummyTenantID, handlerPlugin.GetAttestationScheme())
+	digest := o.Store.Digest(req.Data)
+	if err := o.storeEndorsements(ctx, uc, label, digest); err != nil {
 		return submitEndorsementErrorResponse(err), nil
 	}
-	if err := o.storeEndorsements(ctx, rsp); err != nil {
-		return submitEndorsementErrorResponse(err), nil
-	}
+
 	return submitEndorsementSuccessResponse(), nil
-}
-
-func (o *GRPC) storeEndorsements(ctx context.Context, rsp *handler.EndorsementHandlerResponse) error {
-	for _, ta := range rsp.TrustAnchors {
-
-		err := o.addTrustAnchor(ctx, &ta)
-		if err != nil {
-			return fmt.Errorf("store operation failed for trust anchor: %w", err)
-		}
-	}
-
-	for _, refVal := range rsp.ReferenceValues {
-
-		err := o.addRefValues(ctx, &refVal)
-		if err != nil {
-			return fmt.Errorf("store operation failed for reference values: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func submitEndorsementSuccessResponse() *proto.SubmitEndorsementsResponse {
@@ -314,83 +303,67 @@ func submitEndorsementErrorResponse(err error) *proto.SubmitEndorsementsResponse
 	}
 }
 
-func (o *GRPC) addRefValues(ctx context.Context, refVal *handler.Endorsement) error {
-	var (
-		err     error
-		keys    []string
-		handler handler.IStoreHandler
-		val     []byte
-	)
+func (o *GRPC) decodeAndValidateSignedCorim(data []byte) (*corim.UnsignedCorim, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty corim data")
+	}
 
-	handler, err = o.StorePluginManager.LookupByAttestationScheme(refVal.Scheme)
+	// Parse the signed CoRIM which extracts certificate chain automatically through extractX5Chain
+	sc, err := corim.UnmarshalAndValidateSignedCorimFromCBOR(data)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to parse signed CoRIM: %w", err)
 	}
 
-	keys, err = handler.SynthKeysFromRefValue(DummyTenantID, refVal)
+	if sc.SigningCert == nil {
+		return nil, fmt.Errorf("no signing certificate found in the CoRIM")
+	}
+
+	intermediateCertPool := x509.NewCertPool()
+	for _, cert := range sc.IntermediateCerts {
+		intermediateCertPool.AddCert(cert)
+	}
+
+	// Verify the certificate chain with properly separated root and intermediate pools
+	verifyOpts := x509.VerifyOptions{
+		Roots:         o.rootCerts,
+		Intermediates: intermediateCertPool,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+	}
+
+	_, err = sc.SigningCert.Verify(verifyOpts)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("certificate chain verification failed: %w", err)
 	}
 
-	val, err = json.Marshal(refVal)
-	if err != nil {
-		return err
+	// Verify the signature using the signing certificate's public key
+	if err := sc.Verify(sc.SigningCert.PublicKey); err != nil {
+		return nil, fmt.Errorf("signature verification failed: %w", err)
 	}
 
-	for _, key := range keys {
-		if err := o.EnStore.Add(key, string(val)); err != nil {
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	o.logger.Infow("added reference values", "keys", keys)
-
-	return nil
+	return &sc.UnsignedCorim, nil
 }
 
-func (o *GRPC) addTrustAnchor(
-	ctx context.Context,
-	req *handler.Endorsement,
+func (o *GRPC) decodeAndValidateUnsignedCorim(data []byte) (*corim.UnsignedCorim, error) {
+	return corim.UnmarshalAndValidateUnsignedCorimFromCBOR(data)
+}
+
+func (o *GRPC) storeEndorsements(
+	_ context.Context,
+	uc *corim.UnsignedCorim,
+	label string,
+	digest []byte,
 ) error {
-	var (
-		err     error
-		keys    []string
-		handler handler.IStoreHandler
-		val     []byte
-	)
-
-	o.logger.Debugw("AddTrustAnchor", "trust-anchor", req)
-
-	if req == nil {
-		return errors.New("nil trust anchor in request")
-	}
-
-	handler, err = o.StorePluginManager.LookupByAttestationScheme(req.Scheme)
+	manifest, err := model.NewManifestFromCoRIM(uc)
 	if err != nil {
 		return err
 	}
+	manifest.Label = label
+	manifest.Digest = digest
+	manifest.SetActive(true)
 
-	keys, err = handler.SynthKeysFromTrustAnchor(DummyTenantID, req)
-	if err != nil {
+	if err := o.Store.AddManifest(manifest); err != nil {
 		return err
 	}
-
-	val, err = json.Marshal(req)
-	if err != nil {
-		return err
-	}
-
-	for _, key := range keys {
-		if err := o.TaStore.Add(key, string(val)); err != nil {
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	o.logger.Infow("added trust anchor", "keys", keys)
 
 	return nil
 }
@@ -399,94 +372,110 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
-	o.logger.Infow("get attestation", "media-type", token.MediaType,
-		"tenant-id", token.TenantId)
+	evidence := appraisal.NewEvidenceFromProtobuf(token)
+	o.logger.Infow("get attestation", "media-type", evidence.MediaType,
+		"tenant-id", evidence.TenantID)
 
-	handler, err := o.EvPluginManager.LookupByMediaType(token.MediaType)
+	appraisal := appraisal.NewContext(evidence)
+
+	handler, err := o.SchemePluginManager.LookupByMediaType(evidence.MediaType)
 	if err != nil {
-		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
 		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
 		appraisal.AddPolicyClaim("problem", "could not resolve media type")
 		return o.finalize(appraisal, err)
 	}
 
-	scheme := handler.GetAttestationScheme()
-	stHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
-	if err != nil {
-		appraisal := appraisal.New(token.TenantId, token.Nonce, "ERROR")
-		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
-		appraisal.AddPolicyClaim("problem", "could not resolve scheme name")
+	if err := appraisal.SetScheme(handler.GetAttestationScheme()); err != nil {
 		return o.finalize(appraisal, err)
 	}
 
-	appraisal, err := o.initEvidenceContext(stHandler, token)
+	appraisal.TrustAnchorIDs, err = handler.GetTrustAnchorIDs(evidence)
 	if err != nil {
+		if errors.Is(err, handlermod.BadEvidenceError{}) {
+			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+			appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
+		}
+
 		return o.finalize(appraisal, err)
 	}
 
-	tas, err := o.getTrustAnchors(appraisal.EvidenceContext.TrustAnchorIds)
+	// TODO(setrofim): in principle, we should be matching exactly
+	// here, as we are trying to identify triples for a specific
+	// entity described by the taID environment. However, CoRIM does
+	// not provide a good way to endorse an environment description. So
+	// in practice, environments inside CoRIMs may serve
+	// the double duty of providing a way to match measurements
+	// _and_ an additional description of the environments that is
+	// not present in the evidence.
+	//
+	// Specifically, our parsec-tpm scheme currently relies on the
+	// fact that the trust anchors are provisioned with environment
+	// that contains a class-id as well as an instance-id; the
+	// evidence only contains an instance-id, and the class-id in
+	// the trust anchor is then used to retrieve reference values;
+	// there is no way to directly link reference values to the
+	// evidence.
+	//
+	// Because provisioned environments may contain "additional"
+	// descriptive elements, as well as elements used for matching,
+	// we are forced to do inexact matching here for now, and leave
+	// it to the attestation schemes to resolve this.
+	matchExactly := false
+	trustAnchors, err := o.getKeyTriples(appraisal.TrustAnchorIDs, appraisal.StoreLabel(), matchExactly)
 	if err != nil {
-		if errors.Is(err, kvstore.ErrKeyNotFound) {
-			err = handlermod.BadEvidence("no trust anchor for %s",
-				appraisal.EvidenceContext.TrustAnchorIds)
+		if errors.Is(err, corimstore.ErrNoMatch) {
+			err = handlermod.BadEvidence("no trust anchor for %s", appraisal.DescribeTrustAnchorIDs())
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
 		}
+
 		return o.finalize(appraisal, err)
 	}
 
-	claims, err := handler.ExtractClaims(token, tas)
+	claims, err := handler.ExtractClaims(appraisal.Evidence, trustAnchors)
 	if err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.AddPolicyClaim("problem", err.Error())
 		}
 		return o.finalize(appraisal, err)
 	}
+	appraisal.Claims = claims
 
-	referenceIDs, err := stHandler.GetRefValueIDs(token.TenantId, tas, claims)
+	appraisal.ReferenceValueIDs, err = handler.GetReferenceValueIDs(trustAnchors, claims)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
-
-	appraisal.EvidenceContext.Evidence, err = structpb.NewStruct(claims)
-	if err != nil {
-		err = fmt.Errorf("unserializable claims in result: %w", err)
-		return o.finalize(appraisal, err)
-	}
-
-	appraisal.EvidenceContext.ReferenceIds = referenceIDs
 
 	o.logger.Debugw("constructed evidence context",
-		"software-id", appraisal.EvidenceContext.ReferenceIds,
-		"trust-anchor-id", appraisal.EvidenceContext.TrustAnchorIds)
+		"software-id", appraisal.ReferenceValueIDs,
+		"trust-anchor-id", appraisal.TrustAnchorIDs)
 
-	var multEndorsements []string
-	for _, refvalID := range appraisal.EvidenceContext.ReferenceIds {
-
-		endorsements, err := o.EnStore.Get(refvalID)
-		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-			return o.finalize(appraisal, err)
-		}
-
-		o.logger.Debugw("obtained endorsements", "endorsements", endorsements)
-		multEndorsements = append(multEndorsements, endorsements...)
+	o.logger.Debug("obtaining endorsements...")
+	endorsements, err := o.getValueTriples(appraisal.ReferenceValueIDs, appraisal.StoreLabel(), true)
+	if err != nil {
+		return o.finalize(appraisal, err)
 	}
 
-	if err = handler.ValidateEvidenceIntegrity(token, tas, multEndorsements); err != nil {
+	o.logger.Debug("validating evidence...")
+	if err = handler.ValidateEvidenceIntegrity(appraisal.Evidence, trustAnchors, endorsements); err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			var badErr handlermod.BadEvidenceError
+
 			claimStr := "integrity validation failed"
 			ok := errors.As(err, &badErr)
 			if ok {
 				claimStr += fmt.Sprintf(": %s", badErr.ToString())
 			}
+
 			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
 			appraisal.AddPolicyClaim("problem", claimStr)
 		}
+
 		return o.finalize(appraisal, err)
 	}
 
-	appraisedResult, err := handler.AppraiseEvidence(appraisal.EvidenceContext, multEndorsements)
+	o.logger.Debug("appraising claims...")
+	appraisedResult, err := handler.AppraiseClaims(claims, endorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
@@ -494,59 +483,61 @@ func (o *GRPC) GetAttestation(
 	appraisal.Result = appraisedResult
 	appraisal.InitPolicyID()
 
-	err = o.PolicyManager.Evaluate(ctx, handler.GetAttestationScheme(), appraisal, multEndorsements)
+	o.logger.Debug("evaluating policy...")
+	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}
 
 	o.logger.Infow("evaluated attestation result", "attestation-result", appraisal.Result)
-
 	return o.finalize(appraisal, nil)
 }
 
-func (c *GRPC) initEvidenceContext(
-	handler handler.IStoreHandler,
-	token *proto.AttestationToken,
-) (*appraisal.Appraisal, error) {
-	var err error
+func (o *GRPC) getKeyTriples(
+	trustAnchorIDs []*comid.Environment,
+	label string,
+	exact bool,
+) ([]*comid.KeyTriple, error) {
+	var keyTriples []*comid.KeyTriple //nolint
 
-	appraisal := appraisal.New(token.TenantId, token.Nonce, handler.GetAttestationScheme())
-	appraisal.EvidenceContext.TrustAnchorIds, err = handler.GetTrustAnchorIDs(token)
+	for _, taID := range trustAnchorIDs {
+		triples, err := o.Store.GetActiveKeyTriples(taID, label, exact)
+		if err != nil {
+			return nil, err
+		}
 
-	if errors.Is(err, handlermod.BadEvidenceError{}) {
-		appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
-		appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
+		keyTriples = append(keyTriples, triples...)
 	}
 
-	return appraisal, err
+	return keyTriples, nil
 }
 
-func (c *GRPC) getTrustAnchors(id []string) ([]string, error) {
-	var taValues []string //nolint
+func (o *GRPC) getValueTriples(
+	referenceValueIDs []*comid.Environment,
+	label string,
+	exact bool,
+) ([]*comid.ValueTriple, error) {
+	var valueTriples []*comid.ValueTriple //nolint
 
-	for _, taID := range id {
-		values, err := c.TaStore.Get(taID)
-		if err != nil {
-			return []string{""}, err
+	for _, valID := range referenceValueIDs {
+		triples, err := o.Store.GetActiveValueTriples(valID, label, exact)
+		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
+			return nil, err
 		}
 
-		// For now, Veraison schemes only support one trust anchor per trustAnchorID
-		if len(values) != 1 {
-			return []string{""}, fmt.Errorf("found %d trust anchors, want 1", len(values))
-		}
-		taValues = append(taValues, values[0])
+		valueTriples = append(valueTriples, triples...)
 	}
 
-	return taValues, nil
+	return valueTriples, nil
 }
 
 func (c *GRPC) GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	mts := c.EvPluginManager.GetRegisteredMediaTypes()
+	mts := c.SchemePluginManager.GetRegisteredMediaTypesByCategory("verification")
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
 
 func (c *GRPC) GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	mts := c.EndPluginManager.GetRegisteredMediaTypes()
+	mts := c.SchemePluginManager.GetRegisteredMediaTypesByCategory("provisioning")
 	return &proto.MediaTypeList{MediaTypes: mts}, nil
 }
 
@@ -579,7 +570,7 @@ func (c *GRPC) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*p
 	var mediaTypes []string
 
 	corimDerived := c.assembleCoservMediaTypes(
-		c.EndPluginManager.GetRegisteredMediaTypes(),
+		c.SchemePluginManager.GetRegisteredMediaTypesByCategory("provisioning"),
 		"application/rim+cbor",
 	)
 
@@ -657,80 +648,96 @@ func getEndorsementsError(err error) *proto.EndorsementQueryOut {
 	}
 }
 
-func (o *GRPC) getEndorsementsFromStores(query *proto.EndorsementQueryIn) ([]byte, error) {
-	var q coserv.Coserv
-	if err := q.FromBase64Url(query.Query); err != nil {
+func (o *GRPC) getEndorsementsFromStores(queryIn *proto.EndorsementQueryIn) ([]byte, error) {
+	var query coserv.Coserv
+	if err := query.FromBase64Url(queryIn.Query); err != nil {
 		return nil, err
 	}
 
-	// select store based on the requested artefact type
-	var (
-		store     kvstore.IKVStore
-		storeName string
-	)
-	switch q.Query.ArtifactType {
-	case coserv.ArtifactTypeEndorsedValues:
-		return nil, errors.New("endorsed value queries are not supported")
-	case coserv.ArtifactTypeReferenceValues:
-		storeName = "reference-value"
-		store = o.EnStore
-	case coserv.ArtifactTypeTrustAnchors:
-		storeName = "trust-anchors"
-		store = o.TaStore
-	}
-
-	profile, err := q.Profile.Get()
+	profile, err := query.Profile.Get()
 	if err != nil {
 		return nil, err
 	}
 
 	// Look up a matching endorsement plugin
-	endorsementHandler, err := o.EndPluginManager.LookupByMediaType(fmt.Sprintf(`application/rim+cbor; profile=%q`, profile))
+	schemeHandler, err := o.SchemePluginManager.LookupByMediaType(
+		fmt.Sprintf(`application/rim+cbor; profile=%q`, profile))
 	if err != nil {
 		return nil, err
 	}
 
-	scheme := endorsementHandler.GetAttestationScheme()
+	scheme := schemeHandler.GetAttestationScheme()
+	label := fmt.Sprintf("%s/%s", DummyTenantID, scheme)
 
-	storeHandler, err := o.StorePluginManager.LookupByAttestationScheme(scheme)
+	authority, err := comid.NewCryptoKeyTaggedBytes([]byte("dummyauth"))
 	if err != nil {
 		return nil, err
 	}
 
-	queryKeys, err := storeHandler.SynthCoservQueryKeys(DummyTenantID, query.Query)
+	environments, err := querySelectorToEnvironments(&query.Query.EnvironmentSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	var resultSet []string
-	for _, key := range queryKeys {
-		res, err := store.Get(key)
-		if err != nil && !errors.Is(err, kvstore.ErrKeyNotFound) {
-			return nil, fmt.Errorf("lookup %q in %s failed: %w", key, storeName, err)
+	resultSet := coserv.NewResultSet()
+
+	// add (dummy, for now -- TODO) expiry
+	dummyExpiry := time.Now().Add(time.Hour * 1)
+	resultSet.SetExpiry(dummyExpiry)
+
+	switch query.Query.ArtifactType {
+	case coserv.ArtifactTypeTrustAnchors:
+		keyTriples, err := o.getKeyTriples(environments, label, false)
+		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
+			return nil, err
 		}
 
-		resultSet = append(resultSet, res...)
+		for _, keyTriple := range keyTriples {
+			resultSet.AddAttestationKeys(coserv.AKQuad{
+				Authorities: comid.NewCryptoKeys().Add(authority),
+				AKTriple:    keyTriple,
+			})
+		}
+	case coserv.ArtifactTypeReferenceValues:
+		valueTriples, err := o.getValueTriples(environments, label, false)
+		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
+			return nil, err
+		}
+
+		for _, valueTriple := range valueTriples {
+			resultSet.AddReferenceValues(coserv.RefValQuad{
+				Authorities: comid.NewCryptoKeys().Add(authority),
+				RVTriple:    valueTriple,
+			})
+		}
+	default:
+		return nil, errors.New("only reference value and trust anchors are supported at present")
 	}
 
-	coservResults, err := endorsementHandler.CoservRepackage(query.Query, resultSet)
-	if err != nil {
-		return nil, err
+	if err := query.AddResults(*resultSet); err != nil {
+		return nil, fmt.Errorf("could not add result set to query: %w", err)
 	}
 
-	return coservResults, nil
+	return query.ToCBOR()
 }
 
-func (o *GRPC) getEndorsementsFromProxy(handlerPlugin handler.ICoservProxyHandler, query *proto.EndorsementQueryIn) ([]byte, error) {
+func (o *GRPC) getEndorsementsFromProxy(
+	handlerPlugin handlermod.ICoservProxyHandler,
+	query *proto.EndorsementQueryIn,
+) ([]byte, error) {
 	return handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
 }
 
-func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQueryIn) (*proto.EndorsementQueryOut, error) {
+func (o *GRPC) GetEndorsements(
+	ctx context.Context,
+	query *proto.EndorsementQueryIn,
+) (*proto.EndorsementQueryOut, error) {
 	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
 
 	var (
 		err           error
 		out           []byte
-		handlerPlugin handler.ICoservProxyHandler
+		handlerPlugin handlermod.ICoservProxyHandler
 	)
 
 	// First, check to see if we have a CoSERV proxy plugin that can handle this query
@@ -772,14 +779,22 @@ func (o *GRPC) GetEndorsements(ctx context.Context, query *proto.EndorsementQuer
 	}, nil
 }
 
+// finalize prepares the final appraisal context to be returned to the client.
+// The EAR is signed using the verifier private key.
+//
+// The error parameter indicates whether there was an error during the
+// attestation process. If a non-nil error is supplied, it is classified as a
+// verifier malfunction - unless it's of type "bad evidence", in which case it
+// is logged and the error is cleared because we assume the relevant claim has
+// been already set in the attestation result.
 func (o *GRPC) finalize(
-	appraisal *appraisal.Appraisal,
+	appraisal *appraisal.Context,
 	err error,
 ) (*proto.AppraisalContext, error) {
 	var signErr error
 
 	if err != nil {
-		if errors.Is(err, handler.BadEvidenceError{}) {
+		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			// NOTE(setrofim): I debated whether this should be
 			// logged as Info or Warn. Ultimately deciding to go
 			// with Warn, to make it easier to identifier the
@@ -814,7 +829,12 @@ func (o *GRPC) finalize(
 		err = signErr
 	}
 
-	return appraisal.GetContext(), err
+	pbAppraisal, pbErr := appraisal.ToProtobuf()
+	if pbErr != nil {
+		err = pbErr
+	}
+
+	return pbAppraisal, err
 }
 
 func LoadTLSCreds(
@@ -861,9 +881,16 @@ func LoadTLSCreds(
 	return credentials.NewTLS(config), nil
 }
 
-// LoadCaCerts loads and validates CA certificates from file paths
-func LoadCACerts(paths []string) ([][]byte, error) {
-	certsPEM := [][]byte{}
+// LoadCaCerts loads and validates CA certificates from file paths, as well as the system certs.
+func LoadCACerts(paths []string) (*x509.CertPool, error) {
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("could not load system certs: %w", err)
+	}
+
+	if len(paths) == 0 {
+		return certPool, nil
+	}
 
 	for _, path := range paths {
 		certPEM, err := os.ReadFile(path)
@@ -871,15 +898,12 @@ func LoadCACerts(paths []string) ([][]byte, error) {
 			return nil, fmt.Errorf("error reading cert in %s: %w", path, err)
 		}
 
-		tempPool := x509.NewCertPool()
-		if !tempPool.AppendCertsFromPEM(certPEM) {
+		if !certPool.AppendCertsFromPEM(certPEM) {
 			return nil, fmt.Errorf("invalid cert in %s", path)
 		}
-
-		certsPEM = append(certsPEM, certPEM)
 	}
 
-	return certsPEM, nil
+	return certPool, nil
 }
 
 // SerializeCertPEMBytes converts the CA certificate pool to PEM format for transmission
@@ -896,4 +920,46 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 	}
 
 	return allPEM.Bytes(), nil
+}
+
+func querySelectorToEnvironments(selector *coserv.EnvironmentSelector) ([]*comid.Environment, error) {
+	var ret []*comid.Environment
+
+	if selector.Classes != nil {
+		for _, statefulClass := range *selector.Classes {
+			if statefulClass.Measurements != nil {
+				return nil, ErrMeasurementsNotSupported
+			}
+
+			ret = append(ret, &comid.Environment{
+				Class: statefulClass.Class,
+			})
+		}
+	}
+
+	if selector.Instances != nil {
+		for _, statefulInstance := range *selector.Instances {
+			if statefulInstance.Measurements != nil {
+				return nil, ErrMeasurementsNotSupported
+			}
+
+			ret = append(ret, &comid.Environment{
+				Instance: statefulInstance.Instance,
+			})
+		}
+	}
+
+	if selector.Groups != nil {
+		for _, statefulGroup := range *selector.Groups {
+			if statefulGroup.Measurements != nil {
+				return nil, ErrMeasurementsNotSupported
+			}
+
+			ret = append(ret, &comid.Environment{
+				Group: statefulGroup.Group,
+			})
+		}
+	}
+
+	return ret, nil
 }

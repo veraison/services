@@ -25,7 +25,7 @@ stages:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
       headers:
-        content-type: 'application/corim-unsigned+cbor; profile="http://arm.com/psa/iot/1"'
+        content-type: 'application/rim+cbor; profile="http://arm.com/psa/iot/1"'
         authorization: '{authorization}' # set via hook
       file_body: __generated__/endorsements/corim-{scheme}-{endorsements}.cbor
     response:

@@ -32,18 +32,9 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ./plugins/
-ta-store:
-  backend: sql
-  sql:
-    max_connections: 10
-    driver: sqlite3
-    datasource: stores/vts/ta-store.sql
-en-store:
-  backend: sql
-  sql:
-    max_connections: 10
-    driver: sqlite3
-    datasource: stores/vts/en-store.sql
+store:
+  dbms: sqlite
+  dsn: stores/vts/store.sql
 po-store:
   backend: sql
   sql:

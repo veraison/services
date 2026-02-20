@@ -1,8 +1,9 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test // nolint:dupl
 
 import (
+	"encoding/json"
 	"log"
 	"net/rpc"
 
@@ -12,7 +13,7 @@ import (
 type IAmmo interface {
 	GetName() string
 	GetAttestationScheme() string
-	GetSupportedMediaTypes() []string
+	GetSupportedMediaTypes() map[string][]string
 	GetCapacity() int
 }
 
@@ -23,7 +24,7 @@ type AmmoRPCClient struct {
 func (o *AmmoRPCClient) GetName() string {
 	var (
 		resp   string
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetName", &unused, &resp)
@@ -38,7 +39,7 @@ func (o *AmmoRPCClient) GetName() string {
 func (o *AmmoRPCClient) GetAttestationScheme() string {
 	var (
 		resp   string
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetAttestationScheme", &unused, &resp)
@@ -50,10 +51,10 @@ func (o *AmmoRPCClient) GetAttestationScheme() string {
 	return resp
 }
 
-func (o *AmmoRPCClient) GetSupportedMediaTypes() []string {
+func (o *AmmoRPCClient) GetSupportedMediaTypes() map[string][]string {
 	var (
-		resp   []string
-		unused interface{}
+		resp   []byte
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetSupportedMediaTypes", &unused, &resp)
@@ -62,13 +63,18 @@ func (o *AmmoRPCClient) GetSupportedMediaTypes() []string {
 		return nil
 	}
 
-	return resp
+	var res map[string][]string
+	if err := json.Unmarshal(resp, &res); err != nil {
+		panic(err)
+	}
+
+	return res
 }
 
 func (o *AmmoRPCClient) GetCapacity() int {
 	var (
 		resp   int
-		unused interface{}
+		unused any
 	)
 
 	err := o.client.Call("Plugin.GetCapacity", &unused, &resp)
@@ -84,31 +90,34 @@ type AmmoRPCServer struct {
 	Impl IAmmo
 }
 
-func (o *AmmoRPCServer) GetName(args interface{}, resp *string) error {
+func (o *AmmoRPCServer) GetName(args any, resp *string) error {
 	*resp = o.Impl.GetName()
 	return nil
 }
 
-func (o *AmmoRPCServer) GetAttestationScheme(args interface{}, resp *string) error {
+func (o *AmmoRPCServer) GetAttestationScheme(args any, resp *string) error {
 	*resp = o.Impl.GetAttestationScheme()
 	return nil
 }
 
-func (o *AmmoRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
-	*resp = o.Impl.GetSupportedMediaTypes()
-	return nil
+func (o *AmmoRPCServer) GetSupportedMediaTypes(args any, resp *[]byte) error {
+	var err error
+
+	*resp, err = json.Marshal(o.Impl.GetSupportedMediaTypes())
+
+	return err
 }
 
-func (o *AmmoRPCServer) GetCapacity(args interface{}, resp *int) error {
+func (o *AmmoRPCServer) GetCapacity(args any, resp *int) error {
 	*resp = o.Impl.GetCapacity()
 	return nil
 }
 
-func GetAmmoClient(c *rpc.Client) interface{} {
+func GetAmmoClient(c *rpc.Client) any {
 	return &AmmoRPCClient{client: c}
 }
 
-func GetAmmoServer(i IAmmo) interface{} {
+func GetAmmoServer(i IAmmo) any {
 	return &AmmoRPCServer{Impl: i}
 }
 

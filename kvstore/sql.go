@@ -1,4 +1,4 @@
-// Copyright 2021-2025 Contributors to the Veraison project.
+// Copyright 2021-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package kvstore
 
@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"regexp"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/spf13/viper"
 	"github.com/veraison/services/config"
 	"go.uber.org/zap"
-	sq "github.com/Masterminds/squirrel"
-
 
 	// drivers
 	_ "github.com/go-sql-driver/mysql" // mysql
@@ -20,7 +19,7 @@ import (
 )
 
 var (
-	DefaultTableName = "kvstore"
+	DefaultTableName      = "kvstore"
 	DefaultMaxConnections = 10
 )
 
@@ -49,8 +48,8 @@ func (o *sqlConfig) Validate() error {
 }
 
 type SQL struct {
-	TableName string
-	DB        *sql.DB
+	TableName   string
+	DB          *sql.DB
 	Placeholder sq.PlaceholderFormat
 
 	logger *zap.SugaredLogger
@@ -59,17 +58,22 @@ type SQL struct {
 // Init initializes the KVStore. The config may contain the following values,
 // all of which are optional:
 // "sql.tablename" - The name of the table with key-values pairs (defaults to
-//                 "kvstore".
+//
+//	"kvstore".
+//
 // "sql.driver" - The SQL driver to use; see
-//                https://github.com/golang/go/wiki/SQLDrivers (defaults to
-//                "sqlite3").
+//
+//	https://github.com/golang/go/wiki/SQLDrivers (defaults to
+//	"sqlite3").
+//
 // "sql.datasource" -  The name of the data source to use. Valid values are
-//                     driver-specific (defaults to "db=veraison.sql".
+//
+//	driver-specific (defaults to "db=veraison.sql".
 func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 	o.logger = logger
 
 	cfg := sqlConfig{
-		TableName: DefaultTableName,
+		TableName:      DefaultTableName,
 		MaxConnections: DefaultMaxConnections,
 	}
 
@@ -218,7 +222,7 @@ func (o SQL) Add(key string, val string) error {
 	}
 
 	query := sq.Insert(o.TableName).Columns("kv_key", "kv_val").
-			Values(key, val).PlaceholderFormat(o.Placeholder)
+		Values(key, val).PlaceholderFormat(o.Placeholder)
 
 	queryText, args, err := query.ToSql()
 	if err != nil {
@@ -250,8 +254,8 @@ func (o SQL) Set(key string, val string) error {
 	defer func() { _ = txn.Rollback() }()
 
 	delQuery := sq.Delete(o.TableName).
-			Where(sq.Eq{"kv_key": key}).
-			PlaceholderFormat(o.Placeholder)
+		Where(sq.Eq{"kv_key": key}).
+		PlaceholderFormat(o.Placeholder)
 
 	queryText, args, err := delQuery.ToSql()
 	if err != nil {
@@ -263,8 +267,8 @@ func (o SQL) Set(key string, val string) error {
 	}
 
 	insQuery := sq.Insert(o.TableName).Columns("kv_key", "kv_val").
-			Values(key, val).
-			PlaceholderFormat(o.Placeholder)
+		Values(key, val).
+		PlaceholderFormat(o.Placeholder)
 
 	queryText, args, err = insQuery.ToSql()
 	if err != nil {
@@ -288,8 +292,8 @@ func (o SQL) Del(key string) error {
 	}
 
 	query := sq.Delete(o.TableName).
-			Where(sq.Eq{"kv_key": key}).
-			PlaceholderFormat(o.Placeholder)
+		Where(sq.Eq{"kv_key": key}).
+		PlaceholderFormat(o.Placeholder)
 
 	queryText, args, err := query.ToSql()
 	if err != nil {

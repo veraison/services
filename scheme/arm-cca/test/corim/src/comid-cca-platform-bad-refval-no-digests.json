@@ -1,0 +1,38 @@
+{
+    "tag-identity": {
+      "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+      "version": 0
+    },
+    "triples": {
+      "reference-values": [
+        {
+          "environment": {
+            "class": {
+              "id": {
+                "type": "psa.impl-id",
+                "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              }
+            }
+          },
+          "measurements": [
+            {
+              "key": {
+                "type": "psa.refval-id",
+                "value": {
+                  "label": "BL",
+                  "version": "3.4.2",
+                  "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                }
+              },
+              "value": {
+                "raw-value": {
+                  "type": "bytes",
+                  "value": "AQID"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }

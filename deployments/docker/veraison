@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023-2024 Contributors to the Veraison project.
+# Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 set -eo pipefail
 
@@ -272,6 +272,25 @@ function kill_tmux_session() {
     fi
 }
 
+function shell() {
+    local what="$1"
+
+    local container_id
+    case "$what" in
+        vts | vts-service) container_id="vts-service" ;;
+        provisioning | provisioning-service) container_id="provisioning-service" ;;
+        verification | verification-service) container_id="verification-service" ;;
+        management | management-service) container_id="management-service" ;;
+        keycloak | keycloak-service) container_id="keycloak-service" ;;
+        *)
+            echo -e "$_error: unknown service: $what"
+            exit 1
+            ;;
+    esac
+
+    docker exec -it "$container_id" bash
+}
+
 function cocli() {
     local -a args
     for arg in "$@"; do args+=("$arg"); done
@@ -294,6 +313,14 @@ function pocli() {
     # Note: calling _translated_host_paths sets translated_args
     _translate_host_paths "${args[@]}"
     manager pocli "${translated_args[@]}"
+}
+
+function corim_store() {
+    local -a args
+    for arg in "$@"; do args+=("$arg"); done
+    # Note: calling _translated_host_paths sets translated_args
+    _translate_host_paths "${args[@]}"
+    manager corim-store "${translated_args[@]}"
 }
 
 function help() {
@@ -364,6 +391,10 @@ function help() {
 
 	            Kill the tmux session created with the "tmux" command (see above).
 	            Note: this does NOT stop the services.
+
+	    shell SERVICE
+
+	            Start a shell inside the container running the specified service.
 
 	EOF
 	echo "$usage"
@@ -509,9 +540,11 @@ case $command in
     start-tmux) create_tmux_session "$2";;
     tmux | attach-tmux) attach_tmux_session "$2";;
     stop-tmux | kill-tmux) kill_tmux_session "$2";;
+    shell) shell "$2";;
     cocli) shift; cocli "$@";;
     evcli) shift; evcli "$@";;
     pocli) shift; pocli "$@";;
+    corim-store) shift; corim_store "$@";;
     debug) manager_debug "$@";;
     *) echo -e "$_error: unexpected command: \"$command\" (use -h for help)";;
 esac

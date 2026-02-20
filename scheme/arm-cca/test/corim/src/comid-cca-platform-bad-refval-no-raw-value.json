@@ -1,0 +1,33 @@
+{
+    "tag-identity": {
+      "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+      "version": 0
+    },
+    "triples": {
+      "reference-values": [
+        {
+          "environment": {
+            "class": {
+              "id": {
+                "type": "psa.impl-id",
+                "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              }
+            }
+          },
+          "measurements": [
+            {
+              "key": {
+                "type": "cca.platform-config-id",
+                "value": "cfg v1.0.0"
+              },
+              "value": {
+                "digests": [
+                  "sha-256:CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }

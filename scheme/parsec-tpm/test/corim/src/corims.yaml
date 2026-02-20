@@ -1,0 +1,25 @@
+corim: corim-parsec-tpm
+outdir: ..
+workdir: ../__build
+comids:
+  parsec-tpm-valid:
+    - comid-parsec-tpm-refval
+    - comid-parsec-tpm-ta
+  parsec-tpm-bad-class-id:
+    - comid-bad-class-id
+  parsec-tpm-bad-instance:
+    - comid-bad-instance
+  parsec-tpm-bad-multiple-keys:
+    - comid-bad-multiple-keys
+  parsec-tpm-bad-no-class-id:
+    - comid-bad-no-class-id
+  parsec-tpm-bad-no-class:
+    - comid-bad-no-class
+  parsec-tpm-bad-no-digests:
+    - comid-bad-no-digests
+  parsec-tpm-bad-no-instance:
+    - comid-bad-no-instance
+  parsec-tpm-bad-no-pcr:
+    - comid-bad-no-pcr
+  parsec-tpm-bad-pcr:
+    - comid-bad-pcr

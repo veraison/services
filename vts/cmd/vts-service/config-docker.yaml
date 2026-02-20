@@ -1,17 +1,14 @@
 # This config file assumes the service is being run via "debug" command
 # from the docker deployment debug shell.
 plugin:
-  backend: builtin
-ta-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /veraison/stores/vts/ta-store.sql
-en-store:
-  backend: sql
-  sql:
-    driver: sqlite3
-    datasource: /veraison/stores/vts/en-store.sql
+  #backend: builtin
+  backend: go-plugin
+  go-plugin:
+    dir: ../../../scheme/bin/
+store:
+  dbms: sqlite3
+  dsn: file:/veraison/stores/vts/store.sql
+  trace-sql: false
 po-store:
   backend: sql
   sql:

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package policy
 
@@ -11,10 +11,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/log"
 	mock_deps "github.com/veraison/services/policy/mocks"
-	"github.com/veraison/services/proto"
+	"github.com/veraison/services/vts/appraisal"
 )
 
 func Test_CreateAgent(t *testing.T) {
@@ -36,7 +37,7 @@ func Test_CreateAgent(t *testing.T) {
 type AgentEvaluateTestVector struct {
 	Name              string
 	ExpectedError     string
-	ReturnAppraisal   map[string]interface{}
+	ReturnAppraisal   map[string]any
 	ReturnError       error
 	ExpectedAppraisal *ear.Appraisal
 }
@@ -47,9 +48,9 @@ func Test_Agent_Evaluate(t *testing.T) {
 	vectors := []AgentEvaluateTestVector{
 		{
 			Name: "success",
-			ReturnAppraisal: map[string]interface{}{
+			ReturnAppraisal: map[string]any{
 				"ear.status": 2,
-				"ear.trustworthiness-vector": map[string]interface{}{
+				"ear.trustworthiness-vector": map[string]any{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -71,9 +72,9 @@ func Test_Agent_Evaluate(t *testing.T) {
 		},
 		{
 			Name: "bad status",
-			ReturnAppraisal: map[string]interface{}{
+			ReturnAppraisal: map[string]any{
 				"ear.status": "MEH",
-				"ear.trustworthiness-vector": map[string]interface{}{
+				"ear.trustworthiness-vector": map[string]any{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -90,8 +91,8 @@ func Test_Agent_Evaluate(t *testing.T) {
 		},
 		{
 			Name: "bad result, no status",
-			ReturnAppraisal: map[string]interface{}{
-				"ear.trustworthiness-vector": map[string]interface{}{
+			ReturnAppraisal: map[string]any{
+				"ear.trustworthiness-vector": map[string]any{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -108,7 +109,7 @@ func Test_Agent_Evaluate(t *testing.T) {
 		},
 		{
 			Name: "bad result, no trust vector",
-			ReturnAppraisal: map[string]interface{}{
+			ReturnAppraisal: map[string]any{
 				"ear.status": "affirming",
 			},
 			ReturnError:       nil,
@@ -117,9 +118,9 @@ func Test_Agent_Evaluate(t *testing.T) {
 		},
 		{
 			Name: "bad result, bad trust vector",
-			ReturnAppraisal: map[string]interface{}{
+			ReturnAppraisal: map[string]any{
 				"ear.status": 2,
-				"ear.trustworthiness-vector": map[string]interface{}{
+				"ear.trustworthiness-vector": map[string]any{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2, // AFFIRMING
@@ -146,15 +147,15 @@ func Test_Agent_Evaluate(t *testing.T) {
 		Rules:    "",
 	}
 
-	var endorsements []string
+	endorsements := []*comid.ValueTriple{}
 	contraStatus := ear.TrustTierContraindicated
 	polID := "policy:test-scheme"
+	appraisalContext := &appraisal.Context{}
 	appraisal := &ear.Appraisal{
 		Status:            &contraStatus,
 		TrustVector:       &ear.TrustVector{},
 		AppraisalPolicyID: &polID,
 	}
-	evidence := &proto.EvidenceContext{}
 
 	logger := log.Named("test")
 
@@ -169,14 +170,20 @@ func Test_Agent_Evaluate(t *testing.T) {
 				gomock.Eq(policy.Rules),
 				gomock.Any(),
 				gomock.Any(),
-				gomock.Eq(endorsements)).
+				gomock.Eq([]map[string]any{})).
 			AnyTimes().
 			Return(v.ReturnAppraisal, v.ReturnError)
 
 		agent := &Agent{Backend: backend, logger: logger}
-		submod := "test"
-		res, err := agent.Evaluate(ctx, map[string]interface{}{}, "test", policy,
-			submod, appraisal, evidence, endorsements)
+		res, err := agent.Evaluate(
+			ctx,
+			map[string]any{},
+			appraisalContext,
+			policy,
+			"test",
+			appraisal,
+			endorsements,
+		)
 
 		if v.ExpectedError == "" {
 			require.NoError(t, err)

@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package earsigner
 
@@ -20,8 +20,10 @@ func NewFileKeyLoader(fs afero.Fs) *FileKeyLoader {
 }
 
 // Load they key from the specified URL. The url must be in one of the following formats:
-//    <file-path>
-//    file:<file-path>
+//
+//	<file-path>
+//	file:<file-path>
+//
 // Where <file-path> is the abosute path to the file contianing the key.
 func (o FileKeyLoader) Load(location *url.URL) ([]byte, error) {
 	b, err := afero.ReadFile(o.fs, location.Path)

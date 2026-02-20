@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -18,8 +18,8 @@ func (o ImperialTrooper) GetAttestationScheme() string {
 	return "star-wars"
 }
 
-func (o ImperialTrooper) GetSupportedMediaTypes() []string {
-	return []string{"blaster"}
+func (o ImperialTrooper) GetSupportedMediaTypes() map[string][]string {
+	return map[string][]string{"mook": {"blaster"}}
 }
 
 func (o ImperialTrooper) Shoot() string {

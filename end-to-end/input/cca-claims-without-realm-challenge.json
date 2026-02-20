@@ -1,5 +1,6 @@
 {
   "cca-platform-token": {
+    "cca-platform-challenge": "5QHHS9edCpI1N1heeR7DUBI+gaqXUB34EkQCITSCxVM=",
     "cca-platform-profile": "http://arm.com/CCA-SSD/1.0.0",
     "cca-platform-implementation-id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
     "cca-platform-instance-id": "AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
@@ -45,6 +46,6 @@
     ],
     "cca-realm-hash-algo-id": "sha-256",
     "cca-realm-public-key": "pAECIAIhWDCC+9EyqbXDloefuxU0DZBQl45Vx51SeaK6DpWFTzfiDNL2TztytXC713Pu4s52hCUiWDDt9UXtvon/r+Dpa71G4nDyB5bESLmNr0anZNJ0Qubm7YT4zsgX5uzGpx06PefWfs0=",
-    "cca-realm-public-key-hash-algo-id": "sha-256"
+    "cca-realm-public-key-hash-algo-id": "sha-512"
   }
 }

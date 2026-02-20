@@ -37,6 +37,10 @@ variable "command_dispatcher_path" {
   type = string
 }
 
+variable "corim_store_exe_path" {
+  type = string
+}
+
 source "amazon-ebs" "ubuntu" {
   ami_name      = "${var.ami_name}"
   instance_type = "${var.instance_type}"
@@ -76,6 +80,11 @@ build {
     destination = "veraison-dispatcher"
   }
 
+  provisioner "file" {
+    source = "${var.corim_store_exe_path}"
+    destination = "corim-store"
+  }
+
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
@@ -87,9 +96,12 @@ build {
       "sudo mv veraison-dispatcher /opt/veraison/bin/veraison",
       "sudo chmod +x /opt/veraison/bin/veraison",
       "sudo ln -s /opt/veraison/bin/veraison /usr/bin/veraison",
+      "sudo mv corim-store /opt/veraison/bin/corim-store"
+      "sudo chmod +x /opt/veraison/bin/corim-store"
+      "sudo ln -s /opt/veraison/bin/corim-store /usr/bin/corim-store",
 
       "sudo python3 -mvenv /opt/veraison/venv",
-      "sudo /opt/veraison/venv/bin/pip install psycopg2 pyxdg",
+      "sudo /opt/veraison/venv/bin/pip install psycopg2 pyxdg pyyaml",
 
       "sudo NEEDRESTART_MODE=a apt-get remove --yes gcc",
     ]

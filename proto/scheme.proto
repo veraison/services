@@ -1,0 +1,28 @@
+syntax = "proto3";
+package proto;
+
+import "google/protobuf/struct.proto";
+import "token.proto";
+
+option go_package = "github.com/veraison/services/proto";
+
+message GetReferenceValueIDsArgs {
+  bytes trust_anchors = 1 [json_name = "trust-anchors"];
+  bytes claims = 2 [json_name = "claims"];
+}
+
+message ValidateEvidenceIntegrityArgs {
+  AttestationToken evidence = 1 [json_name = "evidence"];
+  bytes trust_anchors = 2 [json_name = "trust-anchors"];
+  bytes endorsements = 3 [json_name = "endorsements"];
+}
+
+message ExtractClaimsArgs {
+  AttestationToken evidence = 1 [json_name = "evidence"];
+  bytes trust_anchors = 2 [json_name = "trust-anchors"];
+}
+
+message AppraiseClaimsArgs {
+  bytes claims = 1 [json_name = "claims"];
+  bytes endorsements = 2 [json_name = "endorsements"];
+}

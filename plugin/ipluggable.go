@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package plugin
 
@@ -14,7 +14,8 @@ type IPluggable interface {
 	// attestation scheme handled by this IPluggable implementation.
 	GetAttestationScheme() string
 
-	// GetSupportedMediaTypes returns a []string containing the media types
-	// this plugin is capable of handling.
-	GetSupportedMediaTypes() []string
+	// GetSupportedMediaTypes returns a map[string][]string that maps
+	// cetegory names to the  the media types in that category that this
+	// plugin is capable of handling.
+	GetSupportedMediaTypes() map[string][]string
 }

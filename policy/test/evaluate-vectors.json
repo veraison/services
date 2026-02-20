@@ -4,7 +4,7 @@
 		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
-		"endorsements": "test/inputs/psa-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/malformed.rego",
 		"expected": {
 			"error": "could not Eval policy: 1 error occurred: policy.rego:1: rego_parse_error: unexpected : token\n\tbad_rule:;;\n\t        ^",
@@ -16,7 +16,7 @@
 		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
-		"endorsements": "test/inputs/psa-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/bad.rego",
 		"expected": {
 			"error": "could not Eval policy: 1 error occurred: policy.rego:6: rego_unsafe_var_error: var y is unsafe",
@@ -28,7 +28,7 @@
 		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
-		"endorsements": "test/inputs/psa-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/incorrect-rule-value.rego",
 		"expected": {
 			"error": "bad value \"SURE\" for \"executables\"",
@@ -40,7 +40,7 @@
 		"scheme": "PSA_IOT",
 		"result": "test/inputs/psa-result.json",
 		"evidence": "test/inputs/psa-evidence.json",
-		"endorsements": "test/inputs/psa-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/empty.rego",
 		"expected": {
 			"error": null,
@@ -75,7 +75,7 @@
 		"scheme": "TPM_ENACTTRUST",
 		"result": "test/inputs/enacttrust-result.json",
 		"evidence": "test/inputs/enacttrust-evidence.json",
-		"endorsements": "test/inputs/enacttrust-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/sw-up-to-dateness.rego",
 		"expected": {
 			"error": null,
@@ -110,7 +110,7 @@
 		"scheme": "TPM_ENACTTRUST",
 		"result": "test/inputs/enacttrust-result.json",
 		"evidence": "test/inputs/enacttrust-evidence-updatedFirmware.json",
-		"endorsements": "test/inputs/enacttrust-endorsements.json",
+		"endorsements": "test/inputs/empty-endorsements.json",
 		"policy": "test/policies/sw-up-to-dateness.rego",
 		"expected": {
 			"error": null,

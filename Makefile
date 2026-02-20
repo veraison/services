@@ -1,12 +1,5 @@
-# Copyright 2021-2025 Contributors to the Veraison project.
+# Copyright 2021-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-
-export TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-
-# There will be one plugin built for each scheme. Removing this definition will
-# cause a separate plugin to be built for each handler interface (endorsement,
-# store, and verification), resulting in three plugins per scheme.
-export COMBINED_PLUGINS = 1
 
 SHELL = /bin/bash
 
@@ -55,6 +48,12 @@ IGNORE_COVERAGE += github.com/veraison/services/coserv/cmd/coserv-service
 IGNORE_COVERAGE += github.com/veraison/services/scheme/amd-kds-coserv
 IGNORE_COVERAGE += github.com/veraison/services/scheme/nvidia-coserv
 IGNORE_COVERAGE += github.com/veraison/services/scheme/arm-cca
+IGNORE_COVERAGE += github.com/veraison/services/scheme/parsec-cca
+IGNORE_COVERAGE += github.com/veraison/services/scheme/parsec-tpm
+IGNORE_COVERAGE += github.com/veraison/services/scheme/psa-iot
+IGNORE_COVERAGE += github.com/veraison/services/scheme/riot
+IGNORE_COVERAGE += github.com/veraison/services/scheme/sevsnp
+IGNORE_COVERAGE += github.com/veraison/services/scheme/tpm-enacttrust
 
 include mk/cover.mk
 
