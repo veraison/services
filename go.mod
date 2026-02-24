@@ -38,7 +38,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
 	github.com/veraison/cmw v0.2.0
-	github.com/veraison/corim v1.1.3-0.20251002172919-3c18c66c77b0
+	github.com/veraison/corim v1.1.3-0.20260224102946-0337ce53f98f
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.2
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
@@ -131,7 +131,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/veraison/go-cose v1.3.0
-	github.com/veraison/swid v1.1.1-0.20230911094910-8ffdd07a22ca
+	github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
