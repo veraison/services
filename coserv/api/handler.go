@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/veraison/corim/coserv"
+	"github.com/veraison/go-cose"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/coserv/endorsementdistributor"
 	"github.com/veraison/services/log"
@@ -135,6 +137,58 @@ func reportProblem(c *gin.Context, status int, details ...string) {
 	c.Data(status, "application/concise-problem-details+cbor", b)
 }
 
+// unwrapCoserv attempts to parse the input bytes as a COSE_Sign1 message and
+// returns the payload if successful; otherwise, it returns the input bytes
+// unchanged. This allows setCacheHeaders to extract the CoSERV result set from
+// either a signed or unsigned message.
+func unwrapCoserv(data []byte) []byte {
+	var msg cose.Sign1Message
+
+	if err := msg.UnmarshalCBOR(data); err == nil {
+		return msg.Payload
+	}
+
+	return data
+}
+
+// setCacheHeaders sets HTTP caching headers based on the expiry timestamp in
+// the CoSERV result set.
+func setCacheHeaders(c *gin.Context, resultBytes []byte) {
+	var result coserv.Coserv
+
+	resultBytes = unwrapCoserv(resultBytes)
+
+	// §6.1.3 of draft-ietf-rats-coserv: "the HTTP cache directives [...] MUST
+	// NOT exceed the result set expiry timestamp.
+
+	if err := result.FromCBOR(resultBytes); err != nil {
+		log.Warnw("failed to unmarshal result", "error", err)
+		return
+	}
+
+	if result.Results == nil || result.Results.Expiry == nil {
+		// XXX this should not happen as VTS is expected to always include an
+		// expiry timestamp in the result set, but log a warning and skip
+		// setting cache headers if it does
+		log.Warn("ResultSet has no expiry timestamp, skipping cache headers")
+		return
+	}
+
+	exp := result.Results.Expiry
+
+	// XXX the following assumes VTS and CoSERV are time-synchronized
+	now := time.Now()
+	maxAge := int64(exp.Sub(now).Seconds())
+
+	// Ensure max-age is non-negative; if expiry is in the past, use 0
+	if maxAge < 0 {
+		maxAge = 0
+	}
+
+	c.Header("Cache-Control", fmt.Sprintf("max-age=%d", maxAge))
+	c.Header("Expires", exp.UTC().Format(time.RFC1123))
+}
+
 func (o Handler) CoservRequest(c *gin.Context) {
 	offered := c.NegotiateFormat(CoservMTs...)
 	if !slices.Contains(CoservMTs, offered) {
@@ -168,6 +222,9 @@ func (o Handler) CoservRequest(c *gin.Context) {
 		reportProblem(c, status, err.Error())
 		return
 	}
+
+	// Set caching headers based on the result set expiry timestamp
+	setCacheHeaders(c, res)
 
 	c.Data(http.StatusOK, mediaType, res)
 }
