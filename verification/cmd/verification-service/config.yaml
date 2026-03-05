@@ -7,6 +7,7 @@ verification:
   protocol: https
   cert: ../../../deployments/docker/src/certs/verification.crt
   cert-key: ../../../deployments/docker/src/certs/verification.key
+  discovery-max-age: 60s
 vts:
   server-addr: localhost:50051
   tls: true
