@@ -75,7 +75,7 @@ func TestHandler_Submit_UnsupportedMediaType(t *testing.T) {
 		SupportedMediaTypes().
 		Return(supportedMediaTypes, nil)
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusUnsupportedMediaType
 	expectedType := "application/problem+json"
@@ -118,7 +118,7 @@ func TestHandler_Submit_NoBody(t *testing.T) {
 		).
 		Return(true, nil)
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusBadRequest
 	expectedType := "application/problem+json"
@@ -168,7 +168,7 @@ func TestHandler_Submit_DecodeFailure(t *testing.T) {
 		).
 		Return(errors.New(handlerError))
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusOK
 	expectedType := ProvisioningSessionMediaType
@@ -204,7 +204,7 @@ func TestHandler_Submit_ok(t *testing.T) {
 	expectedType := ProvisioningSessionMediaType
 	expectedStatus := "success"
 	dm := mock_deps.NewMockIProvisioner(ctrl)
-	h := NewHandler(dm, log.Named("api"))
+	h := NewHandler(dm, log.Named("api"), "1h")
 
 	w := httptest.NewRecorder()
 	g, _ := gin.CreateTestContext(w)
@@ -249,7 +249,7 @@ func TestHandler_GetWellKnownProvisioningInfo_ok(t *testing.T) {
 		GetVTSState().
 		Return(&testGoodServiceState, nil)
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusOK
 	expectedType := capability.WellKnownMediaType
@@ -291,7 +291,7 @@ func TestHandler_GetWellKnownProvisioningInfo_GetRegisteredMediaTypes_empty(t *t
 		GetVTSState().
 		Return(&testGoodServiceState, nil)
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusOK
 	expectedType := capability.WellKnownMediaType
@@ -332,7 +332,7 @@ func TestHandler_GetWellKnownProvisioningInfo_GetServiceState_fail(t *testing.T)
 		GetVTSState().
 		Return(nil, errors.New("blah"))
 
-	h := NewHandler(dm, log.Named("test"))
+	h := NewHandler(dm, log.Named("test"), "1h")
 
 	expectedCode := http.StatusInternalServerError
 	expectedType := "application/problem+json"
