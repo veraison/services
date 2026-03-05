@@ -28,6 +28,7 @@ vts_FLAGS := -v $(STORES_VOLUME):/opt/veraison/stores
 management_FLAGS := -v $(STORES_VOLUME):/opt/veraison/stores -p $(MANAGEMENT_PORT):$(MANAGEMENT_PORT)
 provisioning_FLAGS := -p $(PROVISIONING_PORT):$(PROVISIONING_PORT)
 verification_FLAGS := -p $(VERIFICATION_PORT):$(VERIFICATION_PORT)
+coserv_FLAGS := -p $(COSERV_PORT):$(COSERV_PORT)
 keycloak_FLAGS := -p $(KEYCLOAK_PORT):$(KEYCLOAK_PORT) -e KEYCLOAK_ADMIN=admin \
 		  -e KEYCLOAK_ADMIN_PASSWORD=admin
 
@@ -91,7 +92,7 @@ services:
 	@# but I haven't looked too much into it). Recursively calling $(MAKE) here
 	@# resolves the issue.
 	$(MAKE) .built/keycloak-container .built/vts-container .built/provisioning-container \
-		.built/verification-container .built/management-container
+		.built/verification-container .built/management-container .built/coserv-container
 
 .PHONY: vts
 vts: deploy .built/vts-container
@@ -122,6 +123,12 @@ keycloak: deploy .built/keycloak-container
 
 .PHONY: keycloak-image
 keycloak-image: deploy .built/keycloak-image
+
+.PHONY: coserv
+coserv: deploy .built/coserv-container
+
+.PHONY: coserv-image
+coserv-image: deploy .built/coserv-image
 
 
 .PHONY: network
@@ -185,12 +192,12 @@ docker-clean:
 	fi
 	@# -f ensures exit code 0, even if image doesn't exist
 	docker container rm -f keycloak-service vts-service provisioning-service \
-		verification-service management-service
+		verification-service management-service coserv-service
 	docker volume rm -f veraison-logs veraison-stores
 	@# ubuntu uses an older version of docker without -f option for network; hence the || : cludge
 	docker network rm $(VERAISON_NETWORK) || :
 	docker image rm -f veraison/builder veraison/keycloak veraison/vts veraison/provisioning \
-		veraison/verification veraison/management veraison/manager
+		veraison/verification veraison/management veraison/manager veraison/coserv
 	rm -rf  .built
 
 .PHONY: host-clean
@@ -245,6 +252,9 @@ typically don't need to be invoked directly:
 	                    create the above.
 	management:         create the management-service container.
 	management-image:   create the veraison/management image used to
+	                    create the above.
+	coserv:             create the coserv-service container.
+	coserv-image:       create the veraison/coserv image used to
 	                    create the above.
 	prune:              prune intermediate docker images.
 endef

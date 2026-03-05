@@ -15,12 +15,14 @@ function status() {
     local verif
     local manage
     local keycloak
+    local coserv
 
     vts=$(_get_container_state vts-service)
     prov=$(_get_container_state provisioning-service)
     verif=$(_get_container_state verification-service)
     manage=$(_get_container_state management-service)
     keycloak=$(_get_container_state keycloak-service)
+    coserv=$(_get_container_state coserv-service)
 
     if [[ $_quiet == true ]]; then
         vts=$(_strip_color "$vts")
@@ -28,16 +30,17 @@ function status() {
         verif=$(_strip_color "$verif")
         manage=$(_strip_color "$manage")
         keycloak=$(_strip_color "$keycloak")
+        coserv=$(_strip_color "$coserv")
 
         local status="${_yell}stopped${_reset}"
 
         if [[ "$vts" == "running" || "$prov" == "running" || "$verif" == "running" || \
-            "$manage" == "running" || "$keycloak" == "running" ]]; then
+            "$manage" == "running" || "$keycloak" == "running" || "$coserv" == "running" ]]; then
             status="${_yell}partial${_yell}"
         fi
 
         if [[ "$vts" == "running" && "$prov" == "running" && "$verif" == "running"  && \
-            "$manage" == "running" && "$keycloak" == "running" ]]; then
+            "$manage" == "running" && "$keycloak" == "running" && "$coserv" == "running" ]]; then
             status="${_green}running${_reset}"
         fi
 
@@ -48,6 +51,7 @@ function status() {
         echo -e "verification: $verif"
         echo -e "  management: $manage"
         echo -e "    keycloak: $keycloak"
+        echo -e "      coserv: $coserv"
     fi
 }
 
@@ -61,6 +65,7 @@ function start() {
         start_provisioning
         start_verification
         start_management
+        start_coserv
     elif [[ "$what" == "vts" || "$what" == "vts-service" ]]; then
         start_vts
     elif [[ "$what" == "provisioning" || "$what" == "provisioning-service" ]]; then
@@ -71,6 +76,8 @@ function start() {
         start_management
     elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
         start_keycloak
+    elif [[ "$what" == "coserv" || "$what" == "coserv-service" ]]; then
+        start_coserv
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -81,6 +88,7 @@ function stop() {
     local what=$1
 
     if [[ "$what" == "" ]]; then
+        stop_coserv
         stop_management
         stop_verification
         stop_provisioning
@@ -96,6 +104,8 @@ function stop() {
         stop_management
     elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
         stop_keycloak
+    elif [[ "$what" == "coserv" || "$what" == "coserv-service" ]]; then
+        stop_coserv
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -115,6 +125,8 @@ function follow() {
         follow_management
     elif [[ "$what" == "keycloak" || "$what" == "keycloak-service" ]]; then
         follow_keycloak
+    elif [[ "$what" == "coserv" || "$what" == "coserv-service" ]]; then
+        follow_coserv
     else
         echo -e "$_error: unknown service: $what"
         exit 1
@@ -179,6 +191,18 @@ function stop_keycloak() {
 
 function follow_keycloak() {
     docker container logs --follow --timestamps keycloak-service
+}
+
+function start_coserv() {
+    docker container start coserv-service
+}
+
+function stop_coserv() {
+    docker container stop coserv-service
+}
+
+function follow_coserv() {
+    docker container logs --follow --timestamps coserv-service
 }
 
 function manager() {
@@ -282,6 +306,7 @@ function shell() {
         verification | verification-service) container_id="verification-service" ;;
         management | management-service) container_id="management-service" ;;
         keycloak | keycloak-service) container_id="keycloak-service" ;;
+        coserv | coserv-service) container_id="coserv-service" ;;
         *)
             echo -e "$_error: unknown service: $what"
             exit 1
@@ -341,12 +366,12 @@ function help() {
 	    help
 	            Print this message and exist (same as -h).
 
-	    start [vts | provisioning | verification]
+	    start [vts | provisioning | verification | management | coserv]
 
 	            Start a single Veraison service (by specifying its name), or all
 	            of them (if no name is specified).
 
-	    stop [vts | provisioning | verification]
+	    stop [vts | provisioning | verification | management | coserv]
 
 	            Stop a single Veraison service (by specifying its name), or all
 	            of them (if no name is specified).
@@ -531,6 +556,9 @@ case $command in
     start-verification) start_verification;;
     stop-verification) stop_verification;;
     follow-verification) follow_verification;;
+    start-coserv) start_coserv;;
+    stop-coserv) stop_coserv;;
+    follow-coserv) follow_coserv;;
     status) status;;
     short-status) _color=false _reset_colors; _quiet=true status;;
     stores | check-stores) stores "$2";;
