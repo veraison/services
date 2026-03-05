@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	tenantID = "0"
+	tenantID           = "0"
+	defaultCacheMaxAge = 60 * time.Second
 )
 
 type IHandler interface {
@@ -28,16 +29,19 @@ type IHandler interface {
 type Handler struct {
 	Provisioner provisioner.IProvisioner
 
-	logger *zap.SugaredLogger
+	WkCacheMaxAge time.Duration
+	logger        *zap.SugaredLogger
 }
 
 func NewHandler(
 	p provisioner.IProvisioner,
 	logger *zap.SugaredLogger,
+	wkCacheMaxAge string,
 ) IHandler {
 	return &Handler{
-		Provisioner: p,
-		logger:      logger,
+		Provisioner:   p,
+		logger:        logger,
+		WkCacheMaxAge: capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 	}
 }
 
@@ -216,6 +220,8 @@ func (o *Handler) GetWellKnownProvisioningInfo(c *gin.Context) {
 		return
 	}
 
+	c.Header("Cache-Control", fmt.Sprintf("max-age=%d", int64(o.WkCacheMaxAge.Seconds())))
+	c.Header("Expires", time.Now().Add(o.WkCacheMaxAge).UTC().Format(time.RFC1123))
 	c.Header("Content-Type", capability.WellKnownMediaType)
 	c.JSON(http.StatusOK, obj)
 }

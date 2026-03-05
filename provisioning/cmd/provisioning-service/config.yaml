@@ -7,6 +7,7 @@ provisioning:
   protocol: https
   cert: ../../../deployments/docker/src/certs/provisioning.crt
   cert-key: ../../../deployments/docker/src/certs/provisioning.key
+  discovery-max-age: 1m
 vts:
   server-addr: localhost:50051
   tls: true

@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package api
@@ -15,6 +15,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/go-cose"
+	"github.com/veraison/services/capability"
 	"github.com/veraison/services/config"
 	"github.com/veraison/services/coserv/endorsementdistributor"
 	"github.com/veraison/services/log"
@@ -28,20 +29,24 @@ var (
 		"application/coserv+cbor",
 		"application/coserv+cose",
 	}
+	defaultCacheMaxAge = 3600 * time.Second
 )
 
 type Handler struct {
 	Logger                *zap.SugaredLogger
 	EndorsementDistibutor endorsementdistributor.IEndorsementDistributor
+	WkCacheMaxAge         time.Duration
 }
 
 func NewHandler(
 	endorsementdistributor endorsementdistributor.IEndorsementDistributor,
 	logger *zap.SugaredLogger,
+	wkCacheMaxAge string,
 ) Handler {
 	return Handler{
 		EndorsementDistibutor: endorsementdistributor,
 		Logger:                logger,
+		WkCacheMaxAge:         capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 	}
 }
 
@@ -92,6 +97,8 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 		keySet,
 	)
 
+	c.Header("Cache-Control", fmt.Sprintf("max-age=%d", int64(o.WkCacheMaxAge.Seconds())))
+	c.Header("Expires", time.Now().Add(o.WkCacheMaxAge).UTC().Format(time.RFC1123))
 	c.Header("Content-Type", CoservDiscoveryMediaType)
 	c.JSON(http.StatusOK, obj)
 }

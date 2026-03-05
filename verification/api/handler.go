@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package api
 
@@ -36,7 +36,8 @@ var (
 )
 
 var (
-	tenantID = "0"
+	tenantID           = "0"
+	defaultCacheMaxAge = 60 * time.Second
 )
 
 type IHandler interface {
@@ -51,14 +52,18 @@ type Handler struct {
 	SessionManager sessionmanager.ISessionManager
 	Verifier       verifier.IVerifier
 
-	logger *zap.SugaredLogger
+	WkCacheMaxAge time.Duration
+	logger        *zap.SugaredLogger
 }
 
-func NewHandler(sm sessionmanager.ISessionManager, v verifier.IVerifier) IHandler {
+func NewHandler(sm sessionmanager.ISessionManager, v verifier.IVerifier, wkCacheMaxAge string) IHandler {
+	logger := log.Named("api-handler")
+
 	return &Handler{
 		SessionManager: sm,
 		Verifier:       v,
-		logger:         log.Named("api-handler"),
+		WkCacheMaxAge:  capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
+		logger:         logger,
 	}
 }
 
@@ -597,6 +602,8 @@ func (o *Handler) GetWellKnownVerificationInfo(c *gin.Context) {
 		return
 	}
 
+	c.Header("Cache-Control", fmt.Sprintf("max-age=%d", int64(o.WkCacheMaxAge.Seconds())))
+	c.Header("Expires", time.Now().Add(o.WkCacheMaxAge).UTC().Format(time.RFC1123))
 	c.Header("Content-Type", capability.WellKnownMediaType)
 	c.JSON(http.StatusOK, obj)
 }

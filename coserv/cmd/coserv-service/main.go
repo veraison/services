@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -20,16 +20,22 @@ var (
 )
 
 type cfg struct {
-	ListenAddr string `mapstructure:"listen-addr" valid:"dialstring"`
-	Protocol   string `mapstructure:"protocol" valid:"in(http|https)"`
-	Cert       string `mapstructure:"cert" config:"zerodefault"`
-	CertKey    string `mapstructure:"cert-key" config:"zerodefault"`
+	ListenAddr      string `mapstructure:"listen-addr" valid:"dialstring"`
+	Protocol        string `mapstructure:"protocol" valid:"in(http|https)"`
+	Cert            string `mapstructure:"cert" config:"zerodefault"`
+	CertKey         string `mapstructure:"cert-key" config:"zerodefault"`
+	DiscoveryMaxAge string `mapstructure:"discovery-max-age" config:"zerodefault"`
 }
 
 func (o cfg) Validate() error {
 	if o.Protocol == "https" && (o.Cert == "" || o.CertKey == "") {
 		return errors.New(`both cert and cert-key must be specified when protocol is "https"`)
 	}
+
+	// Note: we don't validate discovery-max-age here because it is optional and
+	// has a default value, and the parsing of it is handled in the handler
+	// where we can log a warning if it's invalid and fall back to the default
+	// value.
 
 	return nil
 }
@@ -87,7 +93,7 @@ func main() {
 	log.Info("initializing endorsement distributor")
 	endorsementdistributor := endorsementdistributor.New(vtsClient)
 
-	apiHandler := api.NewHandler(endorsementdistributor, log.Named("coserv"))
+	apiHandler := api.NewHandler(endorsementdistributor, log.Named("coserv"), cfg.DiscoveryMaxAge)
 
 	if cfg.Protocol == "https" {
 		apiServerTLS(apiHandler, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
