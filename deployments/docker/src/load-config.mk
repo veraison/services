@@ -12,6 +12,7 @@ PROVISIONING_PORT ?= 9443
 VERIFICATION_PORT ?= 8443
 MANAGEMENT_PORT ?= 10443
 KEYCLOAK_PORT ?= 11111
+COSERV_PORT ?= 11443
 
 # Deploy destination is either an absolute path to a directory on the host, or
 # the name of a docker volume.

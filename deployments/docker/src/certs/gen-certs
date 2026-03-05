@@ -7,7 +7,7 @@ ROOT_CERT_NAME=rootCA
 DEFAULT_DOMAIN=veraison-net
 DEFAULT_SUFFIX=-service
 
-SERVICES=(provisioning verification management keycloak vts)
+SERVICES=(provisioning verification management keycloak vts coserv)
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 function create_root_cert() {
@@ -121,7 +121,7 @@ function help() {
 
 	Commands:
 
-	create [ vts | provisoning | verification | management | keycloak ]
+	create [ vts | provisioning | verification | management | keycloak | coserv ]
 	        Create cert for the specified service, or all, if not specified.
 	        
 	root
@@ -129,7 +129,7 @@ function help() {
 	        (note: if not already created, this will be automatically created by
 	        "create" command).
 
-	clean [ vts | provisoning | verification | management | keycloak ]
+	clean [ vts | provisioning | verification | management | keycloak | coserv ]
 	        Without an arguement, clean up all intermediate artefacts (e.g.,
 	        CSRs).
 	        With an argument, clean output artefacts for the specified

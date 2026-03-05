@@ -18,6 +18,13 @@ management:
   protocol: https
   cert: /opt/veraison/management.crt
   cert-key: /opt/veraison/management.key
+coserv:
+  listen-addr: 0.0.0.0:${COSERV_PORT}
+  protocol: https
+  cert: /opt/veraison/coserv.crt
+  cert-key: /opt/veraison/coserv.key
+coserv-signer:
+  key: /opt/veraison/coserv-signer.jwk
 vts:
   server-addr: vts-service:${VTS_PORT}
   tls: true
