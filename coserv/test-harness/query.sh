@@ -33,8 +33,7 @@ cat << EOF | diag2cbor.rb | base64url_encode
         }
       ] ]
     },
-    / timestamp /   2: 0("2030-12-01T18:30:01Z"),
-    / result-type / 3: 0 / collected material /
+    / result-type / 2: 0 / collected material /
   }
 }
 EOF
@@ -53,8 +52,7 @@ cat << EOF | diag2cbor.rb | base64url_encode
         [ 550(h'0107060504030201000f0e0d0c0b0a090817161514131211101f1e1d1c1b1a1918') ] / UEID /
       ]
     },
-    / timestamp /   2: 0("2030-12-01T18:30:01Z"),
-    / result-type / 3: 0 / collected material /
+    / result-type / 2: 0 / collected material /
   }
 }
 EOF
