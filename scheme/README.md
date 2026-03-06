@@ -21,6 +21,7 @@ Currently the following schemes are implemented:
    [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 - `sevsnp` : AMD Secure Encrypted Virtualization - Secure Nested Paging,
   details [here](https://www.amd.com/en/developer/sev.html)
+- `ratsd` : A Lead Verifier scheme for Verifying Composite Attester based on [RATSD](https://github.com/veraison/ratsd)
 
 ## Implementing Attestation Scheme Support
 
