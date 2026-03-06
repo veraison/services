@@ -1,7 +1,7 @@
 # Copyright 2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../../bin/rats.plugin
+PLUGIN := ../../bin/ratsd.plugin
 GOPKG := github.com/veraison/services/scheme/ratsd
 SRCS := main.go
 
