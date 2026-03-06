@@ -73,7 +73,7 @@ type GRPC struct {
 	Store                     *corimstore.Store
 	SchemePluginManager       plugin.IManager[handlermod.ISchemeHandler]
 	CoservProxyPluginManager  plugin.IManager[handlermod.ICoservProxyHandler]
-	LeadVerifierPluginManager plugin.IManager[handler.IComponentVerifierClientHandler]
+	LeadVerifierPluginManager plugin.IManager[handlermod.IComponentVerifierClientHandler]
 	PolicyManager             *policymanager.PolicyManager
 	EarSigner                 earsigner.IEarSigner
 	CoservSigner              coservsigner.ICoservSigner
@@ -95,7 +95,6 @@ func NewGRPC(
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservSigner coservsigner.ICoservSigner,
-	leadVerifierDispatcher *Dispatcher,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
@@ -363,16 +362,11 @@ func (o *GRPC) GetCompositeAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
+	evidence := appraisal.NewEvidenceFromProtobuf(token)
 	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	// TODO Use the Plugin for the Composite Attester to get the details of Scheme
-	var stHandler handler.IStoreHandler
-
-	mainAppraisal, err := o.initEvidenceContext(stHandler, token)
-	if err != nil {
-		return o.finalize(mainAppraisal, err)
-	}
+	mainAppraisal := appraisal.NewContext(evidence)
 
 	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
 	if err != nil {

@@ -25,8 +25,8 @@ func (ComponentVerifierClientHandler) GetAttestationScheme() string {
 	return SchemeName
 }
 
-func (ComponentVerifierClientHandler) GetSupportedMediaTypes() []string {
-	return VeraisonClientMediaTypes
+func (ComponentVerifierClientHandler) GetSupportedMediaTypes() map[string][]string {
+	return map[string][]string{"coserv": VeraisonClientMediaTypes}
 }
 
 type ClientConfig struct {

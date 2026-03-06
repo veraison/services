@@ -3,6 +3,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/rpc"
 
@@ -37,9 +38,13 @@ func (s *ComponentVerifierClientHandlerRPCServer) GetAttestationScheme(args inte
 	return nil
 }
 
-func (s *ComponentVerifierClientHandlerRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]string) error {
-	*resp = s.Impl.GetSupportedMediaTypes()
-	return nil
+func (s *ComponentVerifierClientHandlerRPCServer) GetSupportedMediaTypes(args interface{}, resp *[]byte) error {
+	mts := s.Impl.GetSupportedMediaTypes()
+
+	var err error
+	*resp, err = json.Marshal(mts)
+
+	return err
 }
 
 type AppraiseComponentEvidenceArgs struct {
