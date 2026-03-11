@@ -10,6 +10,7 @@ schemes.
 Currently the following schemes are implemented:
 
 - `arm-cca` Arm Confidential Compute Architecture attestation.
+- `nvidia` : NVIDIA Remote Attestation
 - `psa-iot`: Arm Platform Security Architecture attestation.
 - `riot`: [RIoT based DICE](https://trustedcomputinggroup.org/work-groups/dice-architectures/)-compatible
   attestation (note: this does not implement any specific DICE architecture).
