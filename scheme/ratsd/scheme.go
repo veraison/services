@@ -34,14 +34,8 @@ func NewImplementation() *Implementation {
 func (o *Implementation) GetTrustAnchorIDs(
 	evidence *appraisal.Evidence,
 ) ([]*comid.Environment, error) {
-	return nil, nil // TODO
-}
 
-func (o *Implementation) GetReferenceValueIDs(
-	trustAnchors []*comid.KeyTriple,
-	claims map[string]any,
-) ([]*comid.Environment, error) {
-	return nil, nil // TODO
+	return nil, nil
 }
 
 func (o *Implementation) ValidateComid(c *comid.Comid) error {
@@ -60,7 +54,11 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
-	return nil // TODO
+	// Decode CMW COSE header
+	// Get the Cert and Cert Chain
+	// Load the Store
+	// Verify the Signature
+	return nil
 }
 
 func (o *Implementation) AppraiseClaims(
@@ -68,7 +66,7 @@ func (o *Implementation) AppraiseClaims(
 	endorsements []*comid.ValueTriple,
 ) (*ear.AttestationResult, error) {
 	result := handler.CreateAttestationResult(Descriptor.Name)
-	//appraisal := result.Submods[Descriptor.Name]
-	// TODO
+
+	// For Lead Attester, there is no real claims to Appraise,  as there are no LA Claims
 	return result, nil
 }
