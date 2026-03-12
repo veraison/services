@@ -38,10 +38,6 @@ func (o *Implementation) GetTrustAnchorIDs(
 	return nil, nil
 }
 
-func (o *Implementation) ValidateComid(c *comid.Comid) error {
-	return nil // TODO
-}
-
 func (o *Implementation) ExtractClaims(
 	evidence *appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
@@ -54,11 +50,8 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
-	// Decode CMW COSE header
-	// Get the Cert and Cert Chain
-	// Load the Store
-	// Verify the Signature
-	return nil
+
+	return nil // TODO
 }
 
 func (o *Implementation) AppraiseClaims(
