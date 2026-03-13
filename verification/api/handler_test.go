@@ -1310,7 +1310,7 @@ func TestHandler_SubmitEvidence_process_composite_ok_sync(t *testing.T) { // nol
 		ProcessCompositeEvidence(tenantID, testNonce, []byte(testJSONCollectionBody), testSupportedCompositeMediaTypeA).
 		Return([]byte(testResult), nil)
 
-	h := NewHandler(sm, v)
+	h := NewHandler(sm, v, "1h")
 
 	w := httptest.NewRecorder()
 
@@ -1360,7 +1360,7 @@ func TestHandler_GetWellKnownVerificationInfo_with_composite_ok(t *testing.T) {
 		ApiEndpoints:                publicApiMap,
 	}
 
-	h := NewHandler(sm, v)
+	h := NewHandler(sm, v, "1h")
 
 	w := httptest.NewRecorder()
 
