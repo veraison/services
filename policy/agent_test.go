@@ -147,10 +147,11 @@ func Test_Agent_Evaluate(t *testing.T) {
 		Rules:    "",
 	}
 
-	endorsements := []*comid.ValueTriple{}
 	contraStatus := ear.TrustTierContraindicated
 	polID := "policy:test-scheme"
-	appraisalContext := &appraisal.Context{}
+	appraisalContext := &appraisal.Context{
+		Endorsements: []*comid.ValueTriple{},
+	}
 	appraisal := &ear.Appraisal{
 		Status:            &contraStatus,
 		TrustVector:       &ear.TrustVector{},
@@ -182,7 +183,6 @@ func Test_Agent_Evaluate(t *testing.T) {
 			policy,
 			"test",
 			appraisal,
-			endorsements,
 		)
 
 		if v.ExpectedError == "" {

@@ -416,10 +416,9 @@ func (o *GRPC) GetCompositeAttestation(
 	}, nil
 }
 
-func (o *GRPC) GetAttestation(
-	ctx context.Context,
+func (o *GRPC) getAttestation(
 	token *proto.AttestationToken,
-) (*proto.AppraisalContext, error) {
+) (*appraisal.Context, error) {
 	evidence := appraisal.NewEvidenceFromProtobuf(token)
 	o.logger.Infow("get attestation", "media-type", evidence.MediaType,
 		"tenant-id", evidence.TenantID)
@@ -430,11 +429,11 @@ func (o *GRPC) GetAttestation(
 	if err != nil {
 		appraisal.SetAllClaims(ear.UnexpectedEvidenceClaim)
 		appraisal.AddPolicyClaim("problem", "could not resolve media type")
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	if err := appraisal.SetScheme(handler.GetAttestationScheme()); err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	appraisal.TrustAnchorIDs, err = handler.GetTrustAnchorIDs(evidence)
@@ -444,7 +443,7 @@ func (o *GRPC) GetAttestation(
 			appraisal.AddPolicyClaim("problem", "could not establish identity from evidence")
 		}
 
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	// TODO(setrofim): in principle, we should be matching exactly
@@ -477,7 +476,7 @@ func (o *GRPC) GetAttestation(
 			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
 		}
 
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	claims, err := handler.ExtractClaims(appraisal.Evidence, trustAnchors)
@@ -485,13 +484,13 @@ func (o *GRPC) GetAttestation(
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
 			appraisal.AddPolicyClaim("problem", err.Error())
 		}
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 	appraisal.Claims = claims
 
 	appraisal.ReferenceValueIDs, err = handler.GetReferenceValueIDs(trustAnchors, claims)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	o.logger.Debugw("constructed evidence context",
@@ -501,8 +500,11 @@ func (o *GRPC) GetAttestation(
 	o.logger.Debug("obtaining endorsements...")
 	endorsements, err := o.getValueTriples(appraisal.ReferenceValueIDs, appraisal.StoreLabel(), true)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
+
+	// set endorsements in appraisal context for use in policy evaluation
+	appraisal.Endorsements = endorsements
 
 	o.logger.Debug("validating evidence...")
 	if err = handler.ValidateEvidenceIntegrity(appraisal.Evidence, trustAnchors, endorsements); err != nil {
@@ -519,20 +521,33 @@ func (o *GRPC) GetAttestation(
 			appraisal.AddPolicyClaim("problem", claimStr)
 		}
 
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 
 	o.logger.Debug("appraising claims...")
 	appraisedResult, err := handler.AppraiseClaims(claims, endorsements)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		return appraisal, err
 	}
 	appraisedResult.Nonce = appraisal.Result.Nonce
 	appraisal.Result = appraisedResult
+
+	return appraisal, nil
+}
+
+func (o *GRPC) GetAttestation(
+	ctx context.Context,
+	token *proto.AttestationToken,
+) (*proto.AppraisalContext, error) {
+	appraisal, err := o.getAttestation(token)
+	if err != nil {
+		return o.finalize(appraisal, err)
+	}
+
 	appraisal.InitPolicyID()
 
 	o.logger.Debug("evaluating policy...")
-	err = o.PolicyManager.Evaluate(ctx, appraisal, endorsements)
+	err = o.PolicyManager.Evaluate(ctx, appraisal)
 	if err != nil {
 		return o.finalize(appraisal, err)
 	}

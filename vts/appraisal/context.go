@@ -29,6 +29,7 @@ type Context struct {
 	Claims            map[string]any         `json:"claims"`
 	Result            *ear.AttestationResult `json:"result"`
 	SignedEAR         []byte                 `json:"signed-ear"`
+	Endorsements      []*comid.ValueTriple   `json:"endorsements"`
 }
 
 // NewContext instantiates a new Context using the provided evidence. The

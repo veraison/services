@@ -75,10 +75,9 @@ func (o *Agent) Evaluate(
 	policy *Policy,
 	submod string,
 	appraisal *ear.Appraisal,
-	endorsements []*comid.ValueTriple,
 ) (*ear.Appraisal, error) {
 
-	endorsementMaps, err := endorsementsToMaps(endorsements)
+	endorsementMaps, err := endorsementsToMaps(appraisalContext.Endorsements)
 	if err != nil {
 		return nil, err
 	}
