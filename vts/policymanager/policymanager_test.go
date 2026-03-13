@@ -103,7 +103,6 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	polID := "policy:TPM_ENACTTRUST"
-	endorsements := []*comid.ValueTriple{}
 	ar := ear.NewAttestationResult("test", "test", "test")
 	tier := ear.TrustTierAffirming
 	earAp := ear.Appraisal{Status: &tier, AppraisalPolicyID: &polID}
@@ -112,7 +111,8 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Evidence: &appraisal.Evidence{
 			TenantID: "0",
 		},
-		Result: ar,
+		Result:       ar,
+		Endorsements: []*comid.ValueTriple{},
 	}
 
 	store := mock_deps.NewMockIKVStore(ctrl)
@@ -130,7 +130,6 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 			gomock.Any(),
 			"test",
 			ar.Submods["test"],
-			endorsements,
 		).
 		Return(&earAp, nil)
 
@@ -139,7 +138,7 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 		Agent:  agent,
 		logger: log.Named("manager"),
 	}
-	err := pm.Evaluate(context.TODO(), appraisalContext, endorsements)
+	err := pm.Evaluate(context.TODO(), appraisalContext)
 	require.NoError(t, err)
 }
 
@@ -155,13 +154,13 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	expectedErr := errors.New("could not evaluate policy: policy returned bad update")
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
-	endorsements := []*comid.ValueTriple{}
 	appraisalContext := &appraisal.Context{
 		Scheme: "TPM_ENACTTRUST",
 		Evidence: &appraisal.Evidence{
 			TenantID: "0",
 		},
-		Result: ar,
+		Result:       ar,
+		Endorsements: []*comid.ValueTriple{},
 	}
 
 	agent.EXPECT().Evaluate(
@@ -171,7 +170,6 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 		gomock.Any(),
 		"test",
 		ar.Submods["test"],
-		endorsements,
 	).Return(nil, expectedErr)
 
 	pm := &PolicyManager{
@@ -179,7 +177,7 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 		Agent:  agent,
 		logger: log.Named("manager"),
 	}
-	err := pm.Evaluate(context.TODO(), appraisalContext, endorsements)
+	err := pm.Evaluate(context.TODO(), appraisalContext)
 	assert.ErrorIs(t, err, expectedErr)
 
 }

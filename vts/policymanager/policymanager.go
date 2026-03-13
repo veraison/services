@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/spf13/viper"
-	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
@@ -36,7 +35,6 @@ func New(v *viper.Viper, store *policy.Store, logger *zap.SugaredLogger) (*Polic
 func (o *PolicyManager) Evaluate(
 	ctx context.Context,
 	appraisalContext *appraisal.Context,
-	endorsements []*comid.ValueTriple,
 ) error {
 	policyKey := o.getPolicyKey(appraisalContext)
 
@@ -62,7 +60,6 @@ func (o *PolicyManager) Evaluate(
 			pol,
 			submodName,
 			submodAppraisal,
-			endorsements,
 		)
 		if err != nil {
 			return err
