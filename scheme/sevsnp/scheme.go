@@ -197,6 +197,10 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 		return handler.BadEvidence(ErrTAMismatch)
 	}
 
+	if err := validateSessionNonce(tsm, evidence.Nonce); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -241,6 +245,21 @@ func (o *Implementation) AppraiseClaims(
 	appraisal.VeraisonAnnotatedEvidence = &claims
 
 	return result, nil
+}
+
+func validateSessionNonce(tsm *tokens.TSMReport, sessionNonce []byte) error {
+	reportProto, err := abi.ReportToProto(tsm.OutBlob)
+	if err != nil {
+		return err
+	}
+
+	evNonce := reportProto.GetReportData()
+
+	if !bytes.Equal(evNonce, sessionNonce) {
+		return handler.BadEvidence(fmt.Errorf("nonce in the evidence doesn't match the session nonce. evidence: 0x%x vs session: 0x%x", evNonce, sessionNonce))
+	}
+
+	return nil
 }
 
 func parseEvidence(evidence *appraisal.Evidence) (*tokens.TSMReport, error) {
