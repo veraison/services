@@ -1,4 +1,4 @@
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 #
 # variables:
@@ -20,5 +20,5 @@ IGNORE_FLAGS = $(foreach P,$(IGNORE_COVERAGE),--ignore $(P))
 .PHONY: coverage
 coverage:
 	make TEST_ARGS="-short -cover" all test | grep "coverage:.*of statements"  | sort -u | \
-		python scripts/check-coverage --threshold $(COVERAGE_THRESHOLD) $(IGNORE_FLAGS)
+		python3 scripts/check-coverage --threshold $(COVERAGE_THRESHOLD) $(IGNORE_FLAGS)
 
