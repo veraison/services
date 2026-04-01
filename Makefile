@@ -19,7 +19,7 @@ SUBDIR += verification
 SUBDIR += vts
 SUBDIR += vtsclient
 
-COVERAGE_THRESHOLD := 60.0
+COVERAGE_THRESHOLD ?= 60.0
 # plugin coverage is low because it is mostly tested via plugin/test, a
 # separate package (this is necessary due to to the nature of the code being
 # tested. plugin/test coverage is low because it's purely test code).
