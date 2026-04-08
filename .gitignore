@@ -49,3 +49,7 @@ perf/reports/2025-02/images/3p3v
 perf/reports/2025-02/images/auto
 perf/reports/2025-02/images/comp-3v1
 perf/reports/2025-02/images/weights
+
+# tools-bin directory is created automatically when running make. It contains
+# pre-built tools needs for the make process (such as golanci-lint)
+tools-bin/*
