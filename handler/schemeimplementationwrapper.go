@@ -10,6 +10,7 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/ear"
+	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/vts/appraisal"
 )
 
@@ -46,9 +47,19 @@ func MustNewSchemeImplementationWrapper(
 	return ret
 }
 
+func (o *SchemeImplementationWrapper) Init(params *plugin.Parameters) error {
+	pluginImpl, ok := o.Impl.(interface {
+		Init(*plugin.Parameters) error
+	})
+	if ok {
+		return pluginImpl.Init(params)
+	}
+
+	return nil
+}
+
 func (o *SchemeImplementationWrapper) GetName() string {
-	name := strings.ToLower(strings.ReplaceAll(o.Desc.Name, " ", "-"))
-	return fmt.Sprintf("%s-scheme-plugin", name)
+	return PluginNameFromScheme(o.Desc.Name)
 }
 
 func (o *SchemeImplementationWrapper) GetAttestationScheme() string {

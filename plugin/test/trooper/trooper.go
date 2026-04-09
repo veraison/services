@@ -3,15 +3,25 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/plugin/test"
 )
 
 type ImperialTrooper struct {
+	sound string
+}
+
+func (o *ImperialTrooper) Init(params *plugin.Parameters) error {
+	var err error
+
+	o.sound, err = params.GetString("sound")
+	return err
 }
 
 func (o ImperialTrooper) GetName() string {
-	return "Galactic Imperial trooper"
+	return "Galactic Imperial Trooper"
 }
 
 func (o ImperialTrooper) GetAttestationScheme() string {
@@ -23,7 +33,7 @@ func (o ImperialTrooper) GetSupportedMediaTypes() map[string][]string {
 }
 
 func (o ImperialTrooper) Shoot() string {
-	return `blaster goes "pew, pew"`
+	return fmt.Sprintf("blaster goes %q", o.sound)
 }
 
 func main() {

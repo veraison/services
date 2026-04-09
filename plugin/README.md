@@ -20,6 +20,7 @@ All Veraison plugins must implement the `IPluggable` interface:
 ```go
 
 type IPluggable interface {
+	Init(*Parameters) error
 	GetName() string
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() []string
@@ -98,6 +99,7 @@ import (
 
 type Impl struct {}
 
+func (o *Impl) Init(*plugin.Parameters) error { return nil }
 func (o *Impl) GetName() string { return "my-implementation" }
 func (o *Impl) GetAttestationScheme() string { return "my-scheme" }
 func (o *Impl) GetSupportedMediaTypes() []string { return []string{"text/html"} }
@@ -163,5 +165,47 @@ func main() {
 
     // use your plugin
     impl.Method1()
+}
+```
+
+## Plugin initialization and configuration
+
+Each plugin's `Init()` method is called when the plugin is discovered and
+loaded by the loader. This is the only method of `IPluggable` that gets
+invoked regardless of whether or not a plugin is actually used. This provides
+an opportunity for early one-time initialization of a plugin.
+
+If `Init()` return an error, this error will be reported  by loader and the
+plugin will not be loaded and will not be available for use later. This,
+however, will not result in process termination, and the loader will continue
+to load other plugins.
+
+Plugins can obtain configuration settings by querying `*Parameters` passed to
+their `Init()`. `Parameters` are populated from service configuration. Please
+see the [VTS service documentation](/vts/cmd/vts-service/README.md) for
+specifics.
+
+For example
+
+```go
+
+const defaultTimeout = 10
+
+func (o *Impl) Init(params *plugin.Parameters) error {
+    url, err := params.GetString("service_url")
+    if err != nil {
+        // "service_url" not set or is not a string
+        return err
+    }
+    o.serviceURL = url // will be used by Impl's other methods
+
+    timeout, err := params.DefaultGetInt("timeout", defaultTimeout)
+    if err != nil {
+        // "timeout" is set but is not an int
+        return err
+    }
+    o.timeout = timeout // will be used by Impl's other methods
+
+    return nil
 }
 ```

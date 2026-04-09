@@ -11,6 +11,7 @@ import (
 )
 
 type IAmmo interface {
+	Init(*plugin.Parameters) error
 	GetName() string
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() map[string][]string
@@ -19,6 +20,22 @@ type IAmmo interface {
 
 type AmmoRPCClient struct {
 	client *rpc.Client
+}
+
+func (o *AmmoRPCClient) Init(params *plugin.Parameters) error {
+	var (
+		unused any
+		args []byte
+		err error
+	)
+
+	if params != nil {
+		if args, err = params.MarshalJSON(); err != nil {
+			return err
+		}
+	}
+
+	return o.client.Call("Plugin.Init", &args, &unused)
 }
 
 func (o *AmmoRPCClient) GetName() string {
@@ -88,6 +105,21 @@ func (o *AmmoRPCClient) GetCapacity() int {
 
 type AmmoRPCServer struct {
 	Impl IAmmo
+}
+
+func (o *AmmoRPCServer) Init(args *[]byte, resp *any) error {
+	var params *plugin.Parameters
+	var err error
+
+	if args == nil {
+		params = plugin.NewParameters()
+	} else {
+		if params, err = plugin.ParametersFromJSON(*args); err != nil {
+			return err
+		}
+	}
+
+	return o.Impl.Init(params)
 }
 
 func (o *AmmoRPCServer) GetName(args any, resp *string) error {

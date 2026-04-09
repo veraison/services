@@ -28,6 +28,21 @@ type CoservProxyRPCServer struct {
 	Impl ICoservProxyHandler
 }
 
+func (o *CoservProxyRPCServer) Init(args []byte, resp *any) error {
+	var params *plugin.Parameters
+	var err error
+
+	if args == nil {
+		params = plugin.NewParameters()
+	} else {
+		if params, err = plugin.ParametersFromJSON(args); err != nil {
+			return err
+		}
+	}
+
+	return o.Impl.Init(params)
+}
+
 func (s *CoservProxyRPCServer) GetName(args interface{}, resp *string) error {
 	*resp = s.Impl.GetName()
 	return nil
@@ -58,6 +73,22 @@ func (s *CoservProxyRPCServer) GetEndorsements(args GetEndorsementArgs, resp *[]
 
 type CoservProxyRPCClient struct {
 	client *rpc.Client
+}
+
+func (o *CoservProxyRPCClient) Init(params *plugin.Parameters) error {
+	var (
+		unused any
+		args []byte
+		err error
+	)
+
+	if params != nil {
+		if args, err = params.MarshalJSON(); err != nil {
+			return err
+		}
+	}
+
+	return o.client.Call("Plugin.Init", args, &unused)
 }
 
 func (c *CoservProxyRPCClient) GetName() string {

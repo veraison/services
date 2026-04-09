@@ -32,3 +32,8 @@ coserv-signer:
   key: ./skey.jwk
 logging:
   level: debug
+# Scheme configuration Example
+# (note: none of the current schemes expect any configuration)
+#scheme:
+  #ARM_CCA:
+    #foo: bar

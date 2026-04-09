@@ -6,6 +6,12 @@ package plugin
 // the common interfaces shared by all Veraison plugins loaded through this
 // framework.
 type IPluggable interface {
+	// Init performs plugin initialization using parameters provided by
+	// configuration. This method is always invoked by the IPluginLoader
+	// implementation when the plugin is loaded, and should not, in general,
+	// be invoked by the plugin's user or anyone else.
+	Init(params *Parameters) error
+
 	// GetName returns a string containing the name of the
 	// implementation of this IPluggable interface. It is the plugin name.
 	GetName() string

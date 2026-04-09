@@ -10,6 +10,10 @@ import (
 type GasCartridge struct {
 }
 
+func (o GasCartridge) Init(*plugin.Parameters) error {
+	return nil
+}
+
 func (o GasCartridge) GetName() string {
 	return "gas cartridge"
 }

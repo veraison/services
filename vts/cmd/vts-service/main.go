@@ -32,7 +32,7 @@ func main() {
 	}
 
 	subs, err := config.GetSubs(v, "store", "po-store",
-		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer", "*logging")
+		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer", "*logging", "*scheme")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,6 +63,13 @@ func main() {
 	var schemePluginManager plugin.IManager[handler.ISchemeHandler]
 	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
 
+	log.Debug("loading scheme configuration")
+	pluginConfig, err := plugin.ParametersMapFromViper(subs["scheme"], handler.PluginNameFromScheme)
+	if err != nil {
+		log.Fatalf("could not load scheme config: %v", err)
+	}
+
+	log.Debug("loading scheme plugins")
 	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
 	if err != nil {
 		log.Fatalf("could not get subs: %v", err)
@@ -72,6 +79,7 @@ func main() {
 	case "plugins":
 		loader, err := plugin.CreateGoPluginLoader(
 			psubs["go-plugin"].AllSettings(),
+			pluginConfig,
 			log.Named("plugin"))
 		if err != nil {
 			log.Fatalf("could not create plugin loader: %v", err)
@@ -96,6 +104,7 @@ func main() {
 	case "builtin":
 		loader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
+			pluginConfig,
 			log.Named("builtin"))
 		if err != nil {
 			log.Fatalf("could not create builtin loader: %v", err)

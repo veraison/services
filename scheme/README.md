@@ -202,6 +202,12 @@ func main() {
 (Note that `ISchemeHandler` embeds `ISchemeImplementation`, so you would still
 need to implement it.)
 
+> [!NOTE]
+> When implementing `IPluggable.GetName()` as part of a full `ISchemeHandler`
+> implementation, it is strongly recommended to use
+> `handler.PluginNameFromScheme()` as configuration processing relies on the
+> plugin name being derived from the scheme name using that function.
+
 ### Call order
 
 During evidence appraisal, `ISchemeHandler` methods will be invoked in the
@@ -293,6 +299,16 @@ individual attestation schemes.
       an error when trying to add them.
 
 [draft-ietf-rats-corim-09]: https://datatracker.ietf.org/doc/draft-ietf-rats-corim/
+
+## Initializing and configuring schemes
+
+Custom one-time initialization may be provided by implementing the (optional)
+`Init(*plugin.Parmeters) error` method on your scheme implementation. Please
+see [plugin documentation](/plugin/README.md) for details.
+
+Parameter values can be specified namespaced under the (case insensitive)
+scheme name under the top-level `scheme` entry in VTS configuration. Please see
+[VTS service documentation](/vts/cmd/vts-service/README.md) for details.
 
 ## Debugging
 

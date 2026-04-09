@@ -10,6 +10,10 @@ import (
 type PowerCell struct {
 }
 
+func (o PowerCell) Init(*plugin.Parameters) error {
+	return nil
+}
+
 func (o PowerCell) GetName() string {
 	return "power cell"
 }

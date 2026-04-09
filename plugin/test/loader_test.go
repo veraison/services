@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package test
 
@@ -21,7 +21,12 @@ func TestLoader_discover_and_load(t *testing.T) {
 	cfg := map[string]interface{}{"dir": "bin"}
 	logger := log.Named("test")
 
-	ldr, err := plugin.CreateGoPluginLoader(cfg, logger)
+	pluginParams := map[string]*plugin.Parameters{
+		"Federation Starship Officer": plugin.NewParameters().SetString("sound", "zap"),
+		"Galactic Imperial Trooper": plugin.NewParameters().SetString("sound", "pew, pew"),
+	}
+
+	ldr, err := plugin.CreateGoPluginLoader(cfg, pluginParams, logger)
 	require.NoError(t, err)
 	defer ldr.Close()
 
@@ -40,6 +45,10 @@ func TestLoader_discover_and_load(t *testing.T) {
 	mediaTypes := ldr.GetRegisteredMediaTypes()
 	expected := []string{"blaster", "phaser", "tibanna gas", "plasma"}
 	assert.ElementsMatch(t, expected, mediaTypes)
+
+	mook, err := plugin.GetGoPluginHandleByNameUsing[IMook](ldr, "Federation Starship Officer")
+	assert.NoError(t, err)
+	assert.Equal(t, `phaser goes "zap"`, mook.Shoot())
 }
 
 func buildPlugins(names []string) error {

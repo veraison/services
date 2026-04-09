@@ -23,6 +23,7 @@ func NewBuiltinManager[I plugin.IPluggable](
 
 func CreateBuiltinManager[I plugin.IPluggable](
 	v *viper.Viper,
+	pluginParams map[string]*plugin.Parameters,
 	logger *zap.SugaredLogger,
 	name string,
 ) (*BuiltinManager[I], error) {
@@ -31,7 +32,7 @@ func CreateBuiltinManager[I plugin.IPluggable](
 		return nil, err
 	}
 
-	loader, err := CreateBuiltinLoader(subs["builtin"].AllSettings(), logger)
+	loader, err := CreateBuiltinLoader(subs["builtin"].AllSettings(), pluginParams, logger)
 	if err != nil {
 		return nil, err
 	}

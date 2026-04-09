@@ -13,6 +13,7 @@ import (
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/coserv"
+	"github.com/veraison/services/plugin"
 )
 
 type CoservProxyHandler struct{}
@@ -47,6 +48,10 @@ func getVcekForInstance(instance *coserv.StatefulInstance) ([]byte, error) {
 	}
 
 	return certBytes, nil
+}
+
+func (s CoservProxyHandler) Init(*plugin.Parameters) error {
+	return nil
 }
 
 func (s CoservProxyHandler) GetName() string {

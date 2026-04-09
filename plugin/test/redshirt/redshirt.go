@@ -3,11 +3,20 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/plugin/test"
 )
 
 type RedShirt struct {
+	sound string
+}
+
+func (o *RedShirt) Init(params *plugin.Parameters) error {
+	var err error
+	o.sound, err = params.GetString("sound")
+	return err
 }
 
 func (o RedShirt) GetName() string {
@@ -23,7 +32,7 @@ func (o RedShirt) GetSupportedMediaTypes() map[string][]string {
 }
 
 func (o RedShirt) Shoot() string {
-	return `phaser goes "zap"`
+	return fmt.Sprintf("phaser goes %q", o.sound)
 }
 
 func main() {

@@ -18,6 +18,8 @@ type BuiltinLoader struct {
 	loadedByName      map[string]plugin.IPluggable
 	loadedByMediaType map[string]plugin.IPluggable
 
+	pluginParams map[string]*plugin.Parameters
+
 	registeredPluginTypes map[string]string
 }
 
@@ -26,15 +28,17 @@ func NewBuiltinLoader(logger *zap.SugaredLogger) *BuiltinLoader {
 }
 
 func CreateBuiltinLoader(
-	cfg map[string]interface{},
+	cfg map[string]any,
+	pluginParams map[string]*plugin.Parameters,
 	logger *zap.SugaredLogger,
 ) (*BuiltinLoader, error) {
 	loader := NewBuiltinLoader(logger)
-	err := loader.Init(cfg)
+	err := loader.Init(cfg, pluginParams)
 	return loader, err
 }
 
-func (o *BuiltinLoader) Init(m map[string]interface{}) error {
+func (o *BuiltinLoader) Init(m map[string]any, pluginParams map[string]*plugin.Parameters) error {
+	o.pluginParams = pluginParams
 	o.loadedByName = map[string]plugin.IPluggable{}
 
 	o.loadedByMediaType = make(map[string]plugin.IPluggable)
@@ -79,6 +83,17 @@ func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
 		name := p.GetName()
 		if _, ok := loader.loadedByName[name]; ok {
 			loader.logger.Panicw("duplicate plugin name", "name", name)
+		}
+
+		var params *plugin.Parameters
+		if params, ok = loader.pluginParams[name]; !ok {
+			params = plugin.NewParameters()
+		}
+
+		loader.logger.Debugw("initializing plugin", "plugin", name, "params", params.Map())
+		if err := p.Init(params); err != nil {
+			loader.logger.Errorf("plugin q: %s", name, err.Error())
+			continue
 		}
 
 		loader.logger.Debugw("found plugin", "name", name)

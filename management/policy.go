@@ -24,7 +24,7 @@ type PolicyManager struct {
 }
 
 func CreatePolicyManagerFromConfig(v *viper.Viper, name string) (*PolicyManager, error) {
-	subs, err := config.GetSubs(v, "*po-agent", "po-store", "*plugin")
+	subs, err := config.GetSubs(v, "*po-agent", "po-store", "*plugin", "*scheme")
 	if err != nil {
 		return nil, err
 	}
@@ -39,18 +39,23 @@ func CreatePolicyManagerFromConfig(v *viper.Viper, name string) (*PolicyManager,
 		return nil, err
 	}
 
+	pluginConfig, err := plugin.ParametersMapFromViper(subs["scheme"], handler.PluginNameFromScheme)
+	if err != nil {
+		return nil, err
+	}
+
 	var pluginManager plugin.IManager[handler.ISchemeHandler]
 
 	if config.SchemeLoader == "plugins" { // nolint:gocritic
 		pluginManager, err = plugin.CreateGoPluginManager(
-			subs["plugin"], log.Named("plugin"),
+			subs["plugin"], pluginConfig, log.Named("plugin"),
 			"scheme-handler", handler.SchemeHandlerRPC)
 		if err != nil {
 			log.Fatalf("plugin manager initialization failed: %v", err)
 		}
 	} else if config.SchemeLoader == "builtin" {
 		pluginManager, err = builtin.CreateBuiltinManager[handler.ISchemeHandler](
-			subs["plugin"], log.Named("builtin"), "scheme-handler")
+			subs["plugin"], pluginConfig, log.Named("builtin"), "scheme-handler")
 		if err != nil {
 			log.Fatalf("scheme manager initialization failed: %v", err)
 		}

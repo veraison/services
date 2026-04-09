@@ -37,6 +37,22 @@ type SchemeRPCClient struct {
 	logger *zap.SugaredLogger
 }
 
+func (o *SchemeRPCClient) Init(params *plugin.Parameters) error {
+	var (
+		unused any
+		args []byte
+		err error
+	)
+
+	if params != nil {
+		if args, err = params.MarshalJSON(); err != nil {
+			return err
+		}
+	}
+
+	return o.client.Call("Plugin.Init", args, &unused)
+}
+
 func (o *SchemeRPCClient) GetName() string {
 	var (
 		unused any
@@ -263,6 +279,21 @@ func (o *SchemeRPCClient) AppraiseClaims(
 
 type SchemeRPCServer struct {
 	Impl ISchemeHandler
+}
+
+func (o *SchemeRPCServer) Init(args []byte, resp *any) error {
+	var params *plugin.Parameters
+	var err error
+
+	if args == nil {
+		params = plugin.NewParameters()
+	} else {
+		if params, err = plugin.ParametersFromJSON(args); err != nil {
+			return err
+		}
+	}
+
+	return o.Impl.Init(params)
 }
 
 func (o *SchemeRPCServer) GetName(unused any, resp *string) error {

@@ -28,6 +28,7 @@ func NewGoPluginManager[I IPluggable](
 
 func CreateGoPluginManager[I IPluggable](
 	v *viper.Viper,
+	pluginParams map[string]*Parameters,
 	logger *zap.SugaredLogger,
 	name string,
 	ch *RPCChannel[I],
@@ -38,7 +39,7 @@ func CreateGoPluginManager[I IPluggable](
 		return nil, err
 	}
 
-	loader, err := CreateGoPluginLoader(subs["go-plugin"].AllSettings(), logger)
+	loader, err := CreateGoPluginLoader(subs["go-plugin"].AllSettings(), pluginParams, logger)
 	if err != nil {
 		return nil, err
 	}

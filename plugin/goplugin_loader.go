@@ -37,6 +37,8 @@ type GoPluginLoader struct {
 	// This gets specified as Plugins when creating a new go-plugin client.
 	pluginMap map[string]plugin.Plugin
 
+	pluginParams map[string]*Parameters
+
 	registeredPluginTypes map[string]string
 }
 
@@ -45,15 +47,17 @@ func NewGoPluginLoader(logger *zap.SugaredLogger) *GoPluginLoader {
 }
 
 func CreateGoPluginLoader(
-	cfg map[string]interface{},
+	cfg map[string]any,
+	pluginParams map[string]*Parameters,
 	logger *zap.SugaredLogger,
 ) (*GoPluginLoader, error) {
 	loader := NewGoPluginLoader(logger)
-	err := loader.Init(cfg)
+	err := loader.Init(cfg, pluginParams)
 	return loader, err
 }
 
-func (o *GoPluginLoader) Init(m map[string]interface{}) error {
+func (o *GoPluginLoader) Init(m map[string]any, pluginParams map[string]*Parameters) error {
+	o.pluginParams = pluginParams
 	o.pluginMap = make(map[string]plugin.Plugin)
 	o.loadedByName = make(map[string]IPluginContext)
 	o.loadedByMediaType = make(map[string]IPluginContext)
@@ -98,8 +102,8 @@ func (o *GoPluginLoader) GetRegisteredMediaTypesByPluginType(typeName string) []
 	return mediaTypes
 }
 
-func Init(m map[string]interface{}) error {
-	return defaultGoPluginLoader.Init(m)
+func Init(m map[string]any, pluginParams map[string]*Parameters) error {
+	return defaultGoPluginLoader.Init(m, pluginParams)
 }
 
 func RegisterGoPlugin[I IPluggable](name string, ch *RPCChannel[I]) error {
@@ -112,7 +116,7 @@ func RegisterGoPluginUsing[I IPluggable](
 	ch *RPCChannel[I],
 ) error {
 	if _, ok := loader.pluginMap[name]; ok {
-		return fmt.Errorf("plugin for %q is already registred", name)
+		return fmt.Errorf("plugin for %q is already registered", name)
 	}
 
 	if err := registerRPCChannel(name, ch); err != nil {
@@ -161,6 +165,19 @@ func DiscoverGoPluginUsing[I IPluggable](o *GoPluginLoader) error {
 				pluginContext.GetPath(),
 			)
 		}
+
+		var params *Parameters
+		var ok bool
+		if params, ok = o.pluginParams[pluginName]; !ok {
+			params = NewParameters()
+		}
+
+		o.logger.Debugw("initializing plugin", "plugin", pluginName, "params", params.Map())
+		if err := pluginContext.Handle.Init(params); err != nil {
+			o.logger.Errorf("plugin q: %s", pluginName, err.Error())
+			continue
+		}
+
 		o.loadedByName[pluginName] = pluginContext
 
 		for _, mediaTypes := range pluginContext.SupportedMediaTypes {

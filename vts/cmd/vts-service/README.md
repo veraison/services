@@ -11,6 +11,7 @@ configuration:
 - `vts` (optional): Veraison Trusted Services backend configuration. See [trustedservices config](/vts/trustedservices/README.md#Configuration).
 - `logging` (optional): Logging configuration. See [logging config](/vts/log/README.md#Configuration).
 - `ear-signer`: Attestation Result signing configuration. See [signer config](/vts/ear-signer/README.md#Configuration).
+- `scheme` (optional): Scheme-specific configuration. See below.
 
 ### `plugin` configuration
 
@@ -29,6 +30,31 @@ The following directives are currently supported:
 #### `go-plugin` backend configuration
 
 - `dir`: path to the directory that will be scanned for plugin executables.
+
+#### `scheme` configuration
+
+`scheme` must be a map of (case insensitive) scheme names to configuration
+entries for those schemes. A configuration entry is a map of parameter names to
+corresponding parameter values. For example:
+
+```yaml
+scheme:
+  my_scheme_name:
+    foo: 1
+    bar: "baz"
+```
+
+Parameter values must be either strings, integers or booleans. Bytes values are
+also supported as either raw base64-encoded strings, `my_param: "3q2+7w=="`, or
+as YAML `!!binary` directives, `my_param: !!binary "3q2+7w=="`.
+
+Valid parameter names, and corresponding expected value types, are
+scheme-specific. Please refer to scheme documentation if it exists, otherwise
+assume that no parameters are expected (which is the case for most existing
+schemes).
+
+Any `scheme` sub-entry that doesn't correspond to a known scheme name will be
+ignored.
 
 ### Config files
 
