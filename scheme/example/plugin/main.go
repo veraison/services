@@ -7,7 +7,7 @@ package main
 import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
-	scheme "github.com/veraison/services/scheme/<TODO>"
+	//scheme "github.com/veraison/services/scheme/<TODO>"
 )
 
 func main() {
