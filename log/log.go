@@ -483,7 +483,7 @@ func Fatalln(args ...interface{}) {
 	logger.Fatalln(args...)
 }
 
-// LogProblem logs a problems.StatusProblem reported  by the api. 500 probelms
+// LogProblem logs a problems.StatusProblem reported by the api. 500 problems
 // are logged as errors, everything else is logged as warnings.
 func LogProblem(logger *zap.SugaredLogger, prob *problems.DefaultProblem) {
 	var logFunc func(msg string, args ...interface{})

@@ -1,7 +1,9 @@
 #!/bin/bash
-# Copyright 2023 Contributors to the Veraison project.
+# Copyright 2023-26 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 source ~/.bashrc
 py.test -vv
 
+## for compact pytest output
+# py.test --tb=short -p no:logging
