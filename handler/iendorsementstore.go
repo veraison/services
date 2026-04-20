@@ -23,6 +23,11 @@ var (
 	// and the attestation scheme, but no matching values were found
 	// in the store.
 	ErrNotFound = errors.New("not found in store")
+
+	// If the request is not well-formed. For example, the CoSERV query
+	// could be invalid or the lifecycle management request could be
+	// invalid.
+	ErrBadRequest = errors.New("store could not handle the request")
 )
 
 type IEndorsementStorePlugin interface {
@@ -39,4 +44,6 @@ type IEndorsementStore interface {
 	ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error)
 
 	AddCorimBytes(data []byte, scheme string, activate bool) error
+
+	SetEndorsementsState(label string, request []byte, state bool) error
 }

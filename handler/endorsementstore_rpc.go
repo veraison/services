@@ -115,6 +115,11 @@ func (s *StoreRPCServer) AddCorimBytes(params *proto.SubmitEndorsementsArgs, res
 	return s.Impl.AddCorimBytes(params.Endorsement, params.Label, params.Activate)
 }
 
+func (s *StoreRPCServer) SetEndorsementsState(params *proto.SetEndorsementsStateRequest,
+	resp *any) error {
+	return s.Impl.SetEndorsementsState(params.TenantId, params.Data, params.SetActive)
+}
+
 type StoreRPCClient struct {
 	client *rpc.Client
 	logger *zap.SugaredLogger
@@ -261,6 +266,19 @@ func (c *StoreRPCClient) AddCorimBytes(data []byte, label string, activate bool)
 	}
 	var unused any
 	if err := c.client.Call("Plugin.AddCorimBytes", &args, &unused); err != nil {
+		return ParseError(err)
+	}
+	return nil
+}
+
+func (c *StoreRPCClient) SetEndorsementsState(label string, request []byte, state bool) error {
+	args := proto.SetEndorsementsStateRequest{
+		TenantId: label,
+		Data: request,
+		SetActive: state,
+	}
+	var unused any
+	if err := c.client.Call("Plugin.SetEndorsementsState", &args, &unused); err != nil {
 		return ParseError(err)
 	}
 	return nil

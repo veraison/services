@@ -140,6 +140,22 @@ func (s *VtsEndorsementStore) AddCorimBytes(data []byte, scheme string, activate
 	return nil
 }
 
+func (s *VtsEndorsementStore) SetEndorsementsState(label string,
+	request []byte, state bool) error {
+	stores, err := s.storeList()
+	if err != nil {
+		s.logger.Errorf("failed to fetch store list: %v", err)
+		return err
+	}
+	store := stores[0]
+	name := store.GetName()
+	if err := store.SetEndorsementsState(label, request, state); err != nil {
+		s.logger.Errorf("failed to change endorsement state in store `%s': %v", name, err)
+		return err
+	}
+	return nil
+}
+
 func logOrErr(err error, logger *zap.SugaredLogger, name string, errs *map[error]bool) error {
 	if err != nil {
 		// errors.Is can be used because the plugin rpc client parses the error
