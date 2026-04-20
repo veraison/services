@@ -23,6 +23,7 @@ var (
 
 type IHandler interface {
 	Submit(c *gin.Context)
+	SetActive(setActive bool) gin.HandlerFunc
 	GetWellKnownProvisioningInfo(c *gin.Context)
 }
 
@@ -41,9 +42,9 @@ func NewHandler(
 	maxPayloadSize int64,
 ) IHandler {
 	return &Handler{
-		Provisioner:   p,
-		logger:        logger,
-		WkCacheMaxAge: capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
+		Provisioner:    p,
+		logger:         logger,
+		WkCacheMaxAge:  capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 		MaxPayloadSize: maxPayloadSize,
 	}
 }
@@ -56,6 +57,7 @@ type ProvisioningSession struct {
 
 const (
 	ProvisioningSessionMediaType = "application/vnd.veraison.provisioning-session+json"
+	ELMQueryMediaType            = "application/vnd.veraison.elm-v1+cbor"
 )
 
 func (o *Handler) Submit(c *gin.Context) {
@@ -125,7 +127,7 @@ func (o *Handler) Submit(c *gin.Context) {
 	if err != nil {
 		o.logger.Errorw("submit endorsement failed", "error", err)
 
-		if errors.Is(err, errors.New("no connection")) {
+		if strings.Contains(err.Error(), "no connection") {
 			ReportProblem(c,
 				http.StatusInternalServerError,
 				err.Error(),
@@ -141,6 +143,65 @@ func (o *Handler) Submit(c *gin.Context) {
 	}
 
 	sendSuccessfulProvisioningSession(c)
+}
+
+func (o *Handler) SetActive(setActive bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// read media type
+		mediaType := c.Request.Header.Get("Content-Type")
+		if mediaType != ELMQueryMediaType {
+			ReportConciseProblem(
+				c,
+				http.StatusUnsupportedMediaType,
+				fmt.Sprintf("unknown media type: %v, expected: %v", mediaType, ELMQueryMediaType),
+			)
+			return
+		}
+
+		// read body
+		payload, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			ReportConciseProblem(c,
+				http.StatusBadRequest,
+				fmt.Sprintf("error reading body: %s", err),
+			)
+			return
+		}
+
+		if len(payload) == 0 {
+			ReportConciseProblem(c,
+				http.StatusBadRequest,
+				"empty body",
+			)
+			return
+		}
+
+		err = o.Provisioner.SetEndorsementsActive(tenantID, payload, setActive)
+		if err != nil {
+			action := "deactivate"
+			if setActive {
+				action = "activate"
+			}
+
+			o.logger.Errorw(action+" endorsement failed", "error", err)
+
+			if strings.Contains(err.Error(), "no connection") {
+				ReportConciseProblem(c,
+					http.StatusInternalServerError,
+					err.Error(),
+				)
+				return
+			}
+
+			ReportConciseProblem(c,
+				http.StatusBadRequest,
+				err.Error(),
+			)
+			return
+		}
+
+		c.AbortWithStatus(http.StatusNoContent)
+	}
 }
 
 func sendFailedProvisioningSession(c *gin.Context, failureReason string) {
