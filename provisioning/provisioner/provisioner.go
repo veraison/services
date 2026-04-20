@@ -1,4 +1,4 @@
-// Copyright 2022-2024 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package provisioner
@@ -78,6 +78,26 @@ func (p *Provisioner) SubmitEndorsements(tenantID string, data []byte, mt string
 			sRes.Status.GetErrorDetail(),
 		)
 	}
+	return nil
+}
+
+func (p *Provisioner) ActivateEndorsements(tenantID string, data []byte, setActive bool) error {
+	aReq := &proto.ActivateEndorsementsRequest{Data: data, SetActive: setActive}
+	aRes, err := p.VTSClient.ActivateEndorsements(context.Background(), aReq)
+	if err != nil {
+		if errors.As(err, &vtsclient.NoConnectionError{}) {
+			return errors.New("no connection")
+		}
+		return fmt.Errorf("activate endorsements (setting active = %v) failed: %w", setActive, err)
+	}
+
+	if !aRes.GetStatus().Result {
+		return fmt.Errorf(
+			"activate endorsements (setting active = %v) failed: %s",
+			setActive, aRes.Status.GetErrorDetail(),
+		)
+	}
+
 	return nil
 }
 

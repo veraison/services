@@ -4,7 +4,7 @@ includes:
   - !include common.yaml
 
 stages:
-  - name: submit post request to the provisioning service successfully
+  - name: submit post request to the provisioning service with empty body
     request:
       method: POST
       url: https://{provisioning-service}/endorsement-provisioning/v1/submit
@@ -16,3 +16,23 @@ stages:
       json:
         title: Bad Request
         detail: empty body
+
+  - name: submit post request to activate endorsements with empty body
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/activate
+      headers:
+        content-type: 'application/vnd.veraison.elm-v1+cbor'
+        authorization: '{authorization}' # set via hook
+    response:
+      status_code: 400
+
+  - name: submit post request to deactivate endorsements with empty body
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/deactivate
+      headers:
+        content-type: 'application/vnd.veraison.elm-v1+cbor'
+        authorization: '{authorization}' # set via hook
+    response:
+      status_code: 400

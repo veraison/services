@@ -30,5 +30,11 @@ func NewRouter(handler IHandler, authorizer auth.IAuthorizer) *gin.Engine {
 	provGroup.POST("submit", handler.Submit)
 	publicApiMap["provisioningSubmit"] = path.Join(provisioningPath, "submit")
 
+	provGroup.POST("activate", handler.Activate(true))
+	publicApiMap["provisioningActivate"] = path.Join(provisioningPath, "activate")
+
+	provGroup.POST("deactivate", handler.Activate(false))
+	publicApiMap["provisioningDeactivate"] = path.Join(provisioningPath, "deactivate")
+
 	return router
 }

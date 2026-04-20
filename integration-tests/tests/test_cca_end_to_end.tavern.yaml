@@ -24,9 +24,13 @@ marks:
         - nonce
         # Indicates whether to use signed or unsigned CoRIM
         - corim_type
+        # Indicates whether to use rim selector or environment selector in ELM query
+        - elm_query_type
       vals:
-        - [cca, _, good, full, ccakeys, good, nonce64, unsigned]
-        - [cca, _, good, full, ccakeys, good, nonce64, signed]
+        - [cca, _, good, full, ccakeys, good, nonce64, unsigned, rv]
+        - [cca, _, good, full, ccakeys, good, nonce64, unsigned, ta]
+        - [cca, _, good, full, ccakeys, good, nonce64, unsigned, rim]
+        - [cca, _, good, full, ccakeys, good, nonce64, signed, rim]
 
 includes:
   - !include common.yaml
@@ -53,6 +57,28 @@ stages:
       file_body: __generated__/endorsements/corim-{scheme}-realm-{endorsements}.cbor
     response:
       status_code: 200
+
+  - name: post deactivate request for CCA endorsement to the provisioning service successfully
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/deactivate
+      headers:
+        content-type: '{elm-query-content-type}' # set via hook
+        authorization: '{authorization}' # set via hook
+      file_body: __generated__/elm-queries/query-{elm_query_type}.cbor
+    response:
+      status_code: 204
+  
+  - name: post activate request for CCA endorsement to the provisioning service successfully
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/activate
+      headers:
+        content-type: '{elm-query-content-type}' # set via hook
+        authorization: '{authorization}' # set via hook
+      file_body: __generated__/elm-queries/query-{elm_query_type}.cbor
+    response:
+      status_code: 204
 
   - name: verify as relying party - creation of session resource
     request:

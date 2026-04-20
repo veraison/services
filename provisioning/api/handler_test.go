@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/moogar0880/problems"
@@ -381,4 +382,136 @@ func TestHandler_GetWellKnownProvisioningInfo_UnsupportedAccept(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_Activate_UnsupportedMediaType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	h := NewHandler(dm, log.Named("test"), "1h")
+
+	mediaType := "application/unsupported+json"
+
+	expectedCode := http.StatusUnsupportedMediaType
+	expectedType := "application/concise-problem-details+cbor"
+	expectedBody := log.ConciseProblem{
+		Title:  fmt.Sprintf("%d %v", expectedCode, http.StatusText(expectedCode)),
+		Detail: fmt.Sprintf("unknown media type: %v, expected: %v", mediaType, ELMQueryMediaType),
+	}
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", http.NoBody)
+	g.Request.Header.Add("Content-Type", mediaType)
+
+	h.Activate(true)(g)
+
+	var body log.ConciseProblem
+	_ = cbor.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_Activate_NoBody(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	h := NewHandler(dm, log.Named("test"), "1h")
+
+	expectedCode := http.StatusBadRequest
+	expectedType := "application/concise-problem-details+cbor"
+	expectedBody := log.ConciseProblem{
+		Title:  fmt.Sprintf("%d %v", expectedCode, http.StatusText(expectedCode)),
+		Detail: "empty body",
+	}
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte{}))
+	g.Request.Header.Add("Content-Type", ELMQueryMediaType)
+
+	h.Activate(true)(g)
+
+	var body log.ConciseProblem
+	_ = cbor.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_Activate_ProvisionerFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mediaType := ELMQueryMediaType
+	elm := []byte("some query")
+	handlerError := "provisioner failure: uh oh!"
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		ActivateEndorsements(
+			tenantID, elm, true,
+		).
+		Return(errors.New(handlerError))
+
+	h := NewHandler(dm, log.Named("test"), "1h")
+
+	expectedCode := http.StatusBadRequest
+	expectedType := "application/concise-problem-details+cbor"
+	expectedBody := log.ConciseProblem{
+		Title:  fmt.Sprintf("%d %v", expectedCode, http.StatusText(expectedCode)),
+		Detail: handlerError,
+	}
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(elm))
+	g.Request.Header.Add("Content-Type", mediaType)
+
+	h.Activate(true)(g)
+
+	var body log.ConciseProblem
+	_ = cbor.Unmarshal(w.Body.Bytes(), &body)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
+	assert.Equal(t, expectedBody, body)
+}
+
+func TestHandler_Activate_ok(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mediaType := ELMQueryMediaType
+	elm := []byte("some query")
+
+	dm := mock_deps.NewMockIProvisioner(ctrl)
+	dm.EXPECT().
+		ActivateEndorsements(
+			tenantID, elm, true,
+		).
+		Return(nil)
+
+	h := NewHandler(dm, log.Named("test"), "1h")
+
+	expectedCode := http.StatusNoContent
+
+	w := httptest.NewRecorder()
+	g, _ := gin.CreateTestContext(w)
+
+	g.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewReader(elm))
+	g.Request.Header.Add("Content-Type", mediaType)
+
+	h.Activate(true)(g)
+
+	assert.Equal(t, expectedCode, w.Code)
+	assert.Nil(t, w.Body.Bytes())
 }
