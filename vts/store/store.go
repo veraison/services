@@ -19,7 +19,14 @@ type Config struct {
 }
 
 func (o *Config) StoreConfig() *corimstore.Config {
-	ret := corimstore.NewConfig(o.DBMS, o.DSN, corimstore.OptionRequireLabel)
+	ret := corimstore.NewConfig(
+		o.DBMS,
+		o.DSN,
+		corimstore.OptionRequireLabel,
+		// Signatures of signed CoRIMs are verified as part of their
+		// initial processing, prior to adding them to the store.
+		corimstore.OptionInsecure,
+	)
 
 	if o.TraceSQL {
 		ret.WithOptions(corimstore.OptionTraceSQL)

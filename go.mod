@@ -1,6 +1,6 @@
 module github.com/veraison/services
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -40,8 +40,8 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
 	github.com/veraison/cmw v0.2.0
-	github.com/veraison/corim v1.1.3-0.20260309101151-2fa49d7c02e3
-	github.com/veraison/corim-store v0.0.0-20260220100808-e966b3eab910
+	github.com/veraison/corim v1.1.3-0.20260430132037-b8653a7359da
+	github.com/veraison/corim-store v0.1.0
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
@@ -55,8 +55,6 @@ require (
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
-
-require go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
@@ -148,6 +146,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/uptrace/bun v1.2.16 // indirect
+	github.com/uptrace/bun/dbfixture v1.2.15 // indirect
 	github.com/uptrace/bun/dialect/mysqldialect v1.2.16 // indirect
 	github.com/uptrace/bun/dialect/pgdialect v1.2.16 // indirect
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.16 // indirect
@@ -163,6 +162,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect

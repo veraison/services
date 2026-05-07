@@ -14,7 +14,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -277,8 +276,7 @@ func (o *GRPC) SubmitEndorsements(
 	}
 
 	label := fmt.Sprintf("%s/%s", DummyTenantID, handlerPlugin.GetAttestationScheme())
-	digest := o.Store.Digest(req.Data)
-	if err := o.Store.AddCoRIM(uc, digest, label, true); err != nil {
+	if err := o.Store.AddBytes(req.Data, label, true); err != nil {
 		return submitEndorsementErrorResponse(err), nil
 	}
 
@@ -632,68 +630,14 @@ func (o *GRPC) getEndorsementsFromStores(queryIn *proto.EndorsementQueryIn) ([]b
 		return nil, err
 	}
 
-	profile, err := query.Profile.Get()
+	fallbackAuthority, err := comid.NewCryptoKeyTaggedBytes([]byte("dummyauth"))
 	if err != nil {
 		return nil, err
 	}
 
-	// Look up a matching endorsement plugin
-	schemeHandler, err := o.SchemePluginManager.LookupByMediaType(
-		fmt.Sprintf(`application/rim+cbor; profile=%q`, profile))
-	if err != nil {
+	coservService := corimstore.NewCoSERVService(o.Store, fallbackAuthority)
+	if err := coservService.UpdateCoSERV(&query); err != nil {
 		return nil, err
-	}
-
-	scheme := schemeHandler.GetAttestationScheme()
-	label := fmt.Sprintf("%s/%s", DummyTenantID, scheme)
-
-	authority, err := comid.NewCryptoKeyTaggedBytes([]byte("dummyauth"))
-	if err != nil {
-		return nil, err
-	}
-
-	environments, err := querySelectorToEnvironments(&query.Query.EnvironmentSelector)
-	if err != nil {
-		return nil, err
-	}
-
-	resultSet := coserv.NewResultSet()
-
-	// add (dummy, for now -- TODO) expiry
-	dummyExpiry := time.Now().Add(time.Hour * 1)
-	resultSet.SetExpiry(dummyExpiry)
-
-	switch query.Query.ArtifactType {
-	case coserv.ArtifactTypeTrustAnchors:
-		keyTriples, err := o.getKeyTriples(environments, label, false)
-		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
-			return nil, err
-		}
-
-		for _, keyTriple := range keyTriples {
-			resultSet.AddAttestationKeys(coserv.AKQuad{
-				Authorities: comid.NewCryptoKeys().Add(authority),
-				AKTriple:    keyTriple,
-			})
-		}
-	case coserv.ArtifactTypeReferenceValues:
-		valueTriples, err := o.getValueTriples(environments, label, false)
-		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
-			return nil, err
-		}
-
-		for _, valueTriple := range valueTriples {
-			resultSet.AddReferenceValues(coserv.RefValQuad{
-				Authorities: comid.NewCryptoKeys().Add(authority),
-				RVTriple:    valueTriple,
-			})
-		}
-	default:
-		return nil, errors.New("only reference value and trust anchors are supported at present")
-	}
-
-	if err := query.AddResults(*resultSet); err != nil {
-		return nil, fmt.Errorf("could not add result set to query: %w", err)
 	}
 
 	return query.ToCBOR()
@@ -898,46 +842,4 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 	}
 
 	return allPEM.Bytes(), nil
-}
-
-func querySelectorToEnvironments(selector *coserv.EnvironmentSelector) ([]*comid.Environment, error) {
-	var ret []*comid.Environment
-
-	if selector.Classes != nil {
-		for _, statefulClass := range *selector.Classes {
-			if statefulClass.Measurements != nil {
-				return nil, ErrMeasurementsNotSupported
-			}
-
-			ret = append(ret, &comid.Environment{
-				Class: statefulClass.Class,
-			})
-		}
-	}
-
-	if selector.Instances != nil {
-		for _, statefulInstance := range *selector.Instances {
-			if statefulInstance.Measurements != nil {
-				return nil, ErrMeasurementsNotSupported
-			}
-
-			ret = append(ret, &comid.Environment{
-				Instance: statefulInstance.Instance,
-			})
-		}
-	}
-
-	if selector.Groups != nil {
-		for _, statefulGroup := range *selector.Groups {
-			if statefulGroup.Measurements != nil {
-				return nil, ErrMeasurementsNotSupported
-			}
-
-			ret = append(ret, &comid.Environment{
-				Group: statefulGroup.Group,
-			})
-		}
-	}
-
-	return ret, nil
 }
