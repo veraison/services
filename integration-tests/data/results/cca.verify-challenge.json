@@ -49,10 +49,10 @@
     }
   },
   "CCA_REALM": {
-    "ear.status": "warning",
+    "ear.status": "affirming",
     "ear.trustworthiness-vector": {
       "configuration": 0,
-      "executables": 33,
+      "executables": 2,
       "file-system": 0,
       "hardware": 0,
       "instance-identity": 2,

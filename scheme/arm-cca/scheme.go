@@ -9,8 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ccatoken/platform"
@@ -18,12 +16,15 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/profiles/cca"
 	"github.com/veraison/ear"
+	"github.com/veraison/psatoken"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
+
+const NUM_REMS = 4
 
 var Descriptor = handler.SchemeDescriptor{
 	Name:         "ARM_CCA",
@@ -113,7 +114,9 @@ func (o *Implementation) GetReferenceValueIDs(
 			Class: trustAnchors[0].Environment.Class,
 		},
 		{
-			Instance: comid.MustNewBytesInstance(rimValue),
+			Class: &comid.Class{
+				ClassID: comid.MustNewBytesClassID(rimValue),
+			},
 		},
 	}, nil
 }
@@ -320,57 +323,71 @@ func AppraiseRealm(
 	appraisal.TrustVector.InstanceIdentity = ear.TrustworthyInstanceClaim
 	appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 
+	logger.Debug("collecting realm reference values...")
 	referenceValues := make([]realmReference, 0, len(endorsements))
 	for _, triple := range endorsements {
-		// unset Instance indicates platform endorsements
-		if triple.Environment.Instance == nil {
-			continue
+		refVal := realmReference{
+			ExtensibleMeasurements: make([][]byte, NUM_REMS),
 		}
 
 		for _, measurement := range triple.Measurements.Values {
-			refVal := realmReference{}
+			mkey, err := readMeasurementKey(&measurement)
+			if err != nil {
+				return err
+			}
 
-			if measurement.Val.RawValue != nil {
+			switch mkey {
+			case cca.CCARealmInitialMeasurementMkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return fmt.Errorf("%s: %w", cca.CCARealmInitialMeasurementMkey, err)
+				}
+				refVal.InitialMeasurement = digest
+			case cca.CCARealmExtendedMeasurement0Mkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement0Mkey, err)
+				}
+				refVal.ExtensibleMeasurements[0] = digest
+			case cca.CCARealmExtendedMeasurement1Mkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement1Mkey, err)
+				}
+				refVal.ExtensibleMeasurements[1] = digest
+			case cca.CCARealmExtendedMeasurement2Mkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement2Mkey, err)
+				}
+				refVal.ExtensibleMeasurements[2] = digest
+			case cca.CCARealmExtendedMeasurement3Mkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement3Mkey, err)
+				}
+				refVal.ExtensibleMeasurements[3] = digest
+			case cca.CCARealmPersonalizationMkey:
+				if measurement.Val.RawValue == nil {
+					return fmt.Errorf("raw-value not set for %s",
+						cca.CCARealmPersonalizationMkey)
+				}
+
 				refVal.PersonalizationValue, err = measurement.Val.RawValue.GetBytes()
 				if err != nil {
-					return fmt.Errorf("personalization value: %w", err)
+					return fmt.Errorf("%s: %w", cca.CCARealmPersonalizationMkey, err)
 				}
+			default:
+				logger.Debugw("skipping non-realm measurement", "mkey", mkey)
 			}
 
-			if measurement.Val.IntegrityRegisters == nil {
-				return errors.New("integrity registers not set in realm reference")
-			}
+		}
 
-			numREMs := len(measurement.Val.IntegrityRegisters.IndexMap) - 1
-			refVal.ExtensibleMeasurements = make([][]byte, numREMs)
-
-			for key, digests := range measurement.Val.IntegrityRegisters.IndexMap {
-				dLen := len(digests)
-				if dLen != 1 {
-					return fmt.Errorf("expected 1 digest for integ. reg.; found %d", dLen)
-				}
-
-				keyText, ok := key.(string)
-				if !ok {
-					return fmt.Errorf("non-string integ. reg. key: %v", key)
-				}
-
-				if keyText == "rim" {
-					refVal.InitialMeasurement = digests[0].HashValue
-				} else {
-					idxText := strings.Replace(keyText, "rem", "", 1)
-					idx, err := strconv.Atoi(idxText)
-					if err != nil {
-						return fmt.Errorf("bad REM key: %s", keyText)
-					}
-
-					refVal.ExtensibleMeasurements[idx] = digests[0].HashValue
-				}
-			}
-
+		if refVal.InitialMeasurement != nil {
 			referenceValues = append(referenceValues, refVal)
 		}
 	}
+	logger.Debug("collected realm reference values", "values", referenceValues)
 
 	for _, refVal := range referenceValues {
 		if !bytes.Equal(refVal.InitialMeasurement, evidenceRIM) {
@@ -428,6 +445,37 @@ func convertToPlatformClaims(v any) (platform.IClaims, error) {
 	return platform.DecodeClaimsFromJSON(encoded)
 }
 
+func readMeasurementKey(measurement *comid.Measurement) (string, error) {
+	if measurement.Key == nil || !measurement.Key.IsSet() {
+		return "", errors.New(" measurement missing mkey")
+	}
+
+	if measurement.Key.Type() != comid.StringType {
+		return "", fmt.Errorf(
+			"measurement mkey must be string, got %s",
+			measurement.Key.Type(),
+		)
+	}
+
+	return measurement.Key.Value.String(), nil
+}
+
+func readMeasurementDigestBytes(measurement *comid.Measurement) ([]byte, error) {
+	if measurement.Val.Digests == nil {
+		return nil, errors.New("no digests in reference value measurement")
+	}
+
+	numDigests := len(*measurement.Val.Digests)
+	if numDigests != 1 {
+		return nil, fmt.Errorf(
+			"expected exactly 1 digest in measurement; found %d",
+			numDigests,
+		)
+	}
+
+	return (*measurement.Val.Digests)[0].HashValue, nil
+}
+
 func matchPlatformClaimsToReferenceValues(
 	logger *zap.SugaredLogger,
 	claims platform.IClaims,
@@ -436,30 +484,18 @@ func matchPlatformClaimsToReferenceValues(
 	var err error
 	var referenceConfigValue []byte
 
+	logger.Debug("building platform reference values map...")
 	referenceValues := make(map[string][2]string)
 	for _, triple := range endorsements {
-		// set Instance indicates realm endorsements
-		if triple.Environment.Instance != nil {
-			continue
-		}
-
 		for _, measurement := range triple.Measurements.Values {
-			if measurement.Key == nil || !measurement.Key.IsSet() {
-				return false, false, errors.New("platform reference value measurement missing mkey")
+			mkey, err := readMeasurementKey(&measurement)
+			if err != nil {
+				return false, false, err
 			}
-
-			if measurement.Key.Type() != comid.StringType {
-				return false, false, fmt.Errorf(
-					"platform reference value measurement mkey must be string, got %s",
-					measurement.Key.Type(),
-				)
-			}
-
-			mkey := measurement.Key.Value.String()
 
 			// Check if this is a platform config measurement.
-			if mkey == cca.CCAPlatformConfigMkey {
-
+			switch mkey {
+			case cca.CCAPlatformConfigMkey:
 				if measurement.Val.RawValue == nil {
 					return false, false,
 						errors.New("no raw value in platform config measurement")
@@ -471,42 +507,30 @@ func matchPlatformClaimsToReferenceValues(
 				}
 
 				continue
-			}
+			case cca.CCASoftwareComponentMkey:
+				digest, err := readMeasurementDigestBytes(&measurement)
+				if err != nil {
+					return false, false, err
+				}
 
-			if mkey != "cca.software-component" {
-				return false, false, fmt.Errorf(
-					"invalid mkey %q in platform reference value measurement",
-					mkey,
-				)
-			}
+				encoded := base64.StdEncoding.EncodeToString(digest)
+				// Extract label (mtype) and version from measurement value
+				var label, version string
 
-			// Not a platform-config entry: this must be a platform software component.
-			if measurement.Val.Digests == nil {
-				return false, false, errors.New("no digests in reference value measurement")
-			}
+				if measurement.Val.Name != nil {
+					label = *measurement.Val.Name
+				}
+				if measurement.Val.Ver != nil {
+					version = measurement.Val.Ver.Version
+				}
 
-			numDigests := len(*measurement.Val.Digests)
-			if numDigests != 1 {
-				return false, false, fmt.Errorf(
-					"expected exactly 1 digest in measurement; found %d",
-					numDigests,
-				)
+				referenceValues[encoded] = [2]string{label, version}
+			default:
+				logger.Debugw("skipping non-platform measurement", "mkey", mkey)
 			}
-
-			encoded := base64.StdEncoding.EncodeToString((*measurement.Val.Digests)[0].HashValue)
-			// Extract label (mtype) and version from measurement value
-			var label, version string
-
-			if measurement.Val.Name != nil {
-				label = *measurement.Val.Name
-			}
-			if measurement.Val.Ver != nil {
-				version = measurement.Val.Ver.Version
-			}
-
-			referenceValues[encoded] = [2]string{label, version}
 		}
 	}
+	logger.Debugw("platform reference values", "map", referenceValues)
 
 	evidenceConfigValue, err := claims.GetConfig()
 	if err != nil {
@@ -539,7 +563,7 @@ func matchPlatformClaimsToReferenceValues(
 		}
 
 		mversion, err := swComp.GetVersion()
-		if err != nil {
+		if err != nil && !errors.Is(err, psatoken.ErrOptionalFieldMissing) {
 			return false, false, handler.BadEvidence(fmt.Errorf("S/W comp. %d version: %w", i, err))
 		}
 
@@ -571,7 +595,7 @@ func allMatch(lhs, rhs [][]byte) bool {
 	}
 
 	for i, lhsV := range lhs {
-		if !bytes.Equal(lhsV, rhs[i]) {
+		if len(lhsV) > 0 && !bytes.Equal(lhsV, rhs[i]) {
 			return false
 		}
 	}
