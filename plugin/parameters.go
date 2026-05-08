@@ -178,7 +178,14 @@ func (o *Parameters) Set(key string, value any) error {
 	case int:
 		o.set(key, int64(t))
 	case float64:
-		if t < float64(math.MinInt64) || t > float64(math.MaxInt64) {
+		// note: due to limited precision, float(9223372036854775807)
+		// is 9223372036854775808.0, so we're using >= rather than >
+		// here. 
+		// This means that, in practice, the highest float64
+		// convertable to int64 is 9223372036854774784.0
+		// ((2^(63-52))/2), as anything above that would round up to
+		// 9223372036854775808.0.
+		if t < float64(math.MinInt64) || t >= float64(math.MaxInt64) {
 			return fmt.Errorf("%w for %q: out of int64 range: %v", ErrInvalid, key, t)
 		}
 
