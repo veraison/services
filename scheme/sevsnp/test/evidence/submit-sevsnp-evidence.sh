@@ -11,7 +11,7 @@ case ${EVIDENCE_FILE##*.} in
 		EVIDENCE_CONTENT_TYPE='application/vnd.veraison.tsm-report+cbor'
 		;;
 	json)
-		EVIDENCE_CONTENT_TYPE='application/vnd.veraison.configfs-tsm+json'
+		EVIDENCE_CONTENT_TYPE='application/vnd.veraison.tsm-report+json'
 		;;
 	*)
 		EVIDENCE_CONTENT_TYPE='application/eat+cwt; eat_profile="tag:github.com,2025:veraison/ratsd/cmw"'

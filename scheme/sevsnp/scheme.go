@@ -42,7 +42,7 @@ var (
 	EndorsementMediaTypeRV   = `application/corim-unsigned+cbor; profile="tag:amd.com,2024:snp-corim-profile"`
 	EvidenceMediaTypeRATSd   = `application/eat+cwt; eat_profile="tag:github.com,2025:veraison/ratsd/cmw"`
 	EvidenceMediaTypeTSMCbor = "application/vnd.veraison.tsm-report+cbor"
-	EvidenceMediaTypeTSMJson = "application/vnd.veraison.configfs-tsm+json"
+	EvidenceMediaTypeTSMJson = "application/vnd.veraison.tsm-report+json"
 )
 
 const (
