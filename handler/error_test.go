@@ -98,3 +98,13 @@ func Test_BadEvidenceError_unmarshalable(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, parsed.Detail, "0x")
 }
+
+func Test_StoreErrorParse(t *testing.T) {
+	enf := errors.New(ErrNotFound.Error())
+	eusp := errors.New(ErrUnsupported.Error())
+	eother := errors.New("Other error")
+
+	assert.ErrorIs(t, ParseError(enf), ErrNotFound)
+	assert.ErrorIs(t, ParseError(eusp), ErrUnsupported)
+	assert.Equal(t, ParseError(eother).Error(), eother.Error())
+}
