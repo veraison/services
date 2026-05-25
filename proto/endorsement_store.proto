@@ -1,0 +1,20 @@
+// Copyright 2026 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/veraison/services/proto";
+
+message GetEndorsementsArgs {
+  bytes environment = 1 [json_name = "environemnt-map"];
+  string label = 2 [json_name = "label"];
+  bool match_exactly = 3 [json_name = "match-exactly"];
+}
+
+message SubmitEndorsementsArgs {
+  bytes endorsement = 1 [json_name = "endorsements"];
+  string label = 2 [json_name = "label"];
+  bool activate = 3 [json_name = "activate"];
+}
