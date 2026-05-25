@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -185,6 +185,14 @@ func ParseError(err error) error {
 
 	if strings.HasPrefix(msg, "bad evidence: ") {
 		return BadEvidenceError{msg[14:]}
+	}
+
+	if msg == ErrNotFound.Error() {
+		return ErrNotFound
+	}
+
+	if msg == ErrUnsupported.Error() {
+		return ErrUnsupported
 	}
 
 	var bee BadEvidenceError
