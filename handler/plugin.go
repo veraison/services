@@ -28,3 +28,10 @@ func RegisterSchemeImplementation(desc SchemeDescriptor, i ISchemeImplementation
 
 	RegisterSchemeHandler(wrapper)
 }
+
+func RegisterEndorsementStore(i IEndorsementStorePlugin) {
+	err := plugin.RegisterImplementation("endorsement-store", i, EndorsementStoreRPC)
+	if err != nil {
+		panic(err)
+	}
+}
