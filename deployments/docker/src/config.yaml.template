@@ -23,8 +23,10 @@ coserv:
   protocol: https
   cert: /opt/veraison/coserv.crt
   cert-key: /opt/veraison/coserv.key
-coserv-signer:
-  key: /opt/veraison/coserv-signer.jwk
+  max-expiry: 5 mins
+  signer:
+    alg: ES256
+    key: /opt/veraison/coserv-signer.jwk
 vts:
   server-addr: vts-service:${VTS_PORT}
   tls: true

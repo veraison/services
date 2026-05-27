@@ -1,6 +1,6 @@
 // Copyright 2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package coservsigner
+package coserv
 
 import (
 	"testing"
@@ -75,7 +75,7 @@ func makeFS(t *testing.T) afero.Fs {
 }
 
 func TestCOSESigner_Init_OK(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/ec256key.jwk",
 		Alg: "ES256",
 	}
@@ -92,7 +92,7 @@ func TestCOSESigner_Init_OK(t *testing.T) {
 }
 
 func TestCOSESigner_Init_KO_not_a_private_key(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/ec256key-pub.jwk",
 		Alg: "ES256",
 	}
@@ -104,7 +104,7 @@ func TestCOSESigner_Init_KO_not_a_private_key(t *testing.T) {
 }
 
 func TestCOSESigner_Init_KO_bad_key(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/bad-key.json",
 		Alg: "ES256",
 	}
@@ -116,7 +116,7 @@ func TestCOSESigner_Init_KO_bad_key(t *testing.T) {
 }
 
 func TestCOSESigner_Init_KO_alg_not_set(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/ec256key.jwk",
 	}
 	fs := makeFS(t)
@@ -127,7 +127,7 @@ func TestCOSESigner_Init_KO_alg_not_set(t *testing.T) {
 }
 
 func TestCOSESigner_Init_KO_symmetric_key(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/symmetric-key.json",
 		Alg: "A128KW",
 	}
@@ -139,7 +139,7 @@ func TestCOSESigner_Init_KO_symmetric_key(t *testing.T) {
 }
 
 func TestCOSESigner_Init_KO_rsa_key(t *testing.T) {
-	cfg := Cfg{
+	cfg := SignerConfig{
 		Key: "testdata/rsa.jwk",
 		Alg: "RS256",
 	}

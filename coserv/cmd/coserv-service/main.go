@@ -65,7 +65,7 @@ func main() {
 
 	log.Infow("Initializing Endorsement Distribution Service", "version", config.Version)
 
-	loader := config.NewLoader(&cfg)
+	loader := config.NewNonExclusiveLoader(&cfg)
 	if err := loader.LoadFromViper(subs["coserv"]); err != nil {
 		log.Fatalf("Could not load coserv config: %v", err)
 	}

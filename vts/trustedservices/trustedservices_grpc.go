@@ -32,7 +32,7 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
-	"github.com/veraison/services/vts/coservsigner"
+	vtscoserv "github.com/veraison/services/vts/coserv"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
 )
@@ -72,7 +72,7 @@ type GRPC struct {
 	CoservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler]
 	PolicyManager            *policymanager.PolicyManager
 	EarSigner                earsigner.IEarSigner
-	CoservSigner             coservsigner.ICoservSigner
+	CoservContext             *vtscoserv.Context
 	rootCerts                *x509.CertPool
 
 	Server *grpc.Server
@@ -89,7 +89,7 @@ func NewGRPC(
 	coservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
-	coservSigner coservsigner.ICoservSigner,
+	coservConfig *vtscoserv.Context,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
@@ -98,7 +98,7 @@ func NewGRPC(
 		CoservProxyPluginManager: coservProxyPluginManager,
 		PolicyManager:            policyManager,
 		EarSigner:                earSigner,
-		CoservSigner:             coservSigner,
+		CoservContext:             coservConfig,
 		logger:                   logger,
 	}
 }
@@ -187,9 +187,9 @@ func (o *GRPC) Close() error {
 		o.logger.Errorf("EAR signer closure failed: %v", err)
 	}
 
-	if o.CoservSigner != nil {
-		if err := o.CoservSigner.Close(); err != nil {
-			o.logger.Errorf("CoSERV signer closure failed: %v", err)
+	if o.CoservContext != nil {
+		if err := o.CoservContext.Close(); err != nil {
+			o.logger.Errorf("CoSERV context closure failed: %v", err)
 		}
 	}
 
@@ -533,7 +533,7 @@ func (c *GRPC) assembleCoservMediaTypes(mts []string, filter string) []string {
 		mediaType := fmt.Sprintf(`application/coserv+cbor; profile=%q`, profile)
 		mediaTypes = append(mediaTypes, mediaType)
 
-		if c.CoservSigner != nil {
+		if c.CoservContext != nil {
 			mediaType = fmt.Sprintf(`application/coserv+cose; profile=%q`, profile)
 			mediaTypes = append(mediaTypes, mediaType)
 		}
@@ -589,11 +589,11 @@ func (o *GRPC) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*proto.P
 
 func (o *GRPC) GetCoservSigningPublicKey(context.Context, *emptypb.Empty) (*proto.PublicKey, error) {
 	// If CoSERV is not enabled, return an empty key.
-	if o.CoservSigner == nil {
+	if o.CoservContext == nil {
 		return &proto.PublicKey{Key: ""}, nil
 	}
 
-	alg, key, err := o.CoservSigner.GetCoservSigningPublicKey()
+	alg, key, err := o.CoservContext.Signer.GetCoservSigningPublicKey()
 	if err != nil {
 		return nil, err
 	}
@@ -630,12 +630,11 @@ func (o *GRPC) getEndorsementsFromStores(queryIn *proto.EndorsementQueryIn) ([]b
 		return nil, err
 	}
 
-	fallbackAuthority, err := comid.NewCryptoKeyTaggedBytes([]byte("dummyauth"))
-	if err != nil {
-		return nil, err
-	}
-
-	coservService := corimstore.NewCoSERVService(o.Store, fallbackAuthority)
+	coservService := corimstore.NewCoSERVService(
+		o.Store,
+		o.CoservContext.FallbackAuthority,
+		o.CoservContext.MaxExpiry,
+	)
 	if err := coservService.UpdateCoSERV(&query); err != nil {
 		return nil, err
 	}
@@ -679,14 +678,14 @@ func (o *GRPC) GetEndorsements(
 	// If we have a CoSERV signer configured and the client requested a COSE
 	// response, sign the result here.
 	if strings.HasPrefix(query.MediaType, "application/coserv+cose") {
-		if o.CoservSigner != nil {
+		if o.CoservContext != nil {
 			var tmp coserv.Coserv
 			err = tmp.FromCBOR(out)
 			if err != nil {
 				return getEndorsementsError(fmt.Errorf("could not parse CoSERV response: %w", err)), nil
 			}
 
-			out, err = o.CoservSigner.Sign(tmp)
+			out, err = o.CoservContext.Signer.Sign(tmp)
 			if err != nil {
 				return getEndorsementsError(fmt.Errorf("could not sign CoSERV response: %w", err)), nil
 			}

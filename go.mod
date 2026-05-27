@@ -41,7 +41,7 @@ require (
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
 	github.com/veraison/cmw v0.2.0
 	github.com/veraison/corim v1.1.3-0.20260430132037-b8653a7359da
-	github.com/veraison/corim-store v0.1.0
+	github.com/veraison/corim-store v0.2.1
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53

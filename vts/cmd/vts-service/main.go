@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/policy"
-	"github.com/veraison/services/vts/coservsigner"
+	"github.com/veraison/services/vts/coserv"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
 	"github.com/veraison/services/vts/store"
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	subs, err := config.GetSubs(v, "store", "po-store",
-		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer", "*logging", "*scheme")
+		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv", "*logging", "*scheme")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,13 +146,11 @@ func main() {
 		log.Fatalf("EAR signer initialization failed: %v", err)
 	}
 
-	var coservSigner coservsigner.ICoservSigner
-
-	if subs["coserv-signer"].GetBool("use") {
-		log.Info("loading CoSERV signer")
-		coservSigner, err = coservsigner.New(subs["coserv-signer"], afero.NewOsFs())
+	var coservContext *coserv.Context
+	if subs["coserv"].IsSet("signer") {
+		coservContext, err = coserv.NewCoservContextFromViper(subs["coserv"])
 		if err != nil {
-			log.Fatalf("CoSERV signer initialization failed: %v", err)
+			log.Fatal("CoSERV config initialization: %v", err)
 		}
 
 		// CoSERV media types.
@@ -165,7 +163,7 @@ func main() {
 	// policyManager and earSigner are owned by vts
 	vts := trustedservices.NewGRPC(enStore,
 		schemePluginManager, coservProxyPluginManager,
-		policyManager, earSigner, coservSigner, log.Named("vts"))
+		policyManager, earSigner, coservContext, log.Named("vts"))
 
 	if err = vts.Init(subs["vts"]); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)

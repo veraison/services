@@ -1,6 +1,6 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package coservsigner
+package coserv
 
 import (
 	"crypto"
@@ -17,6 +17,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/afero"
+	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/go-cose"
 	"github.com/veraison/services/vts/earsigner"
@@ -33,7 +34,7 @@ type COSESigner struct {
 	Signer cose.Signer
 }
 
-func (o *COSESigner) Init(cfg Cfg, fs afero.Fs) error {
+func (o *COSESigner) Init(cfg SignerConfig, fs afero.Fs) error {
 	keyUrl, err := url.Parse(cfg.Key)
 	if err != nil {
 		return fmt.Errorf("parsing CoSERV signer key from configuration: %w", err)
@@ -75,6 +76,30 @@ func (o COSESigner) GetCoservSigningPublicKey() (jwa.KeyAlgorithm, jwk.Key, erro
 	}
 
 	return o.Alg, key, nil
+}
+
+func (o COSESigner) GetAuthority() (*comid.CryptoKey, error) {
+	jwkPub, err := o.Key.PublicKey()
+	if err != nil {
+		return nil, fmt.Errorf("getting public key from CoSERV signer key: %w", err)
+	}
+
+	var pub crypto.PublicKey
+	if err := jwkPub.Raw(&pub); err != nil {
+		return nil, fmt.Errorf("obtaining PublicKey from JWK: %w", err)
+	}
+
+	coseKey, err := cose.NewKeyFromPublic(pub)
+	if err != nil {
+		return nil, fmt.Errorf("creating COSE key: %w", err)
+	}
+
+	keyBytes, err := coseKey.MarshalCBOR()
+	if err != nil {
+		return nil, fmt.Errorf("marshaling COSE key: %w", err)
+	}
+
+	return comid.MustNewCOSEKey(keyBytes), err
 }
 
 func (o *COSESigner) setAlg(alg string) error {

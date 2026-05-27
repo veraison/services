@@ -1,6 +1,6 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package coservsigner
+package coserv
 
 import (
 	"github.com/spf13/afero"
@@ -8,18 +8,13 @@ import (
 	"github.com/veraison/services/config"
 )
 
-type Cfg struct {
-	Use bool   `mapstructure:"use"`
+type SignerConfig struct {
 	Key string `mapstructure:"key"`
 	Alg string `mapstructure:"alg"`
 }
 
-func New(v *viper.Viper, fs afero.Fs) (ICoservSigner, error) {
-	if !v.GetBool("use") {
-		return nil, nil
-	}
-
-	cfg := Cfg{}
+func NewSigner(v *viper.Viper, fs afero.Fs) (ISigner, error) {
+	cfg := SignerConfig{}
 
 	configLoader := config.NewLoader(&cfg)
 	if err := configLoader.LoadFromViper(v); err != nil {
