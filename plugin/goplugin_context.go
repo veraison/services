@@ -64,6 +64,9 @@ func (o PluginContext[I]) GetHandle() interface{} {
 }
 
 func (o PluginContext[I]) Close() {
+	if err := o.Handle.Fini(); err != nil {
+		log.Errorf("failed to Fini plugin %s: %v", o.Name, err)
+	}
 	if o.client != nil {
 		o.client.Kill()
 	}
