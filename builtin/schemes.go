@@ -6,9 +6,9 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 
-	scheme9 "github.com/veraison/services/scheme/amd-kds-coserv"
+	scheme9 "github.com/veraison/services/endorsementstore/amd-kds-coserv"
 	scheme3 "github.com/veraison/services/scheme/arm-cca"
-	scheme8 "github.com/veraison/services/scheme/nvidia-coserv"
+	scheme8 "github.com/veraison/services/endorsementstore/nvidia-coserv"
 	scheme1 "github.com/veraison/services/scheme/parsec-cca"
 	scheme5 "github.com/veraison/services/scheme/parsec-tpm"
 	scheme6 "github.com/veraison/services/scheme/psa-iot"

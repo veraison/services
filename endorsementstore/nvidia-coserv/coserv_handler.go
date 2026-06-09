@@ -16,6 +16,7 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 )
 
@@ -184,7 +185,7 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	return nil
 }
 
-func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]byte, error) {
+func (s CoservProxyHandler) ExecuteCoservQuery(mediaType, query string) (*coserv.Coserv, error) {
 	var q coserv.Coserv
 	if err := q.FromBase64Url(query); err != nil {
 		return nil, err
@@ -226,5 +227,21 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 		return nil, err
 	}
 
-	return q.ToCBOR()
+	return &q, nil
+}
+
+func (o CoservProxyHandler) GetKeyTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.KeyTriple, error) {
+	return nil, handler.ErrUnsupported
+}
+
+func (o CoservProxyHandler) GetValueTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.ValueTriple, error) {
+	return nil, handler.ErrUnsupported
+}
+
+func (b CoservProxyHandler) AddCorimBytes(data []byte, scheme string, activate bool) error {
+	return handler.ErrUnsupported
+}
+
+func (b CoservProxyHandler) Close() error {
+	return nil
 }

@@ -1,8 +1,8 @@
-# Copyright 2025 Contributors to the Veraison project.
+# Copyright 2025-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
-PLUGIN := ../../bin/coserv-nvidia.plugin
-GOPKG := github.com/veraison/services/scheme/nvidia-coserv
+PLUGIN := ../../bin/coserv-amd-kds.plugin
+GOPKG := github.com/veraison/services/endorsementstore/amd-kds-coserv
 SRCS := main.go
 
 include ../../../mk/common.mk

@@ -11,9 +11,6 @@ SUBDIR += riot
 SUBDIR += sevsnp
 SUBDIR += tpm-enacttrust
 
-SUBDIR += amd-kds-coserv
-SUBDIR += nvidia-coserv
-
 clean: ; $(RM) -rf ./bin
 
 include ../mk/subdir.mk
