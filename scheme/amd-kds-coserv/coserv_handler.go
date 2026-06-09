@@ -54,6 +54,10 @@ func (s CoservProxyHandler) Init(*plugin.Parameters) error {
 	return nil
 }
 
+func (s CoservProxyHandler) Fini() error {
+	return nil
+}
+
 func (s CoservProxyHandler) GetName() string {
 	return "amd-kds-coserv-proxy-handler"
 }
