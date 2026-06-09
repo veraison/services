@@ -40,8 +40,8 @@ type SchemeRPCClient struct {
 func (o *SchemeRPCClient) Init(params *plugin.Parameters) error {
 	var (
 		unused any
-		args []byte
-		err error
+		args   []byte
+		err    error
 	)
 
 	if params != nil {
@@ -51,6 +51,11 @@ func (o *SchemeRPCClient) Init(params *plugin.Parameters) error {
 	}
 
 	return o.client.Call("Plugin.Init", args, &unused)
+}
+
+func (o *SchemeRPCClient) Fini() error {
+	var unused any
+	return o.client.Call("Plugin.Fini", &unused, &unused)
 }
 
 func (o *SchemeRPCClient) GetName() string {
@@ -294,6 +299,10 @@ func (o *SchemeRPCServer) Init(args []byte, resp *any) error {
 	}
 
 	return o.Impl.Init(params)
+}
+
+func (o *SchemeRPCServer) Fini(args any, resp *any) error {
+	return o.Impl.Fini()
 }
 
 func (o *SchemeRPCServer) GetName(unused any, resp *string) error {

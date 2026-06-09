@@ -43,6 +43,10 @@ func (o *CoservProxyRPCServer) Init(args []byte, resp *any) error {
 	return o.Impl.Init(params)
 }
 
+func (o *CoservProxyRPCServer) Fini(args any, resp *any) error {
+	return o.Impl.Fini()
+}
+
 func (s *CoservProxyRPCServer) GetName(args interface{}, resp *string) error {
 	*resp = s.Impl.GetName()
 	return nil
@@ -89,6 +93,11 @@ func (o *CoservProxyRPCClient) Init(params *plugin.Parameters) error {
 	}
 
 	return o.client.Call("Plugin.Init", args, &unused)
+}
+
+func (o *CoservProxyRPCClient) Fini() error {
+	var unused any
+	return o.client.Call("Plugin.Fini", unused, &unused)
 }
 
 func (c *CoservProxyRPCClient) GetName() string {
