@@ -58,6 +58,15 @@ func (o *SchemeImplementationWrapper) Init(params *plugin.Parameters) error {
 	return nil
 }
 
+func (o *SchemeImplementationWrapper) Fini() error {
+	if pluginImpl, ok := o.Impl.(interface {
+		Fini() error
+	}); ok {
+		return pluginImpl.Fini()
+	}
+	return nil
+}
+
 func (o *SchemeImplementationWrapper) GetName() string {
 	return PluginNameFromScheme(o.Desc.Name)
 }

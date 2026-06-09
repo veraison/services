@@ -35,6 +35,10 @@ func (o RedShirt) Shoot() string {
 	return fmt.Sprintf("phaser goes %q", o.sound)
 }
 
+func (o RedShirt) Fini() error {
+	return nil
+}
+
 func main() {
 	test.RegisterMookImplementation(&RedShirt{})
 	plugin.Serve()

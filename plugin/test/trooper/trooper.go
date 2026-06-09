@@ -36,6 +36,10 @@ func (o ImperialTrooper) Shoot() string {
 	return fmt.Sprintf("blaster goes %q", o.sound)
 }
 
+func (o ImperialTrooper) Fini() error {
+	return nil
+}
+
 func main() {
 	test.RegisterMookImplementation(&ImperialTrooper{})
 	plugin.Serve()

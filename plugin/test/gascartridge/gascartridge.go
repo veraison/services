@@ -30,6 +30,10 @@ func (o GasCartridge) GetCapacity() int {
 	return 500
 }
 
+func (o GasCartridge) Fini() error {
+	return nil
+}
+
 func main() {
 	test.RegisterAmmoImplementation(&GasCartridge{})
 	plugin.Serve()

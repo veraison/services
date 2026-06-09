@@ -16,6 +16,7 @@ type IMook interface {
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() map[string][]string
 	Shoot() string
+	Fini() error
 }
 
 type MookRPCClient struct {
@@ -25,8 +26,8 @@ type MookRPCClient struct {
 func (o *MookRPCClient) Init(params *plugin.Parameters) error {
 	var (
 		unused any
-		args []byte
-		err error
+		args   []byte
+		err    error
 	)
 
 	if params != nil {
@@ -103,6 +104,15 @@ func (o *MookRPCClient) Shoot() string {
 	return resp
 }
 
+func (o *MookRPCClient) Fini() error {
+	var unused any
+	err := o.client.Call("Plugin.Fini", &unused, &unused)
+	if err != nil {
+		log.Printf("Plugin.Fini RPC call failed: %v", err)
+	}
+	return err
+}
+
 type MookRPCServer struct {
 	Impl IMook
 }
@@ -143,6 +153,10 @@ func (o *MookRPCServer) GetSupportedMediaTypes(args any, resp *[]byte) error {
 func (o *MookRPCServer) Shoot(args any, resp *string) error {
 	*resp = o.Impl.Shoot()
 	return nil
+}
+
+func (o *MookRPCServer) Fini(args any, resp *any) error {
+	return o.Impl.Fini()
 }
 
 func GetMookClient(c *rpc.Client) any {
