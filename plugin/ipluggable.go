@@ -26,4 +26,8 @@ type IPluggable interface {
 	// free to define their own categories -- as far as IPluggable goes,
 	// categories are just arbitrary groupings of media types.
 	GetSupportedMediaTypes() map[string][]string
+
+	// Releases the resources used by the plugin. This method should be
+	// called before closing connection to the plugin.
+	Fini() error
 }

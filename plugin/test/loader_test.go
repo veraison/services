@@ -23,7 +23,7 @@ func TestLoader_discover_and_load(t *testing.T) {
 
 	pluginParams := map[string]*plugin.Parameters{
 		"Federation Starship Officer": plugin.NewParameters().SetString("sound", "zap"),
-		"Galactic Imperial Trooper": plugin.NewParameters().SetString("sound", "pew, pew"),
+		"Galactic Imperial Trooper":   plugin.NewParameters().SetString("sound", "pew, pew"),
 	}
 
 	ldr, err := plugin.CreateGoPluginLoader(cfg, pluginParams, logger)
