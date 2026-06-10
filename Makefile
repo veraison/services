@@ -6,6 +6,7 @@ SHELL = /bin/bash
 SUBDIR += builtin
 SUBDIR += config
 SUBDIR += coserv
+SUBDIR += endorsementstore
 SUBDIR += handler
 SUBDIR += kvstore
 SUBDIR += log
