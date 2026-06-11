@@ -18,6 +18,15 @@ management:
   protocol: https
   cert: ${VERAISON_CERTS_DIR}/management.crt
   cert-key: ${VERAISON_CERTS_DIR}/management.key
+coserv:
+  listen-addr: 0.0.0.0:${COSERV_PORT}
+  protocol: https
+  cert: ${VERAISON_CERTS_DIR}/coserv.crt
+  cert-key: ${VERAISON_CERTS_DIR}/coserv.key
+  max-expiry: 5 mins
+  signer:
+    alg: ES256
+    key: ${VERAISON_SIGNING_DIR}/coserv-signer.jwk
 vts:
   server-addr: ${VTS_HOST}:${VTS_PORT}
   tls: true

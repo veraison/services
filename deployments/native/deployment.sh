@@ -7,7 +7,7 @@ _THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 _ERROR='\e[0;31mERROR\e[0m'
 _WARN='\e[0;33mWARNING\e[0m'
 _INSTALL=$(type -p install)
-_SERVICES=(vts provisioning verification management)
+_SERVICES=(vts provisioning verification management coserv)
 
 set -e
 
@@ -212,13 +212,13 @@ function init_certs() {
 	fi
 }
 
-function init_signing_key() {
+function init_signing_keys() {
 	local mode=$1
 
 	if [[ $mode == "copy" ]]; then
-		_deploy_signing_key
+		_deploy_signing_keys
 	else
-		_gen_signing_key
+		_gen_signing_keys
 	fi
 }
 
@@ -250,7 +250,7 @@ function quick_init_all(){
 	build
 	create_deployment $bins_mode
 	init_certs  $cnk_mode $template $root_cert_path $root_cert_key_path
-	init_signing_key $cnk_mode
+	init_signing_keys $cnk_mode
 	init_clients
 	init_sqlite_stores
 }
@@ -390,7 +390,7 @@ function help() {
 	    Install executables and configuration for Veraison services command line
 	    clients: cocli, evcli, an pocli.
 
-	[-e] [-f] init-signing-key
+	[-e] [-f] init-signing-keys
 	    Initialize the signing key that will be used by verification service to
 	    sign attestation results. If -e option is used, then the example signing
 	    key will be copied into they deployment. Otherwise, a new EC P-256 key
@@ -410,7 +410,7 @@ function help() {
 	        ./deployment.sh init-clients
 	        ./deployment.sh init-stores
 	        ./deployment.sh [-e] init-certs [NAME_TEMPLATE ROOT_CERT ROOT_CERT_KEY]
-	        ./deployment.sh [-e] init-signing-key
+	        ./deployment.sh [-e] init-signing-keys
 
 	setup-keycloak PATH NAMES ROOT_CERT ROOT_CERT_KEY [PORT]
 	    Setup a fresh standalone Keycloak server located at PATH to work with the
@@ -494,11 +494,12 @@ function _gen_certs() {
 		$root_cert_path $root_key_path
 }
 
-function _deploy_signing_key() {
+function _deploy_signing_keys() {
 	cp ${SRC_SIGNING_DIR}/skey.jwk ${DEPLOYMENT_SIGNING_DIR}/skey.jwk
+	cp ${SRC_SIGNING_DIR}/coserv-signer.jwk ${DEPLOYMENT_SIGNING_DIR}/coserv-signer.jwk
 }
 
-function _gen_signing_key() {
+function _gen_signing_keys() {
 	local _f=""
 	if [[ $_force == true ]]; then
 		_f="-f"
@@ -506,7 +507,7 @@ function _gen_signing_key() {
 
 	export VERAISON_CERTS_DIR=${DEPLOYMENT_CERTS_DIR}
 	export VERAISON_SIGNING_DIR=${DEPLOYMENT_SIGNING_DIR}
-	${SRC_BIN_DIR}/veraison $_f gen-signing-key
+	${SRC_BIN_DIR}/veraison $_f gen-signing-keys
 }
 
 function _deploy_services_config() {
@@ -526,6 +527,7 @@ function _symlink_bins() {
 		"${ROOT_DIR}/provisioning/cmd/provisioning-service/provisioning-service"
 		"${ROOT_DIR}/verification/cmd/verification-service/verification-service"
 		"${ROOT_DIR}/management/cmd/management-service/management-service"
+		"${ROOT_DIR}/coserv/cmd/coserv-service/coserv-service"
 		"${ROOT_DIR}/vts/cmd/vts-service/vts-service"
 	)
 
@@ -550,6 +552,7 @@ function _deploy_bins() {
 	$_INSTALL -m 0755 ${ROOT_DIR}/provisioning/cmd/provisioning-service/provisioning-service \
 		${ROOT_DIR}/verification/cmd/verification-service/verification-service \
 		${ROOT_DIR}/management/cmd/management-service/management-service \
+		${ROOT_DIR}/coserv/cmd/coserv-service/coserv-service \
 		${ROOT_DIR}/vts/cmd/vts-service/vts-service \
 		${DEPLOYMENT_BIN_DIR}
 
@@ -621,7 +624,7 @@ case $command in
     deploy) create_deployment "$_binaries";;
     init-certificates | init-certs) init_certs "$_certs_and_keys" "$1" "$2" "$3";;
     init-clients) init_clients;;
-    init-signing-key) init_signing_key "$_certs_and_keys";;
+    init-signing-keys) init_signing_keys "$_certs_and_keys";;
     init-stores) init_sqlite_stores;;
     quick-init-all) quick_init_all "$_binaries" "$_certs_and_keys" "$1" "$2" "$3";;
     setup-keycloak) setup_keycloak "$1" "$2" "$3" "$4" "$5";;
