@@ -22,7 +22,7 @@ _launchd_dir=${VERAISON_LAUNCHD_DIR}
 _logs_dir=${VERAISON_LOGS_DIR}
 _tmux_dir=${VERAISON_TMUX_DIR}
 
-_services=(vts provisioning verification management)
+_services=(vts provisioning verification management coserv)
 
 _sqlite="sqlite3 -init /dev/null -batch"
 
@@ -199,6 +199,10 @@ function create_tmux_session() {
 	tmux send-keys -t $session_name:0.3 bin/management-service Space \
 	    --config Space ${_config_dir}/services/config.yaml C-m
 
+    tmux new-window -t $session_name -n coserv
+	tmux send-keys -t $session_name:1.0 bin/coserv-service Space \
+	    --config Space ${_config_dir}/services/config.yaml C-m
+	tmux previous-window -t $session_name
 }
 
 function attach_tmux_session() {
@@ -240,6 +244,7 @@ function run_services_in_terminals() {
 	$term -- ${_bin_dir}/provisioning-service --config ${_config_dir}/services/config.yaml &
 	$term -- ${_bin_dir}/verification-service --config ${_config_dir}/services/config.yaml &
 	$term -- ${_bin_dir}/management-service --config ${_config_dir}/services/config.yaml &
+	$term -- ${_bin_dir}/coserv-service --config ${_config_dir}/services/config.yaml &
 }
 
 function show_stores() {
@@ -454,7 +459,7 @@ function show_systemd_service_status() {
 	fi
 
 	systemctl $opts list-units -q veraison-vts.service veraison-provisioning.service \
-		veraison-verification.service veraison-management.service
+		veraison-verification.service veraison-management.service veraison-coserv.service
 }
 
 function clear_logs() {
@@ -637,10 +642,13 @@ function help() {
 	    (with the corresponding key written to
 	    ${_certs_dir}/rootCA.key).
 
-	[-f] gen-signing-key
+	[-f] gen-signing-keys
 	    Generate the signing key that will be used by the verification service to
 	    sign attestation results. The key will be written to
 	    ${_signing_dir}/skey.jwk.
+      Also, generate the signing key that will be used by the coserv service to
+      sign CoSERV query results. The key will be written to
+      ${_signing_dir}/coserv-signer.jwk.
 
 	init-sqlite-stores [STORES_DIR]
 	    Initialize the sqlite3 stores for the endorsements, trust anchors, and
@@ -863,8 +871,9 @@ case $command in
 	start-term)
 		run_services_in_terminals
 		;;
-	gen-signing-key)
+	gen-signing-keys)
 		generate_signing_key "$_force" "$_signing_dir/skey.jwk"
+		generate_signing_key "$_force" "$_signing_dir/coserv-signer.jwk"
 		;;
 	init-sqlite-stores)
 		init_sqlite_stores "$1"

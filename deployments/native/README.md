@@ -286,16 +286,18 @@ local use, as they won't be configured with your host's name).
 
 When doing this, you do not need to create/provide a root certificate.
 
-### Step 4: set up signing key
+### Step 4: set up signing keys
 
-The signing key should be provided as `${VERAISON_ROOT}/signing/skey.jwk`. It
-will be used by the verification service to sign attestation results. The key
-must be in [JWK format](https://www.rfc-editor.org/rfc/rfc7517).
+There are two signing keys: one is used to sign the EAR containing the
+attestation results, and the other is used to sign the CoSERV query results.
+The EAR key should be provided as `${VERAISON_ROOT}/signing/skey.jwk`.  The
+CoSERV key should be provided as `${VERAISON_ROOT}/signing/coserv-signer.jwk`.
+Both keys must be in [JWK format](https://www.rfc-editor.org/rfc/rfc7517).
 
-You can generate a new key for the deployment with
+You can generate new keys for the deployment with
 
 ```bash
-./deployment.sh init-signing-key
+./deployment.sh init-signing-keys
 ```
 
 Signing key generation relies on `step` which must be installed on the system
@@ -303,11 +305,11 @@ Signing key generation relies on `step` which must be installed on the system
 
 #### Using example signing key
 
-As with certificates, it is possible use the example key instead of generating
-a new one:
+As with certificates, it is possible use the example keys instead of generating
+new ones:
 
 ```bash
-./deployment.sh -e init-signing-key
+./deployment.sh -e init-signing-keys
 ```
 
 ### Step 5: initialize stores
@@ -407,7 +409,8 @@ be symlinks to their source locations.)
 #### `signing`
 
 This directly contains `skey.jwk`, the key that will be used by the
-verification service to sign attestation results.
+verification service to sign attestation results, and `coserv-signer.jwk`, the
+key used to sign CoSERV query results.
 
 #### `stores`
 
