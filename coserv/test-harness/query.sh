@@ -25,18 +25,17 @@ base64url_encode() {
 function rv_query() {
 cat << EOF | diag2cbor.rb | base64url_encode
 {
-  / profile / 0: "tag:arm.com,2023:cca_platform#1.0.0",
+  / profile / 0: "tag:arm.com,2025:cca_platform#1.0.0",
   / query /   1: {
     / artifact-type /         0: 2, / reference-values /
     / environment-selector /  1: {
       / class / 0: [ [
         {
-          / class-id /  0: 600(h'7f454c4602010100000000000000000003003e00010000005058000000000000')  / tagged-impl-id-type /
+          / class-id /  0: 560(h'7f454c4602010100000000000000000003003e00010000005058000000000000')
         }
       ] ]
     },
-    / timestamp /   2: 0("2030-12-01T18:30:01Z"),
-    / result-type / 3: 0 / collected material /
+    / result-type / 2: 0 / collected material /
   }
 }
 EOF
@@ -47,7 +46,7 @@ EOF
 function ta_query() {
 cat << EOF | diag2cbor.rb | base64url_encode
 {
-  / profile / 0: "tag:arm.com,2023:cca_platform#1.0.0",
+  / profile / 0: "tag:arm.com,2025:cca_platform#1.0.0",
   / query /   1: {
     / artifact-type /         0: 1, / trust-anchors /
     / environment-selector /  1: {
@@ -55,8 +54,7 @@ cat << EOF | diag2cbor.rb | base64url_encode
         [ 550(h'0107060504030201000f0e0d0c0b0a090817161514131211101f1e1d1c1b1a1918') ] / UEID /
       ]
     },
-    / timestamp /   2: 0("2030-12-01T18:30:01Z"),
-    / result-type / 3: 0 / collected material /
+    / result-type / 2: 0 / collected material /
   }
 }
 EOF
