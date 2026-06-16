@@ -58,7 +58,7 @@ store:
   trace-sql: false
 
   dbms: sqlite3
-  dsn: ${VERAISON_STORES_DIR}/store.db
+  dsn: ${VERAISON_STORES_DIR}/store.sql
 
   #dbms: pgx
   #dsn: postgres://veraison:password@localhost:5432/veraison
