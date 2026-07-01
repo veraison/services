@@ -164,7 +164,7 @@ func parseNonceRequest(nonceParam, nonceSizeParam string) ([]byte, error) {
 	return nonce, nil
 }
 
-func newSession(nonce []byte, supportedMediaTypes []string, ttl time.Duration) (uuid.UUID, []byte, error) {
+func newSession(sessionNonce nonce, supportedMediaTypes []string, ttl time.Duration) (uuid.UUID, []byte, error) {
 	id, err := mintSessionID()
 	if err != nil {
 		return uuid.UUID{}, nil, err
@@ -173,7 +173,7 @@ func newSession(nonce []byte, supportedMediaTypes []string, ttl time.Duration) (
 	session := &ChallengeResponseSession{
 		id:     id.String(),
 		Status: StatusWaiting, // start in waiting status
-		Nonce:  nonce,
+		Nonce:  sessionNonce,
 		Expiry: time.Now().Add(ttl), // RFC3339 format, with sub-second precision added if present
 		Accept: supportedMediaTypes,
 	}
@@ -460,7 +460,7 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 	}
 
 	// parse query to devise the nonce
-	nonce, err := parseNonceRequest(c.Query("nonce"), c.Query("nonceSize"))
+	sessionNonce, err := parseNonceRequest(c.Query("nonce"), c.Query("nonceSize"))
 	if err != nil {
 		status := http.StatusBadRequest
 
@@ -484,7 +484,7 @@ func (o *Handler) NewChallengeResponse(c *gin.Context) {
 		return
 	}
 
-	id, session, err := newSession(nonce, supportedMediaTypes, ConfigSessionTTL)
+	id, session, err := newSession(nonce(sessionNonce), supportedMediaTypes, ConfigSessionTTL)
 	if err != nil {
 		ReportProblem(c,
 			http.StatusInternalServerError,
