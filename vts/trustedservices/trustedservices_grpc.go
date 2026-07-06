@@ -191,6 +191,9 @@ func (o *GRPC) Close() error {
 	if err := o.CoservProxyPluginManager.Close(); err != nil {
 		o.logger.Errorf("coserv plugin manager shutdown failed: %v", err)
 	}
+	if err := o.LeadVerifierPluginManager.Close(); err != nil {
+		o.logger.Errorf("lead verifier plugin manager shutdown failed: %v", err)
+	}
 
 	if err := o.Store.Close(); err != nil {
 		o.logger.Errorf("store closure failed: %v", err)
@@ -362,11 +365,18 @@ func (o *GRPC) GetCompositeAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
-	evidence := appraisal.NewEvidenceFromProtobuf(token)
 	o.logger.Infow("get composite attestation", "media-type", token.MediaType,
 		"tenant-id", token.TenantId)
 
-	mainAppraisal := appraisal.NewContext(evidence)
+	// From the outer token and the Media Type, Identify the RATSD PLugin
+	// INvoke the RATSD Plugin with outermost token and MT
+	// PLugin will Validate Evidence Integrity
+	// Take out the Nonce , check Profile Etc
+
+	mainAppraisal, err := o.getAttestation(token)
+	if err != nil {
+		return o.finalize(mainAppraisal, err)
+	}
 
 	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
 	if err != nil {

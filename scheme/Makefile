@@ -15,6 +15,7 @@ SUBDIR += amd-kds-coserv
 SUBDIR += nvidia-coserv
 
 SUBDIR += veraison-client
+SUBDIR += ratsd
 
 clean: ; $(RM) -rf ./bin
 
