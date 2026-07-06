@@ -14,103 +14,65 @@ import (
 )
 
 const (
-	LegacyPlatformProfileString = "http://arm.com/cca/ssd/1"
-	LegacyRealmProfileString    = "http://arm.com/cca/realm/1"
-	PlatformProfileString       = "tag:arm.com,2023:cca_platform#1.0.0"
-	RealmProfileString          = "tag:arm.com,2023:realm#1.0.0"
+	RatsdV2EndorsementProfile = "tag:github.com,2026:veraison/endors/ratsd/v2"
 )
 
-func ValidatePlatformEnvironment(env *comid.Environment, isTrustAnchor bool) error {
+func validateEnvironment(env *comid.Environment) error {
 	if env.Class == nil {
-		return errors.New("class not set")
+		return errors.New("class not set in environment")
 	}
 
-	if env.Class.ClassID == nil {
-		return errors.New("class ID not set")
+	if env.Class.Vendor == nil {
+		return errors.New("vendor not set in environment")
+	}
+	if env.Class.Model == nil {
+		return errors.New("model not set in environment")
 	}
 
-	if env.Class.ClassID.Type() != comid.ImplIDType {
-		return fmt.Errorf("class ID: expected psa.impl-id, got %s", env.Class.ClassID.Type())
-	}
-
-	if isTrustAnchor {
-		if env.Instance == nil {
-			return errors.New("instance not set for trust anchor")
-		}
-
-		if env.Instance.Type() != comid.UEIDType {
-			return fmt.Errorf("instance: expected UEID, got %s", env.Instance.Type())
-		}
-
-	} else if env.Instance != nil {
-		return errors.New("instance set for reference value")
+	if env.Group != nil {
+		return errors.New("group set in environment")
 	}
 
 	return nil
 }
 
-func validateRealmEnvironment(env *comid.Environment) error {
-	if env.Instance == nil {
-		return errors.New("instance not set")
-	}
+func validateCryptoKeys(keys []*comid.CryptoKey) error {
 
-	if env.Instance.Type() != comid.BytesType {
-		return fmt.Errorf("instance: expected bytes, got %s", env.Instance.Type())
+	for _, key := range keys {
+		if key.Type() != comid.PKIXBase64CertPathType && key.Type() != comid.PKIXBase64CertType {
+			return fmt.Errorf("key must be a cert or a cert path, found: %s", key.Type())
+		}
 	}
-
 	return nil
 }
 
-func ValidateCryptoKeys(keys []*comid.CryptoKey) error {
-	if len(keys) != 1 {
-		return fmt.Errorf("expected exactly one key but got %d", len(keys))
-	}
-
-	if keys[0].Type() != comid.PKIXBase64KeyType {
-		return fmt.Errorf("trust anchor must be a PKIX base64 key, found: %s", keys[0].Type())
-	}
-
-	return nil
-}
-
-func ValidatePlatformMeasurements(measurements []comid.Measurement) error {
-	for i, mea := range measurements {
-		if mea.Key == nil {
-			return fmt.Errorf("measurement %d key not set", i)
-		}
-
-		switch mea.Key.Type() {
-		case comid.PSARefValIDType:
-			if mea.Val.Digests == nil {
-				return fmt.Errorf("measurement %d value: no digests", i)
-			}
-		case comid.CCAPlatformConfigIDType:
-			if mea.Val.RawValue == nil {
-				return fmt.Errorf("measurement %d value: no raw value", i)
-			}
-		default:
-			return fmt.Errorf("measurement %d key: unexpected type %s", i, mea.Key.Type())
-		}
-
-	}
-
-	return nil
-}
-
-func validateRealmMeasurements(measurements []comid.Measurement) error {
-	for i, mea := range measurements {
-		if mea.Val.RawValue == nil {
-			return fmt.Errorf("measurement %d: personalization (raw value) not set", i)
-		}
-
-		if mea.Val.IntegrityRegisters == nil {
-			return fmt.Errorf("measurement %d integrity registers not set", i)
-		}
+func validateMeasurements(measurements []comid.Measurement) error {
+	if len(measurements) != 1 {
+		return fmt.Errorf("only one measurement expected, found: %d", len(measurements))
 	}
 
 	return nil
 }
 
 func init() {
+	profileID, err := eat.NewProfile(RatsdV2EndorsementProfile)
+	if err != nil {
+		panic(err)
+	}
 
+	validator := &common.TriplesValidator{
+		TAEnviromentValidator: func(e *comid.Environment) error {
+			return validateEnvironment(e)
+		},
+		RefValEnviromentValidator: func(e *comid.Environment) error {
+			return validateEnvironment(e)
+		},
+		CryptoKeysValidator:   validateCryptoKeys,
+		MeasurementsValidator: validateMeasurements,
+	}
+
+	extMap := extensions.NewMap().Add(comid.ExtTriples, validator)
+	if err := corim.RegisterProfile(profileID, extMap); err != nil {
+		panic(err)
+	}
 }
