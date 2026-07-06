@@ -1,0 +1,27 @@
+{
+  "tag-identity": {
+    "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "vendor": "123",
+            "model": "Lead Attester"
+          }
+        },
+        "measurements": [
+          {
+            "value": {
+              "version": {
+                "value": "1.0.0"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
