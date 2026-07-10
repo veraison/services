@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"encoding/pem"
@@ -56,6 +57,15 @@ func readTokenDescription(path string) (*TokenDescription, error) {
 	return &desc, nil
 }
 
+// decodeNonce decodes a base64 nonce, accepting standard or URL-safe encoding
+// so it matches whatever the verification session used.
+func decodeNonce(s string) ([]byte, error) {
+	if b, err := base64.StdEncoding.DecodeString(s); err == nil {
+		return b, nil
+	}
+	return base64.URLEncoding.DecodeString(s)
+}
+
 func readPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 	buf, err := os.ReadFile(path)
 	if err != nil {
@@ -76,11 +86,13 @@ func readPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 }
 
 func main() {
-	var keyPath, outPath string
+	var keyPath, outPath, noncePath string
 	var badNode bool
 	var marshaledNodeID []byte
 	flag.StringVar(&keyPath, "key", "key.pem", "Path of the ECDSA key used to sign the token data encoded in PEM.")
 	flag.StringVar(&outPath, "out", "quote.bin", "Output path of the generated token.")
+	flag.StringVar(&noncePath, "nonce", "",
+		"Base64 nonce to bind into TPMS_ATTEST.ExtraData. Accepts standard or URL-safe encoding. Left empty when omitted.")
 	flag.BoolVar(&badNode, "bad-node", false,
 		"Allow node-id to not be a valid UUID. If this is set, the bytes of the string will be written as-is, rather than attempting to parse UUID out of it. No length check or any other validation will be performed.")
 	flag.Parse()
@@ -117,6 +129,15 @@ func main() {
 	if err != nil {
 		fmt.Printf("ERROR: could not generate attestation data: %v\n", err)
 		os.Exit(1)
+	}
+
+	if noncePath != "" {
+		nonce, err := decodeNonce(noncePath)
+		if err != nil {
+			fmt.Printf("ERROR: could not decode nonce: %v\n", err)
+			os.Exit(1)
+		}
+		d.ExtraData = nonce
 	}
 
 	attest, err := d.Encode()

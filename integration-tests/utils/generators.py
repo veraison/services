@@ -178,6 +178,7 @@ def generate_evidence(scheme, evidence, nonce, signing, outname):
                 f'data/keys/{key}.pem',
                 f'{GENDIR}/evidence/{outname}.cbor',
                 badnode,
+                nonce,
                 )
     else:
         raise ValueError(f'Unexpected scheme: {scheme}')
@@ -288,9 +289,12 @@ def generate_cca_evidence_token(claims_file, iak_file, rak_file, token_file):
     run_command(evcli_command, 'generate CCA token')
 
 
-def generate_enacttrust_evidence_token(claims_file, key_file, token_file, badnode):
+def generate_enacttrust_evidence_token(claims_file, key_file, token_file, badnode=False, nonce=None):
     bn_flag = '-bad-node' if badnode else ''
-    gentoken_command = f"gen-enacttrust-token {bn_flag} -key {key_file} -out {token_file} {claims_file}"
+    # Bind the session nonce into TPMS_ATTEST.ExtraData so the scheme's freshness
+    # check passes. Left out when no nonce is used.
+    nonce_flag = f'-nonce {nonce}' if nonce else ''
+    gentoken_command = f"gen-enacttrust-token {bn_flag} {nonce_flag} -key {key_file} -out {token_file} {claims_file}"
     run_command(gentoken_command, 'generate EnactTrust token')
 
 
