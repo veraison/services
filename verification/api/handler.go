@@ -4,7 +4,6 @@ package api
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -113,15 +112,10 @@ func aToU8(v string) (uint8, error) {
 	return uint8(u8), nil
 }
 
-// b64ToBytes attempts at converting the supplied b64-encoded string into a byte
-// slice
+// b64ToBytes attempts at converting the supplied base64url-encoded string into
+// a byte slice.
 func b64ToBytes(v string) ([]byte, error) {
-	b, err := base64.URLEncoding.DecodeString(v)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return base64URLToBytes(v)
 }
 
 // parseNonceRequest tries to devise the nonce value to be used for the session
