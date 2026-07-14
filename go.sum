@@ -608,6 +608,8 @@ github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/Masterminds/squirrel v1.5.4 h1:uUcX/aBc8O7Fg9kaISIUsHXdKuqehiXAMQTYX8afzqM=
 github.com/Masterminds/squirrel v1.5.4/go.mod h1:NNaOrjSoIDfDA40n7sr2tPNZRfjzjA400rg+riTZj10=
+github.com/NVIDIA/go-nvml v0.13.0-1 h1:OLX8Jq3dONuPOQPC7rndB6+iDmDakw0XTYgzMxObkEw=
+github.com/NVIDIA/go-nvml v0.13.0-1/go.mod h1:+KNA7c7gIBH7SKSJ1ntlwkfN80zdx8ovl4hrK3LmPt4=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
@@ -1269,8 +1271,8 @@ github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228 h1:oMCBfNZ8yxeMH
 github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228/go.mod h1:hobpAGxGmjCyluLHTNMdgJYficPXno4HZWKJSuUwZ7w=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e h1:W1OWcrRvfN0EWyldcpFgwl9xdKBbZUlk5pnbLTcR8Ec=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e/go.mod h1:bXUwdYAGcRoclxe73JmO8Z9ngV9KDHqW20afM9Q0FKo=
-github.com/veraison/ratsd v0.0.0-20260122210857-1ac35b2e2184 h1:Ns1OqSfMxRjpg40iqwT/2P10JI0TNAJV+CtDdxOV/Lo=
-github.com/veraison/ratsd v0.0.0-20260122210857-1ac35b2e2184/go.mod h1:M267xUihMjj6XF3f4AKgD0kQQAr11+Hr4sRvfKL+1OA=
+github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76 h1:AsVDP6X2A3atSJwoj7rLkAAyXGZ6l5Zr6gAgIztzpcw=
+github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76/go.mod h1:89kdVA6JprVqSY5TwYZN5GrPWuTCgRJapo8SMCjD8tU=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897 h1:ze1ulqK70S7PRignyZzFDBJHNVEDyISk5FDv9Uh3UFw=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb h1:iBPEloogBk7uK2Ygtz1l6gJabikXs8ASZCmormbn2lM=
