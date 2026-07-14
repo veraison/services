@@ -9,6 +9,23 @@ import (
 	"testing"
 )
 
+func nvatIntegrationTestOptions() NvatOptions {
+	verifierMode := os.Getenv("NVAT_VERIFIER_MODE")
+	if verifierMode == "" {
+		verifierMode = "remote"
+	}
+
+	return NvatOptions{
+		VerifierMode: verifierMode,
+		ServiceToken: os.Getenv("NVAT_SERVICE_TOKEN"),
+		RemoteHost:   os.Getenv("NVAT_REMOTE_HOST"),
+	}
+}
+
+func missingRemoteServiceToken(opts NvatOptions) bool {
+	return opts.VerifierMode == "remote" && opts.ServiceToken == ""
+}
+
 func TestNewNvatGpuInterfaceMissingLibrary(t *testing.T) {
 	opts := NvatOptions{
 		VerifierMode: "remote",
@@ -25,14 +42,9 @@ func TestNewNvatGpuInterfaceMissingLibrary(t *testing.T) {
 }
 
 func TestNvatGpuInterfaceVerifyEvidence(t *testing.T) {
-	serviceToken := os.Getenv("NVAT_SERVICE_TOKEN")
-	if serviceToken == "" {
+	opts := nvatIntegrationTestOptions()
+	if missingRemoteServiceToken(opts) {
 		t.Skip("NVAT_SERVICE_TOKEN is not set; skipping NRAS integration test")
-	}
-
-	opts := NvatOptions{
-		VerifierMode: "remote",
-		ServiceToken: serviceToken,
 	}
 
 	nvat, err := NewNvatGpuInterface(opts)
@@ -40,7 +52,7 @@ func TestNvatGpuInterfaceVerifyEvidence(t *testing.T) {
 		if strings.Contains(err.Error(), "failed to load NVAT library") {
 			t.Skip("NVAT library not available for VerifyEvidence test")
 		}
-		t.Skipf("unable to initialize NVAT interface in test environment: %v", err)
+		t.Fatalf("failed to initialize NVAT interface: %v", err)
 	}
 
 	evidencePath := filepath.Join("testdata", "blackwell-evidence.json")
@@ -51,6 +63,6 @@ func TestNvatGpuInterfaceVerifyEvidence(t *testing.T) {
 
 	err = nvat.VerifyEvidence("0xcb86922a772181d54971ccc584bbc96b717c32b7087fff9aaf52832dd3f697a1", evidenceBytes)
 	if err != nil {
-		t.Skipf("NVAT verification not available in test environment: %v", err)
+		t.Fatalf("failed to verify NVIDIA GPU evidence: %v", err)
 	}
 }

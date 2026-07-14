@@ -42,6 +42,38 @@ func TestNvatOptionsValidLocalWithoutServiceToken(t *testing.T) {
 	}
 }
 
+func TestMissingRemoteServiceToken(t *testing.T) {
+	testCases := []struct {
+		name string
+		opts NvatOptions
+		want bool
+	}{
+		{
+			name: "remote without token",
+			opts: NvatOptions{VerifierMode: "remote"},
+			want: true,
+		},
+		{
+			name: "remote with token",
+			opts: NvatOptions{VerifierMode: "remote", ServiceToken: "token"},
+			want: false,
+		},
+		{
+			name: "local without token",
+			opts: NvatOptions{VerifierMode: "local"},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := missingRemoteServiceToken(tc.opts); got != tc.want {
+				t.Fatalf("missingRemoteServiceToken() = %t, want %t", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestNvatOptionsValidFailures(t *testing.T) {
 	opts := NvatOptions{
 		ServiceToken: "token",
