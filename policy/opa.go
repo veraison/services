@@ -8,7 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/v1/ast"
+	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/spf13/viper"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/log"
@@ -57,6 +58,9 @@ func (o *OPA) Evaluate(
 	}
 
 	rego := rego.New(
+		// Policies accepted by this API use the Rego v0 syntax.  Keep that
+		// contract while using the OPA v1 Go API.
+		rego.SetRegoVersion(ast.RegoV0),
 		rego.Package("policy"),
 		rego.Module("opa.rego", preambleText),
 		rego.Module("policy.rego", policy),
@@ -83,6 +87,7 @@ func (o *OPA) Evaluate(
 
 func (o *OPA) Validate(ctx context.Context, policy string) error {
 	rego := rego.New(
+		rego.SetRegoVersion(ast.RegoV0),
 		rego.Package("policy"),
 		rego.Module("opa.rego", preambleText),
 		rego.Module("policy.rego", policy),
