@@ -54,6 +54,10 @@ po-store:
     datasource: stores/vts/po-store.sql
 po-agent:
     backend: opa
+endorsement-store:
+  corim-store:
+    dbms: sqlite
+    dsn: /opt/veraison/stores/vts/store.sql
 auth:
   backend: keycloak
   host: keycloak-service
