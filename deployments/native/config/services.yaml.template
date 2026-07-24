@@ -33,6 +33,11 @@ vts:
   cert: ${VERAISON_CERTS_DIR}/vts.crt
   cert-key: ${VERAISON_CERTS_DIR}/vts.key
   ca-certs: ${VERAISON_CERTS_DIR}/rootCA.crt
+  # select active endorsement store plugins for the deployment
+  active-stores:
+    - corim-store
+    - nvidia-coserv-proxy-handler
+    - amd-kds-coserv-proxy-handler
 ear-signer:
   alg: ES256
   key: ${VERAISON_SIGNING_DIR}/skey.jwk
@@ -56,17 +61,19 @@ plugin:
 # on localhost on its default port, the user is "veraison" with password
 # "password", and the relevant database is "veraison".
 ##############################################################################
-store:
-  trace-sql: false
+endorsement-store:
+  # configurations for the corim-store plugin
+  corim-store:
+    trace-sql: false
 
-  dbms: sqlite3
-  dsn: ${VERAISON_STORES_DIR}/store.sql
+    dbms: sqlite3
+    dsn: ${VERAISON_STORES_DIR}/store.sql
 
-  #dbms: pgx
-  #dsn: postgres://veraison:password@localhost:5432/veraison
-  
-  #dbms: mysql
-  #dsn: veraison:password@tcp(localhost:3306)/veraison
+    #dbms: pgx
+    #dsn: postgres://veraison:password@localhost:5432/veraison
+
+    #dbms: mysql
+    #dsn: veraison:password@tcp(localhost:3306)/veraison
 po-store:
   backend: sql
   sql:

@@ -3,6 +3,7 @@
 
 
 SUBDIR += amd-kds-coserv
+SUBDIR += corimstore
 SUBDIR += nvidia-coserv
 
 clean: ; $(RM) -rf ./bin

@@ -9,19 +9,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
+	vtsstore "github.com/veraison/services/vts/endorsementstore"
 )
 
-type CoservProxyHandler struct{}
-
-var (
-	dummyAuthority = []byte{0xab, 0xcd, 0xef}
-)
+type CoservProxyHandler struct {
+	*vtsstore.StoreCommonParams
+}
 
 func constructVcekUrl(instance *coserv.StatefulInstance) string {
 	// TODO(paulhowardarm) - deduce the product name and TCB parameters from the
@@ -51,7 +51,13 @@ func getVcekForInstance(instance *coserv.StatefulInstance) ([]byte, error) {
 	return certBytes, nil
 }
 
-func (s CoservProxyHandler) Init(*plugin.Parameters) error {
+func (s *CoservProxyHandler) Init(params *plugin.Parameters) error {
+	var cfg vtsstore.StoreCommonParams
+	if err := (&cfg).FromParams(params); err != nil {
+		s.StoreCommonParams = nil
+	} else {
+		s.StoreCommonParams = &cfg
+	}
 	return nil
 }
 
@@ -78,14 +84,10 @@ func (s CoservProxyHandler) addTrustAnchorForInstance(i *coserv.StatefulInstance
 		return err
 	}
 
-	// TODO(paulhowardarm) - This authority is a dummy value.
+	// TODO(paulhowardarm)
 	// We need some kind of cert here, representing this plug-in's authority to re-package from NVIDIA CoRIM
 	// We probably also need an NVIDIA cert in the chain
-	authority, err := comid.NewCryptoKeyTaggedBytes(dummyAuthority)
-
-	if err != nil {
-		return fmt.Errorf("failed to make authority tagged bytes: %v", err)
-	}
+	authority := s.FallbackAuthority
 
 	block := &pem.Block{
 		Type:    "CERTIFICATE",
@@ -114,7 +116,15 @@ func (s CoservProxyHandler) addTrustAnchorForInstance(i *coserv.StatefulInstance
 	return nil
 }
 
-func (s CoservProxyHandler) ExecuteCoservQuery(mediaType, query string) (*coserv.Coserv, error) {
+func (s CoservProxyHandler) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error) {
+	if s.StoreCommonParams == nil {
+		return nil, errors.New("missing configurations for CoSERV service")
+	}
+
+	if !slices.Contains(SupportedCoservProfiles, profile) {
+		return nil, handler.ErrUnsupported
+	}
+
 	var q coserv.Coserv
 	if err := q.FromBase64Url(query); err != nil {
 		return nil, err
@@ -151,8 +161,7 @@ func (s CoservProxyHandler) ExecuteCoservQuery(mediaType, query string) (*coserv
 		}
 	}
 
-	// Set expiry on the results - fairly arbitrary expiry time of 1 hour
-	coservResult.SetExpiry(time.Now().Add(time.Hour))
+	coservResult.SetExpiry(time.Now().Add(s.MaxExpiry))
 
 	// Add all results into the top-level CoSERV object
 	err := q.AddResults(coservResult)

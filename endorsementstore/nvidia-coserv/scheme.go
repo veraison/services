@@ -9,4 +9,5 @@ var (
 	CoservMediaTypes = []string{
 		`application/coserv+cbor; profile="tag:github.com/veraison,2023:nvidia_coserv_proxy#1.0.0"`,
 	}
+	SupportedCoservProfiles = []string{"tag:github.com/veraison,2023:nvidia_coserv_proxy#1.0.0"}
 )
