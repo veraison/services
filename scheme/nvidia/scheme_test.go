@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	ratsdtoken "github.com/veraison/ratsd/ratsd-token"
 	"github.com/veraison/services/plugin"
 )
 
@@ -86,4 +87,17 @@ func TestImplementationAppraiseClaimsReturnsVerificationFailure(t *testing.T) {
 	require.NotNil(t, result)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "failed to verify NVIDIA GPU evidence")
+}
+
+func TestAdjustNonceMissingFunction(t *testing.T) {
+	claims := ratsdtoken.Claims{
+		NonceAdjustMap: map[string]uint{
+			nvidiaGpuNonceAdjustMapKey: 32,
+		},
+	}
+
+	adjusted, err := adjustNonce([]byte("nonce"), claims)
+
+	require.Nil(t, adjusted)
+	require.ErrorIs(t, err, ErrNonceAdjustFunctionMissing)
 }

@@ -3,6 +3,7 @@
 package nvidia
 
 import (
+	"crypto/sha3"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ const (
 	EvidenceMediaTypeRATSd     = `application/eat-ucs+json; eat_profile="` + ratsdtoken.LegacyProfile + `"`
 	EvidenceMediaTypeNVJson    = "application/vnd.veraison.nvidia-gpu-evidence+json"
 	nvidiaGPUEvidenceCMWKey    = "nv-gpu-evidence"
+	nvidiaGpuNonceAdjustMapKey = nvidiaGPUEvidenceCMWKey
 	attestationReportClaimName = "attestation-report"
 	nonceClaimName             = "nonce"
 )
@@ -40,9 +42,10 @@ var Descriptor = handler.SchemeDescriptor{
 }
 
 var (
-	ErrEvidenceMissingCMW     = errors.New("evidence does not contain a CMW collection")
-	ErrInvalidEvidenceCMWKind = errors.New("evidence CMW must be a collection")
-	ErrInvalidGPUCMWKind      = errors.New("NVIDIA GPU CMW entry must be a monad")
+	ErrEvidenceMissingCMW         = errors.New("evidence does not contain a CMW collection")
+	ErrInvalidEvidenceCMWKind     = errors.New("evidence CMW must be a collection")
+	ErrInvalidGPUCMWKind          = errors.New("NVIDIA GPU CMW entry must be a monad")
+	ErrNonceAdjustFunctionMissing = errors.New("nonce adjustment function is missing")
 )
 
 type Implementation struct {
@@ -137,7 +140,11 @@ func (o *Implementation) ExtractClaims(
 
 	claims = make(map[string]any)
 	claims[attestationReportClaimName] = attestationReport
-	claims[nonceClaimName] = evidence.Nonce
+
+	claims[nonceClaimName], err = adjustNonce(evidence.Nonce, tokenClaims)
+	if err != nil {
+		return nil, handler.BadEvidence(err)
+	}
 
 	return claims, nil
 }
@@ -228,4 +235,42 @@ func readStringParam(params *plugin.Parameters, key string) (string, error) {
 		return "", err
 	}
 	return value, nil
+}
+
+func adjustNonce(nonce []byte, tokenClaims ratsdtoken.Claims) ([]byte, error) {
+	nonceAdjustSize, ok := tokenClaims.NonceAdjustMap[nvidiaGpuNonceAdjustMapKey]
+	if !ok {
+		return nonce, nil
+	}
+	if tokenClaims.NonceAdjustFunction == nil {
+		return nil, ErrNonceAdjustFunctionMissing
+	}
+
+	return adjustNonceWithFunction(nonce, nonceAdjustSize, *tokenClaims.NonceAdjustFunction)
+}
+
+func adjustNonceWithFunction(nonce []byte, size uint, function string) ([]byte, error) {
+	if size == 0 {
+		return nil, fmt.Errorf("nonce size must be greater than zero")
+	}
+
+	adjusted := make([]byte, int(size))
+	var h *sha3.SHAKE
+	switch function {
+	case ratsdtoken.NonceAdjustFunctionShake128:
+		h = sha3.NewSHAKE128()
+	case ratsdtoken.NonceAdjustFunctionShake256:
+		h = sha3.NewSHAKE256()
+	default:
+		return nil, fmt.Errorf("unsupported nonce adjustment function %q", function)
+	}
+
+	if _, err := h.Write(nonce); err != nil {
+		return nil, err
+	}
+	if _, err := h.Read(adjusted); err != nil {
+		return nil, err
+	}
+
+	return adjusted, nil
 }
