@@ -40,8 +40,8 @@ type SchemeRPCClient struct {
 func (o *SchemeRPCClient) Init(params *plugin.Parameters) error {
 	var (
 		unused any
-		args []byte
-		err error
+		args   []byte
+		err    error
 	)
 
 	if params != nil {

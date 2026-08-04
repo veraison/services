@@ -22,7 +22,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	corimstore "github.com/veraison/corim-store/pkg/store"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
@@ -67,13 +66,12 @@ func NewGRPCConfig() *GRPCConfig {
 type GRPC struct {
 	ServerAddress string
 
-	Store                    *corimstore.Store
-	SchemePluginManager      plugin.IManager[handlermod.ISchemeHandler]
-	CoservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler]
-	PolicyManager            *policymanager.PolicyManager
-	EarSigner                earsigner.IEarSigner
-	CoservContext             *vtscoserv.Context
-	rootCerts                *x509.CertPool
+	SchemePluginManager plugin.IManager[handlermod.ISchemeHandler]
+	StoreManager        plugin.IManager[handlermod.IEndorsementStorePlugin]
+	PolicyManager       *policymanager.PolicyManager
+	EarSigner           earsigner.IEarSigner
+	CoservContext       *vtscoserv.Context
+	rootCerts           *x509.CertPool
 
 	Server *grpc.Server
 	Socket net.Listener
@@ -84,22 +82,20 @@ type GRPC struct {
 }
 
 func NewGRPC(
-	store *corimstore.Store,
 	schemePluginManager plugin.IManager[handlermod.ISchemeHandler],
-	coservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler],
+	storeManager plugin.IManager[handlermod.IEndorsementStorePlugin],
 	policyManager *policymanager.PolicyManager,
 	earSigner earsigner.IEarSigner,
 	coservConfig *vtscoserv.Context,
 	logger *zap.SugaredLogger,
 ) ITrustedServices {
 	return &GRPC{
-		Store:                    store,
-		SchemePluginManager:      schemePluginManager,
-		CoservProxyPluginManager: coservProxyPluginManager,
-		PolicyManager:            policyManager,
-		EarSigner:                earSigner,
-		CoservContext:             coservConfig,
-		logger:                   logger,
+		SchemePluginManager: schemePluginManager,
+		StoreManager:        storeManager,
+		PolicyManager:       policyManager,
+		EarSigner:           earSigner,
+		CoservContext:       coservConfig,
+		logger:              logger,
 	}
 }
 
@@ -175,12 +171,13 @@ func (o *GRPC) Close() error {
 		o.logger.Errorf("scheme plugin manager shutdown failed: %v", err)
 	}
 
-	if err := o.CoservProxyPluginManager.Close(); err != nil {
-		o.logger.Errorf("coserv plugin manager shutdown failed: %v", err)
+	// FIXME: close stores while closing store manager
+	if err := CloseCorimStore(o.StoreManager); err != nil {
+		o.logger.Errorf("failed to close corim store: %v", err)
 	}
 
-	if err := o.Store.Close(); err != nil {
-		o.logger.Errorf("store closure failed: %v", err)
+	if err := o.StoreManager.Close(); err != nil {
+		o.logger.Errorf("store plugin manager shutdown failed: %v", err)
 	}
 
 	if err := o.EarSigner.Close(); err != nil {
@@ -274,9 +271,12 @@ func (o *GRPC) SubmitEndorsements(
 	} else if !resp.IsValid {
 		return submitEndorsementErrorResponse(resp.Error()), nil
 	}
-
 	label := fmt.Sprintf("%s/%s", DummyTenantID, handlerPlugin.GetAttestationScheme())
-	if err := o.Store.AddBytes(req.Data, label, true); err != nil {
+	store, err := CreateStore("", o.StoreManager, o.logger) // use corimstore
+	if err != nil {
+		return submitEndorsementErrorResponse(err), nil
+	}
+	if err := store.AddCorimBytes(req.Data, label, true); err != nil {
 		return submitEndorsementErrorResponse(err), nil
 	}
 
@@ -365,6 +365,12 @@ func (o *GRPC) GetAttestation(
 		return o.finalize(appraisal, err)
 	}
 
+	store, err := CreateStore(appraisal.StoreLabel(),
+		o.StoreManager, o.logger)
+	if err != nil {
+		return o.finalize(appraisal, err)
+	}
+
 	appraisal.TrustAnchorIDs, err = handler.GetTrustAnchorIDs(evidence)
 	if err != nil {
 		if errors.Is(err, handlermod.BadEvidenceError{}) {
@@ -397,14 +403,21 @@ func (o *GRPC) GetAttestation(
 	// we are forced to do inexact matching here for now, and leave
 	// it to the attestation schemes to resolve this.
 	matchExactly := false
-	trustAnchors, err := o.getKeyTriples(appraisal.TrustAnchorIDs, appraisal.StoreLabel(), matchExactly)
-	if err != nil {
-		if errors.Is(err, corimstore.ErrNoMatch) {
-			err = handlermod.BadEvidence("no trust anchor for %s", appraisal.DescribeTrustAnchorIDs())
-			appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
-			appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
-		}
+	var trustAnchors []*comid.KeyTriple
+	trustAnchors, err = o.getKeyTriples(appraisal.TrustAnchorIDs, appraisal.StoreLabel(), matchExactly, store)
 
+	if err != nil {
+		if errors.Is(err, handlermod.ErrNotFound) {
+			// finalize will be called in the next block
+			o.logger.Warn("no trust anchor in store")
+		} else {
+			return o.finalize(appraisal, err)
+		}
+	}
+	if trustAnchors == nil {
+		err = handlermod.BadEvidence("no trust anchor for %s", appraisal.DescribeTrustAnchorIDs())
+		appraisal.SetAllClaims(ear.CryptoValidationFailedClaim)
+		appraisal.AddPolicyClaim("problem", "no trust anchor for evidence")
 		return o.finalize(appraisal, err)
 	}
 
@@ -426,10 +439,15 @@ func (o *GRPC) GetAttestation(
 		"software-id", appraisal.ReferenceValueIDs,
 		"trust-anchor-id", appraisal.TrustAnchorIDs)
 
+	var endorsements []*comid.ValueTriple
 	o.logger.Debug("obtaining endorsements...")
-	endorsements, err := o.getValueTriples(appraisal.ReferenceValueIDs, appraisal.StoreLabel(), true)
+	endorsements, err = o.getValueTriples(appraisal.ReferenceValueIDs, appraisal.StoreLabel(), true, store)
 	if err != nil {
-		return o.finalize(appraisal, err)
+		if errors.Is(err, handlermod.ErrNotFound) {
+			o.logger.Warn("no reference values in store")
+		} else {
+			return o.finalize(appraisal, err)
+		}
 	}
 
 	o.logger.Debug("validating evidence...")
@@ -473,16 +491,22 @@ func (o *GRPC) getKeyTriples(
 	trustAnchorIDs []*comid.Environment,
 	label string,
 	exact bool,
+	store handlermod.IEndorsementStore,
 ) ([]*comid.KeyTriple, error) {
+
 	var keyTriples []*comid.KeyTriple //nolint
 
 	for _, taID := range trustAnchorIDs {
-		triples, err := o.Store.GetActiveKeyTriples(taID, label, exact)
+		triples, err := store.GetKeyTriples(taID, label, exact)
 		if err != nil {
+			o.logger.Warnw("could not find in store", "taID", taID, "error", err)
 			return nil, err
 		}
-
 		keyTriples = append(keyTriples, triples...)
+	}
+
+	if len(keyTriples) == 0 {
+		return nil, handlermod.ErrNotFound
 	}
 
 	return keyTriples, nil
@@ -492,16 +516,21 @@ func (o *GRPC) getValueTriples(
 	referenceValueIDs []*comid.Environment,
 	label string,
 	exact bool,
+	store handlermod.IEndorsementStoreReader,
 ) ([]*comid.ValueTriple, error) {
+
 	var valueTriples []*comid.ValueTriple //nolint
 
 	for _, valID := range referenceValueIDs {
-		triples, err := o.Store.GetActiveValueTriples(valID, label, exact)
-		if err != nil && !errors.Is(err, corimstore.ErrNoMatch) {
-			return nil, err
+		triples, err := store.GetValueTriples(valID, label, exact)
+		if err != nil {
+			o.logger.Warnw("could not find in store", "valID", valID, "error", err)
 		}
-
 		valueTriples = append(valueTriples, triples...)
+	}
+
+	if len(valueTriples) == 0 {
+		return nil, handlermod.ErrNotFound
 	}
 
 	return valueTriples, nil
@@ -553,7 +582,7 @@ func (c *GRPC) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*p
 	mediaTypes = append(mediaTypes, corimDerived...)
 
 	coservProxyDerived := c.assembleCoservMediaTypes(
-		c.CoservProxyPluginManager.GetRegisteredMediaTypes(),
+		c.StoreManager.GetRegisteredMediaTypes(),
 		"application/coserv+cbor",
 	)
 
@@ -624,29 +653,23 @@ func getEndorsementsError(err error) *proto.EndorsementQueryOut {
 	}
 }
 
-func (o *GRPC) getEndorsementsFromStores(queryIn *proto.EndorsementQueryIn) ([]byte, error) {
+func (o *GRPC) getEndorsementsFromStores(
+	queryIn *proto.EndorsementQueryIn,
+	store handlermod.IEndorsementStoreReader,
+) ([]byte, error) {
 	var query coserv.Coserv
 	if err := query.FromBase64Url(queryIn.Query); err != nil {
 		return nil, err
 	}
 
-	coservService := corimstore.NewCoSERVService(
-		o.Store,
-		o.CoservContext.FallbackAuthority,
-		o.CoservContext.MaxExpiry,
-	)
-	if err := coservService.UpdateCoSERV(&query); err != nil {
-		return nil, err
+	resp, err := store.ExecuteCoservQuery(queryIn.MediaType, queryIn.Query)
+	if err != nil {
+		o.logger.Infof("could not find coserv result in store")
+	} else {
+		return resp.ToCBOR()
 	}
 
-	return query.ToCBOR()
-}
-
-func (o *GRPC) getEndorsementsFromProxy(
-	handlerPlugin handlermod.ICoservProxyHandler,
-	query *proto.EndorsementQueryIn,
-) ([]byte, error) {
-	return handlerPlugin.GetEndorsements(DummyTenantID, query.Query)
+	return nil, handlermod.ErrNotFound
 }
 
 func (o *GRPC) GetEndorsements(
@@ -656,20 +679,21 @@ func (o *GRPC) GetEndorsements(
 	o.logger.Debugw("GetEndorsements", "media-type", query.MediaType)
 
 	var (
-		err           error
-		out           []byte
-		handlerPlugin handlermod.ICoservProxyHandler
+		err error
+		out []byte
 	)
 
-	// First, check to see if we have a CoSERV proxy plugin that can handle this query
-	handlerPlugin, err = o.CoservProxyPluginManager.LookupByMediaType(query.MediaType)
-	if err == nil {
-		// No error means we have a proxy plugin, so delegate to that.
-		out, err = o.getEndorsementsFromProxy(handlerPlugin, query)
-	} else {
-		// There was no proxy plugin, so assume we can obtain from own stores
-		out, err = o.getEndorsementsFromStores(query)
+	store, err := CreateStoreFromMediaType(
+		query.MediaType,
+		o.StoreManager,
+		o.logger,
+	)
+	if err != nil {
+		o.logger.Warnf("could not create store for media-type: %s", query.MediaType)
+		return getEndorsementsError(errors.New("no source found for endorsements")), nil
 	}
+
+	out, err = o.getEndorsementsFromStores(query, store)
 
 	if err != nil {
 		return getEndorsementsError(err), nil

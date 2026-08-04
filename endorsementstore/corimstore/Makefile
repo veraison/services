@@ -1,9 +1,9 @@
-# Copyright 2025 Contributors to the Veraison project.
+# Copyright 2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 
 .DEFAULT_GOAL := test
 
-GOPKG := github.com/veraison/services/scheme/amd-kds-coserv
+GOPKG := github.com/veraison/services/endorsementstore/corimstore
 SRCS := $(wildcard *.go)
 
 SUBDIR += plugin
