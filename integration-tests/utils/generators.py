@@ -296,6 +296,7 @@ def generate_enacttrust_evidence_token(claims_file, key_file, token_file, badnod
 
 def substitute_random_corim_id(path):
     with open(path, 'r') as fh:
+        data = ''
         data = json.load(fh)
 
     if 'corim-id' not in data:

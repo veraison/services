@@ -22,7 +22,7 @@
             },
             "value": {
               "digests": [
-                "sha-256:CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ]
             }
           }

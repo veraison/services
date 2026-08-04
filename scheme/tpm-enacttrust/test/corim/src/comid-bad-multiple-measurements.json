@@ -26,14 +26,14 @@
 	        {
             "value": {
               "digests": [
-                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+                [1, "h0KPxSKAPTEGXnvOPPA_5HUJZjHl4Hu9eg_eYMTPJcc"]
               ]
             }
           },
           {
             "value": {
               "digests": [
-                "sha-256:AmOCmYm2/ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8="
+                [1, "AmOCmYm2_ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8"]
               ]
             }
           }

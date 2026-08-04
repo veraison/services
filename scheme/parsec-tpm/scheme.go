@@ -238,8 +238,8 @@ func computeEndorsedHash(
 		}
 
 		for _, digest := range *mea.Val.Digests {
-			if digest.HashAlgID == hashAlgID {
-				digests[int(endPcr)] = digest.HashValue
+			if uint64(digest.Algorithm.Int()) == hashAlgID {
+				digests[int(endPcr)] = digest.Value
 				break
 			}
 		}

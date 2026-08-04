@@ -3,10 +3,10 @@
   "dependent-rims": [
     {
       "href": "https://parent.example/rims/ccb3aa85-61b4-40f1-848e-02ad6e8a254b",
-      "thumbprint": "sha-256:5Fty9cDAtXLbTY06t+l/No/3TmI0eoJN7LZ6hOUiTXU="
+      "thumbprint": [1, "5Fty9cDAtXLbTY06t-l_No_3TmI0eoJN7LZ6hOUiTXU"]
     }
   ],
-  "profile": "tag:arm.com,2025:psa#1.0.0",
+  "profile": {"type": "uri", "value": "tag:arm.com,2025:psa#1.0.0"},
   "validity": {
     "not-before": "2021-12-31T00:00:00Z",
     "not-after": "2045-12-31T00:00:00Z"

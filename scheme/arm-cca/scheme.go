@@ -373,10 +373,7 @@ func AppraiseRealm(
 						cca.CCARealmPersonalizationMkey)
 				}
 
-				refVal.PersonalizationValue, err = measurement.Val.RawValue.GetBytes()
-				if err != nil {
-					return fmt.Errorf("%s: %w", cca.CCARealmPersonalizationMkey, err)
-				}
+				refVal.PersonalizationValue = measurement.Val.RawValue.Bytes()
 			default:
 				logger.Debugw("skipping non-realm measurement", "mkey", mkey)
 			}
@@ -473,7 +470,7 @@ func readMeasurementDigestBytes(measurement *comid.Measurement) ([]byte, error) 
 		)
 	}
 
-	return (*measurement.Val.Digests)[0].HashValue, nil
+	return (*measurement.Val.Digests)[0].Value, nil
 }
 
 func matchPlatformClaimsToReferenceValues(
@@ -501,10 +498,7 @@ func matchPlatformClaimsToReferenceValues(
 						errors.New("no raw value in platform config measurement")
 				}
 
-				referenceConfigValue, err = measurement.Val.RawValue.GetBytes()
-				if err != nil {
-					return false, false, err
-				}
+				referenceConfigValue = measurement.Val.RawValue.Bytes()
 
 				continue
 			case cca.CCASoftwareComponentMkey:

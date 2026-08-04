@@ -26,8 +26,8 @@
           {
             "value": {
               "digests": [
-                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc=",
-                "sha-256:h0KPxSKAPTEGXnvOPPB/5HUJYjHl4Hu9eg/eYMTPJcc="
+                [1, "h0KPxSKAPTEGXnvOPPA_5HUJZjHl4Hu9eg_eYMTPJcc"],
+                [1, "h0KPxSKAPTEGXnvOPPB_5HUJYjHl4Hu9eg_eYMTPJcc"]
               ]
             }
           }

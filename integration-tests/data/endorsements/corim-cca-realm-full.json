@@ -9,5 +9,5 @@
       ]
     }
   ],
-  "profile": "tag:arm.com,2025:cca_realm#1.0.0"
+  "profile": {"type": "uri", "value": "tag:arm.com,2025:cca_realm#1.0.0"}
 }

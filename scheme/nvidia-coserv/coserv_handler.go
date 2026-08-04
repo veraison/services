@@ -116,7 +116,7 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	// If we want the raw source artifacts, add the RIM verbatim into the result set.
 	// We just need to switch on the RIM type (TCG or CORIM), and use a different media type
 	// label in each case.
-	if query.ResultType == coserv.ResultTypeBoth || query.ResultType == coserv.ResultTypeSourceArtifacts {
+	if *query.ResultType == coserv.ResultTypeBoth || *query.ResultType == coserv.ResultTypeSourceArtifacts {
 		switch rimServiceResponse.RimFormat {
 		case "CORIM":
 			cmw, err := cmw.NewMonad("application/rim+cbor", rimBytes)
@@ -136,7 +136,7 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	}
 
 	// If we want collected artifacts, we need to parse the CORIM
-	if query.ResultType == coserv.ResultTypeBoth || query.ResultType == coserv.ResultTypeCollectedArtifacts {
+	if *query.ResultType == coserv.ResultTypeBoth || *query.ResultType == coserv.ResultTypeCollectedArtifacts {
 		if rimServiceResponse.RimFormat != "CORIM" {
 			return fmt.Errorf("CoSERV proxy plug-in cannot produce collected artifacts for non-CORIM format %s", rimServiceResponse.RimFormat)
 		}
@@ -190,7 +190,11 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 		return nil, err
 	}
 
-	if q.Query.ArtifactType != coserv.ArtifactTypeReferenceValues {
+	if q.Query.EnvironmentSelector == nil {
+		return nil, errors.New("NVIDIA CoSERV proxy plug-in only supports environment queries")
+	}
+
+	if *q.Query.ArtifactType != coserv.ArtifactTypeReferenceValues {
 		return nil, errors.New("NVIDIA CoSERV proxy plug-in can only provide Reference Value artifacts")
 	}
 

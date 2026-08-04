@@ -23,7 +23,7 @@ require (
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/jellydator/ttlcache/v3 v3.0.0
-	github.com/jraman567/go-gen-ref v1.2.3
+	github.com/jraman567/go-gen-ref v0.0.0-20260804142001-42d976f86e46
 	github.com/lestrrat-go/jwx/v2 v2.1.3
 	github.com/lestrrat-go/jwx/v3 v3.0.8
 	github.com/mattn/go-sqlite3 v1.14.28
@@ -40,11 +40,10 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
 	github.com/veraison/cmw v0.2.0
-	github.com/veraison/corim v1.1.3-0.20260430132037-b8653a7359da
-	github.com/veraison/corim-store v0.2.1
+	github.com/veraison/corim v1.1.3-0.20260611115812-7ca640710b0b
+	github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
-	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
 	github.com/veraison/ratsd v0.0.0-20260122210857-1ac35b2e2184
@@ -58,7 +57,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	fortio.org/safecast v1.0.0 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.62 // indirect
@@ -153,6 +152,7 @@ require (
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15 // indirect
 	github.com/uptrace/bun/extra/bundebug v1.2.15 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
+	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53 // indirect
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897
 	github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb // indirect
@@ -162,6 +162,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
