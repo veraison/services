@@ -17,7 +17,7 @@ func TestProfile(t *testing.T) {
 		{
 			Title: "bad ref. vals. present",
 			Input: corimRiotBadRefvals,
-			Err:   "cannot unmarshal byte string",
+			Err:   "found reference values (disallowed by scheme)",
 		},
 		{
 			Title: "bad no vendor",

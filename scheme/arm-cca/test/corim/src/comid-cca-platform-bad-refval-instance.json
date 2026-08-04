@@ -32,7 +32,7 @@
                 }
               ],
               "digests": [
-                "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ],
               "name": "BL",
               "version": {
@@ -54,7 +54,7 @@
                 }
               ],
               "digests": [
-                "sha-256:CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ],
               "name": "M1",
               "version": {
@@ -76,7 +76,7 @@
                 }
               ],
               "digests": [
-                "sha-256:DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ],
               "name": "M2",
               "version": {
@@ -98,7 +98,7 @@
                 }
               ],
               "digests": [
-                "sha-256:EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ],
               "name": "M3",
               "version": {

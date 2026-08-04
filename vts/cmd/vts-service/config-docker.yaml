@@ -8,7 +8,7 @@ plugin:
 store:
   dbms: sqlite3
   dsn: file:/veraison/stores/vts/store.sql
-  trace-sql: false
+  trace-sql: true
 po-store:
   backend: sql
   sql:
@@ -18,7 +18,7 @@ po-agent:
   backend: opa
 vts:
   server-addr: 127.0.0.1:50051
-  tls: true
+  tls: false
   cert: ../../../deployments/docker/src/certs/vts.crt
   cert-key: ../../../deployments/docker/src/certs/vts.key
 ear-signer:

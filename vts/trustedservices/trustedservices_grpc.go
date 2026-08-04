@@ -246,11 +246,7 @@ func (o *GRPC) SubmitEndorsements(
 		return nil, errors.New("profile not set in CoRIM")
 	}
 
-	ucProfile, err := uc.Profile.Get()
-	if err != nil {
-		return nil, fmt.Errorf("invalid profile in CoRIM: %v", uc.Profile)
-	}
-
+	ucProfile := uc.Profile.String()
 	o.logger.Debugw("    CoRIM profile", "profile", ucProfile)
 
 	if ucProfile != profile {

@@ -235,7 +235,7 @@ func matchClaimsToReferenceValues(
 				)
 			}
 
-			encoded := base64.StdEncoding.EncodeToString((*measurement.Val.Digests)[0].HashValue)
+			encoded := base64.StdEncoding.EncodeToString((*measurement.Val.Digests)[0].Value)
 			// Extract label (mtype) and version from measurement value
 			label := ""
 			if measurement.Val.Name != nil {

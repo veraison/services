@@ -115,7 +115,11 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 		return nil, err
 	}
 
-	if q.Query.ArtifactType != coserv.ArtifactTypeTrustAnchors {
+	if q.Query.EnvironmentSelector == nil {
+		return nil, errors.New("AMD CoSERV proxy plug-in only supports environment queries")
+	}
+
+	if *q.Query.ArtifactType != coserv.ArtifactTypeTrustAnchors {
 		return nil, errors.New("AMD CoSERV proxy plug-in can only provide Trust Anchor artifacts")
 	}
 

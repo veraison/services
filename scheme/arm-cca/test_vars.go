@@ -16,11 +16,11 @@ var (
 	//go:embed test/corim/corim-cca-platform-bad-refval-instance.cbor
 	corimCcaPlatformBadRefvalInstance []byte
 
-	//go:embed test/corim/corim-cca-platform-bad-refval-mkey-string.cbor
-	corimCcaPlatformBadRefvalMkeyString []byte
-
 	//go:embed test/corim/corim-cca-platform-bad-refval-mkey.cbor
 	corimCcaPlatformBadRefvalMkey []byte
+
+	//go:embed test/corim/corim-cca-platform-bad-refval-mkey-string.cbor
+	corimCcaPlatformBadRefvalMkeyString []byte
 
 	//go:embed test/corim/corim-cca-platform-bad-refval-no-digests.cbor
 	corimCcaPlatformBadRefvalNoDigests []byte

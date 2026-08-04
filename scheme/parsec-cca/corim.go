@@ -7,13 +7,12 @@ import (
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/extensions"
 	"github.com/veraison/corim/profiles/cca"
-	"github.com/veraison/eat"
 )
 
 const ProfileString = "tag:github.com/parallaxsecond,2023-03-03:cca"
 
 func init() {
-	profileID, err := eat.NewProfile(ProfileString)
+	profileID, err := corim.NewProfileFromString(ProfileString)
 	if err != nil {
 		panic(err)
 	}

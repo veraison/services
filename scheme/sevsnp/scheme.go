@@ -153,7 +153,7 @@ func (o *Implementation) GetReferenceValueIDs(
 		return nil, errors.New("no Digests in evidence Measurement")
 	}
 
-	instance, err := comid.NewBytesInstance((*mea.Val.Digests)[0].HashValue)
+	instance, err := comid.NewBytesInstance((*mea.Val.Digests)[0].Value)
 	if err != nil {
 		return nil, err
 	}
@@ -631,7 +631,7 @@ func compareMeasurements(logger *zap.SugaredLogger, refM comid.Measurement, evM 
 			return false
 		}
 
-		refDigest, _ := refM.Val.RawValue.GetBytes()
+		refDigest := refM.Val.RawValue.Bytes()
 		return evM.Val.RawValue.CompareAgainstReference(refDigest, nil)
 	}
 

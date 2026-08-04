@@ -8,8 +8,8 @@
         "environment": {
           "class": {
             "id": {
-              "type": "psa.impl-id",
-              "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
+              "type": "uuid",
+              "value": "00000000-0000-dead-beef-000000000000"
             },
             "vendor": "ACME",
             "model": "RoadRunner"
@@ -19,7 +19,7 @@
           {
             "value": {
               "digests": [
-                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
+                [1, "h0KPxSKAPTEGXnvOPPA_5HUJZjHl4Hu9eg_eYMTPJcc"]
               ]
             }
           }

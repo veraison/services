@@ -31,7 +31,7 @@ func createTestCoservWithExpiry(t *testing.T, expiry time.Time, signed bool) []b
 		},
 	)
 	require.NotNil(t, envSelector)
-	query, err := coserv.NewQuery(
+	query, err := coserv.NewEnvironmentQuery(
 		coserv.ArtifactTypeReferenceValues,
 		*envSelector,
 		coserv.ResultTypeBoth,

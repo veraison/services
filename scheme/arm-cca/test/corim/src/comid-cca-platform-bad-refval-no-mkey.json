@@ -18,7 +18,7 @@
           {
             "value": {
               "digests": [
-                "sha-256:BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg="
+                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
               ]
             }
           }

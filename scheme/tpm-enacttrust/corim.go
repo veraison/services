@@ -10,7 +10,6 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/extensions"
-	"github.com/veraison/eat"
 	"github.com/veraison/services/scheme/common"
 )
 
@@ -51,7 +50,7 @@ func extractEndorsedDigest(measurements []comid.Measurement) ([]byte, error) {
 		return nil, fmt.Errorf("expected exactly one digest in measurement, found %d", digestLen)
 	}
 
-	return (*mea.Val.Digests)[0].HashValue, nil
+	return (*mea.Val.Digests)[0].Value, nil
 }
 
 func extractKey(keys []*comid.CryptoKey) (*ecdsa.PublicKey, error) {
@@ -79,7 +78,7 @@ func extractKey(keys []*comid.CryptoKey) (*ecdsa.PublicKey, error) {
 }
 
 func init() {
-	profileID, err := eat.NewProfile(ProfileString)
+	profileID, err := corim.NewProfileFromString(ProfileString)
 	if err != nil {
 		panic(err)
 	}

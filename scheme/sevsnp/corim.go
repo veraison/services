@@ -9,7 +9,6 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/extensions"
-	"github.com/veraison/eat"
 	"github.com/veraison/services/scheme/common"
 )
 
@@ -83,12 +82,12 @@ func validateMeasurements(measurements []comid.Measurement) error {
 }
 
 func init() {
-	profileID, err := eat.NewProfile(ProfileString)
+	profileID, err := corim.NewProfileFromString(ProfileString)
 	if err != nil {
 		panic(err)
 	}
 
-	arkProfileID, err := eat.NewProfile(ArkProfileString)
+	arkProfileID, err := corim.NewProfileFromString(ArkProfileString)
 	if err != nil {
 		panic(err)
 	}

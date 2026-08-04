@@ -6,5 +6,5 @@
       "roles": ["manifestCreator"]
     }
   ],
-  "profile": "tag:arm.com,2025:cca_platform#1.0.0"
+  "profile": {"type": "uri", "value": "tag:arm.com,2025:cca_platform#1.0.0"}
 }
