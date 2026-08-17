@@ -25,6 +25,8 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+      - name: Install NVIDIA Attestation SDK headers
+        uses: ./.github/actions/install-nvat-dev
       - name: Install mockgen
         run: |
           go install github.com/golang/mock/mockgen@v1.7.0-rc.1
