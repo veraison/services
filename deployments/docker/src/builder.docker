@@ -2,7 +2,13 @@
 # must be at least 1.26.
 ARG GO_VERSION=1.26
 
-FROM golang:${GO_VERSION} AS veraison-builder
+FROM golang:${GO_VERSION}-bookworm AS go-toolchain
+
+# NVAT packages are currently published for Ubuntu, rather than Debian Trixie.
+FROM ubuntu:24.04 AS veraison-builder
+
+COPY --from=go-toolchain /usr/local/go /usr/local/go
+ENV PATH=/usr/local/go/bin:${PATH}
 
 # User identity that will be used to build the project. This should be
 # overriden at build time to match the host user running the builder, who owns
@@ -14,6 +20,8 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
         --assume-yes \
         --no-install-recommends \
+	build-essential \
+	git \
         protobuf-compiler \
         libprotobuf-dev \
         sqlite3 \
@@ -25,6 +33,12 @@ RUN apt-get update \
         nmap \
         sudo \
 	ca-certificates \
+        wget \
+    && distro="$(. /etc/os-release && printf '%s%s' "$ID" "$(printf '%s' "$VERSION_ID" | tr -d .)")" \
+    && wget --quiet "https://developer.download.nvidia.com/compute/cuda/repos/${distro}/x86_64/cuda-keyring_1.1-1_all.deb" \
+    && dpkg --install cuda-keyring_1.1-1_all.deb \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends libnvat-dev \
     && uuidgen | tr -d - > /etc/machine-id \
     && apt-get clean \
     && apt-get autoremove --assume-yes \

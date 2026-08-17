@@ -1,0 +1,16 @@
+name: Install NVIDIA Attestation SDK development package
+description: Adds NVIDIA's package repository and installs the NVAT C headers.
+runs:
+  using: composite
+  steps:
+    - name: Install libnvat-dev
+      shell: bash
+      run: |
+        distro="ubuntu$(. /etc/os-release && printf '%s' "$VERSION_ID" | tr -d .)"
+        keyring="$RUNNER_TEMP/cuda-keyring.deb"
+        curl --fail --location --silent --show-error \
+          "https://developer.download.nvidia.com/compute/cuda/repos/${distro}/x86_64/cuda-keyring_1.1-1_all.deb" \
+          --output "$keyring"
+        sudo dpkg --install "$keyring"
+        sudo apt-get update
+        sudo apt-get install --yes libnvat-dev
