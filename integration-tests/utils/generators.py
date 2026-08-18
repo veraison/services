@@ -1,7 +1,6 @@
 # Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
 import ast
-import base64
 import json
 import os
 import shutil
@@ -93,9 +92,7 @@ def generate_artefacts_from_response(response, scheme, evidence, signing, keys, 
 
 
 def base64url_to_base64(value):
-    # evcli claim JSON uses standard base64, while session nonces are base64url.
-    decoded = base64.urlsafe_b64decode(value)
-    return base64.b64encode(decoded).decode('ascii')
+    return value.replace('-', '+').replace('_', '/')
 
 
 def generate_expected_result_from_response(response, scheme, expected):
