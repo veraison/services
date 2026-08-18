@@ -4,7 +4,6 @@ package api
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,7 +45,7 @@ var (
 	testJSONBody                  = `{ "k": "v" }`
 	testSession                   = `{
 	"status": "waiting",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -62,7 +61,7 @@ var (
 }`
 	testProcessingSession = `{
 	"status": "processing",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -76,7 +75,7 @@ var (
 }`
 	testCompleteSession = `{
 	"status": "complete",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
+	"nonce": "mVubqtg3Wa5GSrx3L/2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -117,17 +116,6 @@ var (
 		Key: testKeyJSON,
 	}
 )
-
-func responseNonce(t *testing.T, response []byte) string {
-	t.Helper()
-
-	var body struct {
-		Nonce string `json:"nonce"`
-	}
-	require.NoError(t, json.Unmarshal(response, &body))
-
-	return body.Nonce
-}
 
 func TestHandler_NewChallengeResponse_UnsupportedAccept(t *testing.T) {
 	h := &Handler{}
@@ -281,11 +269,11 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	expectedType := ChallengeResponseSessionMediaType
 	expectedLocationRE := sessionURIRegexp
 	expectedSessionStatus := StatusWaiting
-	expectedNonce := testNonce
-	expectedNonceURLSafe := base64.URLEncoding.EncodeToString(expectedNonce)
+	expectedNonce := []byte("nonce-value")
 
 	qParams := url.Values{}
-	qParams.Add("nonce", expectedNonceURLSafe)
+	// b64("nonce-value") => "bm9uY2UtdmFsdWU="
+	qParams.Add("nonce", "bm9uY2UtdmFsdWU=")
 
 	w := httptest.NewRecorder()
 
@@ -301,8 +289,7 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Regexp(t, expectedLocationRE, w.Result().Header.Get("Location"))
-	assert.Equal(t, expectedNonceURLSafe, responseNonce(t, w.Body.Bytes()))
-	assert.Equal(t, expectedNonce, []byte(body.Nonce))
+	assert.Equal(t, expectedNonce, body.Nonce)
 	assert.Nil(t, body.Evidence)
 	assert.Nil(t, body.Result)
 	assert.Equal(t, expectedSessionStatus, body.Status)
@@ -347,7 +334,6 @@ func TestHandler_NewChallengeResponse_NonceSizeParameter(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Regexp(t, expectedLocationRE, w.Result().Header.Get("Location"))
-	assert.Regexp(t, `^[A-Za-z0-9_-]+={0,2}$`, responseNonce(t, w.Body.Bytes()))
 	assert.Len(t, body.Nonce, expectedNonceSize)
 	assert.Nil(t, body.Evidence)
 	assert.Nil(t, body.Result)

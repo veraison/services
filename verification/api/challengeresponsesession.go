@@ -6,7 +6,6 @@
 package api
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -70,52 +69,14 @@ type EvidenceBlob struct {
 	Value []byte `json:"value"`
 }
 
-type nonce []byte
-
-func (o nonce) MarshalJSON() ([]byte, error) {
-	return json.Marshal(base64.URLEncoding.EncodeToString(o))
-}
-
-func (o *nonce) UnmarshalJSON(b []byte) error {
-	var v string
-
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-
-	nonce, err := decodeSessionNonce(v)
-	if err != nil {
-		return fmt.Errorf("nonce must be valid base64url: %w", err)
-	}
-
-	*o = nonce
-
-	return nil
-}
-
 type ChallengeResponseSession struct {
 	id       string
 	Status   Status        `json:"status"`
-	Nonce    nonce         `json:"nonce"`
+	Nonce    []byte        `json:"nonce"`
 	Expiry   time.Time     `json:"expiry"`
 	Accept   []string      `json:"accept"`
 	Evidence *EvidenceBlob `json:"evidence,omitempty"`
 	Result   *string       `json:"result,omitempty"`
-}
-
-func decodeSessionNonce(v string) ([]byte, error) {
-	nonce, err := base64.URLEncoding.DecodeString(v)
-	if err == nil {
-		return nonce, nil
-	}
-
-	// Keep reading sessions created before the nonce wire format switched
-	// from standard base64 to base64url.
-	if nonce, stdErr := base64.StdEncoding.DecodeString(v); stdErr == nil {
-		return nonce, nil
-	}
-
-	return nil, err
 }
 
 func (o *ChallengeResponseSession) SetEvidence(mt string, evidence []byte) {
