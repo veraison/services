@@ -46,7 +46,7 @@ var (
 	testJSONBody                  = `{ "k": "v" }`
 	testSession                   = `{
 	"status": "waiting",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -62,7 +62,7 @@ var (
 }`
 	testProcessingSession = `{
 	"status": "processing",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -76,7 +76,7 @@ var (
 }`
 	testCompleteSession = `{
 	"status": "complete",
-	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64",
+	"nonce": "mVubqtg3Wa5GSrx3L_2B99cQU2bMQFVYUI9aTmDYi64=",
 	"expiry": "2022-07-13T13:50:24.520525+01:00",
 	"accept": [
 		"application/eat_cwt;profile=\"http://arm.com/psa/2.0.0\"",
@@ -282,7 +282,7 @@ func TestHandler_NewChallengeResponse_NonceParameter(t *testing.T) {
 	expectedLocationRE := sessionURIRegexp
 	expectedSessionStatus := StatusWaiting
 	expectedNonce := testNonce
-	expectedNonceURLSafe := base64.RawURLEncoding.EncodeToString(expectedNonce)
+	expectedNonceURLSafe := base64.URLEncoding.EncodeToString(expectedNonce)
 
 	qParams := url.Values{}
 	qParams.Add("nonce", expectedNonceURLSafe)
@@ -347,7 +347,7 @@ func TestHandler_NewChallengeResponse_NonceSizeParameter(t *testing.T) {
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
 	assert.Regexp(t, expectedLocationRE, w.Result().Header.Get("Location"))
-	assert.Regexp(t, `^[A-Za-z0-9_-]+$`, responseNonce(t, w.Body.Bytes()))
+	assert.Regexp(t, `^[A-Za-z0-9_-]+={0,2}$`, responseNonce(t, w.Body.Bytes()))
 	assert.Len(t, body.Nonce, expectedNonceSize)
 	assert.Nil(t, body.Evidence)
 	assert.Nil(t, body.Result)

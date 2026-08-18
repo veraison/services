@@ -72,17 +72,8 @@ type EvidenceBlob struct {
 
 type nonce []byte
 
-func base64URLToBytes(v string) ([]byte, error) {
-	nonce, err := base64.RawURLEncoding.DecodeString(v)
-	if err == nil {
-		return nonce, nil
-	}
-
-	return base64.URLEncoding.DecodeString(v)
-}
-
 func (o nonce) MarshalJSON() ([]byte, error) {
-	return json.Marshal(base64.RawURLEncoding.EncodeToString(o))
+	return json.Marshal(base64.URLEncoding.EncodeToString(o))
 }
 
 func (o *nonce) UnmarshalJSON(b []byte) error {
@@ -92,7 +83,7 @@ func (o *nonce) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	nonce, err := base64URLToBytes(v)
+	nonce, err := base64.URLEncoding.DecodeString(v)
 	if err != nil {
 		return fmt.Errorf("nonce must be valid base64url: %w", err)
 	}
