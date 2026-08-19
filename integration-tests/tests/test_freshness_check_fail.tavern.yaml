@@ -25,6 +25,7 @@ marks:
       vals:
         - [psa, p1, good, full, ec.p256, freshness-fail, nonce32]
         - [cca, _, good, full, ccakeys, freshness-fail, nonce64]
+        - [enacttrust, _, good, mini, ec.p256.enacttrust, freshness-fail, nonce32]
 
 includes:
   - !include common.yaml

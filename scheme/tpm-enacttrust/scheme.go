@@ -4,6 +4,7 @@ package tpm_enacttrust
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/google/go-tpm/tpm2"
@@ -96,6 +97,17 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 
 	if err = decoded.VerifySignature(pubKey); err != nil {
 		return handler.BadEvidence("could not verify evidence signature: %w", err)
+	}
+
+	// Freshness: the attester binds the session nonce into the quote's qualifying
+	// data (TPMS_ATTEST.ExtraData). A quote whose ExtraData does not match the
+	// session nonce is stale or replayed, so reject it here. See issue #427.
+	if !bytes.Equal([]byte(decoded.AttestationData.ExtraData), evidence.Nonce) {
+		return handler.BadEvidence(
+			"freshness: quote nonce (%s) does not match session nonce (%s)",
+			hex.EncodeToString(decoded.AttestationData.ExtraData),
+			hex.EncodeToString(evidence.Nonce),
+		)
 	}
 
 	return nil
