@@ -9,6 +9,6 @@ python-dateutil==2.9.0.post0
 pytimeparse==1.1.8
 pyxdg==0.28
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.33.0
 requests-oauthlib==2.0.0
 sqlitedict==2.1.0
