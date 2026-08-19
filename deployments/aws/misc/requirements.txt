@@ -1,6 +1,6 @@
 boto3==1.35.8
 botocore==1.35.8
-cryptography==43.0.1
+cryptography==50.0.0
 envsubst==0.1.5
 fabric==3.2.2
 jwcrypto==1.5.6
