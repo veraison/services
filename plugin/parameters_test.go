@@ -10,14 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestParameters_round_trip(t *testing.T) {
 	params := NewParameters().
-			SetString("p1", "foo").
-			SetInt("p2", 1).
-			SetInt64("p3", 2).
-			SetBytes("p4", []byte{0xde, 0xad, 0xbe, 0xef}).
-			SetBool("p5", true)
+		SetString("p1", "foo").
+		SetInt("p2", 1).
+		SetInt64("p3", 2).
+		SetBytes("p4", []byte{0xde, 0xad, 0xbe, 0xef}).
+		SetBool("p5", true)
 
 	data, err := params.MarshalJSON()
 	assert.NoError(t, err)
@@ -173,4 +172,20 @@ func TestPametersMapFromViper(t *testing.T) {
 	v.Set("s3.p1.a", 1)
 	_, err = ParametersMapFromViper(v, nil)
 	assert.ErrorIs(t, err, ErrInvalid)
+}
+
+func TestParametersMerge(t *testing.T) {
+	this := NewParameters().SetInt64("one", 1)
+	var other0 *Parameters // nil
+	other1 := NewParameters().SetInt64("two", 2)
+
+	err := this.Merge(other0)
+	assert.NoError(t, err)
+
+	err = this.Merge(other1)
+	assert.NoError(t, err)
+
+	v, err := this.GetInt64("two")
+	assert.NoError(t, err)
+	assert.Equal(t, v, int64(2))
 }
