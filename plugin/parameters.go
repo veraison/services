@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrNotSet = errors.New("parameter not set")
+	ErrNotSet  = errors.New("parameter not set")
 	ErrInvalid = errors.New("invalid parameter value")
 )
 
@@ -28,18 +28,18 @@ var (
 //
 // For example:
 //
-//   v := viper.New()
-//   v.Set("s1.p1", "foo")
-//   v.Set("s2.p1", 1)
-//   m1, err := ParametersMapFromViper(v, func(n string) string { return strings.ToUpper(n) })
+//	v := viper.New()
+//	v.Set("s1.p1", "foo")
+//	v.Set("s2.p1", 1)
+//	m1, err := ParametersMapFromViper(v, func(n string) string { return strings.ToUpper(n) })
 //
-//   m2 := map[string]*Parameters{
-//       "S1": NewParameters().SetString("p1", "foo"),
-//       "S2": NewParameters().SetInt("p1", 1),
-//   }
+//	m2 := map[string]*Parameters{
+//	    "S1": NewParameters().SetString("p1", "foo"),
+//	    "S2": NewParameters().SetInt("p1", 1),
+//	}
 //
 // m1 and m2 above are equivalent.
-func ParametersMapFromViper(v *viper.Viper, keyTrans func(string)string) (map[string]*Parameters, error) {
+func ParametersMapFromViper(v *viper.Viper, keyTrans func(string) string) (map[string]*Parameters, error) {
 	ret := make(map[string]*Parameters)
 	if v == nil {
 		return ret, nil
@@ -180,7 +180,7 @@ func (o *Parameters) Set(key string, value any) error {
 	case float64:
 		// note: due to limited precision, float(9223372036854775807)
 		// is 9223372036854775808.0, so we're using >= rather than >
-		// here. 
+		// here.
 		// This means that, in practice, the highest float64
 		// convertable to int64 is 9223372036854774784.0
 		// ((2^(63-52))/2), as anything above that would round up to
@@ -199,6 +199,15 @@ func (o *Parameters) Set(key string, value any) error {
 	}
 
 	return nil
+}
+
+// Merge populates the Parameters from another Parameters
+// object. Duplicate keys are overwritten
+func (o *Parameters) Merge(p *Parameters) error {
+	if p == nil {
+		return nil
+	}
+	return o.PopulateFromMap(p.values)
 }
 
 // PopulateFromMap populates the Parameters from the provided map. This is
@@ -333,7 +342,6 @@ func (o *Parameters) MustGetInt64(key string) int64 {
 
 	return val
 }
-
 
 // DefaultGetInt64 returns the int64 value corresponding to the specified key.
 // If the key is not set, defaultValue is returned instead. If the value is not
