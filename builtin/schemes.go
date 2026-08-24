@@ -8,7 +8,6 @@ import (
 
 	scheme9 "github.com/veraison/services/scheme/amd-kds-coserv"
 	scheme3 "github.com/veraison/services/scheme/arm-cca"
-	scheme10 "github.com/veraison/services/scheme/nvidia"
 	scheme8 "github.com/veraison/services/scheme/nvidia-coserv"
 	scheme1 "github.com/veraison/services/scheme/parsec-cca"
 	scheme5 "github.com/veraison/services/scheme/parsec-tpm"
@@ -26,7 +25,6 @@ var plugins = []plugin.IPluggable{
 	handler.MustNewSchemeImplementationWrapper(scheme5.Descriptor, scheme5.NewImplementation()),
 	handler.MustNewSchemeImplementationWrapper(scheme6.Descriptor, scheme6.NewImplementation()),
 	handler.MustNewSchemeImplementationWrapper(scheme7.Descriptor, scheme7.NewImplementation()),
-	handler.MustNewSchemeImplementationWrapper(scheme10.Descriptor, scheme10.NewImplementation()),
 	&scheme8.CoservProxyHandler{},
 	&scheme9.CoservProxyHandler{},
 }
