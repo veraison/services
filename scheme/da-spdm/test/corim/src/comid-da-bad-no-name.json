@@ -1,0 +1,34 @@
+{
+  "tag-identity": {
+    "id": "00000000-0000-0000-DA54-000000000000",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "bytes",
+              "value": "c3BkbTpBQ01FOldJREdFVC1BCg=="
+            }
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "uint",
+              "value": 1
+            },
+            "value": {
+              "raw-value": {
+                "type": "bytes",
+                "value": "T21haGE="
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

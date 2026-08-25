@@ -1,0 +1,71 @@
+{
+  "tag-identity": {
+    "id": "00000000-0000-0000-DA54-000000000001",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "bytes",
+              "value": "c3BkbTpBQ01FOldJREdFVC1BCg=="
+            }
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "uint",
+              "value": 1
+            },
+            "value": {
+              "name": "hardware-config",
+              "raw-value": {
+                "type": "bytes",
+                "value": "T21haGE="
+              }
+            }
+          }
+        ]
+      },
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "bytes",
+              "value": "c3BkbTpDPUNBLE89QUNNRSxPVT1XaWRnZXQtQgo="
+            }
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "uint",
+              "value": 1
+            },
+            "value": {
+              "name": "mutable-firmware",
+              "digests": [
+                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "uint",
+              "value": 6
+            },
+            "value": {
+              "name": "hardware-config",
+              "digests": [
+                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

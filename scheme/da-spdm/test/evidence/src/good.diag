@@ -1,0 +1,42 @@
+{
+  / profile / 265: "tag:linaro.org,2025:device#1.0.0",
+  / nonce / 10: h'f9efc3341597f75f8d94432ad39566a8c5704b2004ba001c094f475bfc057f9f25d7aa40cd86cd30ebaae746fb19f008c1e6a1f23ad6a178e18dceda918f7f6e',
+  / submods / 266: {
+    "spdm:ACME:WIDGET-A:0123456789": {
+      / profile / 265: "tag:linaro.org,2025:device-spdm#1.0.0",
+      / measurements / 0x0eda: {
+        1: {
+          / component-type /  1: 3, / hardware config /
+          / raw-measurement / 3: h'4f6d616861'
+        }
+      },
+      / certificates / 0x0edb: {
+        / device certs / 0: h'676f616e6e61747261646974696f6e6d6f6e676572'
+        / no aux certs /
+      }
+    },
+    "spdm:C=CA,O=ACME,OU=Widget-B,CN=9876543210": {
+      / profile / 265: "tag:linaro.org,2025:device-spdm#1.0.0",
+      / measurements / 0x0eda: {
+        1: {
+          / component-type / 1: 2, / mutable firmware /
+          / digest-measurement / 2: [
+            / alg / 1,
+            / val / h'07060504030201000f0e0c0b0817161514131211101f1e1d1c1b1a1918'
+          ]
+        },
+        6: {
+          / component-type / 1: 3, / hardware config /
+          / digest measurement / 2: [
+            / alg / 1,
+            / val / h'07060504030201000f0e0c0b0817161514131211101f1e1d1c1b1a1918'
+          ]
+        }
+      },
+      / certificates / 0x0edb: {
+        / device certs / 0: h'61746865697A656178696C6C6172',
+        / aux certs (slot=2) / 2: h'23451576923AE99106783948598A'
+      }
+    }
+  }
+}
