@@ -35,7 +35,12 @@ RUN apt-get update \
 	ca-certificates \
         wget \
     && distro="$(. /etc/os-release && printf '%s%s' "$ID" "$(printf '%s' "$VERSION_ID" | tr -d .)")" \
-    && wget --quiet "https://developer.download.nvidia.com/compute/cuda/repos/${distro}/x86_64/cuda-keyring_1.1-1_all.deb" \
+    && case "$(dpkg --print-architecture)" in \
+           amd64) repo_arch=x86_64 ;; \
+           arm64) repo_arch=sbsa ;; \
+           *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+       esac \
+    && wget --quiet "https://developer.download.nvidia.com/compute/cuda/repos/${distro}/${repo_arch}/cuda-keyring_1.1-1_all.deb" \
     && dpkg --install cuda-keyring_1.1-1_all.deb \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends libnvat-dev \
