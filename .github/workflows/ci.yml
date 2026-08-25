@@ -4,8 +4,11 @@ name: ci
 on: [push, pull_request]
 jobs:
   tests:
-    name: Test on ubuntu-latest
-    runs-on: ubuntu-latest
+    name: Test on ${{matrix.os}}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     env:
       GO111MODULE: on
       CI_PIPELINE: true
