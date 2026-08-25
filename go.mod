@@ -44,6 +44,7 @@ require (
 	github.com/veraison/cmw v0.2.0
 	github.com/veraison/corim v1.1.3-0.20260611115812-7ca640710b0b
 	github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5
+	github.com/veraison/da v0.0.0-20260902105205-bdc14504b673
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
@@ -83,7 +84,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.8.0
+	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
