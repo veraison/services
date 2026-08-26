@@ -1,4 +1,4 @@
 {
   "corim-id": "00000000-0000-0001-p5a1-000000000001",
-  "profile": "tag:arm.com,2025:psa#1.0.0"
+  "profile": {"type": "uri", "value": "tag:arm.com,2025:psa#1.0.0"}
 }

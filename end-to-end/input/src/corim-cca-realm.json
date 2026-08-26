@@ -1,6 +1,6 @@
 {
   "corim-id": "00000000-0000-0001-cca4-000000000001",
-  "profile": "http://arm.com/cca/realm/1",
+  "profile": {"type": "uri", "value": "tag:arm.com,2025:cca_realm#1.0.0"},
   "validity": {
     "not-before": "2021-12-31T00:00:00Z",
     "not-after": "2025-12-31T00:00:00Z"
