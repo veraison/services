@@ -4,17 +4,6 @@
     "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
     "version": 0
   },
-  "entities": [
-    {
-      "name": "ACME Ltd.",
-      "regid": "https://acme.example",
-      "roles": [
-        "tagCreator",
-        "creator",
-        "maintainer"
-      ]
-    }
-  ],
   "triples": {
     "reference-values": [
       {
@@ -23,9 +12,7 @@
             "id": {
               "type": "bytes",
               "value": "YWNtZS1pbXBsZW1lbnRhdGlvbi1pZC0wMDAwMDAwMDE="
-            },
-            "vendor": "ACME",
-            "model": "RoadRunner"
+            }
           }
         },
         "measurements": [
@@ -35,19 +22,16 @@
               "value": "psa.software-component"
             },
             "value": {
-              "digests": [
-                "sha-256:h0KPxSKAPTEGXnvOPPA/5HUJZjHl4Hu9eg/eYMTPJcc="
-              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
-                  "value": "01234567890123456789012345678901"
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
               ],
-              "version": {
-                "value": "2.1.0",
-                "scheme": "semver"
-              }
+              "digests": [
+                [1, "h0KPxSKAPTEGXnvOPPA_5HUJZjHl4Hu9eg_eYMTPJcc"]
+              ],
+              "name": "BL"
             }
           },
           {
@@ -56,19 +40,16 @@
               "value": "psa.software-component"
             },
             "value": {
-              "digests": [
-                "sha-256:AmOCmYm2/ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8="
-              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
-                  "value": "01234567890123456789012345678901"
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
               ],
-              "version": {
-                "value": "1.3.5",
-                "scheme": "semver"
-              }
+              "digests": [
+                [1, "AmOCmYm2_ZVPcrqvL8ZLwuLwHWktTecphuqAj26ZgT8"]
+              ],
+              "name": "PRoT"
             }
           },
           {
@@ -77,19 +58,16 @@
               "value": "psa.software-component"
             },
             "value": {
-              "digests": [
-                "sha-256:o6XnFfDMV0pzw/m+u2vCTzL/1bZ7OHJEwskJ2neaFHg="
-              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
-                  "value": "01234567890123456789012345678901"
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
               ],
-              "version": {
-                "value": "0.1.4",
-                "scheme": "semver"
-              }
+              "digests": [
+                [1, "o6XnFfDMV0pzw_m-u2vCTzL_1bZ7OHJEwskJ2neaFHg"]
+              ],
+              "name": "ARoT"
             }
           }
         ]

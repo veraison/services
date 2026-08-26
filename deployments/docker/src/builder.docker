@@ -80,7 +80,7 @@ RUN go mod download &&\
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
     go install github.com/mitchellh/protoc-gen-go-json@v1.1.0 &&\
     go install github.com/veraison/cocli@7ee92696 &&\
-    go install github.com/veraison/evcli/v2@1685bf5 &&\
+    go install github.com/veraison/evcli/v2@cf9de873 &&\
     go install github.com/veraison/pocli@v0.2.0 &&\
     go install github.com/go-delve/delve/cmd/dlv@v1.26.0 &&\
     go install github.com/veraison/corim-store/cmd/corim-store@818cd5f652ce
