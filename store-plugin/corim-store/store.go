@@ -1,6 +1,6 @@
 // Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
-package store
+package corim_store
 
 import (
 	"context"
@@ -9,13 +9,39 @@ import (
 	"github.com/spf13/viper"
 	corimstore "github.com/veraison/corim-store/pkg/store"
 	"github.com/veraison/services/config"
+	"github.com/veraison/services/plugin"
+	vtscoserv "github.com/veraison/services/vts/coserv"
 	"go.uber.org/zap"
 )
 
 type Config struct {
-	DBMS     string `mapstructure:"dbms"`
-	DSN      string `mapstructure:"dsn"`
-	TraceSQL bool   `mapstructure:"trace-sql" config:"zerodefault"`
+	DBMS      string                 `mapstructure:"dbms"`
+	DSN       string                 `mapstructure:"dsn"`
+	TraceSQL  bool                   `mapstructure:"trace-sql" config:"zerodefault"`
+	CoservCfg *vtscoserv.StoreConfig `config:"zerodefault"`
+}
+
+func ConfigFromParameters(params *plugin.Parameters, logger *zap.SugaredLogger) (*Config, error) {
+	var (
+		cfg       Config
+		coservCfg vtscoserv.StoreConfig
+	)
+
+	logger.Debug("creating corim-store config from plugin parameters")
+	loader := config.NewNonExclusiveLoader(&cfg)
+	if err := loader.LoadFromMap(params.Map()); err != nil {
+		return nil, err
+	}
+
+	// CoSERV configuration not being present is not an error
+	if err := (&coservCfg).FromParams(params); err != nil {
+		logger.Warnf("error converting parameters to coserv config: %v", err)
+		cfg.CoservCfg = nil
+	} else {
+		cfg.CoservCfg = &coservCfg
+	}
+
+	return &cfg, nil
 }
 
 func (o *Config) StoreConfig() *corimstore.Config {
@@ -33,6 +59,10 @@ func (o *Config) StoreConfig() *corimstore.Config {
 	}
 
 	return ret
+}
+
+func (o *Config) CoservConfig() *vtscoserv.StoreConfig {
+	return o.CoservCfg
 }
 
 func New(v *viper.Viper, logger *zap.SugaredLogger) (*corimstore.Store, error) {

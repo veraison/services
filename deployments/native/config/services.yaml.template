@@ -26,10 +26,6 @@ coserv:
   protocol: https
   cert: ${VERAISON_CERTS_DIR}/coserv.crt
   cert-key: ${VERAISON_CERTS_DIR}/coserv.key
-  max-expiry: 5 mins
-  signer:
-    alg: ES256
-    key: ${VERAISON_SIGNING_DIR}/coserv-signer.jwk
 vts:
   server-addr: ${VTS_HOST}:${VTS_PORT}
   tls: true
@@ -42,8 +38,10 @@ ear-signer:
   key: ${VERAISON_SIGNING_DIR}/skey.jwk
 plugin:
   backend: go-plugin
-  go-plugin:
-    dir: ${VERAISON_PLUGINS_DIR}/
+  go-plugin-schemes:
+    dir: ${VERAISON_SCHEME_PLUGINS_DIR}/
+  go-plugin-stores:
+    dir: ${VERAISON_STORE_PLUGINS_DIR}/
 ##############################################################################
 # The store entries below configure the stores for endorsements, trust
 # anchors, and policies. They are configured to use sqlite3 by default. sqlite3
@@ -58,17 +56,30 @@ plugin:
 # on localhost on its default port, the user is "veraison" with password
 # "password", and the relevant database is "veraison".
 ##############################################################################
-store:
-  trace-sql: false
+endorsement-store:
+  coserv:
+    max-expiry: 5 mins
+    signer:
+      alg: ES256
+      key: ${VERAISON_SIGNING_DIR}/coserv-signer.jwk
+  active-plugins:
+    - corim-store
+    - nvidia-coserv-proxy-handler
+    - amd-kds-coserv-proxy-handler
 
-  dbms: sqlite3
-  dsn: ${VERAISON_STORES_DIR}/store.sql
+  # configurations for the corim-store plugin
+  plugin-parameters:
+    corim-store:
+      trace-sql: false
 
-  #dbms: pgx
-  #dsn: postgres://veraison:password@localhost:5432/veraison
-  
-  #dbms: mysql
-  #dsn: veraison:password@tcp(localhost:3306)/veraison
+      dbms: sqlite3
+      dsn: ${VERAISON_STORES_DIR}/store.sql
+
+      #dbms: pgx
+      #dsn: postgres://veraison:password@localhost:5432/veraison
+
+      #dbms: mysql
+      #dsn: veraison:password@tcp(localhost:3306)/veraison
 po-store:
   backend: sql
   sql:
