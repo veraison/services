@@ -26,10 +26,6 @@ coserv:
   protocol: https
   cert: /opt/veraison/coserv.crt
   cert-key: /opt/veraison/coserv.key
-  max-expiry: 5 mins
-  signer:
-    alg: ES256
-    key: /opt/veraison/coserv-signer.jwk
 vts:
   server-addr: vts-service:${VTS_PORT}
   tls: true
@@ -42,11 +38,10 @@ ear-signer:
   key: skey.jwk
 plugin:
   backend: go-plugin
-  go-plugin:
-    dir: ./plugins/
-store:
-  dbms: sqlite
-  dsn: stores/vts/store.sql
+  go-plugin-schemes:
+    dir: ./plugins/schemes/
+  go-plugin-stores:
+    dir: ./plugins/stores/
 po-store:
   backend: sql
   sql:
@@ -55,6 +50,20 @@ po-store:
     datasource: stores/vts/po-store.sql
 po-agent:
     backend: opa
+endorsement-store:
+  coserv:
+    max-expiry: 5 mins
+    signer:
+      alg: ES256
+      key: /opt/veraison/coserv-signer.jwk
+  active-plugins:
+    - corim-store
+    - nvidia-coserv-proxy-handler
+    - amd-kds-coserv-proxy-handler
+  plugin-parameters:
+    corim-store:
+      dbms: sqlite
+      dsn: /opt/veraison/stores/vts/store.sql
 auth:
   backend: keycloak
   host: keycloak-service

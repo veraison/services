@@ -3,17 +3,15 @@
 # automatically if run via  ./run-vts script.
 plugin:
   backend: go-plugin
-  go-plugin:
+  go-plugin-schemes:
     dir: ../../../scheme/bin/
+  go-plugin-stores:
+    dir: ../../../store-plugin/bin/
 po-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: /tmp/po-store.sql
-store:
-  dbms: sqlite3
-  dsn: file::memory:?cache=shared
-  trace-sql: false
 po-agent:
   backend: opa
 vts:
@@ -28,11 +26,19 @@ vts:
 ear-signer:
   alg: ES256
   key: ./skey.jwk
-coserv:
-  max-expiry: 5 mins
-  signer:
-    alg: ES256
-    key: ./skey.jwk
+endorsement-store:
+  coserv:
+    signer:
+      alg: ES256
+      key: ./skey.jwk
+    max-expiry: 5 mins
+  active-plugins:
+    - corim-store
+  plugin-parameters:
+    corim-store:
+      dbms: sqlite3
+      dsn: file::memory:?cache=shared
+      trace-sql: false
 logging:
   level: debug
 # Scheme configuration Example

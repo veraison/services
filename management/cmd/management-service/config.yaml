@@ -1,6 +1,6 @@
 plugin:
   backend: go-plugin
-  go-plugin:
+  go-plugin-schemes:
     dir: ../../../scheme/bin/
 po-store:
   backend: sql

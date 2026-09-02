@@ -11,16 +11,14 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
-	"github.com/veraison/corim/comid"
 	"github.com/veraison/services/config"
 )
 
 var FallbackMaxExpiry = 5 * time.Minute
 
 type Context struct {
-	Signer            ISigner
-	FallbackAuthority *comid.CryptoKey
-	MaxExpiry         time.Duration
+	StoreConfig
+	Signer ISigner
 }
 
 func NewCoservContextFromViper(v *viper.Viper) (*Context, error) {
@@ -44,10 +42,11 @@ func NewCoservContextFromViper(v *viper.Viper) (*Context, error) {
 		return nil, fmt.Errorf("fallback authority: %w", err)
 	}
 
+	storeCfg := CreateStoreConfig(authority, expiry)
+
 	return &Context{
-		Signer:            signer,
-		MaxExpiry:         expiry,
-		FallbackAuthority: authority,
+		StoreConfig: storeCfg,
+		Signer:      signer,
 	}, nil
 
 }
