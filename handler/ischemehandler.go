@@ -30,6 +30,12 @@ type ISchemeHandler interface {
 	// to the specified profile.
 	ValidateCorim(uc *corim.UnsignedCorim) (*ValidateCorimResponse, error)
 
+	// GetTrustAnchorIDs returns a slice of Environments used to
+	// retrieve the trust anchors associated with evidence. The trust
+	// anchors may be necessary to validate the entire evidence and/or extract
+	// its claims (if it is encrypted).
+	GetTrustAnchorIDs(evidence *appraisal.Evidence) ([]*comid.Environment, error)
+
 	// GetReferenceValueIDs returns a slice of Environments used to retrieve
 	// reference values for an attestation scheme, using the claims
 	// extracted from attestation token and the associated trust anchors.

@@ -11,12 +11,6 @@ import (
 // ISchemeImplementation is the subset of the ISchemeHandler interface that
 // must be implemented by schemes that make use of SchemeHandlerWrapper.
 type ISchemeImplementation interface {
-	// GetTrustAnchorIDs returns a slice of Environments used to
-	// retrieve the trust anchors associated with evidence. The trust
-	// anchors may be necessary to validate the entire evidence and/or extract
-	// its claims (if it is encrypted).
-	GetTrustAnchorIDs(evidence *appraisal.Evidence) ([]*comid.Environment, error)
-
 	// ExtractClaims parses the attestation evidence and returns claims
 	// extracted therefrom. (Note: the integrity of the input evidence must
 	// be validated before any claims can be used; this can be done as part
