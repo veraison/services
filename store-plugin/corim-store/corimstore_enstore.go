@@ -1,0 +1,149 @@
+// Copyright 2025-2026 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+package corim_store
+
+import (
+	"context"
+	"errors"
+	"strings"
+
+	corimstore "github.com/veraison/corim-store/pkg/store"
+	"github.com/veraison/corim/comid"
+	"github.com/veraison/corim/coserv"
+	handler "github.com/veraison/services/handler"
+	"github.com/veraison/services/log"
+	"github.com/veraison/services/plugin"
+	vtsstore "github.com/veraison/services/vts/endorsementstore"
+	"go.uber.org/zap"
+)
+
+const (
+	PluginName = "corim-store"
+)
+
+// implement the IEndorsementStore interface for corimstore.Store
+type Store struct {
+	Store     *corimstore.Store
+	logger    *zap.SugaredLogger
+	CoservCfg *vtsstore.StoreCommonParams
+}
+
+func NewStore() *Store {
+	logger := log.Named(PluginName)
+	return &Store{nil, logger, nil}
+}
+
+func (s *Store) GetKeyTriples(env *comid.Environment, label string, exact bool) ([]*comid.KeyTriple, error) {
+	res, err := s.Store.GetActiveKeyTriples(env, label, exact)
+	if errors.Is(err, corimstore.ErrNoMatch) {
+		return nil, handler.ErrNotFound
+	}
+	return res, err
+}
+
+func (s *Store) GetValueTriples(env *comid.Environment, label string, exact bool) ([]*comid.ValueTriple, error) {
+	res, err := s.Store.GetActiveValueTriples(env, label, exact)
+	if errors.Is(err, corimstore.ErrNoMatch) {
+		return nil, handler.ErrNotFound
+	}
+	return res, err
+}
+
+func (s *Store) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error) {
+	// If reading CoSERV config failed during initialization,
+	// CoSERV interface would be disabled.
+	if s.CoservCfg == nil {
+		s.logger.Errorf("store is not configured for CoSERV")
+		return nil, errors.New("missing configurations for CoSERV service")
+	}
+	s.logger.Infof("got coserv query: %v", query)
+	coservService := corimstore.NewCoSERVService(s.Store, s.CoservCfg.FallbackAuthority, s.CoservCfg.MaxExpiry)
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query); err != nil {
+		s.logger.Errorf("could not decode string to coserv: %v", err)
+		return nil, err
+	}
+	if err := coservService.UpdateCoSERV(&q); err != nil {
+		s.logger.Errorf("could not update coserv: %v", err)
+		return nil, err
+	}
+	if q.Results == nil {
+		return nil, errors.New("internal error: bad CoSERV result: result-set is nil")
+	}
+	// return ErrNotFound instead of empty results
+	if q.Results.AKQ == nil && q.Results.RVQ == nil {
+		return nil, handler.ErrNotFound
+	}
+	s.logger.Debugf("got coserv response: %v", q)
+	return &q, nil
+}
+
+func (s *Store) AddCorimBytes(data []byte, label string, activate bool) error {
+	s.logger.Debugf("adding CoRIM")
+	return s.Store.AddBytes(data, label, activate)
+}
+
+func (s *Store) Fini() error {
+	s.logger.Info("closing corimstore")
+	if s.Store == nil {
+		panic("attempted to close an uninitialized store")
+	}
+	if err := s.Store.Close(); err != nil {
+		s.logger.Errorf("Failed to close corim-store: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (s *Store) Init(params *plugin.Parameters) error {
+	s.logger.Debug("initializing default store")
+	if params == nil {
+		return errors.New("parameters are required for corimstore")
+	}
+	cfg, err := ConfigFromParameters(params, s.logger)
+	if err != nil {
+		s.logger.Errorf("Failed to load corim-store parameters: %v", err)
+		return err
+	}
+	s.CoservCfg = cfg.StoreCommonParams
+
+	s.logger.Debugf("connecting to %s store %s", cfg.DBMS, cfg.DSN)
+
+	store, err := corimstore.Open(context.Background(), cfg.StoreConfig())
+	if err != nil {
+		return err
+	}
+
+	// The store must be initialized before it may be used. In general, we
+	// rely on the store being pointed to by DSN to be initialized prior
+	// to starting the VTS. For in-memory store this can never be the case, so we
+	// initialize it here.
+	if strings.Contains(cfg.DSN, ":memory:") {
+		if err := store.Init(); err != nil {
+			return err
+		}
+	}
+
+	s.Store = store
+	return nil
+}
+
+func (s *Store) GetName() string {
+	return PluginName
+}
+
+func (s *Store) GetAttestationScheme() string {
+	// FIXME(dhanus): This store will in principle work for any schemes that
+	// support CoRIM endorsements. So returning a single scheme name does
+	// not make sense. The plugin interface must be updated to support plugins
+	// that are associated with multiple schemes.
+	return ""
+}
+
+func (s *Store) GetSupportedMediaTypes() map[string][]string {
+	// FIXME(dhanus): This method does not make much sense for store plugin,
+	// but something similar is required to let VTS know the CoSERV profiles
+	// that are supported. The plugin interface must be updated to somehow
+	// incorporate this.
+	return nil
+}

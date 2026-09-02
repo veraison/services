@@ -18,8 +18,8 @@ import (
 	"github.com/veraison/services/policy"
 	"github.com/veraison/services/vts/coserv"
 	"github.com/veraison/services/vts/earsigner"
+	"github.com/veraison/services/vts/endorsementstore"
 	"github.com/veraison/services/vts/policymanager"
-	"github.com/veraison/services/vts/store"
 	"github.com/veraison/services/vts/trustedservices"
 )
 
@@ -31,8 +31,9 @@ func main() {
 		log.Fatalf("could not read config: %v", err)
 	}
 
-	subs, err := config.GetSubs(v, "store", "po-store",
-		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv", "*logging", "*scheme")
+	subs, err := config.GetSubs(v, "po-store",
+		"*po-agent", "plugin", "*vts", "ear-signer", "*coserv-signer",
+		"*coserv", "*logging", "*scheme", "*endorsement-store")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,10 +43,15 @@ func main() {
 		log.Fatalf("could not configure logging: %v", err)
 	}
 
-	log.Info("initializing stores")
-	enStore, err := store.New(subs["store"], log.Named("store"))
-	if err != nil {
-		log.Fatalf("endorsement store initialization failed: %v", err)
+	var coservContext *coserv.Context
+	if subs["coserv"].IsSet("signer") {
+		coservContext, err = coserv.NewCoservContextFromViper(subs["coserv"])
+		if err != nil {
+			log.Fatalf("CoSERV config initialization failed: %v", err)
+		}
+
+		// CoSERV media types.
+		log.Info("TODO CoSERV profile types:")
 	}
 
 	poStore, err := policy.NewStore(subs["po-store"], log.Named("po-store"))
@@ -61,65 +67,94 @@ func main() {
 
 	log.Info("loading attestation schemes")
 	var schemePluginManager plugin.IManager[handler.ISchemeHandler]
-	var coservProxyPluginManager plugin.IManager[handler.ICoservProxyHandler]
+	var endorsementStoreManager plugin.IManager[handler.IEndorsementStorePlugin]
 
 	log.Debug("loading scheme configuration")
-	pluginConfig, err := plugin.ParametersMapFromViper(subs["scheme"], handler.PluginNameFromScheme)
+	schemePluginConfig, err := plugin.ParametersMapFromViper(subs["scheme"], handler.PluginNameFromScheme)
 	if err != nil {
 		log.Fatalf("could not load scheme config: %v", err)
 	}
 
-	log.Debug("loading scheme plugins")
-	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin", "*builtin")
+	log.Debug("loading store configuration")
+	endorsementStorePluginConfig, err := plugin.ParametersMapFromViper(subs["endorsement-store"], nil)
+	if err != nil {
+		log.Fatalf("could not load endorsement-store config: %v", err)
+	}
+
+	endorsementStoreConfig, err := endorsementstore.AggregateStoreParams(
+		endorsementStorePluginConfig, subs["vts"], coservContext)
+
+	if err != nil {
+		log.Fatalf("could not create endorsement store configuration: %v", err)
+	}
+
+	log.Debug("loading scheme and endorsement store plugins")
+	psubs, err := config.GetSubs(subs["plugin"], "*go-plugin-schemes", "*builtin", "go-plugin-stores")
 	if err != nil {
 		log.Fatalf("could not get subs: %v", err)
 	}
 
 	switch config.SchemeLoader {
 	case "plugins":
-		loader, err := plugin.CreateGoPluginLoader(
-			psubs["go-plugin"].AllSettings(),
-			pluginConfig,
+		schemeLoader, err := plugin.CreateGoPluginLoader(
+			psubs["go-plugin-schemes"].AllSettings(),
+			schemePluginConfig,
 			log.Named("plugin"))
 		if err != nil {
 			log.Fatalf("could not create plugin loader: %v", err)
 		}
+		storeLoader, err := plugin.CreateGoPluginLoader(
+			psubs["go-plugin-stores"].AllSettings(),
+			endorsementStoreConfig,
+			log.Named("store-loader"))
+		if err != nil {
+			log.Fatalf("could not create store plugin loader: %v", err)
+		}
 
 		schemePluginManager, err = plugin.CreateGoPluginManagerWithLoader(
-			loader,
+			schemeLoader,
 			"scheme-handler",
 			log.Named("plugin"),
 			handler.SchemeHandlerRPC)
 		if err != nil {
 			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
 		}
-		coservProxyPluginManager, err = plugin.CreateGoPluginManagerWithLoader(
-			loader,
-			"coserv-proxy-handler",
-			log.Named("plugin"),
-			handler.CoservProxyHandlerRPC)
+		endorsementStoreManager, err = plugin.CreateGoPluginManagerWithLoader(
+			storeLoader,
+			"endorsement-store",
+			log.Named("store-plugin-manager"),
+			handler.EndorsementStoreRPC)
 		if err != nil {
-			log.Fatalf("could not create coserv PluginManagerWithLoader: %v", err)
+			log.Fatalf("could not create store PluginManagerWithLoader: %v", err)
 		}
 	case "builtin":
-		loader, err := builtin.CreateBuiltinLoader(
+		schemeLoader, err := builtin.CreateBuiltinLoader(
 			psubs["builtin"].AllSettings(),
-			pluginConfig,
-			log.Named("builtin"))
+			builtin.SchemePlugin,
+			schemePluginConfig,
+			log.Named("builtin-scheme"))
 		if err != nil {
-			log.Fatalf("could not create builtin loader: %v", err)
+			log.Fatalf("could not create builtin scheme loader: %v", err)
+		}
+		storeLoader, err := builtin.CreateBuiltinLoader(
+			psubs["builtin"].AllSettings(),
+			builtin.StorePlugin,
+			endorsementStoreConfig,
+			log.Named("builtin-store"))
+		if err != nil {
+			log.Fatalf("could not create builtin store loader: %v", err)
 		}
 		schemePluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ISchemeHandler](
-			loader, log.Named("builtin"),
+			schemeLoader, log.Named("builtin"),
 			"scheme-handler")
 		if err != nil {
 			log.Fatalf("could not create store BuiltinManagerWithLoader: %v", err)
 		}
-		coservProxyPluginManager, err = builtin.CreateBuiltinManagerWithLoader[handler.ICoservProxyHandler](
-			loader, log.Named("builtin"),
-			"coserv-handler")
+		endorsementStoreManager, err = builtin.CreateBuiltinManagerWithLoader[handler.IEndorsementStorePlugin](
+			storeLoader, log.Named("builtin"),
+			"endorsement-store")
 		if err != nil {
-			log.Fatalf("could not create coserv BuiltinManagerWithLoader: %v", err)
+			log.Fatalf("could not create endorsement-store BuiltinManagerWithLoader: %v", err)
 		}
 	default:
 		log.Panicw("invalid SchemeLoader value", "SchemeLoader", config.SchemeLoader)
@@ -135,8 +170,8 @@ func main() {
 		log.Info("\t", mt)
 	}
 
-	log.Info("CoSERV Proxy media types:")
-	for _, mt := range coservProxyPluginManager.GetRegisteredMediaTypes() {
+	log.Info("Endorsement Store media types:")
+	for _, mt := range endorsementStoreManager.GetRegisteredMediaTypesByCategory("coserv") {
 		log.Info("\t", mt)
 	}
 
@@ -146,25 +181,13 @@ func main() {
 		log.Fatalf("EAR signer initialization failed: %v", err)
 	}
 
-	var coservContext *coserv.Context
-	if subs["coserv"].IsSet("signer") {
-		coservContext, err = coserv.NewCoservContextFromViper(subs["coserv"])
-		if err != nil {
-			log.Fatal("CoSERV config initialization: %v", err)
-		}
-
-		// CoSERV media types.
-		log.Info("TODO CoSERV profile types:")
-	}
-
 	log.Info("initializing service")
 	// from this point onwards taStore, enStore, evPluginManager,
 	// endPluginManager, storePluginManager, coservProxyPluginManager,
 	// policyManager and earSigner are owned by vts
-	vts := trustedservices.NewGRPC(enStore,
-		schemePluginManager, coservProxyPluginManager,
+	vts := trustedservices.NewGRPC(
+		schemePluginManager, endorsementStoreManager,
 		policyManager, earSigner, coservContext, log.Named("vts"))
-
 	if err = vts.Init(subs["vts"]); err != nil {
 		log.Fatalf("VTS initialisation failed: %v", err)
 	}

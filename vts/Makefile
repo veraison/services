@@ -4,6 +4,7 @@
 SUBDIR += trustedservices
 SUBDIR += policymanager
 SUBDIR += cmd/vts-service
+SUBDIR += endorsementstore
 
 # Create directories for packaging (TODO: May be a better way to do this)
 install:
