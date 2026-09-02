@@ -57,13 +57,25 @@ func readTokenDescription(path string) (*TokenDescription, error) {
 	return &desc, nil
 }
 
-// decodeNonce decodes a base64 nonce, accepting standard or URL-safe encoding
-// so it matches whatever the verification session used.
+// decodeNonce decodes a base64 nonce, accepting padded or unpadded standard
+// and URL-safe encodings so it matches whatever the verification session used.
 func decodeNonce(s string) ([]byte, error) {
-	if b, err := base64.StdEncoding.DecodeString(s); err == nil {
-		return b, nil
+	encodings := []*base64.Encoding{
+		base64.StdEncoding,
+		base64.RawStdEncoding,
+		base64.URLEncoding,
+		base64.RawURLEncoding,
 	}
-	return base64.URLEncoding.DecodeString(s)
+
+	var err error
+	for _, encoding := range encodings {
+		var b []byte
+		if b, err = encoding.DecodeString(s); err == nil {
+			return b, nil
+		}
+	}
+
+	return nil, err
 }
 
 func readPrivateKey(path string) (*ecdsa.PrivateKey, error) {
