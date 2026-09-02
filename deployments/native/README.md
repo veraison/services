@@ -365,6 +365,7 @@ structure
 ├── bin
 ├── certs
 ├── config
+├── endorsementstore
 ├── env
 ├── logs
 ├── plugins
@@ -387,6 +388,13 @@ This directory has a number of sub-directories, one for the services, and one
 for each client. Each subdirectory contains a `config.yaml` with associated
 configuration.
 
+#### `endorsementstore`
+
+This directory contains endorsement store plugins.
+
+(note: if the deployment was created with `-s` option, the plugins will in fact
+be symlinks to their source locations.)
+
 #### `env`
 
 This directly contains env files that may be sourced by various shells in order
@@ -403,7 +411,7 @@ This directory contains service logs.
 
 This directly contains attestation scheme plugins.
 
-(note: if the deployment was crated with `-s` option, the plugins will in fact
+(note: if the deployment was created with `-s` option, the plugins will in fact
 be symlinks to their source locations.)
 
 #### `signing`

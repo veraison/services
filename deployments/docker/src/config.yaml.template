@@ -41,6 +41,8 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ./plugins/
+  go-plugin-stores:
+    dir: ./endorsementstore/
 store:
   dbms: sqlite
   dsn: stores/vts/store.sql

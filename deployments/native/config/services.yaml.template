@@ -40,6 +40,8 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ${VERAISON_PLUGINS_DIR}/
+  go-plugin-stores:
+    dir: ${VERAISON_STORE_PLUGINS_DIR}/
 ##############################################################################
 # The store entries below configure the stores for endorsements, trust
 # anchors, and policies. They are configured to use sqlite3 by default. sqlite3
