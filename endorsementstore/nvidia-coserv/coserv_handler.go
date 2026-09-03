@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/veraison/cmw"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
+	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
+	vtsstore "github.com/veraison/services/vts/endorsementstore"
 )
 
 // ----- JSON Helper Types -----
@@ -31,13 +34,21 @@ type RimServiceResponse struct {
 	RequestId   string `json:"request_id"`
 }
 
-type CoservProxyHandler struct{}
+type CoservProxyHandler struct {
+	*vtsstore.StoreCommonParams
+}
 
-var (
-	dummyAuthority = []byte{0xab, 0xcd, 0xef}
-)
+func (s *CoservProxyHandler) Init(params *plugin.Parameters) error {
+	var cfg vtsstore.StoreCommonParams
+	if err := (&cfg).FromParams(params); err != nil {
+		s.StoreCommonParams = nil
+	} else {
+		s.StoreCommonParams = &cfg
+	}
+	return nil
+}
 
-func (s CoservProxyHandler) Init(*plugin.Parameters) error {
+func (s CoservProxyHandler) Fini() error {
 	return nil
 }
 
@@ -161,14 +172,11 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 
 				// We'll just look at reference value triples in the CoMID
 				for _, triple := range c.Triples.ReferenceValues.Values {
+					authority := s.FallbackAuthority
 					// Turn each triple into a quad
-					// TODO(paulhowardarm) - This authority is a dummy value.
+					// TODO(paulhowardarm)
 					// We need some kind of cert here, representing this plug-in's authority to re-package from NVIDIA CoRIM
 					// We probably also need an NVIDIA cert in the chain
-					authority, err := comid.NewCryptoKeyTaggedBytes(dummyAuthority)
-					if err != nil {
-						return fmt.Errorf("failed to make authority tagged bytes: %w", err)
-					}
 
 					rvQuad := coserv.RefValQuad{
 						Authorities: comid.NewCryptoKeys().Add(authority),
@@ -184,7 +192,15 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	return nil
 }
 
-func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]byte, error) {
+func (s CoservProxyHandler) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error) {
+	if s.StoreCommonParams == nil {
+		return nil, errors.New("missing configurations for CoSERV service")
+	}
+
+	if !slices.Contains(SupportedCoservProfiles, profile) {
+		return nil, handler.ErrUnsupported
+	}
+
 	var q coserv.Coserv
 	if err := q.FromBase64Url(query); err != nil {
 		return nil, err
@@ -221,8 +237,7 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 		}
 	}
 
-	// Set expiry on the results - fairly arbitrary expiry time of 1 hour
-	coservResult.SetExpiry(time.Now().Add(time.Hour))
+	coservResult.SetExpiry(time.Now().Add(s.MaxExpiry))
 
 	// Add all results into the top-level CoSERV object
 	err := q.AddResults(coservResult)
@@ -230,5 +245,17 @@ func (s CoservProxyHandler) GetEndorsements(tenantID string, query string) ([]by
 		return nil, err
 	}
 
-	return q.ToCBOR()
+	return &q, nil
+}
+
+func (o CoservProxyHandler) GetKeyTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.KeyTriple, error) {
+	return nil, handler.ErrUnsupported
+}
+
+func (o CoservProxyHandler) GetValueTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.ValueTriple, error) {
+	return nil, handler.ErrUnsupported
+}
+
+func (b CoservProxyHandler) AddCorimBytes(data []byte, scheme string, activate bool) error {
+	return handler.ErrUnsupported
 }

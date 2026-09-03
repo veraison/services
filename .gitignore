@@ -9,6 +9,7 @@ policy/cmd/polcli/polcli
 protogen
 provisioning/cmd/provisioning-service/provisioning-service
 scheme/bin
+endorsementstore/bin
 plugin/test/bin
 scheme/enacttrust/test/tokens/*.token
 scheme/tpm-enacttrust/test/cmd/gen-token/gen-token

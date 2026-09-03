@@ -28,6 +28,7 @@ SRC_CERTS_DIR=${VERAISON_CERTS:-${EXAMPLE_DIR}/certs}
 
 DEPLOYMENT_BIN_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_BIN_DIR} | tr -s '/')
 DEPLOYMENT_PLUGINS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_PLUGINS_DIR} | tr -s '/')
+DEPLOYMENT_STORE_PLUGINS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_STORE_PLUGINS_DIR} | tr -s '/')
 DEPLOYMENT_CERTS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_CERTS_DIR} | tr -s '/')
 DEPLOYMENT_LOGS_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_LOGS_DIR} | tr -s '/')
 DEPLOYMENT_STORES_DIR=$(echo ${DEPLOYMENT_DEST}/${VERAISON_STORES_DIR} | tr -s '/')
@@ -434,6 +435,7 @@ function help() {
 function _init_deployment_dir() {
 	mkdir -p ${DEPLOYMENT_BIN_DIR}
 	mkdir -p ${DEPLOYMENT_PLUGINS_DIR}
+	mkdir -p ${DEPLOYMENT_STORE_PLUGINS_DIR}
 	mkdir -p ${DEPLOYMENT_CERTS_DIR}
 	mkdir -p ${DEPLOYMENT_LOGS_DIR}
 	mkdir -p ${DEPLOYMENT_CONFIG_DIR}
@@ -546,6 +548,12 @@ function _symlink_bins() {
 		chmod +x "$path"
 		ln -s $_f "$path" "${DEPLOYMENT_PLUGINS_DIR}/$(basename $path)"
 	    done
+
+	find "${ROOT_DIR}/endorsementstore/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	    while IFS= read -r -d '' path; do
+		chmod +x "$path"
+		ln -s $_f "$path" "${DEPLOYMENT_STORE_PLUGINS_DIR}/$(basename $path)"
+	    done
 }
 
 function _deploy_bins() {
@@ -560,6 +568,12 @@ function _deploy_bins() {
 	    while IFS= read -r -d '' path; do
 		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_PLUGINS_DIR}/$(basename $path)"
 	    done
+
+	find "${ROOT_DIR}/endorsementstore/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	    while IFS= read -r -d '' path; do
+		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_STORE_PLUGINS_DIR}/$(basename $path)"
+	    done
+
 }
 
 function _deploy_frontend {

@@ -174,7 +174,8 @@ func DiscoverGoPluginUsing[I IPluggable](o *GoPluginLoader) error {
 
 		o.logger.Debugw("initializing plugin", "plugin", pluginName, "params", params.Map())
 		if err := pluginContext.Handle.Init(params); err != nil {
-			o.logger.Errorf("plugin q: %s", pluginName, err.Error())
+			o.logger.Errorf("plugin %q: %s", pluginName, err.Error())
+			pluginContext.Close()
 			continue
 		}
 

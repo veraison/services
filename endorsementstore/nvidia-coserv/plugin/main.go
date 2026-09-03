@@ -4,12 +4,12 @@
 package main
 
 import (
+	scheme "github.com/veraison/services/endorsementstore/nvidia-coserv"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
-	scheme "github.com/veraison/services/scheme/nvidia-coserv"
 )
 
 func main() {
-	handler.RegisterCoservProxyHandler(&scheme.CoservProxyHandler{})
+	handler.RegisterEndorsementStore(&scheme.CoservProxyHandler{})
 	plugin.Serve()
 }

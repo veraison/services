@@ -16,6 +16,7 @@ type IAmmo interface {
 	GetAttestationScheme() string
 	GetSupportedMediaTypes() map[string][]string
 	GetCapacity() int
+	Fini() error
 }
 
 type AmmoRPCClient struct {
@@ -25,8 +26,8 @@ type AmmoRPCClient struct {
 func (o *AmmoRPCClient) Init(params *plugin.Parameters) error {
 	var (
 		unused any
-		args []byte
-		err error
+		args   []byte
+		err    error
 	)
 
 	if params != nil {
@@ -103,6 +104,15 @@ func (o *AmmoRPCClient) GetCapacity() int {
 	return resp
 }
 
+func (o *AmmoRPCClient) Fini() error {
+	var unused any
+	err := o.client.Call("Plugin.Fini", &unused, &unused)
+	if err != nil {
+		log.Printf("Plugin.Fini RPC call failed: %v", err)
+	}
+	return err
+}
+
 type AmmoRPCServer struct {
 	Impl IAmmo
 }
@@ -143,6 +153,10 @@ func (o *AmmoRPCServer) GetSupportedMediaTypes(args any, resp *[]byte) error {
 func (o *AmmoRPCServer) GetCapacity(args any, resp *int) error {
 	*resp = o.Impl.GetCapacity()
 	return nil
+}
+
+func (o *AmmoRPCServer) Fini(args any, resp *any) error {
+	return o.Impl.Fini()
 }
 
 func GetAmmoClient(c *rpc.Client) any {

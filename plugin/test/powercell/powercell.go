@@ -30,6 +30,10 @@ func (o PowerCell) GetCapacity() int {
 	return 12000000
 }
 
+func (o PowerCell) Fini() error {
+	return nil
+}
+
 func main() {
 	test.RegisterAmmoImplementation(&PowerCell{})
 	plugin.Serve()

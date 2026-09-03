@@ -6,13 +6,6 @@ import (
 	"github.com/veraison/services/plugin"
 )
 
-func RegisterCoservProxyHandler(i ICoservProxyHandler) {
-	err := plugin.RegisterImplementation("coserv-proxy-handler", i, CoservProxyHandlerRPC)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func RegisterSchemeHandler(i ISchemeHandler) {
 	err := plugin.RegisterImplementation("scheme-handler", i, SchemeHandlerRPC)
 	if err != nil {
@@ -27,4 +20,11 @@ func RegisterSchemeImplementation(desc SchemeDescriptor, i ISchemeImplementation
 	}
 
 	RegisterSchemeHandler(wrapper)
+}
+
+func RegisterEndorsementStore(i IEndorsementStorePlugin) {
+	err := plugin.RegisterImplementation("endorsement-store", i, EndorsementStoreRPC)
+	if err != nil {
+		panic(err)
+	}
 }

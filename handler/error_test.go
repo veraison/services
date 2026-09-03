@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -79,4 +79,14 @@ func Test_BadEvidenceError_wrapping(t *testing.T) {
 	assert.True(t, errors.Is(out, bee))
 	assert.True(t, errors.Is(out, err2))
 	assert.True(t, errors.Is(out, err1))
+}
+
+func Test_StoreErrorParse(t *testing.T) {
+	enf := errors.New(ErrNotFound.Error())
+	eusp := errors.New(ErrUnsupported.Error())
+	eother := errors.New("Other error")
+
+	assert.ErrorIs(t, ParseError(enf), ErrNotFound)
+	assert.ErrorIs(t, ParseError(eusp), ErrUnsupported)
+	assert.Equal(t, ParseError(eother).Error(), eother.Error())
 }
