@@ -1,8 +1,9 @@
-name: Build RPM release package
+name: Automatic RPM package creation based on the monthly tag
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - v0.0.**
 
 permissions:
   contents: read
@@ -15,12 +16,13 @@ jobs:
     env:
       GO111MODULE: on
       CI_PIPELINE: true
-      RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      RELEASE_VERSION: ${{ github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -54,6 +56,6 @@ jobs:
       - name: Upload RPM
         uses: actions/upload-artifact@v4
         with:
-          name: veraison-services-rpm-${{ github.event.release.tag_name }}
+          name: veraison-services-rpm-${{ github.ref_name }}
           path: ~/rpmbuild/RPMS/**/*.rpm
           if-no-files-found: error
