@@ -42,7 +42,7 @@ require (
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.3.2-0.20250512122414-b26aba0635c4
 	github.com/veraison/cmw v0.2.0
-	github.com/veraison/corim v1.1.3-0.20260611115812-7ca640710b0b
+	github.com/veraison/corim v1.1.3-0.20260731101222-a4685b2cd5c2
 	github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5
 	github.com/veraison/dice v0.0.1
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
@@ -57,10 +57,9 @@ require (
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
-require github.com/Masterminds/semver/v3 v3.4.0 // indirect
-
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/NVIDIA/go-nvml v0.13.0-1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.62 // indirect
@@ -155,7 +154,7 @@ require (
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15 // indirect
 	github.com/uptrace/bun/extra/bundebug v1.2.15 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
-	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53 // indirect
+	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897
 	github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb // indirect

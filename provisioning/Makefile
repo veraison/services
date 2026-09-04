@@ -3,6 +3,7 @@
 
 SUBDIR := api
 SUBDIR += provisioner
+SUBDIR += lifecycle
 SUBDIR += cmd/provisioning-service
 
 # Create directories for packaging (TODO: May be a better way to do this)

@@ -50,7 +50,7 @@ def generate_cca_end_to_end_endorsements(test):
     
     # Generate unsigned CoRIM
     unsigned_output_path = f'{GENDIR}/endorsements/corim-{scheme}-platform-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, unsigned_output_path)
+    test.test_vars['platform-corim-id'] = generate_corim(corim_template, comid_templates, unsigned_output_path)
     
     # If signed CoRIM is requested, sign it
     if corim_type == 'signed':
@@ -69,7 +69,7 @@ def generate_cca_end_to_end_endorsements(test):
     
     # Generate unsigned CoRIM
     unsigned_output_path = f'{GENDIR}/endorsements/corim-{scheme}-realm-{spec}.cbor'
-    generate_corim(corim_template, comid_templates, unsigned_output_path)
+    test.test_vars['realm-corim-id'] = generate_corim(corim_template, comid_templates, unsigned_output_path)
 
     if corim_type == 'signed':
         # sign the CoRIM
@@ -248,13 +248,15 @@ def generate_corim(corim_template, comid_templates, output_path):
     comid_files = [os.path.join(output_dir, '.'.join([os.path.splitext(name)[0], 'cbor']))
                    for name in map(os.path.basename, comid_templates)]
 
-    corim_template = substitute_random_corim_id(corim_template)
+    corim_template, new_corim_id = substitute_random_corim_id(corim_template)
 
     corim_create_cmd = ' '.join(
             [f'cocli corim create --output {output_path} --template={corim_template}'] +
             [f'--comid={cf}' for cf in comid_files]
     )
     run_command(corim_create_cmd, 'generate CoRIM')
+
+    return new_corim_id
 
 
 def sign_corim(unsigned_corim_path, signed_corim_path):
@@ -318,8 +320,23 @@ def substitute_random_corim_id(path):
     if 'corim-id' not in data:
         raise ValueError(f'did not see corim-id in {path}')
 
-    data['corim-id'] = str(uuid.uuid4())
+    new_corim_id = str(uuid.uuid4())
+    data['corim-id'] = new_corim_id
 
     with tempfile.NamedTemporaryFile(delete=False, mode='w') as tf:
         json.dump(data, tf)
-        return tf.name
+        return tf.name, new_corim_id
+
+def generate_elm_queries(test):
+    os.makedirs(f'{GENDIR}/elm-queries', exist_ok=True)
+
+    for query_type in ["rv", "ta", "rim"]:
+        corim_arg = ''
+        if query_type == "rim":
+            corim_id = test.test_vars.get('platform-corim-id')
+            if not corim_id:
+                raise ValueError('did not see platform-corim-id in test.test_vars')
+            corim_arg = f'C={corim_id}'
+
+        gencmd = f"A={query_type} {corim_arg} O={GENDIR}/elm-queries/query-{query_type}.cbor bash gen-elm-queries.sh"
+        run_command(gencmd, f"generate ELM query for {query_type}")

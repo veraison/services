@@ -34,6 +34,20 @@ func (m *MockIProvisioner) EXPECT() *MockIProvisionerMockRecorder {
 	return m.recorder
 }
 
+// ActivateEndorsements mocks base method.
+func (m *MockIProvisioner) ActivateEndorsements(tenantID string, data []byte, setActive bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ActivateEndorsements", tenantID, data, setActive)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ActivateEndorsements indicates an expected call of ActivateEndorsements.
+func (mr *MockIProvisionerMockRecorder) ActivateEndorsements(tenantID, data, setActive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ActivateEndorsements", reflect.TypeOf((*MockIProvisioner)(nil).ActivateEndorsements), tenantID, data, setActive)
+}
+
 // GetVTSState mocks base method.
 func (m *MockIProvisioner) GetVTSState() (*proto.ServiceState, error) {
 	m.ctrl.T.Helper()

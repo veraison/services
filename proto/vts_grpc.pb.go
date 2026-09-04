@@ -25,8 +25,10 @@ type VTSClient interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(ctx context.Context, in *AttestationToken, opts ...grpc.CallOption) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
+	// endorsement provisioning API
 	GetSupportedProvisioningMediaTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MediaTypeList, error)
 	SubmitEndorsements(ctx context.Context, in *SubmitEndorsementsRequest, opts ...grpc.CallOption) (*SubmitEndorsementsResponse, error)
+	ActivateEndorsements(ctx context.Context, in *ActivateEndorsementsRequest, opts ...grpc.CallOption) (*ActivateEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error)
 	// endorsement distribution API
@@ -89,6 +91,15 @@ func (c *vTSClient) SubmitEndorsements(ctx context.Context, in *SubmitEndorsemen
 	return out, nil
 }
 
+func (c *vTSClient) ActivateEndorsements(ctx context.Context, in *ActivateEndorsementsRequest, opts ...grpc.CallOption) (*ActivateEndorsementsResponse, error) {
+	out := new(ActivateEndorsementsResponse)
+	err := c.cc.Invoke(ctx, "/proto.VTS/ActivateEndorsements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *vTSClient) GetEARSigningPublicKey(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PublicKey, error) {
 	out := new(PublicKey)
 	err := c.cc.Invoke(ctx, "/proto.VTS/GetEARSigningPublicKey", in, out, opts...)
@@ -135,8 +146,10 @@ type VTSServer interface {
 	// vector, etc -- for the provided attestation token data.
 	GetAttestation(context.Context, *AttestationToken) (*AppraisalContext, error)
 	GetSupportedVerificationMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
+	// endorsement provisioning API
 	GetSupportedProvisioningMediaTypes(context.Context, *emptypb.Empty) (*MediaTypeList, error)
 	SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error)
+	ActivateEndorsements(context.Context, *ActivateEndorsementsRequest) (*ActivateEndorsementsResponse, error)
 	// Returns the public key used to sign evidence.
 	GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error)
 	// endorsement distribution API
@@ -165,6 +178,9 @@ func (UnimplementedVTSServer) GetSupportedProvisioningMediaTypes(context.Context
 }
 func (UnimplementedVTSServer) SubmitEndorsements(context.Context, *SubmitEndorsementsRequest) (*SubmitEndorsementsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitEndorsements not implemented")
+}
+func (UnimplementedVTSServer) ActivateEndorsements(context.Context, *ActivateEndorsementsRequest) (*ActivateEndorsementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActivateEndorsements not implemented")
 }
 func (UnimplementedVTSServer) GetEARSigningPublicKey(context.Context, *emptypb.Empty) (*PublicKey, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEARSigningPublicKey not implemented")
@@ -281,6 +297,24 @@ func _VTS_SubmitEndorsements_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VTS_ActivateEndorsements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActivateEndorsementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VTSServer).ActivateEndorsements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.VTS/ActivateEndorsements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VTSServer).ActivateEndorsements(ctx, req.(*ActivateEndorsementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VTS_GetEARSigningPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -379,6 +413,10 @@ var VTS_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitEndorsements",
 			Handler:    _VTS_SubmitEndorsements_Handler,
+		},
+		{
+			MethodName: "ActivateEndorsements",
+			Handler:    _VTS_ActivateEndorsements_Handler,
 		},
 		{
 			MethodName: "GetEARSigningPublicKey",

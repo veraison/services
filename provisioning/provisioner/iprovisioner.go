@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package provisioner
 
@@ -9,4 +9,5 @@ type IProvisioner interface {
 	IsSupportedMediaType(mt string) (bool, error)
 	SupportedMediaTypes() ([]string, error)
 	SubmitEndorsements(tenantID string, data []byte, mt string) error
+	ActivateEndorsements(tenantID string, data []byte, setActive bool) error
 }

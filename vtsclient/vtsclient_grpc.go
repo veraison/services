@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package vtsclient
 
@@ -157,6 +157,21 @@ func (o *GRPC) SubmitEndorsements(
 		return nil, ErrNoClient
 	}
 	return c.SubmitEndorsements(ctx, in, opts...)
+}
+
+func (o *GRPC) ActivateEndorsements(
+	ctx context.Context, in *proto.ActivateEndorsementsRequest, opts ...grpc.CallOption,
+) (*proto.ActivateEndorsementsResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("ActivateEndorsements", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.ActivateEndorsements(ctx, in, opts...)
 }
 
 func (o *GRPC) GetProvisionerClient() proto.VTSClient {

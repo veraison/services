@@ -16,11 +16,20 @@ message Evidence {
 }
 
 message SubmitEndorsementsRequest {
-  string media_type =1;
-  bytes data  = 2;
+  string media_type = 1;
+  bytes data = 2;
 }
 
 message SubmitEndorsementsResponse {
+  Status status = 1;
+}
+
+message ActivateEndorsementsRequest {
+  bytes data = 1;
+  bool set_active = 2;
+}
+
+message ActivateEndorsementsResponse {
   Status status = 1;
 }
 
@@ -43,8 +52,10 @@ service VTS {
   rpc GetAttestation(AttestationToken) returns (AppraisalContext);
   rpc GetSupportedVerificationMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
 
+  // endorsement provisioning API
   rpc GetSupportedProvisioningMediaTypes(google.protobuf.Empty) returns (MediaTypeList);
   rpc SubmitEndorsements(SubmitEndorsementsRequest) returns (SubmitEndorsementsResponse);
+  rpc ActivateEndorsements(ActivateEndorsementsRequest) returns (ActivateEndorsementsResponse);
 
   // Returns the public key used to sign evidence.
   rpc GetEARSigningPublicKey(google.protobuf.Empty) returns (PublicKey);

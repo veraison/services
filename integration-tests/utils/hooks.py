@@ -69,6 +69,7 @@ def setup_cca_end_to_end(test, variables):
     _set_nonce(test, variables)
     generate_cca_end_to_end_endorsements(test)
     generate_evidence_from_test(test)
+    generate_elm_queries(test)
 
 def setup_freshness_check_fail(test, variables):
     scheme = test.test_vars['scheme']
@@ -131,3 +132,6 @@ def _set_cca_content_types(test, variables):
     variables['realm-en-content-type'] = realm_ct
     # For simple tests that submit a single file, use platform content type
     variables['endorsements-content-type'] = platform_ct
+
+    # Set endorsement lifecycle mgmt (ELM) query content type
+    variables['elm-query-content-type'] = 'application/vnd.veraison.elm-v1+cbor'
