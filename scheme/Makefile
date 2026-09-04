@@ -4,6 +4,7 @@
 SUBDIR += common
 
 SUBDIR += arm-cca
+SUBDIR += da-spdm
 SUBDIR += nvidia
 SUBDIR += parsec-cca
 SUBDIR += parsec-tpm

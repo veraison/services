@@ -1,0 +1,24 @@
+outdir: ..
+workdir: ../__build
+corim: corim-da
+comids:
+  da-ref:
+    - comid-da-ref
+  da-bad-no-class:
+    - comid-da-bad-no-class
+  da-bad-no-class-id:
+    - comid-da-bad-no-class-id
+  da-bad-instance-set:
+    - comid-da-bad-instance-set
+  da-bad-group-set:
+    - comid-da-bad-group-set
+  da-bad-mkey-not-set:
+    - comid-da-bad-mkey-not-set
+  da-bad-mkey-wrong-type:
+    - comid-da-bad-mkey-wrong-type
+  da-bad-no-name:
+    - comid-da-bad-no-name
+  da-bad-no-value:
+    - comid-da-bad-no-value
+  da-bad-multiple-values:
+    - comid-da-bad-multiple-values

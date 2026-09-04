@@ -130,7 +130,15 @@ func (o *SchemeImplementationWrapper) ValidateCorim(uc *corim.UnsignedCorim) (*V
 func (o *SchemeImplementationWrapper) GetTrustAnchorIDs(
 	evidence *appraisal.Evidence,
 ) ([]*comid.Environment, error) {
-	return o.Impl.GetTrustAnchorIDs(evidence)
+	impl, ok := o.Impl.(interface {
+		GetTrustAnchorIDs(*appraisal.Evidence) ([]*comid.Environment, error)
+	})
+
+	if ok {
+		return impl.GetTrustAnchorIDs(evidence)
+	}
+
+	return nil, nil
 }
 
 func (o *SchemeImplementationWrapper) GetReferenceValueIDs(
