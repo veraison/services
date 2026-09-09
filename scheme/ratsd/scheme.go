@@ -3,12 +3,11 @@
 package ratsd
 
 import (
-	"bytes"
-	"encoding/hex"
 	"errors"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
+	ratsd "github.com/veraison/ratsd/ratsd-token-v2"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/vts/appraisal"
@@ -39,6 +38,19 @@ func (o *Implementation) GetTrustAnchorIDs(
 	evidence *appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 
+	/*
+			ev := &ratsd.Evidence{}
+			ev.UnmarshalCBOR(evidence.Data)
+
+			c := ev.GetClaims()
+			oem := c.GetOEMID()
+			vendor := FormatInt(oem, 10)
+			model := c.GetSWName()
+
+		   Set Vendor and Model in the comid.Environment
+
+
+	*/
 	return nil, nil
 }
 
@@ -46,7 +58,13 @@ func (o *Implementation) ExtractClaims(
 	evidence *appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
-	return extractClaims(evidence.Data)
+
+	// Here we need to just extract the RatsD token...
+	ev := &ratsd.Evidence{}
+	ev.UnmarshalCBOR(evidence.Data)
+
+	cmw := ev.GetCollection()
+
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
@@ -54,18 +72,33 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
-	eat, err := extractClaims(evidence.Data)
-	if err != nil {
-		return handler.BadEvidence(err)
-	}
-	evNonce := eat["eat_nonce"].([]byte)
-	if !bytes.Equal(evNonce, evidence.Nonce) {
-		return handler.BadEvidence(
-			"freshness: evidence challenge (%s) does not match session nonce (%s)",
-			hex.EncodeToString(evNonce),
-			hex.EncodeToString(evidence.Nonce),
-		)
-	}
+	// Here we need to just extract the RatsD token...
+	ev := &ratsd.Evidence{}
+	ev.UnmarshalCBOR(evidence.Data)
+	// Get the Signing Certs from Evidence
+	// Get the Intermediate Certs from the Evidence
+
+	// Verify against the Trust Anchors
+
+	// From the trustAnchors from the corim-store, assumption is that comid.KeyTriple will contain the RatsD Trust Root x.509 certificatye
+	// anchor := trustAnchors.GetRootX.509Cert
+	/*
+		  var external []byte
+		  // TO DO set the Options correctly, else Verification will fail
+			chain, err := ev.message.VerifyWithX5Chain(external, anchors, opts)
+			if err != nil{
+			// Handle error here
+			}
+
+
+	*/
+
+	/*
+		   c :=  ev.GetClaims ()
+		Get the Nonce Claim
+		Compare the Nonces
+	*/
+
 	return nil
 }
 

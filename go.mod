@@ -1,6 +1,6 @@
 module github.com/veraison/services
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -47,12 +47,12 @@ require (
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
-	github.com/veraison/ratsd v0.0.0-20260122210857-1ac35b2e2184
+	github.com/veraison/ratsd v0.0.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/text v0.31.0
-	google.golang.org/grpc v1.67.3
+	golang.org/x/text v0.39.0
+	google.golang.org/grpc v1.79.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
-	google.golang.org/protobuf v1.36.4
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
@@ -85,7 +85,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -93,7 +93,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
-	github.com/golang/glog v1.2.4 // indirect
+	github.com/golang/glog v1.2.5 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/logger v1.1.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
@@ -161,21 +161,21 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
-	go.opentelemetry.io/otel v1.29.0 // indirect
-	go.opentelemetry.io/otel/metric v1.29.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.29.0 // indirect
-	go.opentelemetry.io/otel/trace v1.29.0 // indirect
+	go.opentelemetry.io/otel v1.39.0 // indirect
+	go.opentelemetry.io/otel/metric v1.39.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
+	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.53.0
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
-	golang.org/x/mod v0.30.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250204164813-702378808489 // indirect
+	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/oauth2 v0.34.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.66.3 // indirect
@@ -188,3 +188,8 @@ require (
 require github.com/pkg/errors v0.9.1
 
 require github.com/veraison/apiclient v0.4.0
+
+require (
+	github.com/NVIDIA/go-nvml v0.13.0-1 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+)
