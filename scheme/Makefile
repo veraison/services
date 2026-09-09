@@ -9,7 +9,6 @@ SUBDIR += nvidia
 SUBDIR += parsec-cca
 SUBDIR += parsec-tpm
 SUBDIR += psa-iot
-SUBDIR += riot
 SUBDIR += sevsnp
 SUBDIR += tpm-enacttrust
 
