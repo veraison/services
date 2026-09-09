@@ -13,14 +13,12 @@ import (
 	scheme1 "github.com/veraison/services/scheme/parsec-cca"
 	scheme5 "github.com/veraison/services/scheme/parsec-tpm"
 	scheme6 "github.com/veraison/services/scheme/psa-iot"
-	scheme2 "github.com/veraison/services/scheme/riot"
 	scheme7 "github.com/veraison/services/scheme/sevsnp"
 	scheme4 "github.com/veraison/services/scheme/tpm-enacttrust"
 )
 
 var plugins = []plugin.IPluggable{
 	handler.MustNewSchemeImplementationWrapper(scheme1.Descriptor, scheme1.NewImplementation()),
-	handler.MustNewSchemeImplementationWrapper(scheme2.Descriptor, scheme2.NewImplementation()),
 	handler.MustNewSchemeImplementationWrapper(scheme3.Descriptor, scheme3.NewImplementation()),
 	handler.MustNewSchemeImplementationWrapper(scheme4.Descriptor, scheme4.NewImplementation()),
 	handler.MustNewSchemeImplementationWrapper(scheme5.Descriptor, scheme5.NewImplementation()),
