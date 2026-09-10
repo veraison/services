@@ -32,8 +32,15 @@ RUN apt-get update \
     && apt-get autoremove --assume-yes \
     && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
+# The uid is pinned, unlike the other service images, because this one is not
+# on debian: useradd --system takes the next free system uid, which is 997 on
+# debian trixie but 999 on ubuntu 24.04. The deployment shares the stores and
+# logs volumes between services, so letting the base image decide would leave
+# these two containers owning files at a different uid from the rest and
+# unable to write ones the others created. Pinning keeps every service at the
+# same uid regardless of base image.
 RUN groupadd -g 616 veraison && \
-    useradd -m  -g veraison  --system veraison
+    useradd -m -u 997 -g veraison --system veraison
 
 ADD --chown=root:root certs/rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
 ADD --chown=root:root certs/corimCA.crt /usr/local/share/ca-certificates/corim-ca.crt
