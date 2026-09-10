@@ -17,6 +17,8 @@ var publicApiMap = make(map[string]string)
 func NewRouter(handler Handler) *gin.Engine {
 	router := gin.New()
 
+	// CoSERV service is intended as a public API for distributing Endorsements
+	// and Reference Values. Therefore, no authentication is added here.
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
