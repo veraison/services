@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -110,7 +110,7 @@ func (o *BadEvidenceError) UnmarshalJSON(data []byte) error {
 func (o BadEvidenceError) Error() string {
 	data, err := o.MarshalJSON()
 	if err != nil {
-		panic(err)
+		return o.ToString()
 	}
 
 	return string(data)
@@ -151,11 +151,13 @@ func (o BadEvidenceError) Is(other error) bool {
 // BadEvidence creates a new BadEvidenceError instance using the provided args
 // to construct the detail. If no args are specified, the generic detail of
 // "invalid"  is used. If exactly one argument is specified, it is used as the
-// detial. If more than one ergument is specified, the behavior depends on the
+// detail. If more than one argument is specified, the behavior depends on the
 // type of the first argument.
 // When args[0] is a string a new error is created using fmt.Errorf, using
 // args[0] as the format, and that error is used as the detail.
 // Otherwise, the entire args slice is used as the detail.
+// The resulting detail must be JSON-marshalable. If non-marshalable objects
+// (channels, cyclic structs, etc) are passed in args, BadEvidence panics.
 func BadEvidence(args ...interface{}) error {
 	var detail interface{}
 
@@ -171,6 +173,10 @@ func BadEvidence(args ...interface{}) error {
 		default:
 			detail = args[0]
 		}
+	}
+
+	if _, err := json.Marshal(detail); err != nil {
+		panic(fmt.Sprintf("unmarshalable detail: %v (%s)", detail, err.Error()))
 	}
 
 	return BadEvidenceError{detail}
