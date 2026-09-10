@@ -4,6 +4,7 @@ package ratsd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
@@ -11,6 +12,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/compositeevidenceparser"
 	"go.uber.org/zap"
 )
 
@@ -20,7 +22,7 @@ var Descriptor = handler.SchemeDescriptor{
 	VersionMinor:  0,
 	CorimProfiles: []string{""},
 	EvidenceMediaTypes: []string{
-		`application/eat+ujcs;; eat_profile="tag:github.com,2025:veraison/ratsd/cmw"`,
+		`application/eat+ujcs; eat_profile="tag:github.com,2026:veraison/ratsd/cmw"`,
 	},
 }
 
@@ -63,7 +65,28 @@ func (o *Implementation) ExtractClaims(
 	ev := &ratsd.Evidence{}
 	ev.UnmarshalCBOR(evidence.Data)
 
-	cmw := ev.GetCollection()
+	c, err := ev.GetCollection()
+	if err != nil {
+		return nil, err
+	}
+	// The following code can be improved slightly
+	cmw, err := c.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := compositeevidenceparser.GetCEParserFromMediaType(evidence.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fecth parser from received MediaType: %s, %w", evidence.MediaType, err)
+	}
+
+	evs, err := p.Parse(cmw)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse Composite Evidence for the MediaType: %s, %w", evidence.MediaType, err)
+	}
+	if len(evs) == 0 {
+		return nil, errors.New("no data in Evidence")
+	}
 
 }
 

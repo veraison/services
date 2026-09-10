@@ -33,7 +33,6 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
-	"github.com/veraison/services/vts/compositeevidenceparser"
 	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
@@ -378,24 +377,16 @@ func (o *GRPC) GetCompositeAttestation(
 		return o.finalize(mainAppraisal, err)
 	}
 
-	p, err := compositeevidenceparser.GetCEParserFromMediaType(token.MediaType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fecth parser from received MediaType: %s, %w", token.MediaType, err)
-	}
-
-	evs, err := p.Parse(token.Data)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse Composite Evidence for the MediaType: %s, %w", token.MediaType, err)
-	}
-
+	c := mainAppraisal.Claims
 	// TODO use the parallel mechanism in subsequent change, to handle this. For now sequential invocation is fine
-	for i, ev := range evs {
-		mt := ev.GetMediaType()
-		clientName, err := o.LeadVerifierDispatcher.LookupClientNameFromMediaType(mt)
+	for i, ev := range c {
+
+		clientName, err := o.LeadVerifierDispatcher.LookupClientNameFromMediaType(i)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get component verifier client name at index: %d, media type: %s, %w", i, mt, err)
 		}
-		cfg, err := o.LeadVerifierDispatcher.LookupClientCfgFromMediaType(mt)
+		// This is due toi earlier code base where Plugins did not had the Media Type
+		cfg, err := o.LeadVerifierDispatcher.LookupClientCfgFromMediaType(i)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get component verifier client config component evidence at index: %d, media type: %s, %w", i, mt, err)
 		}
@@ -405,6 +396,7 @@ func (o *GRPC) GetCompositeAttestation(
 			return nil, fmt.Errorf("unable to lookup client for: %s, at index: %d, for media type: %s, %w", clientName, i, mt, err)
 		}
 
+		// TO DO Correct this
 		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, cfg)
 		if err != nil {
 			return o.finalize(mainAppraisal, err)
