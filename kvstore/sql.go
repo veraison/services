@@ -99,7 +99,7 @@ func (o *SQL) Init(v *viper.Viper, logger *zap.SugaredLogger) error {
 	}
 
 	o.DB = db
-	o.logger.Infow("store opened", "driver", cfg.DriverName,
+	o.logger.Debugw("store opened", "driver", cfg.DriverName,
 		"datasource", cfg.DataSourceName, "table", o.TableName,
 		"max_connections", cfg.MaxConnections)
 
