@@ -6,7 +6,9 @@ Logging configuration is specified under top-level entry `logging`.
 
 - `level` (optional): specify the minimum enabled logging level. Supported
   values (from lowest to highest) are: `debug`, `info`, `warn`, `error`.
-  Defaults to `info`.
+  Defaults to `info`.  **Important:** `debug` may include sensitive data in the
+  logs. Production deployments should run at `info` level or higher
+  (default for non-development deployments).
 - `format` (optional): specify the format of the log records (e.g. which
   entries appear in it). Currently supported formats:<br />
   `production`:  default `zap` production config.<br />
