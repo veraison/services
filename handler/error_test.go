@@ -1,4 +1,4 @@
-// Copyright 2024 Contributors to the Veraison project.
+// Copyright 2024-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package handler
 
@@ -28,16 +28,16 @@ func Test_BadEvidenceError_marshalling_roundtrip(t *testing.T) {
 	}
 
 	for _, tv := range tvs {
-		fmt.Println(tv.Title)
+		t.Run(tv.Title, func(t *testing.T) {
+			data, err := json.Marshal(tv.Bee)
+			require.NoError(t, err)
 
-		data, err := json.Marshal(tv.Bee)
-		require.NoError(t, err)
+			var decoded BadEvidenceError
+			err = json.Unmarshal(data, &decoded)
+			require.NoError(t, err)
 
-		var decoded BadEvidenceError
-		err = json.Unmarshal(data, &decoded)
-		require.NoError(t, err)
-
-		assert.Equal(t, decoded.Error(), tv.Bee.Error())
+			assert.Equal(t, decoded.Error(), tv.Bee.Error())
+		})
 	}
 }
 
@@ -79,4 +79,22 @@ func Test_BadEvidenceError_wrapping(t *testing.T) {
 	assert.True(t, errors.Is(out, bee))
 	assert.True(t, errors.Is(out, err2))
 	assert.True(t, errors.Is(out, err1))
+}
+
+func Test_BadEvidenceError_unmarshalable(t *testing.T) {
+	ch := make(chan int)
+
+	assert.Panics(t, func() {
+		_ = BadEvidence(ch)
+	})
+
+	bad := BadEvidenceError{ch}
+	assert.Contains(t, bad.Error(), "bad evidence: 0x")
+
+	_, err := bad.MarshalJSON()
+	assert.ErrorContains(t, err, "unsupported type: chan int")
+
+	parsed, ok := ParseError(bad).(BadEvidenceError)
+	assert.True(t, ok)
+	assert.Contains(t, parsed.Detail, "0x")
 }
