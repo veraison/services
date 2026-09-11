@@ -150,7 +150,13 @@ func (o *Implementation) AppraiseClaims(
 	}
 
 	// Appraise All claims by comparing it with ValueTriple for RATSD
+	// Note we need to define the Reference Values for RATSD Claims
 
-	// Ratsd Lead Attester has no claims of its own
+	// Temporary Hack, Once the RatsD Claims have been appraised, remove it from Claims Map
+	// Once EAR Overall Appraisal Status is fixed, then we can check from Overall Appraisal in VTS and skip the loop for RATSD Evidence Verification
+	// More robust strategy is required to filter Verification of Lead Attester.
+
+	// For now, Once the RatsD Claims have been appraised, remove it from Claims Map
+	delete(claims, mt)
 	return result, nil
 }
