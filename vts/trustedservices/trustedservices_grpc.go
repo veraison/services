@@ -33,6 +33,7 @@ import (
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
 	"github.com/veraison/services/vts/appraisal"
+	"github.com/veraison/services/vts/compositeevidenceparser"
 	"github.com/veraison/services/vts/coservsigner"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/policymanager"
@@ -379,13 +380,13 @@ func (o *GRPC) GetCompositeAttestation(
 
 	c := mainAppraisal.Claims
 	// TODO use the parallel mechanism in subsequent change, to handle this. For now sequential invocation is fine
-	for i, ev := range c {
-
-		clientName, err := o.LeadVerifierDispatcher.LookupClientNameFromMediaType(i)
+	for mt, ev := range c {
+		evidence := ev.(compositeevidenceparser.ComponentEvidence)
+		clientName, err := o.LeadVerifierDispatcher.LookupClientNameFromMediaType(mt)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get component verifier client name at index: %d, media type: %s, %w", i, mt, err)
 		}
-		// This is due toi earlier code base where Plugins did not had the Media Type
+		// This is due to earlier code base where we did not had the mechanism to pass the configuration to individual plugins
 		cfg, err := o.LeadVerifierDispatcher.LookupClientCfgFromMediaType(i)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get component verifier client config component evidence at index: %d, media type: %s, %w", i, mt, err)
@@ -396,8 +397,7 @@ func (o *GRPC) GetCompositeAttestation(
 			return nil, fmt.Errorf("unable to lookup client for: %s, at index: %d, for media type: %s, %w", clientName, i, mt, err)
 		}
 
-		// TO DO Correct this
-		ar, err := client.AppraiseComponentEvidence(ev.GetevidenceData(), mt, token.Nonce, cfg)
+		ar, err := client.AppraiseComponentEvidence(evidence.GetevidenceData(), evidence.GetMediaType(), token.Nonce, cfg)
 		if err != nil {
 			return o.finalize(mainAppraisal, err)
 		}
