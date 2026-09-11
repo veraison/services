@@ -22,7 +22,7 @@ var Descriptor = handler.SchemeDescriptor{
 	VersionMinor:  0,
 	CorimProfiles: []string{""},
 	EvidenceMediaTypes: []string{
-		`application/eat+ujcs; eat_profile="tag:github.com,2026:veraison/ratsd/cmw"`,
+		`"application/eat-ucs+cbor; eat_profile="tag:github.com,2026:veraison/ratsd/v2"`,
 	},
 }
 
@@ -87,7 +87,12 @@ func (o *Implementation) ExtractClaims(
 	if len(evs) == 0 {
 		return nil, errors.New("no data in Evidence")
 	}
+	claims := make(map[string]any)
 
+	for _, ev := range evs {
+		claims[ev.GetMediaType()] = ev
+	}
+	return claims, nil
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
@@ -131,27 +136,21 @@ func (o *Implementation) AppraiseClaims(
 ) (*ear.AttestationResult, error) {
 	result := handler.CreateAttestationResult(Descriptor.Name)
 
-	profile, ok := claims["eat_profile"].(string)
+	mt := Descriptor.EvidenceMediaTypes[0]
+
+	e, ok := claims[mt]
 	if !ok {
-		return nil, errors.New("unable to get eat profile from evidence")
+		return result, fmt.Errorf("unable to extract RATSD Evidence from claims map")
 	}
-	found := false
-	for _, p := range Descriptor.EvidenceMediaTypes {
-		if p == profile {
-			found = true
-			break
-		}
+
+	ev := e.(compositeevidenceparser.ComponentEvidence)
+	var c ratsd.Claims
+	if err := c.UnmarshalCBOR(ev.GetevidenceData()); err != nil {
+		return result, fmt.Errorf("unable to unmarshal claims from RATSD Evidence: %w", err)
 	}
-	if !found {
-		return result, handler.BadEvidence(errors.New("invalid profile in the evidence"))
-	}
+
+	// Appraise All claims by comparing it with ValueTriple for RATSD
 
 	// Ratsd Lead Attester has no claims of its own
 	return result, nil
-}
-
-func extractClaims(data []byte) (map[string]any, error) {
-	// extract individual tokens and Lead Attester Token
-	// Flatten Out ratsd claims
-	return eat, nil
 }
