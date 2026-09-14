@@ -4,6 +4,7 @@
 SHELL = /bin/bash
 
 SUBDIR += builtin
+SUBDIR += auth
 SUBDIR += config
 SUBDIR += coserv
 SUBDIR += handler
@@ -32,6 +33,7 @@ IGNORE_COVERAGE += github.com/veraison/services/handler
 # coverage. Previous version of go ignored them.
 #  See: https://go-review.googlesource.com/c/go/+/495447
 IGNORE_COVERAGE += github.com/veraison/services/builtin
+IGNORE_COVERAGE += github.com/veraison/services/auth
 IGNORE_COVERAGE += github.com/veraison/services/management/api
 IGNORE_COVERAGE += github.com/veraison/services/management/cmd/management-service
 IGNORE_COVERAGE += github.com/veraison/services/provisioning/cmd/provisioning-service

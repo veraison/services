@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package auth
@@ -103,30 +103,48 @@ func (o *BasicAuthorizer) GetGinHandler(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		o.logger.Debugw("auth basic", "path", c.Request.URL.Path)
 
+		haveProblem := false
+
 		userName, password, hasAuth := c.Request.BasicAuth()
 		if !hasAuth {
-			c.Writer.Header().Set("WWW-Authenticate", "Basic realm=veraison")
-			ReportProblem(c, http.StatusUnauthorized,
-				"no Basic Authorizaiton given")
-			return
+			o.logger.Warn("request does not contain basic auth")
+			haveProblem = true
 		}
 
-		userInfo, ok := o.users[userName]
-		if !ok {
-			c.Writer.Header().Set("WWW-Authenticate", "Basic realm=veraison")
-			ReportProblem(c, http.StatusUnauthorized,
-				"no Basic Authorizaiton given")
-			return
+		var userInfo *basicAuthUser
+		found := false
+		for name, info := range o.users {
+			if name == userName {
+				userInfo = info
+				found = true
+
+				// continue looping to ensure constant time
+			}
+		}
+
+		if !found {
+			if !haveProblem {
+				o.logger.Warnw("basic auth: unknown user", "user", userName)
+				haveProblem = true
+			}
+
+			userInfo = &basicAuthUser{
+				// dummyPassword
+				Password: "$2b$12$jul9hCKZP4cOF0hul0pmguzaJKLPfJ477NglE526eSYHUu9Rqe3UG",
+			}
 		}
 
 		if err := bcrypt.CompareHashAndPassword(
 			[]byte(userInfo.Password),
 			[]byte(password),
-		); err != nil {
-			o.logger.Debugf("password check failed: %v", err)
+		); err != nil && !haveProblem{
+			o.logger.Warnf("password check failed: %v", err)
+			haveProblem = true
+		}
+
+		if haveProblem {
 			c.Writer.Header().Set("WWW-Authenticate", "Basic realm=veraison")
-			ReportProblem(c, http.StatusUnauthorized,
-				"wrong username or password")
+			ReportProblem(c, http.StatusUnauthorized, "authorization failed")
 			return
 		}
 
