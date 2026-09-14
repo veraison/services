@@ -59,7 +59,7 @@ func (o *Loader) Init(dest interface{}) error {
 
 	val := reflect.ValueOf(dest)
 
-	if val.Kind() != reflect.Ptr || reflect.Indirect(val).Kind() != reflect.Struct {
+	if val.Kind() != reflect.Pointer || reflect.Indirect(val).Kind() != reflect.Struct {
 		return fmt.Errorf("expected pointer to a struct but got %v", val.Kind())
 	}
 
