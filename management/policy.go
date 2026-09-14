@@ -48,7 +48,7 @@ func CreatePolicyManagerFromConfig(v *viper.Viper, name string) (*PolicyManager,
 
 	if config.SchemeLoader == "plugins" { // nolint:gocritic
 		pluginManager, err = plugin.CreateGoPluginManager(
-			subs["plugin"], pluginConfig, log.Named("plugin"),
+			subs["plugin"], "go-plugin", pluginConfig, log.Named("plugin"),
 			"scheme-handler", handler.SchemeHandlerRPC)
 		if err != nil {
 			log.Fatalf("plugin manager initialization failed: %v", err)
