@@ -6,9 +6,9 @@
 # targets:
 # * lint  - run source code linter
 
-GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E gosimple -E prealloc
+GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E prealloc
 
-GOLINT_VERSION = v1.64.8
+GOLINT_VERSION = v2.13.2
 GOLINT = $(TOPDIR)/tools-bin/golangci-lint
 GOLINT_STAMP = $(TOPDIR)/tools-bin/golangci-lint-$(GOLINT_VERSION).stamp
 
@@ -17,7 +17,7 @@ $(GOLINT): $(GOLINT_STAMP)
 $(GOLINT_STAMP):
 	mkdir -p $(dir $(GOLINT))
 	touch $(GOLINT_STAMP)
-	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLINT_VERSION)
+	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)
 
 .PHONY: lint
 lint: $(GOLINT) lint-hook-pre reallint
