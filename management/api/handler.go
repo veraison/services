@@ -96,18 +96,21 @@ func (o Handler) CreatePolicy(c *gin.Context) {
 
 	if err = o.Manager.Validate(c, policyRules); err != nil {
 		reportProblem(c, http.StatusBadRequest, fmt.Sprintf("invalid policy: %s", err))
+		return
 	}
 
 	policy, err := o.Manager.Update(c, tenantID, scheme, name, policyRules)
 	if err != nil {
 		o.Logger.Errorf("could not update policy: %s", err)
 		reportProblem(c, http.StatusInternalServerError, "could not update policy")
+		return
 	}
 
 	respBytes, err := json.Marshal(&policy)
 	if err != nil {
 		o.Logger.Errorf("error marshaling policy to JSON: %s", err)
 		reportProblem(c, http.StatusInternalServerError, "could not update policy")
+		return
 	}
 
 	c.Data(http.StatusCreated, PolicyMediaType, respBytes)
