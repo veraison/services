@@ -143,8 +143,17 @@ func main() {
             log.Fatal(err)
     }
 
+    // Extract plugin configuration
+    pluginConfig, err := plugin.ParametersMapFromViper(subs["plugin-type"], nil)
+    if err != nil {
+            log.Fatal(err)
+    }
+
     pluginManager, err := plugin.CreateGoPluginManager(
-            subs["plugin"], log.Named("plugin"),
+            subs["plugin"],
+            "go-plugin-myplugin", // subs["plugin"]["go-plugin-myplugin"] must not be empty
+            pluginConfig,
+            log.Named("plugin"),
             // plugins must register themselves with type "my-plugin" -- see
             // above.
             "my-plugins", myplugin.MyPluginRPC)
