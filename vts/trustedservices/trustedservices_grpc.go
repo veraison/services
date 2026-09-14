@@ -539,20 +539,19 @@ func (c *GRPC) assembleCoservMediaTypes(mts []string, filter string) []string {
 }
 
 func (c *GRPC) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*proto.MediaTypeList, error) {
-	var mediaTypes []string
-
 	corimDerived := c.assembleCoservMediaTypes(
 		c.SchemePluginManager.GetRegisteredMediaTypesByCategory("provisioning"),
 		"application/rim+cbor",
 	)
 
-	mediaTypes = append(mediaTypes, corimDerived...)
 
 	coservProxyDerived := c.assembleCoservMediaTypes(
 		c.CoservProxyPluginManager.GetRegisteredMediaTypes(),
 		"application/coserv+cbor",
 	)
 
+	mediaTypes := make([]string, 0, len(corimDerived) + len(coservProxyDerived))
+	mediaTypes = append(mediaTypes, corimDerived...)
 	mediaTypes = append(mediaTypes, coservProxyDerived...)
 
 	c.logger.Debugw("GetSupportedCoservMediaTypes", "media types", mediaTypes)

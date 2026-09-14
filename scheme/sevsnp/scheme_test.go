@@ -85,7 +85,7 @@ func Test_ValidateEvidenceIntegrity_ok(t *testing.T) {
 	var (
 		endCorim     corim.UnsignedCorim
 		endComid     comid.Comid
-		trustAnchors []*comid.KeyTriple
+		trustAnchors []*comid.KeyTriple //nolint:prealloc
 	)
 
 	err := endCorim.FromCBOR(sevsnpCorimValidEndorsements)
@@ -137,7 +137,7 @@ func Test_AppraiseClaims_ok(t *testing.T) {
 		claims       map[string]any
 		endCorim     corim.UnsignedCorim
 		endComid     comid.Comid
-		endorsements []*comid.ValueTriple
+		endorsements []*comid.ValueTriple //nolint:prealloc
 	)
 
 	err := json.Unmarshal(sevsnpRatsdClaimsMapJson, &claims)
