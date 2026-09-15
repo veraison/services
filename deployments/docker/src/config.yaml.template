@@ -37,16 +37,19 @@ vts:
   cert-key: /opt/veraison/vts.key
   ca-certs:
     - /usr/local/share/ca-certificates/corim-ca.crt
+  active-stores:
+    - corim-store
+    - nvidia-coserv-proxy-handler
+    - amd-kds-coserv-proxy-handler
 ear-signer:
   alg: ES256
   key: skey.jwk
 plugin:
   backend: go-plugin
-  go-plugin:
-    dir: ./plugins/
-store:
-  dbms: sqlite
-  dsn: stores/vts/store.sql
+  go-plugin-schemes:
+    dir: ./plugins/schemes/
+  go-plugin-stores:
+    dir: ./plugins/stores/
 po-store:
   backend: sql
   sql:
@@ -55,6 +58,10 @@ po-store:
     datasource: stores/vts/po-store.sql
 po-agent:
     backend: opa
+endorsement-store:
+  corim-store:
+    dbms: sqlite
+    dsn: /opt/veraison/stores/vts/store.sql
 auth:
   backend: keycloak
   host: keycloak-service

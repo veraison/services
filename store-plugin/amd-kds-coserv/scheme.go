@@ -1,4 +1,4 @@
-// Copyright 2025 Contributors to the Veraison project.
+// Copyright 2025-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package amdkdscoserv
@@ -9,4 +9,5 @@ var (
 	CoservMediaTypes = []string{
 		`application/coserv+cbor; profile="tag:github.com/veraison,2023:amd_kds_coserv_proxy#1.0.0"`,
 	}
+	SupportedCoservProfiles = []string{"tag:github.com/veraison,2023:amd_kds_coserv_proxy#1.0.0"}
 )

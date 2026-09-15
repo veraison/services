@@ -10,11 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
-var defaultBuiltinLoader *BuiltinLoader
+var defaultBuiltinSchemeLoader *BuiltinLoader
 
 type BuiltinLoader struct {
 	logger *zap.SugaredLogger
 
+	class             PluginClass
 	loadedByName      map[string]plugin.IPluggable
 	loadedByMediaType map[string]plugin.IPluggable
 
@@ -23,16 +24,20 @@ type BuiltinLoader struct {
 	registeredPluginTypes map[string]string
 }
 
-func NewBuiltinLoader(logger *zap.SugaredLogger) *BuiltinLoader {
-	return &BuiltinLoader{logger: logger}
+func NewBuiltinLoader(logger *zap.SugaredLogger, class PluginClass) *BuiltinLoader {
+	return &BuiltinLoader{
+		logger: logger,
+		class:  class,
+	}
 }
 
 func CreateBuiltinLoader(
 	cfg map[string]any,
+	class PluginClass,
 	pluginParams map[string]*plugin.Parameters,
 	logger *zap.SugaredLogger,
 ) (*BuiltinLoader, error) {
-	loader := NewBuiltinLoader(logger)
+	loader := NewBuiltinLoader(logger, class)
 	err := loader.Init(cfg, pluginParams)
 	return loader, err
 }
@@ -70,11 +75,11 @@ func (o *BuiltinLoader) GetRegisteredMediaTypesByCategory(category string) []str
 }
 
 func DiscoverBuiltin[I plugin.IPluggable]() error {
-	return DiscoverBuiltinUsing[I](defaultBuiltinLoader)
+	return DiscoverBuiltinUsing[I](defaultBuiltinSchemeLoader)
 }
 
 func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
-	for _, p := range plugins {
+	for _, p := range plugins[loader.class] {
 		_, ok := p.(I)
 		if !ok {
 			continue
@@ -117,7 +122,7 @@ func DiscoverBuiltinUsing[I plugin.IPluggable](loader *BuiltinLoader) error {
 }
 
 func GetBuiltinHandleByMediaType[I plugin.IPluggable](mediaType string) (I, error) {
-	return GetBuiltinHandleByMediaTypeUsing[I](defaultBuiltinLoader, mediaType)
+	return GetBuiltinHandleByMediaTypeUsing[I](defaultBuiltinSchemeLoader, mediaType)
 }
 
 func GetBuiltinHandleByMediaTypeUsing[I plugin.IPluggable](
@@ -196,5 +201,5 @@ func GetBuiltinHandleByAttestationSchemeUsing[I plugin.IPluggable](
 }
 
 func init() {
-	defaultBuiltinLoader = NewBuiltinLoader(log.Named("builtin"))
+	defaultBuiltinSchemeLoader = NewBuiltinLoader(log.Named("builtin"), SchemePlugin)
 }

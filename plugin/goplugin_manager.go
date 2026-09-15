@@ -26,20 +26,33 @@ func NewGoPluginManager[I IPluggable](
 	return &GoPluginManager[I]{loader: loader, logger: logger}
 }
 
+// CreateGoPluginManager create a new GoPluginManager for the provided plugin
+// RPCChannel ch. In addition to the RPCChannel, it takes the the following
+// additional inputs to find and load the plugins:
+//
+// 	* v - plugin configuration (section plugin in the config)
+// 	* pluginClass - the class of plugins for which to create the manager.
+//	The parameters for loading this class of plugins will be part of
+//	'pluginClass' section of the plugin configuration
+// 	* pluginParams - parameters to be passed to this class of plugins
+// 	* logger - logger that will be used by the plugin manager
+// 	* name - the plugin implementation name that was registered
+// 	* ch - the plugin RPC channel
 func CreateGoPluginManager[I IPluggable](
 	v *viper.Viper,
+	pluginClass string,
 	pluginParams map[string]*Parameters,
 	logger *zap.SugaredLogger,
 	name string,
 	ch *RPCChannel[I],
 ) (*GoPluginManager[I], error) {
 
-	subs, err := config.GetSubs(v, "go-plugin")
+	subs, err := config.GetSubs(v, pluginClass)
 	if err != nil {
 		return nil, err
 	}
 
-	loader, err := CreateGoPluginLoader(subs["go-plugin"].AllSettings(), pluginParams, logger)
+	loader, err := CreateGoPluginLoader(subs[pluginClass].AllSettings(), pluginParams, logger)
 	if err != nil {
 		return nil, err
 	}

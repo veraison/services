@@ -5,10 +5,13 @@ plugin:
   backend: go-plugin
   go-plugin:
     dir: ../../../scheme/bin/
-store:
-  dbms: sqlite3
-  dsn: file:/veraison/stores/vts/store.sql
-  trace-sql: true
+  go-plugin-stores:
+    dir: ../../../store-plugin/bin/
+endorsement-store:
+  corim-store:
+    dbms: sqlite3
+    dsn: file:/veraison/stores/vts/store.sql
+    trace-sql: true
 po-store:
   backend: sql
   sql:
@@ -21,6 +24,8 @@ vts:
   tls: false
   cert: ../../../deployments/docker/src/certs/vts.crt
   cert-key: ../../../deployments/docker/src/certs/vts.key
+  active-stores:
+    - corim-store
 ear-signer:
   alg: ES256
   key: ./skey.jwk
