@@ -1,4 +1,4 @@
-name: Automatic monthly tag with format v0.0.yyMM
+name: Automatic monthly tag with format v0.0.yyMM00
 on:
   schedule:
     # At 00:00 on the first day of each month
@@ -13,6 +13,6 @@ jobs:
           fetch-depth: 0
       - name: Generate a new tag and push it
         run: |
-          TAG="v0.0.$(date +%y%m)"
+          TAG="v0.0.$(date +%y%m)00"
           git tag $TAG
           git push origin $TAG
