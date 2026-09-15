@@ -483,12 +483,33 @@ func Fatalln(args ...interface{}) {
 	logger.Fatalln(args...)
 }
 
-// LogProblem logs a problems.StatusProblem reported  by the api. 500 probelms
+// LogProblem logs a problems.StatusProblem reported by the api. 500 problems
 // are logged as errors, everything else is logged as warnings.
 func LogProblem(logger *zap.SugaredLogger, prob *problems.DefaultProblem) {
 	var logFunc func(msg string, args ...interface{})
 
 	if prob.Status >= 500 {
+		logFunc = logger.Errorw
+	} else {
+		logFunc = logger.Warnw
+	}
+
+	logFunc("problem encountered", "title", prob.Title, "detail", prob.Detail)
+}
+
+// ConciseProblem is a representation of the problem details structure defined
+// in RFC 9290. The response encoding format is CBOR.
+type ConciseProblem struct {
+	Title  string `cbor:"-1,keyasint"`
+	Detail string `cbor:"-2,keyasint,omitempty"`
+}
+
+// LogConciseProblem logs a ConciseProblem reported by the ELM API (for now).
+// 500 problems are logged as errors and the rest as warnings.
+func LogConciseProblem(logger *zap.SugaredLogger, status int, prob *ConciseProblem) {
+	var logFunc func(msg string, args ...interface{})
+
+	if status >= 500 {
 		logFunc = logger.Errorw
 	} else {
 		logFunc = logger.Warnw

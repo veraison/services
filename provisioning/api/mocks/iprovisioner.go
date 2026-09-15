@@ -64,6 +64,20 @@ func (mr *MockIProvisionerMockRecorder) IsSupportedMediaType(mt interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSupportedMediaType", reflect.TypeOf((*MockIProvisioner)(nil).IsSupportedMediaType), mt)
 }
 
+// SetEndorsementsActive mocks base method.
+func (m *MockIProvisioner) SetEndorsementsActive(tenantID string, data []byte, setActive bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEndorsementsActive", tenantID, data, setActive)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEndorsementsActive indicates an expected call of SetEndorsementsActive.
+func (mr *MockIProvisionerMockRecorder) SetEndorsementsActive(tenantID, data, setActive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEndorsementsActive", reflect.TypeOf((*MockIProvisioner)(nil).SetEndorsementsActive), tenantID, data, setActive)
+}
+
 // SubmitEndorsements mocks base method.
 func (m *MockIProvisioner) SubmitEndorsements(tenantID string, data []byte, mt string) error {
 	m.ctrl.T.Helper()
