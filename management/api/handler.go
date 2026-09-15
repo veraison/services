@@ -100,15 +100,14 @@ func (o Handler) CreatePolicy(c *gin.Context) {
 
 	policy, err := o.Manager.Update(c, tenantID, scheme, name, policyRules)
 	if err != nil {
-		reportProblem(c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("could not update policy: %s", err),
-		)
+		o.Logger.Errorf("could not update policy: %s", err)
+		reportProblem(c, http.StatusInternalServerError, "could not update policy")
 	}
 
 	respBytes, err := json.Marshal(&policy)
 	if err != nil {
-		reportProblem(c, http.StatusInternalServerError, err.Error())
+		o.Logger.Errorf("error marshaling policy to JSON: %s", err)
+		reportProblem(c, http.StatusInternalServerError, "could not update policy")
 	}
 
 	c.Data(http.StatusCreated, PolicyMediaType, respBytes)
@@ -237,9 +236,11 @@ func (o Handler) respondSimple(c *gin.Context, err error) {
 		c.Status(http.StatusOK)
 	} else {
 		if errors.Is(err, policy.ErrNoPolicy) {
-			reportProblem(c, http.StatusNotFound, err.Error())
+			o.Logger.Warnf("policy not found: %s", err)
+			reportProblem(c, http.StatusNotFound, "policy not found")
 		} else {
-			reportProblem(c, http.StatusInternalServerError, err.Error())
+			o.Logger.Error(err.Error())
+			reportProblem(c, http.StatusInternalServerError, "error on policy (de)activation")
 		}
 	}
 }
@@ -280,16 +281,19 @@ func (o Handler) GetManagementWellKnownInfo(c *gin.Context) {
 func (o Handler) respondToGet(c *gin.Context, mt string, ret interface{}, err error) {
 	if err != nil {
 		if errors.Is(err, policy.ErrNoPolicy) || errors.Is(err, policy.ErrNoActivePolicy) {
-			reportProblem(c, http.StatusNotFound, err.Error())
+			o.Logger.Warn(err.Error())
+			reportProblem(c, http.StatusNotFound, "not found")
 		} else {
-			reportProblem(c, http.StatusInternalServerError, err.Error())
+			o.Logger.Error(err.Error())
+			reportProblem(c, http.StatusInternalServerError, "error getting policy")
 		}
 		return
 	}
 
 	respBytes, err := json.Marshal(ret)
 	if err != nil {
-		reportProblem(c, http.StatusInternalServerError, err.Error())
+		o.Logger.Errorf("error mashaling return value: %s", err)
+		reportProblem(c, http.StatusInternalServerError, "error getting policy")
 	}
 
 	c.Data(http.StatusOK, mt, respBytes)
