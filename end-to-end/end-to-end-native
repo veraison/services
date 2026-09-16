@@ -1,6 +1,10 @@
 #!/bin/bash
 # Copyright 2024-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
+
+# remove the leading "+" from "set -x" output
+PS4=""
+
 if [[ $VERAISON_ROOT == "" ]]; then
 	echo "ERROR: VERAISON_ROOT must be set."
 	exit 1
@@ -29,14 +33,19 @@ SCHEME=${SCHEME:-psa}
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 function provision() {
+    local corim_files=()
+    local media_types=()
+
     case $SCHEME  in
         psa)
-            local corim_file=$THIS_DIR/input/psa-endorsements.cbor
-            local media_type="application/rim+cbor; profile=\"tag:arm.com,2025:psa#1.0.0\""
+            corim_files+=("$THIS_DIR/input/psa-endorsements.cbor")
+            media_types+=("application/rim+cbor; profile=\"tag:arm.com,2025:psa#1.0.0\"")
             ;;
         cca)
-            local corim_file=$THIS_DIR/input/cca-endorsements.cbor
-            local media_type="application/rim+cbor; profile=\"tag:arm.com,2025:cca_platform#1.0.0\""
+            corim_files+=("$THIS_DIR/input/cca-endorsements.cbor")
+            media_types+=("application/rim+cbor; profile=\"tag:arm.com,2025:cca_platform#1.0.0\"")
+            corim_files+=("$THIS_DIR/input/cca-realm-endorsements.cbor")
+            media_types+=("application/rim+cbor; profile=\"tag:arm.com,2025:cca_realm#1.0.0\"")
             ;;
         *)
             echo "ERROR: bad SCHEME: $SCHEME"
@@ -44,9 +53,14 @@ function provision() {
             ;;
     esac
 
-    set -x
-    $COCLI corim submit --config="${VERAISON_ROOT}/config/cocli/config.yaml" \
-	    --corim-file="$corim_file" --media-type="$media_type"
+    for  i in "${!corim_files[@]}"; do
+        set -x
+
+        $COCLI corim submit --config="${VERAISON_ROOT}/config/cocli/config.yaml" \
+                --corim-file="${corim_files[i]}" --media-type="${media_types[i]}"
+
+        { set +x; } 2>/dev/null
+    done
 }
 
 function check() {
