@@ -14,6 +14,7 @@ import (
 	corimstore "github.com/veraison/corim-store/pkg/store"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/provisioning/provisioner"
+	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
 )
 
@@ -128,10 +129,10 @@ func (o *Handler) Submit(c *gin.Context) {
 	if err != nil {
 		o.logger.Errorw("submit endorsement failed", "error", err)
 
-		if strings.Contains(err.Error(), "no connection") {
+		if _, ok := errors.AsType[vtsclient.NoConnectionError](err); ok {
 			ReportProblem(c,
 				http.StatusInternalServerError,
-				err.Error(),
+				"something went wrong on our side, please try again",
 			)
 			return
 		}
