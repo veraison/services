@@ -13,6 +13,24 @@ stages:
     response:
       status_code: 401
 
+  - name: submit post request to activate endorsements with no authorization
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/activate
+      headers:
+        content-type: 'application/vnd.veraison.elm-v1+cbor'
+    response:
+      status_code: 401
+
+  - name: submit post request to deactivate endorsements with no authorization
+    request:
+      method: POST
+      url: https://{provisioning-service}/endorsement-provisioning/v1/deactivate
+      headers:
+        content-type: 'application/vnd.veraison.elm-v1+cbor'
+    response:
+      status_code: 401
+
   - name: get active policy with no authorization
     request:
       method: GET

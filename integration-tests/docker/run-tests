@@ -5,3 +5,5 @@
 source ~/.bashrc
 py.test -vv
 
+## for compact pytest output
+# py.test --tb=short -p no:logging
