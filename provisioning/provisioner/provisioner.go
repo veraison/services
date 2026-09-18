@@ -66,9 +66,6 @@ func (p *Provisioner) SubmitEndorsements(tenantID string, data []byte, mt string
 	sReq := &proto.SubmitEndorsementsRequest{MediaType: mt, Data: data}
 	sRes, err := p.VTSClient.SubmitEndorsements(context.Background(), sReq)
 	if err != nil {
-		if errors.As(err, &vtsclient.NoConnectionError{}) {
-			return errors.New("no connection")
-		}
 		return fmt.Errorf("submit endorsements failed: %w", err)
 	}
 
