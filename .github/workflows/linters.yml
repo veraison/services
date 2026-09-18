@@ -25,10 +25,27 @@ jobs:
       run: |
         go install golang.org/x/tools/cmd/guru@latest
     - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Install protoc with ARM64 support
+        PROTOC_VERSION="25.1"
+        ARCH=$(uname -m)
+        if [[ "$ARCH" == "x86_64" ]]; then
+          PROTOC_ARCH="x86_64"
+        elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+          PROTOC_ARCH="aarch_64"
+        else
+          echo "Unsupported architecture: $ARCH"
+          exit 1
+        fi
+        
+        PROTOC_ZIP="protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip"
+        curl -OL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}"
+        sudo unzip -o "$PROTOC_ZIP" -d /usr/local bin/protoc
+        sudo unzip -o "$PROTOC_ZIP" -d /usr/local 'include/*'
+        rm -f "$PROTOC_ZIP"
+        
+        # Verify installation
+        protoc --version
     - name: protoc-gen deps
       run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
