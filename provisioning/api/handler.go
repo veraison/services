@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/veraison/services/capability"
 	"github.com/veraison/services/provisioning/provisioner"
+	"github.com/veraison/services/vtsclient"
 	"go.uber.org/zap"
 )
 
@@ -41,9 +42,9 @@ func NewHandler(
 	maxPayloadSize int64,
 ) IHandler {
 	return &Handler{
-		Provisioner:   p,
-		logger:        logger,
-		WkCacheMaxAge: capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
+		Provisioner:    p,
+		logger:         logger,
+		WkCacheMaxAge:  capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 		MaxPayloadSize: maxPayloadSize,
 	}
 }
@@ -125,10 +126,10 @@ func (o *Handler) Submit(c *gin.Context) {
 	if err != nil {
 		o.logger.Errorw("submit endorsement failed", "error", err)
 
-		if errors.Is(err, errors.New("no connection")) {
+		if _, ok := errors.AsType[vtsclient.NoConnectionError](err); ok {
 			ReportProblem(c,
 				http.StatusInternalServerError,
-				err.Error(),
+				"something went wrong on our side, please try again",
 			)
 			return
 		}
