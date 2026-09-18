@@ -59,6 +59,6 @@ po-agent:
     backend: opa
 plugin:
   backend: go-plugin
-  go-plugin:
-    folder: ../../plugins/bin/
+  go-plugin-schemes:
+    dir: ../../plugins/bin/
 ```

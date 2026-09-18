@@ -11,6 +11,7 @@ PROTOSRCS += vts.proto
 PROTOSRCS += status.proto
 PROTOSRCS += endorsement_query.proto
 PROTOSRCS += scheme.proto
+PROTOSRCS += endorsement_store.proto
 
 lint-hook-pre: protogen
 	protolint lint $(PROTOSRCS)

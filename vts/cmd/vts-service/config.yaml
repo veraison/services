@@ -3,17 +3,20 @@
 # automatically if run via  ./run-vts script.
 plugin:
   backend: go-plugin
-  go-plugin:
+  go-plugin-schemes:
     dir: ../../../scheme/bin/
+  go-plugin-stores:
+    dir: ../../../store-plugin/bin/
 po-store:
   backend: sql
   sql:
     driver: sqlite3
     datasource: /tmp/po-store.sql
-store:
-  dbms: sqlite3
-  dsn: file::memory:?cache=shared
-  trace-sql: false
+endorsement-store:
+  corim-store:
+    dbms: sqlite3
+    dsn: file::memory:?cache=shared
+    trace-sql: false
 po-agent:
   backend: opa
 vts:
@@ -23,6 +26,8 @@ vts:
   cert-key: ../../../deployments/docker/src/certs/vts.key
   ca-certs:
       - ../../../deployments/docker/src/certs/rootCA.crt
+  active-stores:
+    - corim-store
 ear-signer:
   alg: ES256
   key: ./skey.jwk

@@ -368,6 +368,8 @@ structure
 ├── env
 ├── logs
 ├── plugins
+│   ├── schemes
+│   └── stores
 ├── signing
 ├── stores
 └── systemd (or launchd)
@@ -401,9 +403,10 @@ This directory contains service logs.
 
 #### `plugins`
 
-This directly contains attestation scheme plugins.
+This directly contains attestation scheme plugins (in the `schemes` sub directory)
+and endorsement store plugins (in the `stores` sub directory).
 
-(note: if the deployment was crated with `-s` option, the plugins will in fact
+(note: if the deployment was created with `-s` option, the plugins will in fact
 be symlinks to their source locations.)
 
 #### `signing`
