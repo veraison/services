@@ -11,12 +11,16 @@ import (
 )
 
 func TestParameters_round_trip(t *testing.T) {
+	p := NewParameters().
+		SetBool("inner", true).
+		SetStrArray("innerstr", []string{"map", "trap"})
 	params := NewParameters().
 		SetString("p1", "foo").
 		SetInt("p2", 1).
 		SetInt64("p3", 2).
 		SetBytes("p4", []byte{0xde, 0xad, 0xbe, 0xef}).
-		SetBool("p5", true)
+		SetBool("p5", true).
+		SetParameters("p6", *p)
 
 	data, err := params.MarshalJSON()
 	assert.NoError(t, err)
@@ -30,6 +34,7 @@ func TestParameters_round_trip(t *testing.T) {
 	assert.Equal(t, params.MustGetInt64("p3"), out.MustGetInt64("p3"))
 	assert.Equal(t, params.MustGetBytes("p4"), out.MustGetBytes("p4"))
 	assert.Equal(t, params.MustGetBool("p5"), out.MustGetBool("p5"))
+	assert.Equal(t, params.MustGetParameters("p6").Map(), out.MustGetParameters("p6").Map())
 }
 
 func TestParameters_bytes(t *testing.T) {
@@ -90,18 +95,23 @@ func TestParametersFromMap(t *testing.T) {
 	m := map[string]any{
 		"p1": "foo",
 		"p2": int64(2),
+		"p4": map[string]any{
+			"inner":    "yes",
+			"innerstr": []string{"map", "trap"},
+		},
 	}
 	params, err := ParametersFromMap(m)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", params.MustGetString("p1"))
 	assert.Equal(t, 2, params.MustGetInt("p2"))
+	assert.NotNil(t, params.MustGetParameters("p4"))
 	assert.Equal(t, m, params.Map())
 
 	_, err = params.GetBool("p3")
 	assert.ErrorIs(t, err, ErrNotSet)
 
 	_, err = ParametersFromMap(map[string]any{
-		"p1": []string{"foo", "bar"},
+		"p1": []int{1, 2},
 	})
 	assert.ErrorIs(t, err, ErrInvalid)
 }
@@ -110,16 +120,21 @@ func TestParametersFromViper(t *testing.T) {
 	v := viper.New()
 	v.Set("p1", "foo")
 	v.Set("p2", 2)
+	v.Set("p4", map[string]any{
+		"inner":    true,
+		"innerstr": []string{"trap"},
+	})
 
 	params, err := ParametersFromViper(v)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", params.MustGetString("p1"))
 	assert.Equal(t, 2, params.MustGetInt("p2"))
+	assert.NotNil(t, params.MustGetParameters("p4"))
 
 	_, err = params.GetBool("p3")
 	assert.ErrorIs(t, err, ErrNotSet)
 
-	v.Set("p3.a", true)
+	v.Set("p3.a", []any{1, 2, "string"})
 	_, err = ParametersFromViper(v)
 	assert.ErrorIs(t, err, ErrInvalid)
 
@@ -128,16 +143,17 @@ func TestParametersFromViper(t *testing.T) {
 }
 
 func TestParametersFromJSON(t *testing.T) {
-	bytes := []byte(`{"p1":"foo","p2":2}`)
+	bytes := []byte(`{"p1":"foo","p2":2, "p4":["inner"]}`)
 	params, err := ParametersFromJSON(bytes)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", params.MustGetString("p1"))
 	assert.Equal(t, 2, params.MustGetInt("p2"))
+	assert.Equal(t, []string{"inner"}, params.MustGetStrArray("p4"))
 
 	_, err = params.GetBool("p3")
 	assert.ErrorIs(t, err, ErrNotSet)
 
-	bytes = []byte(`{"p1":["foo","bar"]}`)
+	bytes = []byte(`{"p1":[1,"bar"]}`)
 	err = params.UnmarshalJSON(bytes)
 	assert.ErrorIs(t, err, ErrInvalid)
 	assert.Equal(t, "foo", params.MustGetString("p1"))
@@ -149,6 +165,7 @@ func TestPametersMapFromViper(t *testing.T) {
 	v.Set("s1.p2", 2)
 	v.Set("s2.p1", "bar")
 	v.Set("s2.p2", "baz")
+	v.Set("s2.p3.inner", true)
 
 	m, err := ParametersMapFromViper(v, nil)
 	assert.NoError(t, err)
@@ -156,6 +173,7 @@ func TestPametersMapFromViper(t *testing.T) {
 	assert.Equal(t, 2, m["s1"].MustGetInt("p2"))
 	assert.Equal(t, "bar", m["s2"].MustGetString("p1"))
 	assert.Equal(t, "baz", m["s2"].MustGetString("p2"))
+	assert.Equal(t, true, m["s2"].MustGetParameters("p3").MustGetBool("inner"))
 
 	_, ok := m["p3"]
 	assert.False(t, ok)
@@ -169,7 +187,7 @@ func TestPametersMapFromViper(t *testing.T) {
 	_, ok = m["p1"]
 	assert.False(t, ok)
 
-	v.Set("s3.p1.a", 1)
+	v.Set("s3.p1.a", []any{1, 2, 3, "hello"})
 	_, err = ParametersMapFromViper(v, nil)
 	assert.ErrorIs(t, err, ErrInvalid)
 }
