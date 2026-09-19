@@ -1,0 +1,41 @@
+{
+  / profile / 0: "tag:arm.com,2025:cca_platform#1.0.0",
+  / query / 1: {
+    / artifact-type / 0: 1 / trust-anchors /,
+    / environment-selector / 1: {
+      / instance / 1: [
+        [
+          550(h'0107060504030201000F0E0D0C0B0A090817161514131211101F1E1D1C1B1A1918')
+        ]
+      ]
+    },
+    / result-type / 2: 0 / collected material /
+  },
+  / results / 2: {
+    / akq / 3: [
+      {
+        / authorities / 1: [
+          558({
+            1: 2,
+            3: -7,
+            -1: 1,
+            -2: h'CF4B4DB205072B54D90B7DBD8EAAF7DECFC6B9A7EAD640FE4A3015C258C107C6',
+            -3: h'5C8AD59BE377FF25AC642B70C1A3D541AEABF12911741B724A8E97857674F852'
+          })
+        ],
+        / ak-triple / 2: [
+          {
+            0: {
+              0: 560(h'7F454C4602010100000000000000000003003E00010000005058000000000000')
+            },
+            1: 550(h'0107060504030201000F0E0D0C0B0A090817161514131211101F1E1D1C1B1A1918')
+          },
+          [
+            554("-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEIShnxS4rlQiwpCCpBWDzlNLfqiG911FP\n8akBr+fh94uxHU5m+Kijivp2r2oxxN6MhM4tr8mWQli1P61xh3T0ViDREbF26DGO\nEYfbAjWjGNN7pZf+6A4OTHYqEryz6m7U\n-----END PUBLIC KEY-----\n")
+          ]
+        ]
+      }
+    ],
+    / expiry / 10: 0("2099-06-16T13:39:18+01:00")
+  }
+}
