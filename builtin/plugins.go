@@ -13,6 +13,7 @@ import (
 	scheme4 "github.com/veraison/services/scheme/tpm-enacttrust"
 	store3 "github.com/veraison/services/store-plugin/amd-kds-coserv"
 	store1 "github.com/veraison/services/store-plugin/corim-store"
+	store4 "github.com/veraison/services/store-plugin/coserv-broker"
 	store2 "github.com/veraison/services/store-plugin/nvidia-coserv"
 )
 
@@ -39,5 +40,6 @@ var schemePlugins = []plugin.IPluggable{
 var storePlugins = []plugin.IPluggable{
 	&store2.CoservProxyHandler{},
 	&store3.CoservProxyHandler{},
+	store4.NewBroker(),
 	store1.NewStore(),
 }
