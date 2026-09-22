@@ -18,7 +18,6 @@ RUN groupadd -g 616 veraison && \
     useradd -m  -g veraison  --system veraison
 
 ADD --chown=root:root certs/rootCA.crt /usr/local/share/ca-certificates/veraison-ca.crt
-ADD --chown=root:root certs/corimCA.crt /usr/local/share/ca-certificates/corim-ca.crt
 RUN update-ca-certificates
 
 USER veraison
@@ -28,7 +27,7 @@ WORKDIR /opt/veraison
 RUN mkdir logs
 
 ADD --chown=veraison:nogroup config.yaml verification-service service-entrypoint \
-    certs/verification.crt certs/verification.key ./
+    certs/verification.crt certs/corimCA.crt certs/verification.key ./
 
 ENTRYPOINT ["/opt/veraison/service-entrypoint"]
 CMD ["/opt/veraison/verification-service"]

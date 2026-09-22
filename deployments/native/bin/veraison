@@ -7,10 +7,9 @@ set -e
 _os=$(uname)
 
 # NOTE: when this script is installed into a deployment, the definitions below
-# will be replaced with a hard-coded path (based on the deployment).
+# will be replaced with hard-coded paths (based on the deployment).
 # shellcheck disable=SC2153
 _veraison_root=${VERAISON_ROOT}
-
 _bin_dir=${VERAISON_BIN_DIR}
 _config_dir=${VERAISON_CONFIG_DIR}
 _certs_dir=${VERAISON_CERTS_DIR}
@@ -74,10 +73,15 @@ function generate_certs() {
 		local root_cert=${_certs_dir}/rootCA.crt
 		local root_cert_key=${_certs_dir}/rootCA.key
 
-		create_root_cert "$force" "$root_cert" "$root_cert_key"
+		create_root_cert "$force" \
+			"$_certs_dir/rootCA.crt" "$_certs_dir/rootCA.key" \
+			"serverAuth, clientAuth"
+		create_root_cert "$force" \
+			"$_certs_dir/corimCA.crt" "$_certs_dir/corimCA.key" \
+			"codeSigning"
 	fi
 
-	install_root_cert "$root_cert" "$force"
+	install_root_cert "$root_cert" "$root_cert_key" "$force"
 
 	create_all_service_certs "$template" "$root_cert" "$root_cert_key" "$force"
 
@@ -90,7 +94,8 @@ function create_root_cert() {
 	local force=$1
 	local cert_path=$2
 	local key_path=$3
-	local subject=$4
+	local eku=$4
+	local subject=$5
 
 	if [[ -f "${cert_path}" || -f "${key_path}" ]]; then
 		if [[ $force == false ]]; then
@@ -99,14 +104,15 @@ function create_root_cert() {
 		fi
 	fi
 
-	_gen_root_cert "${cert_path}" "${key_path}" "${subject}"
+	_gen_root_cert "${cert_path}" "${key_path}" "${eku}" "${subject}"
 
 	echo "Created ${cert_path} and ${key_path}"
 }
 
 function install_root_cert() {
 	local cert_path=$1
-	local force=$2
+	local key_path=$2
+	local force=$3
 
 	# special case: trying to install an already installed cert is a no-op
 	if [[ "$cert_path" -ef "${_certs_dir}/rootCA.crt" ]]; then
@@ -121,6 +127,7 @@ function install_root_cert() {
 	fi
 
 	cp "$cert_path" "${_certs_dir}/rootCA.crt"
+	cp "$key_path" "${_certs_dir}/rootCA.key"
 
 	echo "Installed ${_certs_dir}/rootCA.crt"
 }
@@ -741,15 +748,25 @@ function _gen_root_cert() {
 
 	local cert_path=$1
 	local key_path=$2
-	local subject=$3
+	local eku=$3
+	local subject=$4
 
 	if [[ "$subject" == "" ]]; then
 		subject="/O=Veraison"
 	fi
 
+	set +e
+	read -r -d '' config <<-EOF
+	[extensions]
+	basicConstraints = critical, CA:true
+	keyUsage = critical, keyCertSign
+	extendedKeyUsage = critical, $eku
+	EOF
+	set -e
+
 	openssl ecparam -name prime256v1 -genkey -noout -out "$key_path"
 	openssl req -x509 -new -nodes -key "$key_path" -sha256 -days 3650 \
-		-subj "$subject" -out "$cert_path"
+		-config <(echo  "$config") -extensions extensions -subj "$subject" -out "$cert_path"
 }
 
 function _gen_service_cert() {
@@ -760,12 +777,20 @@ function _gen_service_cert() {
 	local ca_cert=$3
 	local ca_cert_key=$4
 
+	set +e
+	read -r -d '' config <<-EOF
+	keyUsage = critical, digitalSignature
+	extendedKeyUsage = critical, serverAuth, clientAuth
+	subjectAltName = $(_gen_subject_alt_names $service $template)
+	EOF
+	set -e
+
 	openssl ecparam -name prime256v1 -genkey -noout -out "${service}.key"
 	openssl req -new -key "${service}.key" -out "${service}.csr" \
 		-subj "/CN=$(_gen_common_name $service $template)"
 	openssl x509 -req -in "${service}.csr" -CA ${ca_cert} -CAkey ${ca_cert_key} \
 		-CAcreateserial -out "${service}.crt" -days 3650 -sha256 \
-		-extfile <(echo "subjectAltName = $(_gen_subject_alt_names $service $template)")
+		-extfile <(echo "$config")
 }
 
 function _canonize_service_name() {
@@ -865,8 +890,13 @@ case $command in
 	gen-service-certs)
 		generate_certs "$_save_intermediate" "$_force" "$1" "$2" "$3"
 		;;
-	gen-root-cert)
-		create_root_cert "$_force" "$_certs_dir/rootCA.crt" "$_certs_dir/rootCA.key" "$1"
+	gen-root-certs)
+		create_root_cert "$_force" \
+			"$_certs_dir/rootCA.crt" "$_certs_dir/rootCA.key" \
+			"serverAuth, clientAuth" "$1"
+		create_root_cert "$_force" \
+			"$_certs_dir/corimCA.crt" "$_certs_dir/corimCA.key" \
+			"codeSigning" "$1"
 		;;
 	start-term)
 		run_services_in_terminals

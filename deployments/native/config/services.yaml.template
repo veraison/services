@@ -35,7 +35,8 @@ vts:
   tls: true
   cert: ${VERAISON_CERTS_DIR}/vts.crt
   cert-key: ${VERAISON_CERTS_DIR}/vts.key
-  ca-certs: ${VERAISON_CERTS_DIR}/rootCA.crt
+  tls-ca-certs: ${VERAISON_CERTS_DIR}/rootCA.crt
+  corim-ca-certs: ${VERAISON_CERTS_DIR}/corimCA.crt
 ear-signer:
   alg: ES256
   key: ${VERAISON_SIGNING_DIR}/skey.jwk

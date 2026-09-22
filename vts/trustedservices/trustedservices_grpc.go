@@ -57,7 +57,8 @@ type GRPCConfig struct {
 	UseTLS        bool     `mapstructure:"tls" config:"zerodefault"`
 	ServerCert    string   `mapstructure:"cert" config:"zerodefault"`
 	ServerCertKey string   `mapstructure:"cert-key" config:"zerodefault"`
-	CACerts       []string `mapstructure:"ca-certs" config:"zerodefault"`
+	TLSCACerts    []string `mapstructure:"tls-ca-certs" config:"zerodefault"`
+	CoRIMCACerts  []string `mapstructure:"corim-ca-certs" config:"zerodefault"`
 }
 
 func NewGRPCConfig() *GRPCConfig {
@@ -72,7 +73,7 @@ type GRPC struct {
 	CoservProxyPluginManager plugin.IManager[handlermod.ICoservProxyHandler]
 	PolicyManager            *policymanager.PolicyManager
 	EarSigner                earsigner.IEarSigner
-	CoservContext             *vtscoserv.Context
+	CoservContext            *vtscoserv.Context
 	rootCerts                *x509.CertPool
 
 	Server *grpc.Server
@@ -98,7 +99,7 @@ func NewGRPC(
 		CoservProxyPluginManager: coservProxyPluginManager,
 		PolicyManager:            policyManager,
 		EarSigner:                earSigner,
-		CoservContext:             coservConfig,
+		CoservContext:            coservConfig,
 		logger:                   logger,
 	}
 }
@@ -142,14 +143,14 @@ func (o *GRPC) Init(
 	var opts []grpc.ServerOption
 
 	o.logger.Info("loading root CA certs")
-	o.rootCerts, err = LoadCACerts(cfg.CACerts)
+	o.rootCerts, err = LoadCACerts(cfg.CoRIMCACerts)
 	if err != nil {
 		return err
 	}
 
 	if cfg.UseTLS {
 		o.logger.Info("loading TLS credentials")
-		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.CACerts)
+		creds, err := LoadTLSCreds(cfg.ServerCert, cfg.ServerCertKey, cfg.TLSCACerts)
 		if err != nil {
 			return err
 		}
@@ -321,6 +322,19 @@ func (o *GRPC) decodeAndValidateSignedCorim(data []byte) (*corim.UnsignedCorim, 
 		Roots:         o.rootCerts,
 		Intermediates: intermediateCertPool,
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+	}
+
+	// Verify that the certifacate has codeSigning set in its EKU x509v3 field.
+	hasCodeSigningEKU := false
+	for _, eku := range sc.SigningCert.ExtKeyUsage {
+		if eku == x509.ExtKeyUsageCodeSigning {
+			hasCodeSigningEKU = true
+			break
+		}
+	}
+
+	if !hasCodeSigningEKU {
+		return nil, errors.New("certificate does not have codeSigning in its Extended Key Usage")
 	}
 
 	_, err = sc.SigningCert.Verify(verifyOpts)
@@ -544,13 +558,12 @@ func (c *GRPC) GetSupportedCoservMediaTypes(context.Context, *emptypb.Empty) (*p
 		"application/rim+cbor",
 	)
 
-
 	coservProxyDerived := c.assembleCoservMediaTypes(
 		c.CoservProxyPluginManager.GetRegisteredMediaTypes(),
 		"application/coserv+cbor",
 	)
 
-	mediaTypes := make([]string, 0, len(corimDerived) + len(coservProxyDerived))
+	mediaTypes := make([]string, 0, len(corimDerived)+len(coservProxyDerived))
 	mediaTypes = append(mediaTypes, corimDerived...)
 	mediaTypes = append(mediaTypes, coservProxyDerived...)
 
@@ -797,12 +810,9 @@ func LoadTLSCreds(
 	return credentials.NewTLS(config), nil
 }
 
-// LoadCaCerts loads and validates CA certificates from file paths, as well as the system certs.
+// LoadCaCerts loads and validates CA certificates from file paths.
 func LoadCACerts(paths []string) (*x509.CertPool, error) {
-	certPool, err := x509.SystemCertPool()
-	if err != nil {
-		return nil, fmt.Errorf("could not load system certs: %w", err)
-	}
+	certPool := x509.NewCertPool()
 
 	if len(paths) == 0 {
 		return certPool, nil

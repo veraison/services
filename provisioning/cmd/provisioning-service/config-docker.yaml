@@ -7,6 +7,8 @@ provisioning:
   protocol: https
   cert: ../../../deployments/docker/src/certs/provisioning.crt
   cert-key: ../../../deployments/docker/src/certs/provisioning.key
+  corim-ca-certs:
+      - ../../../deployments/docker/src/certs/corimCA.crt
   discovery-max-age: 1m
   max-payload-size: 1MB
 vts:

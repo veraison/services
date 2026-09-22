@@ -21,8 +21,10 @@ vts:
   tls: true
   cert: ../../../deployments/docker/src/certs/vts.crt
   cert-key: ../../../deployments/docker/src/certs/vts.key
-  ca-certs:
+  tls-ca-certs:
       - ../../../deployments/docker/src/certs/rootCA.crt
+  corim-ca-certs:
+      - ../../../deployments/docker/src/certs/corimCA.crt
 ear-signer:
   alg: ES256
   key: ./skey.jwk

@@ -186,13 +186,13 @@ function create_deployment() {
 
 }
 
-function create_root_cert() {
+function create_root_certs() {
 	local _f=""
 	if [[ $_force == true ]]; then
 		_f="-f"
 	fi
 
-	${DEPLOYMENT_BIN_DIR}/veraison $_f gen-root-cert "$1"
+	${DEPLOYMENT_BIN_DIR}/veraison $_f gen-root-certs "$1"
 }
 
 function _deploy_license() {
@@ -476,6 +476,7 @@ function _deploy_certs() {
 	done
 
 	cp ${SRC_CERTS_DIR}/rootCA.crt ${DEPLOYMENT_CERTS_DIR}
+	cp ${SRC_CERTS_DIR}/corimCA.crt ${DEPLOYMENT_CERTS_DIR}
 }
 
 function _gen_certs() {
@@ -537,12 +538,14 @@ function _symlink_bins() {
 	fi
 
 	for path in "${exes[@]}"; do
+		path=$(realpath "$path")
 		chmod +x "$path"
 		ln -s $_f "$path" "${DEPLOYMENT_BIN_DIR}/$(basename $path)"
 	done
 
 	find "${ROOT_DIR}/scheme/bin/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
+		path=$(realpath "$path")
 		chmod +x "$path"
 		ln -s $_f "$path" "${DEPLOYMENT_PLUGINS_DIR}/$(basename $path)"
 	    done
@@ -620,7 +623,7 @@ case $command in
     bootstrap) bootstrap;;
     build) build;;
     check-requirements | check-reqs)  check_requirements;;
-    create-root-cert) create_root_cert "$1";;
+    create-root-certs) create_root_certs "$1";;
     deploy) create_deployment "$_binaries";;
     init-certificates | init-certs) init_certs "$_certs_and_keys" "$1" "$2" "$3";;
     init-clients) init_clients;;

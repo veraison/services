@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+ROOT_CA_DIR=$(realpath "$THIS_DIR/../../../../deployments/docker/src/certs")
+
+function gen_intermediate() {
+	openssl ecparam -name prime256v1 -genkey -noout \
+		-out "$THIS_DIR"/intermediateCA.key
+
+	openssl req -new -key "$THIS_DIR"/intermediateCA.key \
+		-out "$THIS_DIR"/intermediateCA.csr \
+		-subj "/CN=Intermediate CA"
+
+	set +e
+	read -r -d '' config <<-EOF
+	basicConstraints = critical, CA:true
+	keyUsage = critical, keyCertSign, cRLSign
+	extendedKeyUsage = critical, codeSigning
+	EOF
+	set -e
+
+	openssl x509 -req -in "$THIS_DIR"/intermediateCA.csr \
+	    -CA "$ROOT_CA_DIR"/corimCA.crt \
+	    -CAkey "$ROOT_CA_DIR"/corimCA.key \
+	    -CAcreateserial -days 3650 \
+	    -out "$THIS_DIR"/intermediateCA.pem \
+	    -extfile <(echo "$config")
+
+	openssl x509 -in "$THIS_DIR"/intermediateCA.pem -outform DER \
+		-out "$THIS_DIR"/intermediateCA.der
+}
+
+function sign_pub_key() {
+	openssl req -new -key "$THIS_DIR"/endEntityPriv.pem \
+		-out "$THIS_DIR"/endEntity.csr \
+		-subj "/CN=CoRIM Signer"
+
+	set +e
+	read -r -d '' config <<-EOF
+	basicConstraints = critical, CA:false
+	keyUsage = critical, digitalSignature
+	extendedKeyUsage = critical, codeSigning
+	EOF
+	set -e
+
+	openssl x509 -req -in "$THIS_DIR"/endEntity.csr \
+		-CA "$THIS_DIR"/intermediateCA.pem \
+		-CAkey "$THIS_DIR"/intermediateCA.key \
+		-CAcreateserial -days 365 \
+		-extfile <(echo "$config") \
+		-outform DER \
+		-out "$THIS_DIR"/endEntity.der
+}
+
+function clean() {
+	rm -f "$THIS_DIR"/*.csr "$THIS_DIR"/*srl
+	rm -f "$ROOT_CA_DIR"/corimCA.srl
+}
+
+gen_intermediate
+sign_pub_key
+clean

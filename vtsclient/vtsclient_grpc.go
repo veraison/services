@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package vtsclient
 
@@ -61,7 +61,7 @@ func (o *GRPC) Init(v *viper.Viper, certPath, keyPath string) error {
 	o.ServerAddress = cfg.ServerAddress
 
 	if cfg.UseTLS {
-		creds, err := trustedservices.LoadTLSCreds(certPath, keyPath, cfg.CACerts)
+		creds, err := trustedservices.LoadTLSCreds(certPath, keyPath, cfg.TLSCACerts)
 		if err != nil {
 			return err
 		}

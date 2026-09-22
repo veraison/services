@@ -12,6 +12,8 @@ provisioning:
 vts:
   server-addr: localhost:50051
   tls: true
-  ca-certs:
+  tls-ca-certs:
       - ../../../deployments/docker/src/certs/rootCA.crt
+  corim-ca-certs:
+      - ../../../deployments/docker/src/certs/corimCA.crt
 # vim: set ft=yaml:

@@ -4,6 +4,7 @@
 set -e
 
 ROOT_CERT_NAME=rootCA
+CORIM_CERT_NAME=corimCA
 DEFAULT_DOMAIN=veraison-net
 DEFAULT_SUFFIX=-service
 
@@ -14,11 +15,23 @@ function create_root_cert() {
 	_check_openssl
 	pushd "$THIS_DIR" > /dev/null || exit 1
 
-	openssl ecparam -name prime256v1 -genkey -noout -out ${ROOT_CERT_NAME}.key
-	openssl req -x509 -new -nodes -key ${ROOT_CERT_NAME}.key -sha256 -days 3650 \
-		-subj "/O=Veraison" -out ${ROOT_CERT_NAME}.crt
+	local cert_name=$1
+	local eku=$2
 
-	echo "Created ${THIS_DIR}/${ROOT_CERT_NAME}.crt"
+	set +e
+	read -r -d '' config <<-EOF
+	[extensions]
+	basicConstraints = critical, CA:true
+	keyUsage = critical, keyCertSign
+	extendedKeyUsage = critical, $eku
+	EOF
+	set -e
+
+	openssl ecparam -name prime256v1 -genkey -noout -out "${cert_name}.key"
+	openssl req -x509 -new -nodes -key "${cert_name}.key" -sha256 -days 3650 \
+		-config <(echo "$config") -extensions extensions -subj "/O=Veraison" -out "${cert_name}.crt"
+
+	echo "Created ${THIS_DIR}/${cert_name}.crt"
 
 	popd > /dev/null || exit 1
 }
@@ -36,6 +49,14 @@ function create_service_cert() {
 
 	san=$(printf "subjectAltName = DNS:%s%s.%s,DNS:%s%s,DNS:localhost" \
 				"$service" "$suffix" "$domain" "$service" "$suffix")
+	set +e
+	read -r -d '' config <<-EOF
+	keyUsage = critical, digitalSignature
+	extendedKeyUsage = critical, serverAuth, clientAuth
+	$san
+	EOF
+	set -e
+
 
 	if [[ -f "${service}.crt" || -f "${service}.key" ]]; then
 		if [[ $force == false ]]; then
@@ -49,7 +70,7 @@ function create_service_cert() {
 		-subj "/CN=${service}${suffix}.${domain}"
 	openssl x509 -req -in "${service}.csr" -CA rootCA.crt -CAkey ${ROOT_CERT_NAME}.key \
 		-CAcreateserial -out "${service}.crt" -days 3650 -sha256 \
-		-extfile <(echo "$san")
+		-extfile <(echo "$config")
 
 	echo "Created ${THIS_DIR}/${service}.crt"
 
@@ -96,6 +117,7 @@ function clean_all() {
 	done
 
 	clean_cert $ROOT_CERT_NAME
+	clean_cert $CORIM_CERT_NAME
 }
 
 function help() {
@@ -221,7 +243,8 @@ case $command in
 		fi
 		;;
 	root)
-		create_root_cert
+		create_root_cert "$ROOT_CERT_NAME" "serverAuth, clientAuth"
+		create_root_cert "$CORIM_CERT_NAME" "codeSigning"
 		;;
 	*)
 		echo -e "ERROR: unexpected command: \"$command\" (use -h for help)"
