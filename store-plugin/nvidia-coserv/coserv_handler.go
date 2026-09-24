@@ -261,3 +261,7 @@ func (o CoservProxyHandler) GetValueTriples(env *comid.Environment, scheme strin
 func (b CoservProxyHandler) AddCorimBytes(data []byte, scheme string, activate bool) error {
 	return handler.ErrUnsupported
 }
+
+func (b CoservProxyHandler) SetEndorsementsState(label string, request []byte, state bool) error {
+	return handler.ErrUnsupported
+}

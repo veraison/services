@@ -165,6 +165,20 @@ func (mr *MockIEndorsementStorePluginMockRecorder) Init(params interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockIEndorsementStorePlugin)(nil).Init), params)
 }
 
+// SetEndorsementsState mocks base method.
+func (m *MockIEndorsementStorePlugin) SetEndorsementsState(label string, request []byte, state bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEndorsementsState", label, request, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEndorsementsState indicates an expected call of SetEndorsementsState.
+func (mr *MockIEndorsementStorePluginMockRecorder) SetEndorsementsState(label, request, state interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEndorsementsState", reflect.TypeOf((*MockIEndorsementStorePlugin)(nil).SetEndorsementsState), label, request, state)
+}
+
 // MockIEndorsementStore is a mock of IEndorsementStore interface.
 type MockIEndorsementStore struct {
 	ctrl     *gomock.Controller
@@ -245,4 +259,18 @@ func (m *MockIEndorsementStore) GetValueTriples(env *comid.Environment, scheme s
 func (mr *MockIEndorsementStoreMockRecorder) GetValueTriples(env, scheme, exact interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValueTriples", reflect.TypeOf((*MockIEndorsementStore)(nil).GetValueTriples), env, scheme, exact)
+}
+
+// SetEndorsementsState mocks base method.
+func (m *MockIEndorsementStore) SetEndorsementsState(label string, request []byte, state bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEndorsementsState", label, request, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEndorsementsState indicates an expected call of SetEndorsementsState.
+func (mr *MockIEndorsementStoreMockRecorder) SetEndorsementsState(label, request, state interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEndorsementsState", reflect.TypeOf((*MockIEndorsementStore)(nil).SetEndorsementsState), label, request, state)
 }
