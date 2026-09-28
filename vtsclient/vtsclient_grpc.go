@@ -159,6 +159,21 @@ func (o *GRPC) SubmitEndorsements(
 	return c.SubmitEndorsements(ctx, in, opts...)
 }
 
+func (o *GRPC) SetEndorsementsState(
+	ctx context.Context, in *proto.SetEndorsementsStateRequest, opts ...grpc.CallOption,
+) (*proto.SetEndorsementsStateResponse, error) {
+	if err := o.EnsureConnection(); err != nil {
+		return nil, NewNoConnectionError("SetEndorsementsState", err)
+	}
+
+	c := o.GetProvisionerClient()
+	if c == nil {
+		return nil, ErrNoClient
+	}
+
+	return c.SetEndorsementsState(ctx, in, opts...)
+}
+
 func (o *GRPC) GetProvisionerClient() proto.VTSClient {
 	if o.Connection == nil {
 		return nil

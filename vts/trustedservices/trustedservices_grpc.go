@@ -873,3 +873,32 @@ func SerializeCertPEMBytes(certPEMs [][]byte) ([]byte, error) {
 
 	return allPEM.Bytes(), nil
 }
+
+func (o *GRPC) SetEndorsementsState(
+	ctx context.Context,
+	req *proto.SetEndorsementsStateRequest,
+) (*proto.SetEndorsementsStateResponse, error) {
+	err := o.endorsementStore.SetEndorsementsState(req.TenantId, req.Data, req.SetActive)
+	if err != nil {
+		return setEndorsementsStateErrorResponse(err), nil
+	} else {
+		return setEndorsementsStateSuccessResponse(), nil
+	}
+}
+
+func setEndorsementsStateSuccessResponse() *proto.SetEndorsementsStateResponse {
+	return &proto.SetEndorsementsStateResponse{
+		Status: &proto.Status{
+			Result: true,
+		},
+	}
+}
+
+func setEndorsementsStateErrorResponse(err error) *proto.SetEndorsementsStateResponse {
+	return &proto.SetEndorsementsStateResponse{
+		Status: &proto.Status{
+			Result:      false,
+			ErrorDetail: fmt.Sprintf("%v", err),
+		},
+	}
+}

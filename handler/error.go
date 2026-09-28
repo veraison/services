@@ -201,6 +201,10 @@ func ParseError(err error) error {
 		return ErrUnsupported
 	}
 
+	if msg == ErrBadRequest.Error() {
+		return ErrBadRequest
+	}
+
 	var bee BadEvidenceError
 	var decErr error
 	if decErr = json.Unmarshal([]byte(msg), &bee); decErr == nil {
