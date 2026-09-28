@@ -204,7 +204,19 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 		return handler.BadEvidence(err)
 	}
 
-	if !bytes.Equal(certChain.GetArkCert(), taCert) {
+	// The host fills the certificate table in either encoding (Google Cloud
+	// writes DER, other hosts PEM) and the trust anchor is PEM: compare DER.
+	evArk, err := readCert(certChain.GetArkCert())
+	if err != nil {
+		return handler.BadEvidence("can't read ARK: %w", err)
+	}
+
+	taArk, err := readCert(taCert)
+	if err != nil {
+		return fmt.Errorf("can't read trust anchor: %w", err)
+	}
+
+	if !bytes.Equal(evArk, taArk) {
 		return handler.BadEvidence(ErrTAMismatch)
 	}
 
@@ -342,16 +354,24 @@ func parseEvidence(evidence *appraisal.Evidence) (*tokens.TSMReport, error) {
 	return tsm, nil
 }
 
+// readCert returns the DER encoding of a certificate supplied PEM-encoded or
+// as DER; hosts differ in how they fill the SEV-SNP certificate table.
 func readCert(cert []byte) ([]byte, error) {
 	if len(cert) == 0 {
 		return nil, errors.New("empty certificate")
 	}
 
-	block, _ := pem.Decode(cert)
-	if block == nil || block.Type != "CERTIFICATE" {
+	if block, _ := pem.Decode(cert); block != nil {
+		if block.Type != "CERTIFICATE" {
+			return nil, ErrCertificateReadFailure
+		}
+		return block.Bytes, nil
+	}
+
+	if _, err := x509.ParseCertificate(cert); err != nil {
 		return nil, ErrCertificateReadFailure
 	}
-	return block.Bytes, nil
+	return cert, nil
 }
 
 func parseCertChainFromTSMReport(tsm *tokens.TSMReport) (*sevsnp.CertificateChain, error) {
