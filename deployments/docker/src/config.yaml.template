@@ -58,12 +58,27 @@ endorsement-store:
       key: /opt/veraison/coserv-signer.jwk
   active-plugins:
     - corim-store
+    # - cca-coserv-broker
     - nvidia-coserv-proxy-handler
     - amd-kds-coserv-proxy-handler
   plugin-parameters:
     corim-store:
       dbms: sqlite
       dsn: /opt/veraison/stores/vts/store.sql
+    cca-coserv-broker:
+    # Config for Remote Coserv Service
+    # enable-broker ==> "Enable endorsement broker to call remote coserv service"
+    # coserv-url ==> "Remote coserv service URL which follows draft-ietf-rats-coserv-06 IETF draft"
+    # client-tls-insecure ==> "Enable insecure TLS, no certificate validation"
+    # client-certs ==> "If secure TLS, certs to verify with, each path (inside docker container) separated by comma"
+    # client-caching ==> "Enable caching for coserv fetch"
+    # unsigned-coserv ==> "If true then only accepts unsigned coserv as reponse from remote service"
+      enable-broker: false
+      coserv-url: "https://veraison.test.linaro.org:11443"
+      client-tls-insecure: true
+      client-certs: ""
+      client-caching: true
+      unsigned-coserv: false
 auth:
   backend: keycloak
   host: keycloak-service

@@ -34,11 +34,26 @@ endorsement-store:
     max-expiry: 5 mins
   active-plugins:
     - corim-store
+    # - cca-coserv-broker
   plugin-parameters:
     corim-store:
       dbms: sqlite3
       dsn: file::memory:?cache=shared
       trace-sql: false
+    cca-coserv-broker:
+    # Config for Remote Coserv Service
+    # enable-broker ==> "Enable endorsement broker to call remote coserv service"
+    # coserv-url ==> "Remote coserv service URL which follows draft-ietf-rats-coserv-06 IETF draft"
+    # client-tls-insecure ==> "Enable insecure TLS, no certificate validation"
+    # client-certs ==> "If secure TLS, certs to verify with, each path (inside docker container) separated by comma"
+    # client-caching ==> "Enable caching for coserv fetch"
+    # unsigned-coserv ==> "If true then only accepts unsigned coserv as reponse from remote service"
+      enable-broker: false
+      coserv-url: "https://veraison.test.linaro.org:11443"
+      client-tls-insecure: true
+      client-certs: ""
+      client-caching: true
+      unsigned-coserv: false
 logging:
   level: debug
 # Scheme configuration Example

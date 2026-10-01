@@ -5,6 +5,7 @@
 SUBDIR += amd-kds-coserv
 SUBDIR += corim-store
 SUBDIR += nvidia-coserv
+SUBDIR += cca-coserv-broker
 
 clean: ; $(RM) -rf ./bin
 
