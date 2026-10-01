@@ -1,10 +1,11 @@
 {
   "cca-platform-token": {
     "cca-platform-challenge": "5QHHS9edCpI1N1heeR7DUBI+gaqXUB34EkQCITSCxVM=",
-    "cca-platform-profile": "http://arm.com/CCA-SSD/1.0.0",
+    "cca-platform-profile": "tag:arm.com,2024:cca_platform#2.0.0",
     "cca-platform-implementation-id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
     "cca-platform-instance-id": "AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
     "cca-platform-config": "AQID",
+    "cca-platform-client-id": 1,
     "cca-platform-lifecycle": 12288,
     "cca-platform-sw-components": [
       {
@@ -36,6 +37,7 @@
     "cca-platform-hash-algo-id": "sha-256"
   },
   "cca-realm-delegated-token": {
+    "cca-realm-profile": "tag:arm.com,2024:realm#2.0.0",
     "cca-realm-challenge": "byTWuWNaLIu/WOkIuU4Ewb+zroDN6+gyQkV4SZ/jF2Hn9eHYvOASGET1Sr36UobaiPU6ZXsVM1yTlrQyklS8XA==",
     "cca-realm-personalization-value": "QURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBREFEQURBRA==",
     "cca-realm-initial-measurement": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQw==",
@@ -47,6 +49,8 @@
     ],
     "cca-realm-hash-algo-id": "sha-256",
     "cca-realm-public-key": "pAECIAIhWDCC+9EyqbXDloefuxU0DZBQl45Vx51SeaK6DpWFTzfiDNL2TztytXC713Pu4s52hCUiWDDt9UXtvon/r+Dpa71G4nDyB5bESLmNr0anZNJ0Qubm7YT4zsgX5uzGpx06PefWfs0=",
-    "cca-realm-public-key-hash-algo-id": "sha-256"
+    "cca-realm-public-key-hash-algo-id": "sha-256",
+    "cca-realm-mec-policy": 1,
+    "cca-realm-instance-id": "Ad6tvu/erb7v3q2+796tvu/erb7v3q2+796tvu/erb7v"
   }
 }
