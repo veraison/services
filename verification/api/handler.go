@@ -541,7 +541,7 @@ func (o *Handler) getVerificationMediaTypes() ([]string, error) {
 	return o.Verifier.SupportedMediaTypes()
 }
 
-func (o *Handler) getVerificationServerVersionAndState() (string, string, error) {
+func (o *Handler) getVerificationServerVersionAndState() (string, string, error) { // nolint:gocritic
 	vtsState, err := o.Verifier.GetVTSState()
 	if err != nil {
 		return "", "", err

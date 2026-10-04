@@ -101,7 +101,7 @@ var (
 	touchRx    = regexp.MustCompile(`^touch (\S+) (\d+)( noreply)?\r\n`)
 )
 
-func (c *testConn) handleRequestLine(line string) bool {
+func (c *testConn) handleRequestLine(line string) bool { // nolint:gocyclo // test function
 	c.s.mu.Lock()
 	defer c.s.mu.Unlock()
 
