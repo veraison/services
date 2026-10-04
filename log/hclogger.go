@@ -145,7 +145,7 @@ func (o *HCLogger) Named(name string) hclog.Logger {
 // the current name as well.
 func (o *HCLogger) ResetNamed(name string) hclog.Logger {
 	// SugaredLoggers does not have an equivalent method -- it provides no
-	// way to reset the name heirarchy. So we reflect to override the
+	// way to reset the name hierarchy. So we reflect to override the
 	// hidden field value directly. This is cursed, but I can't think of a
 	// nicer way of doing this, and I'm sure it'll be ok... (famous last
 	// words)
