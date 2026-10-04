@@ -196,7 +196,7 @@ func (c *StoreRPCClient) GetSupportedMediaTypes() map[string][]string {
 	return ret
 }
 
-func (c *StoreRPCClient) GetValueTriples(env *comid.Environment, label string, exact bool) ([]*comid.ValueTriple, error) {
+func (c *StoreRPCClient) GetValueTriples(env *comid.Environment, label string, exact bool) ([]*comid.ValueTriple, error) { // nolint:dupl
 	c.logger.Debugw("value triples lookup", "environment", env)
 	envCbor, err := cbor.Marshal(env)
 	if err != nil {
@@ -218,7 +218,7 @@ func (c *StoreRPCClient) GetValueTriples(env *comid.Environment, label string, e
 	return ret, nil
 }
 
-func (c *StoreRPCClient) GetKeyTriples(env *comid.Environment, label string, exact bool) ([]*comid.KeyTriple, error) {
+func (c *StoreRPCClient) GetKeyTriples(env *comid.Environment, label string, exact bool) ([]*comid.KeyTriple, error) { // nolint:dupl
 	c.logger.Debugw("key triples lookup", "environment", env)
 	envCbor, err := cbor.Marshal(env)
 	if err != nil {
