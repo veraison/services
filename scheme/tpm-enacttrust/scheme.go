@@ -11,7 +11,7 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/handler"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 )
 
 var Descriptor = handler.SchemeDescriptor{
@@ -33,7 +33,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	return extractEnvinromentsFromEvidence(evidence)
 }
@@ -46,7 +46,7 @@ func (o *Implementation) GetReferenceValueIDs(
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	var decoded Token
@@ -76,7 +76,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
@@ -163,7 +163,7 @@ func (o *Implementation) AppraiseClaims(
 	return result, nil
 }
 
-func extractEnvinromentsFromEvidence(evidence *appraisal.Evidence) ([]*comid.Environment, error) {
+func extractEnvinromentsFromEvidence(evidence *vts_appraisal.Evidence) ([]*comid.Environment, error) {
 	var decoded Token
 
 	if err := decoded.Decode(evidence.Data); err != nil {

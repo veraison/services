@@ -34,15 +34,15 @@ func loadEvidenceToken(t *testing.T) []byte {
 // Helper: loadTrustAnchors extracts KeyTriple from a platform CoRIM's attester-verification-keys.
 func loadTrustAnchors(t *testing.T, corimData []byte) []*comid.KeyTriple {
 	t.Helper()
-	var corim corim.UnsignedCorim
-	err := corim.FromCBOR(corimData)
+	var corimUnsigned corim.UnsignedCorim
+	err := corimUnsigned.FromCBOR(corimData)
 	assert.Nil(t, err)
 
 	var kt []*comid.KeyTriple
 
-	for i := range corim.Tags {
+	for i := range corimUnsigned.Tags {
 		var cor comid.Comid
-		err = cor.FromCBOR(corim.Tags[i].Content)
+		err = cor.FromCBOR(corimUnsigned.Tags[i].Content)
 		require.NoError(t, err)
 
 		if cor.Triples.AttestVerifKeys == nil {
@@ -59,15 +59,15 @@ func loadTrustAnchors(t *testing.T, corimData []byte) []*comid.KeyTriple {
 // Helper: loadReferenceValues extracts ValueTriple from a CoRIM (reference values).
 func loadReferenceValues(t *testing.T, corimData []byte) []*comid.ValueTriple {
 	t.Helper()
-	var corim corim.UnsignedCorim
-	err := corim.FromCBOR(corimData)
+	var corimUnsigned corim.UnsignedCorim
+	err := corimUnsigned.FromCBOR(corimData)
 	assert.Nil(t, err)
 
 	var vt []*comid.ValueTriple
 
-	for i := range corim.Tags {
+	for i := range corimUnsigned.Tags {
 		var cor comid.Comid
-		err = cor.FromCBOR(corim.Tags[i].Content)
+		err = cor.FromCBOR(corimUnsigned.Tags[i].Content)
 		require.NoError(t, err)
 
 		if cor.Triples.ReferenceValues == nil {

@@ -29,7 +29,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -98,7 +98,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	tsm, err := parseEvidence(evidence)
 	if err != nil {
@@ -169,7 +169,7 @@ func (o *Implementation) GetReferenceValueIDs(
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	evCoRIM, err := transformEvidenceToCorim(evidence)
@@ -181,7 +181,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
@@ -267,13 +267,13 @@ func validateSessionNonce(tsm *tokens.TSMReport, sessionNonce []byte) error {
 	evNonce := reportProto.GetReportData()
 
 	if !bytes.Equal(evNonce, sessionNonce) {
-		return handler.BadEvidence(fmt.Errorf("nonce in the evidence doesn't match the session nonce. evidence: 0x%x vs session: 0x%x", evNonce, sessionNonce))
+		return handler.BadEvidence(fmt.Errorf("nonce in the evidence doesn't match the session nonce. evidence: 0x%x vs session: 0x%x", evNonce, sessionNonce)) // nolint:lll
 	}
 
 	return nil
 }
 
-func parseEvidence(evidence *appraisal.Evidence) (*tokens.TSMReport, error) {
+func parseEvidence(evidence *vts_appraisal.Evidence) (*tokens.TSMReport, error) {
 	var (
 		err           error
 		tsm           = new(tokens.TSMReport)
@@ -382,7 +382,7 @@ func transformClaimsToCorim(claims map[string]any) (*corim.UnsignedCorim, error)
 	return &ret, nil
 }
 
-func transformEvidenceToComid(evidence *appraisal.Evidence) (*comid.Comid, error) {
+func transformEvidenceToComid(evidence *vts_appraisal.Evidence) (*comid.Comid, error) {
 	tsm, err := parseEvidence(evidence)
 	if err != nil {
 		return nil, err
@@ -406,7 +406,7 @@ func transformEvidenceToComid(evidence *appraisal.Evidence) (*comid.Comid, error
 	return evComid, err
 }
 
-func transformEvidenceToCorim(evidence *appraisal.Evidence) (*corim.UnsignedCorim, error) {
+func transformEvidenceToCorim(evidence *vts_appraisal.Evidence) (*corim.UnsignedCorim, error) {
 	evComid, err := transformEvidenceToComid(evidence)
 	if err != nil {
 		return nil, err
@@ -480,7 +480,7 @@ func transformClaimsToMeasurementsMap(claims map[string]any) (map[uint64]comid.M
 func transformValueTripleToMeasurementsMap(vt *comid.ValueTriple) (map[uint64]comid.Measurement, error) {
 	ret := make(map[uint64]comid.Measurement)
 
-	for _, measurement := range vt.Measurements.Values {
+	for _, measurement := range vt.Measurements.Values { // nolint:gocritic // copy is intentional
 		key, err := measurement.Key.GetKeyUint()
 		if err != nil {
 			return nil, err
@@ -496,7 +496,7 @@ func tryMatchEvidence(
 	logger *zap.SugaredLogger,
 	evMeasurements, refMeasurements map[uint64]comid.Measurement,
 ) bool {
-	for key, refMeasurement := range refMeasurements {
+	for key, refMeasurement := range refMeasurements { //nolint:gocritic
 		// We can skip validating certain claims for the following reasons:
 		// - POLICY ToDo: Do we need to test individual policy features?
 		// - CURRENT_TCB is informational only. It's best handled by policy
@@ -651,22 +651,24 @@ func compareMeasurements(logger *zap.SugaredLogger, refM comid.Measurement, evM 
 			return false
 		}
 
-		if c, ok := evM.Val.SVN.Value.(*comid.TaggedSVN); ok {
-			if r, ok := refM.Val.SVN.Value.(*comid.TaggedSVN); ok {
+		switch c := evM.Val.SVN.Value.(type) {
+		case *comid.TaggedSVN:
+			switch r := refM.Val.SVN.Value.(type) {
+			case *comid.TaggedSVN:
 				return c.CompareAgainstRefSVN(*r)
-			} else if r, ok := refM.Val.SVN.Value.(*comid.TaggedMinSVN); ok {
+			case *comid.TaggedMinSVN:
 				return c.CompareAgainstRefMinSVN(*r)
-			} else {
+			default:
 				logger.Debug("unknown refVal SVN type")
 				return false
 			}
-		} else if c, ok := evM.Val.SVN.Value.(*comid.TaggedMinSVN); ok {
+		case *comid.TaggedMinSVN:
 			if r, ok := refM.Val.SVN.Value.(*comid.TaggedMinSVN); ok {
 				return c.Equal(*r)
 			}
 			logger.Debug("can't compare TaggedMinSVN against TaggedSVN")
 			return false
-		} else {
+		default:
 			logger.Debug("unknown evidence SVN type")
 			return false
 		}

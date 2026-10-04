@@ -17,7 +17,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	psaToken, err := psatoken.DecodeAndValidateEvidenceFromCOSE(evidence.Data)
 	if err != nil {
@@ -103,7 +103,7 @@ func (o *Implementation) ValidateComid(c *comid.Comid) error {
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	psaToken, err := psatoken.DecodeAndValidateEvidenceFromCOSE(evidence.Data)
@@ -120,7 +120,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
@@ -222,7 +222,8 @@ func matchClaimsToReferenceValues(
 ) (bool, error) {
 	referenceValues := make(map[string][2]string)
 	for _, triple := range endorsements {
-		for _, measurement := range triple.Measurements.Values {
+		for i := range triple.Measurements.Values {
+			measurement := &triple.Measurements.Values[i]
 			if measurement.Val.Digests == nil {
 				return false, errors.New("no digests in reference value measurement")
 			}

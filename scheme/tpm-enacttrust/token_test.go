@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestToken_Decode_signature_check(t *testing.T) {
 	data := []byte{ // nolint:prealloc
 		0x7d, 0xf7, 0x71, 0x4e, 0xaa, 0x04, 0x46, 0x38, // 16-byte node ID
@@ -52,10 +51,10 @@ func TestToken_Decode_signature_check(t *testing.T) {
 }
 
 func Test_validateSignatureFormat(t *testing.T) {
-	testCases := []struct{
+	testCases := []struct {
 		title string
-		sig tpm2.Signature
-		err string
+		sig   tpm2.Signature
+		err   string
 	}{
 		{
 			title: "ok",
@@ -142,10 +141,10 @@ func Test_validateSignatureFormat(t *testing.T) {
 }
 
 func TestToken_Decode_size_check(t *testing.T) {
-	testCases := []struct{
+	testCases := []struct {
 		title string
-		data []byte
-		err string
+		data  []byte
+		err   string
 	}{
 		{
 			title: "err truncated TPMS_ATTEST",
