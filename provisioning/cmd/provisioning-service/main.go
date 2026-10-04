@@ -55,8 +55,8 @@ func main() {
 	}
 
 	cfg := cfg{
-		ListenAddr: DefaultListenAddr,
-		Protocol:   "https",
+		ListenAddr:     DefaultListenAddr,
+		Protocol:       "https",
 		MaxPayloadSize: "1MB",
 	}
 
@@ -95,16 +95,16 @@ func main() {
 			log.Infow("vts connection established", "server-version",
 				vtsState.ServerVersion)
 		} else {
-			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings", // nolint:lll
 				"server-state", vtsState.Status.String())
 		}
 	} else {
-		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings", // nolint:lll
 			"error", err)
 	}
 
 	log.Info("initializing provisioner")
-	provisioner := provisioner.New(vtsClient)
+	provisionerObj := provisioner.New(vtsClient)
 
 	log.Infow("initializing provisioning API service", "address", cfg.ListenAddr)
 	authorizer, err := auth.NewAuthorizer(subs["auth"], log.Named("auth"))
@@ -118,7 +118,7 @@ func main() {
 		}
 	}()
 
-	apiHandler := api.NewHandler(provisioner, log.Named("api"), cfg.DiscoveryMaxAge, maxPayloadSize)
+	apiHandler := api.NewHandler(provisionerObj, log.Named("api"), cfg.DiscoveryMaxAge, maxPayloadSize)
 
 	if cfg.Protocol == "https" {
 		go apiServerTLS(apiHandler, authorizer, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
