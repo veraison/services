@@ -9,6 +9,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - scheme/nvidia/nvat_bindings.go # glue code only
   settings:
     goconst:
       ignore-string-values:

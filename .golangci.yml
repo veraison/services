@@ -60,6 +60,7 @@ linters:
     - third_party$
     - builtin$
     - examples$
+    - scheme/nvidia/nvat_bindings.go
 formatters:
   enable:
   - goimports
