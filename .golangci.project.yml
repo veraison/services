@@ -1,0 +1,24 @@
+# Exclude examples and third-party code from linters
+linters:
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - legacy
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    goconst:
+      ignore-string-values:
+        - 'error'
+        - 'kv_key' # used in kvstore
+        - 'https'
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
