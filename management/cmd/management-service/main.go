@@ -59,7 +59,7 @@ func main() {
 	}
 	loader := config.NewLoader(&cfg)
 	if err := loader.LoadFromViper(subs["management"]); err != nil {
-		log.Fatalf("Could not load verfication config: %v", err)
+		log.Fatalf("Could not load verification config: %v", err)
 
 	}
 
@@ -88,17 +88,17 @@ func main() {
 	}
 }
 
-func apiServer(apiHandler api.Handler, auth auth.IAuthorizer, listenAddr string) {
+func apiServer(apiHandler api.Handler, authorizer auth.IAuthorizer, listenAddr string) {
 	log.Infow("initializing management API HTTP service", "address", listenAddr)
-	if err := api.NewRouter(apiHandler, auth).Run(listenAddr); err != nil {
+	if err := api.NewRouter(apiHandler, authorizer).Run(listenAddr); err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
 }
 
-func apiServerTLS(apiHandler api.Handler, auth auth.IAuthorizer, listenAddr, certFile, keyFile string) {
+func apiServerTLS(apiHandler api.Handler, authorizer auth.IAuthorizer, listenAddr, certFile, keyFile string) {
 	log.Infow("initializing management API HTTPS service", "address", listenAddr)
 
-	if err := api.NewRouter(apiHandler, auth).RunTLS(listenAddr, certFile, keyFile); err != nil {
+	if err := api.NewRouter(apiHandler, authorizer).RunTLS(listenAddr, certFile, keyFile); err != nil {
 		log.Fatalf("Gin engine failed: %v", err)
 	}
 }
