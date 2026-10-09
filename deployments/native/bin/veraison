@@ -206,7 +206,7 @@ function create_tmux_session() {
 	tmux send-keys -t $session_name:0.3 bin/management-service Space \
 	    --config Space ${_config_dir}/services/config.yaml C-m
 
-    tmux new-window -t $session_name -n coserv
+    tmux new-window -t $session_name -n coserv -c $_tmux_dir "$SHELL"
 	tmux send-keys -t $session_name:1.0 bin/coserv-service Space \
 	    --config Space ${_config_dir}/services/config.yaml C-m
 	tmux previous-window -t $session_name
