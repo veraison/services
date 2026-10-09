@@ -42,7 +42,7 @@ func (o *PolicyManager) Evaluate(
 
 	pol, err := o.getPolicy(policyKey)
 	if err != nil {
-		if errors.Is(err, policy.ErrNoPolicy) {
+		if errors.Is(err, policy.ErrNoPolicy) || errors.Is(err, policy.ErrNoActivePolicy){
 			o.logger.Debugw("no policy", "policy-id", policyKey)
 			return nil // No policy? No problem!
 		}

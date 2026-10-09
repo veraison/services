@@ -183,3 +183,33 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	assert.ErrorIs(t, err, expectedErr)
 
 }
+
+func TestPolicyMgr_Evaluate_inactive_policy(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	endorsements := []*comid.ValueTriple{}
+	ar := ear.NewAttestationResult("test", "test", "test")
+	appraisalContext := &appraisal.Context{
+		Scheme: "TPM_ENACTTRUST",
+		Evidence: &appraisal.Evidence{
+			TenantID: "0",
+		},
+		Result: ar,
+	}
+
+	store := mock_deps.NewMockIKVStore(ctrl)
+	store.EXPECT().
+		Get(gomock.Eq("0:TPM_ENACTTRUST:opa")).
+		Return([]string{`{"uuid": "7df7714e-aa04-4638-bcbf-434b1dd720f1", "active": false}`}, nil)
+
+	agent := mock_deps.NewMockIAgent(ctrl)
+	agent.EXPECT().GetBackendName().Return("opa")
+
+	pm := &PolicyManager{
+		Store:  &policy.Store{KVStore: store, Logger: log.Named("store")},
+		Agent:  agent,
+		logger: log.Named("manager"),
+	}
+	err := pm.Evaluate(context.TODO(), appraisalContext, endorsements)
+	require.NoError(t, err)
+}
