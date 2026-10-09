@@ -69,7 +69,7 @@ func testSetCacheHeaders_WithValidExpiry(t *testing.T, signed bool) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", nil)
+	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", http.NoBody)
 
 	setCacheHeaders(c, tv)
 
@@ -104,7 +104,7 @@ func testSetCacheHeaders_WithExpiredExpiry(t *testing.T, signed bool) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", nil)
+	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", http.NoBody)
 
 	setCacheHeaders(c, tv)
 
@@ -127,7 +127,7 @@ func TestSetCacheHeaders_WithInvalidCBOR(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", nil)
+	c.Request = httptest.NewRequest(http.MethodGet, "/coserv/dGVzdAo", http.NoBody)
 
 	setCacheHeaders(c, invalidBytes)
 

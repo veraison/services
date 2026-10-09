@@ -1,41 +1,33 @@
-# Go Linters - GitHub Actions
 name: linters
-on: [push, pull_request]
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+
 jobs:
   lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: "1.26"
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install NVIDIA Attestation SDK headers
-      uses: ./.github/actions/install-nvat-dev
-    - name: Install mockgen
-      run: |
+    uses: veraison/ci/.github/workflows/go.yml@main
+    with:
+      jobs: 'lint'
+      install-protoc: true
+      setup: |
+        .github/actions/install-nvat-dev/install.sh
         go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-    - name: Install gopls
-      run: |
         go install golang.org/x/tools/gopls@latest
-    - name: Install guru
-      run: |
         go install golang.org/x/tools/cmd/guru@latest
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: protoc-gen deps
-      run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
         go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
-    - name: Install protolint
-      run: |
         go install github.com/yoheimuta/protolint/cmd/protolint@v0.43.2
-    - name: Run required linters in .golangci.yml plus hard-coded ones here
-      run: make -w lint
+      lint-command: |
+        make -w lint CI_PIPELINE=true
+        

@@ -34,7 +34,7 @@ func (t *Token) Decode(data []byte) error {
 	// With  NODE_ID being 16 bytes, the SIZE 2 bytes, and the size of
 	// TPMS_ATTEST is contained in the SIZE.
 	// As such the size of the token must be at least 18 bytes to
-	// accomodate the first two fixed-sized fields.
+	// accommodate the first two fixed-sized fields.
 	if len(data) < 18 {
 		return fmt.Errorf("token too small: found %d bytes, need at least 18", len(data))
 	}

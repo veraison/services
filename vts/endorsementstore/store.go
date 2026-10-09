@@ -55,7 +55,7 @@ func CreateEndorsementStore(pluginNames []string, manager StoreManager, logger *
 	return &store, nil
 }
 
-func (s *VtsEndorsementStore) GetKeyTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.KeyTriple, error) {
+func (s *VtsEndorsementStore) GetKeyTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.KeyTriple, error) { // nolint:dupl
 	s.logger.Debugw("searching key triples for", "env", env)
 	errs := make(map[error]bool, 2) // keep track of kind of errors encountered
 	stores, err := s.storeList()
@@ -78,7 +78,7 @@ func (s *VtsEndorsementStore) GetKeyTriples(env *comid.Environment, scheme strin
 	return nil, computeStoreErr(errs)
 }
 
-func (s *VtsEndorsementStore) GetValueTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.ValueTriple, error) {
+func (s *VtsEndorsementStore) GetValueTriples(env *comid.Environment, scheme string, exact bool) ([]*comid.ValueTriple, error) { // nolint:dupl,lll
 	s.logger.Debugw("searching value triples for", "env", env)
 	errs := make(map[error]bool, 2) // keep track of kind of errors encountered
 	stores, err := s.storeList()
@@ -156,7 +156,7 @@ func (s *VtsEndorsementStore) SetEndorsementsState(label string,
 	return nil
 }
 
-func logOrErr(err error, logger *zap.SugaredLogger, name string, errs *map[error]bool) error {
+func logOrErr(err error, logger *zap.SugaredLogger, name string, errs *map[error]bool) error { // nolint: gocritic,lll // function might mutate errs
 	if err != nil {
 		// errors.Is can be used because the plugin rpc client parses the error
 		// before returning.

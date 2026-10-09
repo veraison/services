@@ -12,7 +12,7 @@ import (
 func nvatIntegrationTestOptions() NvatOptions {
 	verifierMode := os.Getenv("NVAT_VERIFIER_MODE")
 	if verifierMode == "" {
-		verifierMode = "remote"
+		verifierMode = REMOTE
 	}
 
 	return NvatOptions{
@@ -28,7 +28,7 @@ func missingRemoteServiceToken(opts NvatOptions) bool {
 
 func TestNewNvatGpuInterfaceMissingLibrary(t *testing.T) {
 	opts := NvatOptions{
-		VerifierMode: "remote",
+		VerifierMode: REMOTE,
 		ServiceToken: "token",
 	}
 

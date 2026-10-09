@@ -11,7 +11,7 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/config"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -71,7 +71,7 @@ func (o *Agent) GetBackendName() string {
 func (o *Agent) Evaluate(
 	ctx context.Context,
 	sessionContext map[string]any,
-	appraisalContext *appraisal.Context,
+	appraisalContext *vts_appraisal.Context,
 	policy *Policy,
 	submod string,
 	appraisal *ear.Appraisal,

@@ -26,46 +26,45 @@ func TestBasicAuthorizer_GetGinHandler(t *testing.T) {
 			"foo": &basicAuthUser{
 				// Pa55w0rd$
 				Password: "$2b$12$yH/i2alYaIrVbKFkaYu5HOSf3JiZ0zPJlooufSRdO.6V3X/hXgTOq",
-				Roles: []string{"test"},
+				Roles:    []string{"test"},
 			},
 			"bar": &basicAuthUser{
 				// l3Tm31n!!!
 				Password: "$2b$12$AiqmFNuYYubFwyrL3be4Pe21yqwwIshQ0VQjYeKSshcp1r37zWovO",
-				Roles: []string{"test2"},
-
+				Roles:    []string{"test2"},
 			},
 		},
 	}
 
 	authHandler := testAuthorizer.GetGinHandler("test")
 
-	testCases := []struct{
-		title string
+	testCases := []struct {
+		title  string
 		header string
-		err string
+		err    string
 	}{
 		{
-			title: "ok",
+			title:  "ok",
 			header: buildAuthHeader("foo", "Pa55w0rd$"),
 		},
 		{
 			title: "err no auth",
-			err: "authorization failed",
+			err:   "authorization failed",
 		},
 		{
-			title: "err bad password",
+			title:  "err bad password",
 			header: buildAuthHeader("foo", "password"),
-			err: "authorization failed",
+			err:    "authorization failed",
 		},
 		{
-			title: "err unknown user",
+			title:  "err unknown user",
 			header: buildAuthHeader("baz", "Pa55w0rd$"),
-			err: "authorization failed",
+			err:    "authorization failed",
 		},
 		{
-			title: "err no role",
+			title:  "err no role",
 			header: buildAuthHeader("bar", "l3Tm31n!!!"),
-			err: "API unauthorized for user",
+			err:    "API unauthorized for user",
 		},
 	}
 

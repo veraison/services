@@ -14,7 +14,7 @@ import (
 	"github.com/veraison/services/log"
 	cca_scheme "github.com/veraison/services/scheme/arm-cca"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +41,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	var parsecEvidence parsec_cca.Evidence
 
@@ -99,7 +99,7 @@ func (o *Implementation) ValidateComid(c *comid.Comid) error {
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	var parsecEvidence parsec_cca.Evidence
@@ -139,7 +139,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {

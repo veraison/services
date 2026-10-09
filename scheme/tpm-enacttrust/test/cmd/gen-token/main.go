@@ -50,7 +50,7 @@ func readTokenDescription(path string) (*TokenDescription, error) {
 	}
 
 	var desc TokenDescription
-	if err = json.Unmarshal(buf, &desc); err != nil {
+	if err := json.Unmarshal(buf, &desc); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func main() {
 	flag.StringVar(&noncePath, "nonce", "",
 		"Base64 nonce to bind into TPMS_ATTEST.ExtraData. Accepts standard or URL-safe encoding. Left empty when omitted.")
 	flag.BoolVar(&badNode, "bad-node", false,
-		"Allow node-id to not be a valid UUID. If this is set, the bytes of the string will be written as-is, rather than attempting to parse UUID out of it. No length check or any other validation will be performed.")
+		"Allow node-id to not be a valid UUID. If this is set, the bytes of the string will be written as-is, rather than attempting to parse UUID out of it. No length check or any other validation will be performed.") // nolint:lll
 	flag.Parse()
 	descPath := flag.Arg(0)
 
@@ -183,7 +183,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	attestLen := uint16(len(attest))
+	attestLen := uint16(len(attest)) // nolint:gosec // test code
 	if err := binary.Write(buff, endianness, attestLen); err != nil {
 		fmt.Printf("ERROR writing length: %v\n", err)
 		os.Exit(1)

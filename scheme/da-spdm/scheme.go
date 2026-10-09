@@ -16,11 +16,9 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
-
-
 
 const (
 	TPM_ALG_SHA_256 uint8 = iota + 1
@@ -33,35 +31,35 @@ const (
 )
 
 var (
-	DaDeviceProfile = "tag:linaro.org,2025:device#1.0.0"
+	DaDeviceProfile     = "tag:linaro.org,2025:device#1.0.0"
 	DaDeviceSpdmProfile = "tag:linaro.org,2025:device-spdm#1.0.0"
 
 	SpdmComponentTypes = map[da.ComponentType]string{
-		da.ComponentTypeImmutableROM: "immutable-rom",
-		da.ComponentTypeMutableFirmware: "mutable-firmware",
-		da.ComponentTypeHardwareConfig: "hardware-config",
-		da.ComponentTypeFirmwareConfig: "firmware-config",
-		da.ComponentTypeFreeformMeasurementManifest: "freeform-manifest",
-		da.ComponentTypeDeviceMode: "device-mode",
-		da.ComponentTypeMutableFirmwareVersion: "mutable-firmware-version",
-		da.ComponentTypeMutableFirmwareSVN: "mutable-firmware-svn",
-		da.ComponentTypeHashExtendMeasurement: "hash-extended-measurement",
-		da.ComponentTypeInformational: "informational",
+		da.ComponentTypeImmutableROM:                  "immutable-rom",
+		da.ComponentTypeMutableFirmware:               "mutable-firmware",
+		da.ComponentTypeHardwareConfig:                "hardware-config",
+		da.ComponentTypeFirmwareConfig:                "firmware-config",
+		da.ComponentTypeFreeformMeasurementManifest:   "freeform-manifest",
+		da.ComponentTypeDeviceMode:                    "device-mode",
+		da.ComponentTypeMutableFirmwareVersion:        "mutable-firmware-version",
+		da.ComponentTypeMutableFirmwareSVN:            "mutable-firmware-svn",
+		da.ComponentTypeHashExtendMeasurement:         "hash-extended-measurement",
+		da.ComponentTypeInformational:                 "informational",
 		da.ComponentTypeStructuredMeasurementManifest: "structured-measurement-manifest",
 	}
 
 	SpdmHashAlgorithms = map[uint8]comid.DigestAlgorithm{
-		TPM_ALG_SHA_256: comid.IntDigestAlgorithm(comid.Sha256),
-		TPM_ALG_SHA_384: comid.IntDigestAlgorithm(comid.Sha384),
-		TPM_ALG_SHA_512: comid.IntDigestAlgorithm(comid.Sha512),
+		TPM_ALG_SHA_256:  comid.IntDigestAlgorithm(comid.Sha256),
+		TPM_ALG_SHA_384:  comid.IntDigestAlgorithm(comid.Sha384),
+		TPM_ALG_SHA_512:  comid.IntDigestAlgorithm(comid.Sha512),
 		TPM_ALG_SHA3_256: comid.IntDigestAlgorithm(comid.Sha3_256),
 		TPM_ALG_SHA3_384: comid.IntDigestAlgorithm(comid.Sha3_384),
 		TPM_ALG_SHA3_512: comid.IntDigestAlgorithm(comid.Sha3_512),
-		TPM_ALG_SM3_256: comid.StringDigestAlgorithm("SM3_256"),
+		TPM_ALG_SM3_256:  comid.StringDigestAlgorithm("SM3_256"),
 	}
 
 	Descriptor = handler.SchemeDescriptor{
-		Name: "DA_SPDM",
+		Name:         "DA_SPDM",
 		VersionMajor: 1,
 		VersionMinor: 0,
 		CorimProfiles: []string{
@@ -75,10 +73,10 @@ var (
 
 type MatchResult struct {
 	Matched bool
-	Reason string
+	Reason  string
 }
 
-type Implementation struct{
+type Implementation struct {
 	logger *zap.SugaredLogger
 }
 
@@ -106,7 +104,7 @@ func (o *Implementation) GetReferenceValueIDs(
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	claims, err := evidenceToTriplesMap(evidence)
@@ -158,7 +156,7 @@ func (o *Implementation) AppraiseClaims(
 
 		if matchResult.Matched {
 			appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
-		 } else {
+		} else {
 			appraisal.TrustVector.Executables = ear.UnrecognizedRuntimeClaim
 		}
 	}
@@ -172,7 +170,7 @@ func (o *Implementation) AppraiseClaims(
 	return result, nil
 }
 
-func evidenceToTriplesMap(evidence *appraisal.Evidence) (map[string]*comid.ValueTriple, error) {
+func evidenceToTriplesMap(evidence *vts_appraisal.Evidence) (map[string]*comid.ValueTriple, error) {
 	var token da.Token
 
 	err := token.FromCBOR(evidence.Data)
@@ -353,35 +351,37 @@ func submodNameFromEnvironment(env *comid.Environment) (string, error) {
 }
 
 func matchMeasurements(referenceMeasurements, evidenceMeasurements []comid.Measurement) (MatchResult, error) {
-	for i, refMeasurement := range referenceMeasurements {
+	for i := range referenceMeasurements {
+		refMeasurement := &referenceMeasurements[i]
 		mkey, err := refMeasurement.Key.GetKeyUint()
 		if err != nil {
 			return MatchResult{}, fmt.Errorf("reference measurement[%d]: %w", i, err)
 		}
 
 		var evidenceMeasurement *comid.Measurement
-		for i, measurement := range evidenceMeasurements {
+		for i := range evidenceMeasurements {
+			measurement := &evidenceMeasurements[i]
 			evidenceMkey, err := measurement.Key.GetKeyUint()
 			if err != nil {
 				return MatchResult{}, fmt.Errorf("evidence measurement[%d]: %w", i, err)
 			}
 
 			if evidenceMkey == mkey {
-				evidenceMeasurement = &measurement
+				evidenceMeasurement = measurement
 				break
 			}
 		}
 
 		if evidenceMeasurement == nil {
 			return MatchResult{
-				Matched:  false,
-				Reason: fmt.Sprintf("failed to match mkey %d", mkey),
+				Matched: false,
+				Reason:  fmt.Sprintf("failed to match mkey %d", mkey),
 			}, nil
 		}
 
 		if *refMeasurement.Val.Name != *evidenceMeasurement.Val.Name {
 			return MatchResult{
-				Matched:  false,
+				Matched: false,
 				Reason: fmt.Sprintf(
 					"mkey %d: reference (%q) and evidence (%q) names don't match",
 					mkey,
@@ -394,8 +394,8 @@ func matchMeasurements(referenceMeasurements, evidenceMeasurements []comid.Measu
 		if refMeasurement.Val.RawValue != nil {
 			if evidenceMeasurement.Val.RawValue == nil {
 				return MatchResult{
-					Matched:  false,
-					Reason: fmt.Sprintf("mkey %d: evidence does not contain raw-value", mkey),
+					Matched: false,
+					Reason:  fmt.Sprintf("mkey %d: evidence does not contain raw-value", mkey),
 				}, nil
 			}
 
@@ -404,7 +404,7 @@ func matchMeasurements(referenceMeasurements, evidenceMeasurements []comid.Measu
 				refMeasurement.Val.RawValue.Mask(),
 			) {
 				return MatchResult{
-					Matched:  false,
+					Matched: false,
 					Reason: fmt.Sprintf(
 						"mkey %d: raw-value (%x) did not match reference (%x)",
 						mkey,
@@ -416,8 +416,8 @@ func matchMeasurements(referenceMeasurements, evidenceMeasurements []comid.Measu
 		} else {
 			if evidenceMeasurement.Val.Digests == nil {
 				return MatchResult{
-					Matched:  false,
-					Reason: fmt.Sprintf("mkey %d: evidence does not contain digests", mkey),
+					Matched: false,
+					Reason:  fmt.Sprintf("mkey %d: evidence does not contain digests", mkey),
 				}, nil
 			}
 
@@ -425,8 +425,8 @@ func matchMeasurements(referenceMeasurements, evidenceMeasurements []comid.Measu
 				*refMeasurement.Val.Digests,
 			) {
 				return MatchResult{
-					Matched:  false,
-					Reason: fmt.Sprintf("mkey %d: digests did not match reference", mkey),
+					Matched: false,
+					Reason:  fmt.Sprintf("mkey %d: digests did not match reference", mkey),
 				}, nil
 			}
 		}

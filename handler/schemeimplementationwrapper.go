@@ -87,8 +87,8 @@ func (o *SchemeImplementationWrapper) GetSupportedProvisioningMediaTypes() []str
 
 	for _, profile := range o.Desc.CorimProfiles {
 		ret = append(ret,
-			fmt.Sprintf(`application/rim+cbor; profile="%s"`, profile),
-			fmt.Sprintf(`application/rim+cose; profile="%s"`, profile),
+			fmt.Sprintf(`application/rim+cbor; profile=%q`, profile),
+			fmt.Sprintf(`application/rim+cose; profile=%q`, profile),
 		)
 	}
 
@@ -112,22 +112,25 @@ func (o *SchemeImplementationWrapper) ValidateCorim(uc *corim.UnsignedCorim) (*V
 	})
 	if ok {
 		for i, tag := range uc.Tags {
-			if tag.Number == corim.ComidTag {
-				var c comid.Comid
-
-				err := c.FromCBOR(tag.Content)
-				if err != nil {
-					return nil, fmt.Errorf("decoding failed for CoMID at index %d: %w", i, err)
-				}
-
-				err = comidImpl.ValidateComid(&c)
-				if err != nil {
-					return &ValidateCorimResponse{
-						IsValid: false,
-						Message: fmt.Sprintf("CoMID at index %d: %s", i, err.Error()),
-					}, nil
-				}
+			if tag.Number != corim.ComidTag {
+				continue
 			}
+
+			var c comid.Comid
+
+			err := c.FromCBOR(tag.Content)
+			if err != nil {
+				return nil, fmt.Errorf("decoding failed for CoMID at index %d: %w", i, err)
+			}
+
+			err = comidImpl.ValidateComid(&c)
+			if err != nil {
+				return &ValidateCorimResponse{
+					IsValid: false,
+					Message: fmt.Sprintf("CoMID at index %d: %s", i, err.Error()),
+				}, nil
+			}
+
 		}
 
 		return &ValidateCorimResponse{IsValid: true, Message: "<all CoMIDs validated>"}, nil
