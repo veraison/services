@@ -572,7 +572,7 @@ function _deploy_bins() {
 		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_SCHEME_PLUGINS_DIR}/$(basename $path)"
 	    done
 
-	find "${ROOT_DIR}/endorsementstore/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	find "${ROOT_DIR}/store-plugin/bin/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_STORE_PLUGINS_DIR}/$(basename $path)"
 	    done
