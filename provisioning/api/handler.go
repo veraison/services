@@ -239,7 +239,7 @@ func sendSuccessfulProvisioningSession(c *gin.Context) {
 	)
 }
 
-func (o *Handler) getProvisioningServerVersionAndState() (string, string, error) {
+func (o *Handler) getProvisioningServerVersionAndState() (string, string, error) { // nolint:gocritic
 	vtsState, err := o.Provisioner.GetVTSState()
 	if err != nil {
 		return "", "", err

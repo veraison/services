@@ -55,5 +55,5 @@ func ParseBytesSize(in string) (int64, error) {
 }
 
 func init() {
-	sizeRegexp = regexp.MustCompile(`^\s*(\d+)\s*(?:(g|m|k)i?)?b?\s*$`)
+	sizeRegexp = regexp.MustCompile(`^\s*(\d+)\s*(?:([gmk])i?)?b?\s*$`)
 }

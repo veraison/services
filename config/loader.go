@@ -40,7 +40,7 @@ func NewLoader(dest interface{}) *Loader {
 }
 
 // NewNonExclusiveLoader is just like NewLoader, but the loader returned allows
-// ther to be unknown settings in the source.
+// there to be unknown settings in the source.
 func NewNonExclusiveLoader(dest interface{}) *Loader {
 	loader := &Loader{exclusive: false}
 

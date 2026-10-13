@@ -129,7 +129,7 @@ func (o *BasicAuthorizer) GetGinHandler(role string) gin.HandlerFunc {
 				haveProblem = true
 			}
 
-			userInfo = &basicAuthUser{
+			userInfo = &basicAuthUser{ // nolint:gosec
 				// dummyPassword
 				Password: "$2b$12$jul9hCKZP4cOF0hul0pmguzaJKLPfJ477NglE526eSYHUu9Rqe3UG",
 			}
@@ -138,7 +138,7 @@ func (o *BasicAuthorizer) GetGinHandler(role string) gin.HandlerFunc {
 		if err := bcrypt.CompareHashAndPassword(
 			[]byte(userInfo.Password),
 			[]byte(password),
-		); err != nil && !haveProblem{
+		); err != nil && !haveProblem {
 			o.logger.Warnf("password check failed: %v", err)
 			haveProblem = true
 		}

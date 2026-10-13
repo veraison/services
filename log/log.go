@@ -8,7 +8,7 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"text/template"
+	tmpl "text/template"
 
 	"github.com/moogar0880/problems"
 	jww "github.com/spf13/jwalterweatherman"
@@ -189,7 +189,8 @@ func (o Config) Zap() zap.Config {
 	}
 }
 
-// VerboseViper enables verbose output level for Viper loggers. This is exposed as a separate function as one might want to enable this before initializing logging.
+// VerboseViper enables verbose output level for Viper loggers.
+// This is exposed as a separate function as one might want to enable this before initializing logging.
 func VerboseViper() {
 	// jww (jwalterweatherman) is the logger used by Viper enabling this
 	// allows debugging configuration issues.
@@ -252,7 +253,7 @@ func resolveTemplates(texts *[]string, vals map[string]interface{}) error {
 		return nil
 	}
 
-	templ := template.New("paths")
+	templ := tmpl.New("paths")
 	buff := bytes.NewBuffer(rawBuff)
 
 	for _, text := range *texts {
@@ -285,7 +286,7 @@ func Named(name string) *zap.SugaredLogger {
 }
 
 // NamedWriter creates an io.Writer that utilizes a zap logger with the
-// specified name at the specifed level.
+// specified name at the specified level.
 func NamedWriter(name string, level zapcore.Level) io.Writer {
 	return WriterFromZap(Named(name), level)
 }

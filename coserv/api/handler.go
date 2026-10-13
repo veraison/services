@@ -39,12 +39,12 @@ type Handler struct {
 }
 
 func NewHandler(
-	endorsementdistributor endorsementdistributor.IEndorsementDistributor,
+	endorsementdistributorHandler endorsementdistributor.IEndorsementDistributor,
 	logger *zap.SugaredLogger,
 	wkCacheMaxAge string,
 ) Handler {
 	return Handler{
-		EndorsementDistibutor: endorsementdistributor,
+		EndorsementDistibutor: endorsementdistributorHandler,
 		Logger:                logger,
 		WkCacheMaxAge:         capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 	}
@@ -209,13 +209,13 @@ func (o Handler) CoservRequest(c *gin.Context) {
 
 	coservQuery := c.Param("query")
 
-	var coserv coserv.Coserv
-	if err := coserv.FromBase64Url(coservQuery); err != nil {
+	var coservData coserv.Coserv
+	if err := coservData.FromBase64Url(coservQuery); err != nil {
 		reportProblem(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	profile, err := coserv.Profile.Get()
+	profile, err := coservData.Profile.Get()
 	if err != nil {
 		reportProblem(c, http.StatusBadRequest, err.Error())
 		return

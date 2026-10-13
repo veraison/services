@@ -1,59 +1,32 @@
-# Copyright 2020-present Montgomery Edwards⁴⁴⁸ (github.com/x448).
-# This file is licensed under the MIT License. See LICENSE at https://github.com/x448/workflows for the full text.
-#
-# CI Go Cover 2020.1.28.
-# This GitHub Actions workflow checks if Go (Golang) code coverage satisfies the required minimum.
-# The required minimum is specified in the workflow name to keep badge.svg and verified minimum in sync.
-#
-# To help protect your privacy, this workflow avoids external services.
-# This workflow simply runs `go test -short -cover` --> grep --> python.
-# The python script is embedded and readable in this file.
-#
-# Steps to install and set minimum required coverage:
-# 0. Copy this file to github.com/OWNER_NAME/REPO_NAME/.github/workflows/ci-go-cover.yml
-# 1. Change workflow name from "cover 100%" to "cover ≥92.5%". Script will automatically use 92.5%.
-# 2. Update README.md to use the new path to badge.svg because the path includes the workflow name.
+name: coverage
 
-name: cover ≥57.0%
-on: [push, pull_request]
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+
 jobs:
   cover:
-    name: Coverage
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-      CI_PIPELINE: true
-    steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: "1.26"
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install NVIDIA Attestation SDK headers
-      uses: ./.github/actions/install-nvat-dev
-    - name: Install mockgen
-      run: |
+    uses: veraison/ci/.github/workflows/go.yml@main
+    with:
+      jobs: 'cover'
+      install-protoc: true
+      check-tests: false # we intentionally exclude some parts
+      setup: |
+        .github/actions/install-nvat-dev/install.sh
         go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-    - name: Install gopls
-      run: |
         go install golang.org/x/tools/gopls@latest
-    - name: Install guru
-      run: |
         go install golang.org/x/tools/cmd/guru@latest
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: protoc-gen deps
-      run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
         go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
-    - name: Go Coverage
-      run: |
-        go version
-        make coverage \
-          COVER_THRESHOLD=$(echo "${{ vars.GITHUB_WORKFLOW }}" | grep -o --regex '[0-9]\+\.[0-9]\+')
-
-      shell: bash
+      cover-command: 'make coverage CI_PIPELINE=true'
+      check-coverage: false # already done by the command itself

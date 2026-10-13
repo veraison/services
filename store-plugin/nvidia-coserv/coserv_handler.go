@@ -70,7 +70,7 @@ func callRimService(rimid *string) (*RimServiceResponse, error) {
 	// Create an HTTP request to the NVIDIA RIM service.
 	urlStr := fmt.Sprintf("https://rim.attestation.nvidia.com/v1/rim/%s", *rimid)
 
-	resp, err := http.Get(urlStr)
+	resp, err := http.Get(urlStr) // nolint:gosec // URL constructed by us
 	if err != nil {
 		return nil, fmt.Errorf("HTTP GET error: %w", err)
 	}
@@ -132,17 +132,17 @@ func (s CoservProxyHandler) addReferenceValuesForClass(query *coserv.Query, c *c
 	if *query.ResultType == coserv.ResultTypeBoth || *query.ResultType == coserv.ResultTypeSourceArtifacts {
 		switch rimServiceResponse.RimFormat {
 		case "CORIM":
-			cmw, err := cmw.NewMonad("application/rim+cbor", rimBytes)
+			cmwData, err := cmw.NewMonad("application/rim+cbor", rimBytes)
 			if err != nil {
 				return fmt.Errorf("failed to create CMW for CORIM source artifact: %w", err)
 			}
-			results.AddSourceArtifacts(*cmw)
+			results.AddSourceArtifacts(*cmwData)
 		case "TCG":
-			cmw, err := cmw.NewMonad("application/swid+xml", rimBytes)
+			cmwData, err := cmw.NewMonad("application/swid+xml", rimBytes)
 			if err != nil {
 				return fmt.Errorf("failed to create CMW for TCG source artifact: %w", err)
 			}
-			results.AddSourceArtifacts(*cmw)
+			results.AddSourceArtifacts(*cmwData)
 		default:
 			return fmt.Errorf("unexpected RIM format %s from NVIDIA RIM service", rimServiceResponse.RimFormat)
 		}

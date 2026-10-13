@@ -33,7 +33,7 @@ type Store struct {
 	Logger  *zap.SugaredLogger
 }
 
-// Setup the underyling kvstore. This is a one-time setup that only needs to be
+// Setup the underlying kvstore. This is a one-time setup that only needs to be
 // performed once for a deployment.
 func (o *Store) Setup() error {
 	return o.KVStore.Setup()
@@ -75,7 +75,7 @@ func (o *Store) Get(key PolicyKey) ([]*Policy, error) {
 
 	for _, v := range vals {
 		var p Policy
-		if err = json.Unmarshal([]byte(v), &p); err != nil {
+		if err := json.Unmarshal([]byte(v), &p); err != nil {
 			return nil, err
 		}
 

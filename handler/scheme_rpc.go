@@ -140,7 +140,7 @@ func (o *SchemeRPCClient) ValidateCorim(uc *corim.UnsignedCorim) (*ValidateCorim
 	}
 
 	var resp ValidateCorimResponse
-	if err = json.Unmarshal(rawResp, &resp); err != nil {
+	if err := json.Unmarshal(rawResp, &resp); err != nil {
 		return nil, err
 	}
 
@@ -352,7 +352,7 @@ func (o *SchemeRPCServer) ValidateCorim(toValidate []byte, resp *[]byte) error {
 	return err
 }
 
-func (o *SchemeRPCServer) GetReferenceValueIDs(
+func (o *SchemeRPCServer) GetReferenceValueIDs( // nolint:dupl
 	params *proto.GetReferenceValueIDsArgs,
 	resp *[]byte,
 ) error {
@@ -429,7 +429,7 @@ func (o *SchemeRPCServer) ExtractClaims(
 	return err
 }
 
-func (o *SchemeRPCServer) AppraiseClaims(
+func (o *SchemeRPCServer) AppraiseClaims( // nolint:dupl
 	params *proto.AppraiseClaimsArgs,
 	resp *[]byte,
 ) error {

@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/services/kvstore"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/policy"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	mock_deps "github.com/veraison/services/vts/policymanager/mocks"
 )
 
@@ -32,9 +32,9 @@ func TestPolicyMgr_getPolicy_not_found(t *testing.T) {
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
 
-	appraisal := &appraisal.Context{
+	appraisal := &vts_appraisal.Context{
 		Scheme: "TPM_ENACTTRUST",
-		Evidence: &appraisal.Evidence{
+		Evidence: &vts_appraisal.Evidence{
 			TenantID: "0",
 		},
 	}
@@ -61,9 +61,9 @@ func TestPolicyMgr_getPolicy_OK(t *testing.T) {
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
 
-	appraisal := &appraisal.Context{
+	appraisal := &vts_appraisal.Context{
 		Scheme: "TPM_ENACTTRUST",
-		Evidence: &appraisal.Evidence{
+		Evidence: &vts_appraisal.Evidence{
 			TenantID: "0",
 		},
 	}
@@ -107,9 +107,9 @@ func TestPolicyMgr_Evaluate_OK(t *testing.T) {
 	ar := ear.NewAttestationResult("test", "test", "test")
 	tier := ear.TrustTierAffirming
 	earAp := ear.Appraisal{Status: &tier, AppraisalPolicyID: &polID}
-	appraisalContext := &appraisal.Context{
+	appraisalContext := &vts_appraisal.Context{
 		Scheme: "TPM_ENACTTRUST",
-		Evidence: &appraisal.Evidence{
+		Evidence: &vts_appraisal.Evidence{
 			TenantID: "0",
 		},
 		Result: ar,
@@ -156,9 +156,9 @@ func TestPolicyMgr_Evaluate_NOK(t *testing.T) {
 	agent := mock_deps.NewMockIAgent(ctrl)
 	agent.EXPECT().GetBackendName().Return("opa")
 	endorsements := []*comid.ValueTriple{}
-	appraisalContext := &appraisal.Context{
+	appraisalContext := &vts_appraisal.Context{
 		Scheme: "TPM_ENACTTRUST",
-		Evidence: &appraisal.Evidence{
+		Evidence: &vts_appraisal.Evidence{
 			TenantID: "0",
 		},
 		Result: ar,

@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"github.com/veraison/swid"
 	"go.uber.org/zap"
 )
@@ -44,7 +44,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	var parsecEvidence tpm.Evidence
 	err := parsecEvidence.FromCBOR(evidence.Data)
@@ -90,7 +90,7 @@ func (o *Implementation) ValidateComid(c *comid.Comid) error {
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	var parsecEvidence tpm.Evidence
@@ -109,7 +109,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
@@ -225,7 +225,8 @@ func computeEndorsedHash(
 	measurements []comid.Measurement,
 ) ([]byte, bool) {
 	digests := make(map[int][]byte)
-	for i, mea := range measurements {
+	for i := range measurements {
+		mea := &measurements[i]
 		endPcr, err := mea.Key.GetKeyUint()
 		if err != nil {
 			logger.Errorf("measurement key at index %d: %w", i, err)
@@ -238,8 +239,8 @@ func computeEndorsedHash(
 		}
 
 		for _, digest := range *mea.Val.Digests {
-			if uint64(digest.Algorithm.Int()) == hashAlgID {
-				digests[int(endPcr)] = digest.Value
+			if uint64(digest.Algorithm.Int()) == hashAlgID { // nolint:gosec
+				digests[int(endPcr)] = digest.Value // nolint:gosec
 				break
 			}
 		}

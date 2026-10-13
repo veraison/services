@@ -1,48 +1,34 @@
-# GitHub Actions - CI for Go to build & test.  See ci-go-cover.yml and linters.yml for code coverage and linters.
-# Stolen from: https://github.com/fxamacker/cbor/workflows/ci.yml (thanks!)
 name: ci
-on: [push, pull_request]
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+
 jobs:
-  tests:
-    name: Test on ${{matrix.os}}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
-    env:
-      GO111MODULE: on
-      CI_PIPELINE: true
-    steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: "1.26"
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install NVIDIA Attestation SDK headers
-      uses: ./.github/actions/install-nvat-dev
-    - name: Install mockgen
-      run: |
+  test:
+    uses: veraison/ci/.github/workflows/go.yml@main
+    with:
+      jobs: 'test'
+      check-tests: false # we intentionally exclude some parts
+      install-protoc: true
+      setup: |
+        .github/actions/install-nvat-dev/install.sh
         go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-    - name: Install gopls
-      run: |
         go install golang.org/x/tools/gopls@latest
-    - name: Install guru
-      run: |
         go install golang.org/x/tools/cmd/guru@latest
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: protoc-gen deps
-      run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
         go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
-    - name: Build project
-      run: |
+      os: '["ubuntu-latest", "ubuntu-24.04-arm"]'
+      test-command: |
         make
-    - name: Run tests
-      run: |
-        go version
-        make -w test CI_PIPELINE=${{ env.CI_PIPELINE }}
+        make -w test CI_PIPELINE=true
