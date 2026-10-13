@@ -6,4 +6,11 @@ report signed with the chip's VCEK, and the certificate table as the host suppli
 are DER. Its REPORT_DATA is the 64-octet value the guest bound (`sevsnpGCPReportData` in `scheme_test.go`). The
 report's trust anchor is AMD's ARK-Milan, as go-sev-guest embeds it.
 
+`sevsnp-aws-vlek-tsm-report.cbor` (sha256 `55e6cca06e137b690ed1ab29486448bd8286887f07dfb7e1d18449b6740167b0`) is, byte for byte, the TSM report token an AWS EC2
+guest (c6a.large, AMD Milan, us-east-2) made through configfs-tsm on 6 October 2026: the attestation report signed with the
+VLEK the host holds for that instance, and the certificate table as the guest sent it: the VLEK the host supplied, and AMD's
+ASVK and ARK (Milan VLEK chain) the guest appended for a verifier without roots of its own. AWS hosts supply the VLEK alone;
+`hostTable` in `scheme_test.go` restores that table. Its REPORT_DATA is the 64-octet value the guest bound
+(`sevsnpAWSVLEKReportData`). The report's trust anchor is AMD's ARK-Milan, as go-sev-guest embeds it.
+
 The other files are the scheme's original samples.
