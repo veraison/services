@@ -34,7 +34,15 @@
       }
     ],
     "cca-platform-service-indicator": "https://veraison.example/v1/challenge-response",
-    "cca-platform-hash-algo-id": "sha-256"
+    "cca-platform-hash-algo-id": "sha-256",
+     "cca-platform-manufacturing-config": "EBA=",
+    "cca-platform-tbb-rotpk": [
+        {
+        "name": "CM",
+        "index": 3,
+        "hash": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+        }
+    ]
   },
   "cca-realm-delegated-token": {
     "cca-realm-profile": "tag:arm.com,2024:realm#2.0.0",

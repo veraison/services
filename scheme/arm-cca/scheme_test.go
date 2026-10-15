@@ -248,6 +248,36 @@ func TestImplementation_AppraiseClaims_Platform_No_MKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "measurement missing mkey")
 }
 
+func TestImplementation_AppraiseClaims_Platform_Invalid_Manufacturing_Config(t *testing.T) {
+	impl := NewImplementation()
+	claims, err := extractClaimsFromEvidence(t)
+	require.NoError(t, err)
+
+	endorsements := loadReferenceValues(t, corimCcaPlatformBadRefvalMfgCfg)
+	result, err := impl.AppraiseClaims(claims, endorsements)
+	require.NoError(t, err)
+
+	platformAppraisal := result.Submods["CCA_SSD_PLATFORM"]
+	assert.NotNil(t, platformAppraisal)
+	assert.Equal(t, ear.TrustTierWarning, *platformAppraisal.Status)
+	assert.Equal(t, ear.UnsafeConfigClaim, platformAppraisal.TrustVector.Configuration)
+}
+
+func TestImplementation_AppraiseClaims_Platform_Invalid_TBB_RoTPK(t *testing.T) {
+	impl := NewImplementation()
+	claims, err := extractClaimsFromEvidence(t)
+	require.NoError(t, err)
+
+	endorsements := loadReferenceValues(t, corimCcaPlatformBadRefvalTbbRotpk)
+	result, err := impl.AppraiseClaims(claims, endorsements)
+	require.NoError(t, err)
+
+	platformAppraisal := result.Submods["CCA_SSD_PLATFORM"]
+	assert.NotNil(t, platformAppraisal)
+	assert.Equal(t, ear.TrustTierWarning, *platformAppraisal.Status)
+	assert.Equal(t, ear.UnsafeConfigClaim, platformAppraisal.TrustVector.Configuration)
+}
+
 func TestImplementation_AppraiseClaims_Realm_Valid(t *testing.T) {
 	impl := NewImplementation()
 	claims, err := extractClaimsFromEvidence(t)

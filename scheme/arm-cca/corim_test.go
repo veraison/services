@@ -62,7 +62,7 @@ func TestProfile(t *testing.T) {
 		{
 			Title: "platform bad RefVal no raw value",
 			Input: corimCcaPlatformBadRefvalNoRawValue,
-			Err:   "raw-value is mandatory for cca.platform-config",
+			Err:   "cca.platform-config raw value error: raw-value is mandatory",
 		},
 		{
 			Title: "realm ok",

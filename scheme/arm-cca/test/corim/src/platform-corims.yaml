@@ -25,3 +25,7 @@ comids:
     - comid-cca-platform-bad-refval-no-digests
   cca-platform-bad-refval-no-raw-value:
     - comid-cca-platform-bad-refval-no-raw-value
+  cca-platform-bad-refval-mfg-cfg:
+    - comid-cca-platform-bad-refval-mfg-cfg
+  cca-platform-bad-refval-tbb-rotpk:
+    - comid-cca-platform-bad-refval-tbb-rotpk
