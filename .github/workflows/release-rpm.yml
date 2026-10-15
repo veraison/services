@@ -1,0 +1,61 @@
+name: Automatic RPM package creation based on the monthly tag
+
+on:
+  push:
+    tags:
+      - v0.0.**
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build RPM
+    runs-on: ubuntu-latest
+    container: fedora:42
+    env:
+      GO111MODULE: on
+      CI_PIPELINE: true
+      RELEASE_VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - name: Install RPM build dependencies
+        run: |
+          dnf --assumeyes install \
+            gcc \
+            gettext \
+            git \
+            golang \
+            jose \
+            jq \
+            make \
+            openssl \
+            protobuf \
+            protobuf-compiler \
+            protobuf-devel \
+            rpm-build \
+            rpmdevtools \
+            sqlite
+
+      - name: Build RPM
+        run: |
+          export VERAISON_BUILD_VERSION="${RELEASE_VERSION#v}"
+          make rpm
+
+      - name: Upload RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: veraison-services-rpm-${{ github.ref_name }}
+          path: ~/rpmbuild/RPMS/**/*.rpm
+          if-no-files-found: error
