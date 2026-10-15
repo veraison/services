@@ -47,7 +47,6 @@ require (
 	github.com/veraison/da v0.0.0-20260902105205-bdc14504b673
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/go-cose v1.3.0
-	github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
 	github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76
 	go.uber.org/zap v1.27.0
