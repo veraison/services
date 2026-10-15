@@ -1267,8 +1267,6 @@ github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53 h1:5gnX2TrGd/Xz8DOp2O
 github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53/go.mod h1:+kxt8iuFiVvKRs2VQ1Ho7bbAScXAB/kHFFuP5Biw19I=
 github.com/veraison/go-cose v1.3.0 h1:2/H5w8kdSpQJyVtIhx8gmwPJ2uSz1PkyWFx0idbd7rk=
 github.com/veraison/go-cose v1.3.0/go.mod h1:df09OV91aHoQWLmy1KsDdYiagtXgyAwAl8vFeFn1gMc=
-github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228 h1:oMCBfNZ8yxeMHelMg/H8uLrBLRvipjAwBL0d5/F9bvY=
-github.com/veraison/parsec v0.2.1-0.20240912163334-0368b9c16228/go.mod h1:hobpAGxGmjCyluLHTNMdgJYficPXno4HZWKJSuUwZ7w=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e h1:W1OWcrRvfN0EWyldcpFgwl9xdKBbZUlk5pnbLTcR8Ec=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e/go.mod h1:bXUwdYAGcRoclxe73JmO8Z9ngV9KDHqW20afM9Q0FKo=
 github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76 h1:AsVDP6X2A3atSJwoj7rLkAAyXGZ6l5Zr6gAgIztzpcw=

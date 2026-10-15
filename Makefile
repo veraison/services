@@ -52,7 +52,6 @@ IGNORE_COVERAGE += github.com/veraison/services/store-plugin/amd-kds-coserv
 IGNORE_COVERAGE += github.com/veraison/services/store-plugin/nvidia-coserv
 IGNORE_COVERAGE += github.com/veraison/services/scheme/nvidia
 IGNORE_COVERAGE += github.com/veraison/services/store-plugin/corim-store
-IGNORE_COVERAGE += github.com/veraison/services/scheme/parsec-cca
 IGNORE_COVERAGE += github.com/veraison/services/scheme/psa-iot
 IGNORE_COVERAGE += github.com/veraison/services/scheme/riot
 IGNORE_COVERAGE += github.com/veraison/services/scheme/sevsnp

@@ -16,8 +16,6 @@ Currently the following schemes are implemented:
   attestation (note: this does not implement any specific DICE architecture).
 - `tmp-enacttrust`: TPM-based attestation for
   [EnactTrust](https://www.enacttrust.com/) security cloud.
-- `parsec-cca` : Parsec CCA based hardware-backed attestation, details
-   [here](https://github.com/CCC-Attestation/attested-tls-poc/blob/main/doc/parsec-evidence-cca.md)
 - `sevsnp` : AMD Secure Encrypted Virtualization - Secure Nested Paging,
   details [here](https://www.amd.com/en/developer/sev.html)
 
