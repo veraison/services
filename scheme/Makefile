@@ -7,7 +7,6 @@ SUBDIR += arm-cca
 SUBDIR += da-spdm
 SUBDIR += nvidia
 SUBDIR += parsec-cca
-SUBDIR += parsec-tpm
 SUBDIR += psa-iot
 SUBDIR += sevsnp
 SUBDIR += tpm-enacttrust
