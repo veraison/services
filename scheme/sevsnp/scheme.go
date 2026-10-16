@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/go-sev-guest/abi"
@@ -37,10 +38,9 @@ var (
 	ErrCertificateReadFailure = errors.New("failed to read certificate")
 	ErrMissingCMW             = errors.New("CMW not found in evidence token")
 	ErrMissingCertChain       = errors.New("evidence missing certificate chain")
-	ErrNoARK                  = errors.New("missing ARK certificate in evidence")
-	ErrNoASK                  = errors.New("missing ASK certificate in evidence")
 	ErrNoVEK                  = errors.New("evidence must supply VLEK or VCEK")
 	ErrTAMismatch             = errors.New("evidence Trust Anchor (ARK) doesn't match the provisioned one")
+	ErrNotCertifiedByAMD      = errors.New("the report's certificate is not certified by AMD's roots")
 	ErrNoVCEK                 = errors.New("VCEK is missing")
 	ErrNoVLEK                 = errors.New("VLEK is missing")
 	ErrBadSigningKey          = errors.New("bad signing key in attestation report")
@@ -110,12 +110,7 @@ func (o *Implementation) GetTrustAnchorIDs(
 		return nil, handler.BadEvidence(err)
 	}
 
-	ark, err := readCert(certChain.GetArkCert())
-	if err != nil {
-		return nil, handler.BadEvidence("can't read ARK to compose TA ID: %w", err)
-	}
-
-	cert, err := x509.ParseCertificate(ark)
+	cert, _, err := trustedARK(tsm, certChain)
 	if err != nil {
 		return nil, handler.BadEvidence(err)
 	}
@@ -204,11 +199,14 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 		return handler.BadEvidence(err)
 	}
 
-	// The host fills the certificate table in either encoding (Google Cloud
-	// writes DER, other hosts PEM) and the trust anchor is PEM: compare DER.
-	evArk, err := readCert(certChain.GetArkCert())
+	// The ARK compared with the trust anchor is the one among AMD's roots
+	// that certifies the report's signing key, not an entry of the host's
+	// table: hosts differ in what they put there (AWS supplies the VLEK
+	// alone), and the table is the Attester's to fill. The trust anchor is
+	// PEM: compare DER.
+	ark, leaf, err := trustedARK(tsm, certChain)
 	if err != nil {
-		return handler.BadEvidence("can't read ARK: %w", err)
+		return handler.BadEvidence(err)
 	}
 
 	taArk, err := readCert(taCert)
@@ -216,7 +214,7 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 		return fmt.Errorf("can't read trust anchor: %w", err)
 	}
 
-	if !bytes.Equal(evArk, taArk) {
+	if !bytes.Equal(ark.Raw, taArk) {
 		return handler.BadEvidence(ErrTAMismatch)
 	}
 
@@ -224,7 +222,7 @@ func (o *Implementation) ValidateEvidenceIntegrity(
 		return err
 	}
 
-	return validateReportIntegrity(tsm, certChain)
+	return validateReportIntegrity(tsm, leaf)
 }
 
 func (o *Implementation) AppraiseClaims(
@@ -453,15 +451,10 @@ func getCertFromTrustAnchors(trustAnchors []*comid.KeyTriple) ([]byte, error) {
 	return []byte(vk.String()), nil
 }
 
+// validateCertChain checks that the host's table carries the report's
+// signing key. The ASK or ASVK and the ARK are AMD's: the chain is
+// verified up to AMD's roots (amdRoots), whatever else the table holds.
 func validateCertChain(certChain *sevsnp.CertificateChain) error {
-	if len(certChain.GetArkCert()) == 0 {
-		return handler.BadEvidence(ErrNoARK)
-	}
-
-	if len(certChain.GetAskCert()) == 0 {
-		return handler.BadEvidence(ErrNoASK)
-	}
-
 	if len(certChain.GetVcekCert()) == 0 && len(certChain.GetVlekCert()) == 0 {
 		return handler.BadEvidence(ErrNoVEK)
 	}
@@ -695,64 +688,142 @@ func compareMeasurements(logger *zap.SugaredLogger, refM comid.Measurement, evM 
 	return true
 }
 
-func validateReportIntegrity(tsm *tokens.TSMReport, certChain *sevsnp.CertificateChain) error {
-	var (
-		ark, ask, vcek, vlek []byte
-		attestation          sevsnp.Attestation
-	)
+// amdRoots returns AMD's roots for each product line, one per certificate
+// chain AMD's KDS publishes and go-sev-guest embeds: the ASK and ARK that
+// certify a VCEK, and the ASVK and ARK that certify a VLEK. go-sev-guest's
+// own defaults hold no ASVK, so without these a VLEK report, as AWS hosts
+// issue, cannot be verified unless the evidence itself carries the ASVK.
+var amdRoots = sync.OnceValues(func() (map[string][]*trust.AMDRootCerts, error) {
+	chains := []struct {
+		productLine string
+		bundle      []byte
+	}{
+		{"Milan", trust.AskArkMilanVcekBytes},
+		{"Milan", trust.AskArkMilanVlekBytes},
+		{"Genoa", trust.AskArkGenoaVcekBytes},
+		{"Genoa", trust.AskArkGenoaVlekBytes},
+		{"Turin", trust.AskArkTurinVcekBytes},
+		{"Turin", trust.AskArkTurinVlekBytes},
+	}
+
+	roots := map[string][]*trust.AMDRootCerts{}
+	for _, c := range chains {
+		r := trust.AMDRootCertsProduct(c.productLine)
+		// the Turin VLEK chain ends with a blank line, which
+		// kds.ParseProductCertChain refuses (google/go-sev-guest#206)
+		if err := r.FromKDSCertBytes(bytes.TrimSpace(c.bundle)); err != nil {
+			return nil, fmt.Errorf("AMD %s certificate chain: %w", c.productLine, err)
+		}
+		roots[c.productLine] = append(roots[c.productLine], r)
+	}
+
+	return roots, nil
+})
+
+// reportLeaf returns the certificate the report is signed with, the VLEK or
+// the VCEK of the host's table as the report's signer info names it, as DER.
+func reportLeaf(tsm *tokens.TSMReport, certChain *sevsnp.CertificateChain) (*sevsnp.CertificateChain, error) {
+	protoReport, err := abi.ReportToProto(tsm.OutBlob)
+	if err != nil {
+		return nil, err
+	}
+
+	signerInfo, err := abi.ParseSignerInfo(protoReport.GetSignerInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	switch signerInfo.SigningKey {
+	case ReportSigningKeyVlek:
+		if len(certChain.GetVlekCert()) == 0 {
+			return nil, ErrNoVLEK
+		}
+		vlek, err := readCert(certChain.GetVlekCert())
+		if err != nil {
+			return nil, fmt.Errorf("can't read VLEK to validate cert chain: %w", err)
+		}
+		return &sevsnp.CertificateChain{VlekCert: vlek}, nil
+	case ReportSigningKeyVcek:
+		if len(certChain.GetVcekCert()) == 0 {
+			return nil, ErrNoVCEK
+		}
+		vcek, err := readCert(certChain.GetVcekCert())
+		if err != nil {
+			return nil, fmt.Errorf("can't read VCEK to validate cert chain: %w", err)
+		}
+		return &sevsnp.CertificateChain{VcekCert: vcek}, nil
+	default:
+		return nil, ErrBadSigningKey
+	}
+}
+
+// trustedARK returns, among AMD's roots, the ARK that certifies the
+// intermediate (an ASK, or an ASVK for a VLEK) that signed the report's
+// certificate, with that certificate alone as the chain to verify.
+func trustedARK(tsm *tokens.TSMReport, certChain *sevsnp.CertificateChain) (*x509.Certificate, *sevsnp.CertificateChain, error) {
+	leaf, err := reportLeaf(tsm, certChain)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	der := leaf.GetVcekCert()
+	if len(der) == 0 {
+		der = leaf.GetVlekCert()
+	}
+
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't parse the report's certificate: %w", err)
+	}
+
+	roots, err := amdRoots()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, line := range roots {
+		for _, r := range line {
+			for _, inter := range []*x509.Certificate{r.ProductCerts.Ask, r.ProductCerts.Asvk} {
+				if inter != nil && cert.CheckSignatureFrom(inter) == nil {
+					return r.ProductCerts.Ark, leaf, nil
+				}
+			}
+		}
+	}
+
+	return nil, nil, ErrNotCertifiedByAMD
+}
+
+// validateReportIntegrity verifies the report's signature and its
+// certificate's chain up to AMD's roots; leaf is the report's certificate
+// alone, as trustedARK returns it.
+func validateReportIntegrity(tsm *tokens.TSMReport, leaf *sevsnp.CertificateChain) error {
+	roots, err := amdRoots()
+	if err != nil {
+		return err
+	}
 
 	// options: options to use when verifying SEV-SNP evidence
 	//          not feasible to enable certificate fetching and
-	//          checking revocations as AMD KDS rate-limits requests
+	//          checking revocations as AMD KDS rate-limits requests;
+	//          the chain is checked up to AMD's roots, never to the
+	//          ASK, ASVK or ARK the evidence carries
 	options := verify.Options{
 		Getter:              trust.DefaultHTTPSGetter(),
 		Now:                 time.Now(),
 		DisableCertFetching: true,
 		CheckRevocations:    false,
+		TrustedRoots:        roots,
 	}
 
 	protoReport, err := abi.ReportToProto(tsm.OutBlob)
 	if err != nil {
 		return err
 	}
-	attestation.Report = protoReport
 
-	if ark, err = readCert(certChain.GetArkCert()); err != nil {
-		return fmt.Errorf("can't read ARK to validate cert chain: %w", err)
-	}
+	attestation := sevsnp.Attestation{Report: protoReport, CertificateChain: leaf}
 
-	if ask, err = readCert(certChain.GetAskCert()); err != nil {
-		return fmt.Errorf("can't read ASK to validate cert chain: %w", err)
-	}
-
-	signerInfo, err := abi.ParseSignerInfo(protoReport.GetSignerInfo())
-	if err != nil {
-		return err
-	}
-
-	switch signerInfo.SigningKey {
-	case ReportSigningKeyVlek:
-		if len(certChain.GetVlekCert()) == 0 {
-			return ErrNoVLEK
-		}
-		if vlek, err = readCert(certChain.GetVlekCert()); err != nil {
-			return fmt.Errorf("can't read VLEK to validate cert chain: %w", err)
-		}
-		attestation.CertificateChain = &sevsnp.CertificateChain{VlekCert: vlek, AskCert: ask, ArkCert: ark}
-	case ReportSigningKeyVcek:
-		if len(certChain.GetVcekCert()) == 0 {
-			return ErrNoVCEK
-		}
-		if vcek, err = readCert(certChain.GetVcekCert()); err != nil {
-			return fmt.Errorf("can't read VCEK to validate cert chain: %w", err)
-		}
-		attestation.CertificateChain = &sevsnp.CertificateChain{VcekCert: vcek, AskCert: ask, ArkCert: ark}
-	default:
-		return ErrBadSigningKey
-	}
-
-	err = verify.SnpAttestation(&attestation, &options)
-	if err != nil {
+	if err := verify.SnpAttestation(&attestation, &options); err != nil {
 		return handler.BadEvidence(err)
 	}
 
