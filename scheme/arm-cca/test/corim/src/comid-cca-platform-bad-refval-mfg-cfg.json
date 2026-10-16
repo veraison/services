@@ -1,0 +1,146 @@
+{
+  "tag-identity": {
+    "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
+    "version": 0
+  },
+  "triples": {
+    "reference-values": [
+      {
+        "environment": {
+          "class": {
+            "id": {
+              "type": "bytes",
+              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+            }
+          }
+        },
+        "measurements": [
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ],
+              "digests": [
+                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ],
+              "name": "BL"
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ],
+              "digests": [
+                [1, "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ],
+              "name": "M1"
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ],
+              "digests": [
+                [1, "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ],
+              "name": "M2"
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ],
+              "digests": [
+                [1, "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+              ],
+              "name": "M3"
+            }
+          },
+        {
+            "key": {
+              "type": "string",
+              "value": "cca.platform-config"
+            },
+            "value": {
+              "raw-value": {
+                "type": "masked",
+                "value": {
+                  "value":"AQID",
+                  "mask": "BAUG"
+                }
+              }
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.platform-manufacturing-config"
+            },
+            "value": {
+              "raw-value": {
+                "type": "masked",
+                "value": {
+                  "value":"EAB=",
+                  "mask": "//8="
+                }
+              }
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.rotpk.CM.3"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                },
+                {
+                  "type": "bytes",
+                  "value": "2sRqWEFdw6ANenQYUgCOnK5k9S0DufdtdvSzZE/vxBY="
+                }, 
+                {
+                  "type": "bytes",
+                  "value":  "aOZWslHmfoNYvvhIOrDVHGYZ8+ehqfDnWDjUH/No9yg="
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
