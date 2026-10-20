@@ -12,7 +12,7 @@ import (
 	"github.com/veraison/cmw"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/ear"
-	ratsdtoken "github.com/veraison/ratsd/ratsd-token"
+	ratsdtoken "github.com/veraison/ratsd-token"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/plugin"

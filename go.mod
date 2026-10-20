@@ -1,6 +1,6 @@
 module github.com/veraison/services
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
@@ -41,7 +41,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tbaehler/gin-keycloak v1.6.1
 	github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666
-	github.com/veraison/cmw v0.2.0
+	github.com/veraison/cmw v0.3.0
 	github.com/veraison/corim v1.1.3-0.20261014075055-d19e48dba761
 	github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5
 	github.com/veraison/da v0.0.0-20260902105205-bdc14504b673
@@ -49,6 +49,7 @@ require (
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
 	github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76
+	github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.41.0
 	google.golang.org/grpc v1.83.2
