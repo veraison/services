@@ -122,10 +122,12 @@
             },
             "value": {
               "raw-value": {
-                "type": "bytes",
-                "value": "AQID"
-              },
-              "raw-value-mask": "AQID"
+                "type": "masked",
+                "value": {
+                  "value":"AQID",
+                  "mask": "BAUG"
+                }
+              }
             }
           }
         ]
