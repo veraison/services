@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	ratsdtoken "github.com/veraison/ratsd/ratsd-token"
+	ratsdtoken "github.com/veraison/ratsd-token"
 	"github.com/veraison/services/plugin"
 )
 
