@@ -48,8 +48,7 @@ require (
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
-	github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76
-	github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56
+	github.com/veraison/ratsd-token v0.0.0-20261022195846-499d07105e48
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.41.0
 	google.golang.org/grpc v1.83.2
@@ -61,7 +60,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/NVIDIA/go-nvml v0.13.0-1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.62 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
