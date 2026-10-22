@@ -16,7 +16,7 @@ import (
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/ear"
-	"github.com/veraison/ratsd/tokens"
+	"github.com/veraison/ratsd-token/tokens"
 	"github.com/veraison/services/vts/appraisal"
 )
 
