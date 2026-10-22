@@ -16,11 +16,14 @@ var (
 	//go:embed test/corim/corim-cca-platform-bad-refval-instance.cbor
 	corimCcaPlatformBadRefvalInstance []byte
 
-	//go:embed test/corim/corim-cca-platform-bad-refval-mkey.cbor
-	corimCcaPlatformBadRefvalMkey []byte
+	//go:embed test/corim/corim-cca-platform-bad-refval-mfg-cfg.cbor
+	corimCcaPlatformBadRefvalMfgCfg []byte
 
 	//go:embed test/corim/corim-cca-platform-bad-refval-mkey-string.cbor
 	corimCcaPlatformBadRefvalMkeyString []byte
+
+	//go:embed test/corim/corim-cca-platform-bad-refval-mkey.cbor
+	corimCcaPlatformBadRefvalMkey []byte
 
 	//go:embed test/corim/corim-cca-platform-bad-refval-no-digests.cbor
 	corimCcaPlatformBadRefvalNoDigests []byte
@@ -30,6 +33,9 @@ var (
 
 	//go:embed test/corim/corim-cca-platform-bad-refval-no-raw-value.cbor
 	corimCcaPlatformBadRefvalNoRawValue []byte
+
+	//go:embed test/corim/corim-cca-platform-bad-refval-tbb-rotpk.cbor
+	corimCcaPlatformBadRefvalTbbRotpk []byte
 
 	//go:embed test/corim/corim-cca-platform-bad-ta-cert.cbor
 	corimCcaPlatformBadTaCert []byte
