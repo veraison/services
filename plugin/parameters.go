@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 	"math"
 
 	"github.com/spf13/viper"
@@ -93,7 +92,7 @@ func ParametersFromMap(m map[string]any) (*Parameters, error) {
 
 // Parameters represent plugin configuration settings that are passed to a
 // plugin on its initialization. These are, essentially, string keys mapping on
-// values of supported types (string, []byte, int, int64, bool).
+// values of supported types (string, []byte, int, int64, bool, *Parameters).
 // Valid keys and their expected value types are plugin-specific.
 type Parameters struct {
 	values map[string]any
@@ -167,10 +166,28 @@ func (o *Parameters) SetBool(key string, value bool) *Parameters {
 	return o.set(key, value)
 }
 
+// SetParameters sets the specified key to the specified parameters value and returns a
+// pointer to the Parameters object. If the key already exists, it is
+// overwritten.
+func (o *Parameters) SetParameters(key string, value Parameters) *Parameters {
+
+	return o.set(key, &Parameters{
+		values: cloneMap(value.values),
+	})
+}
+
+// SetStrArray sets the specified key to the specified string array value and returns a
+// pointer to the Parameters object. If the key already exists, it is
+// overwritten.
+func (o *Parameters) SetStrArray(key string, value []string) *Parameters {
+
+	return o.set(key, append([]string(nil), value...))
+}
+
 // Set the specified key to the specified value, provided value is of one of
 // the supported types, otherwise ErrInvalid is returned. Supported types are
-// string, []byte, int, int64, and bool. If the key already exists, it is
-// overwritten.
+// string, []byte, int, int64, bool, []string, *Parameters and map[string]any (converted to *Parameters).
+// If the key already exists, it is overwritten.
 func (o *Parameters) Set(key string, value any) error {
 	switch t := value.(type) {
 	case string, []byte, int64, bool:
@@ -194,6 +211,41 @@ func (o *Parameters) Set(key string, value any) error {
 		}
 
 		o.set(key, int64(t))
+
+	case map[string]any:
+		nested, err := ParametersFromMap(t)
+		if err != nil {
+			return fmt.Errorf("parameter %q: %w", key, err)
+		}
+		o.set(key, nested)
+
+	case *Parameters:
+		if t == nil {
+			return fmt.Errorf("%w for %q: nil Parameters", ErrInvalid, key)
+		}
+		nested := NewParameters()
+		if err := nested.Merge(t); err != nil {
+			return fmt.Errorf("parameter %q: %w", key, err)
+		}
+		o.set(key, nested)
+
+	case []string:
+		o.set(key, append([]string(nil), t...))
+
+	case []any:
+		strings := make([]string, len(t))
+		for i, item := range t {
+			s, ok := item.(string)
+			if !ok {
+				return fmt.Errorf(
+					"%w for %q: array element %d is not a string (%T)",
+					ErrInvalid, key, i, item,
+				)
+			}
+			strings[i] = s
+		}
+		o.set(key, strings)
+
 	default:
 		return fmt.Errorf("%w for %q: %v (%T)", ErrInvalid, key, value, value)
 	}
@@ -231,7 +283,42 @@ func (o *Parameters) PopulateFromViper(v *viper.Viper) error {
 
 // Map returns a map[string]any corresponding to the Parameters.
 func (o *Parameters) Map() map[string]any {
-	return maps.Clone(o.values)
+	ret := make(map[string]any, len(o.values))
+
+	for k, v := range o.values {
+		switch t := v.(type) {
+		case *Parameters:
+			ret[k] = t.Map()
+		case map[string]any:
+			ret[k] = cloneMap(t)
+		case []string:
+			ret[k] = append([]string(nil), t...)
+		default:
+			ret[k] = v
+		}
+	}
+
+	return ret
+}
+
+// Helper function to deep clone map
+func cloneMap(m map[string]any) map[string]any {
+	ret := make(map[string]any, len(m))
+
+	for k, v := range m {
+		switch t := v.(type) {
+		case *Parameters:
+			ret[k] = t.Map()
+		case map[string]any:
+			ret[k] = cloneMap(t)
+		case []string:
+			ret[k] = append([]string(nil), t...)
+		default:
+			ret[k] = v
+		}
+	}
+
+	return ret
 }
 
 // Get returns the value corresponding to the specified key, or ErrNotSet if
@@ -257,7 +344,7 @@ func (o *Parameters) DefaultGet(key string, defaultValue any) any {
 }
 
 // GetString returns the string value corresponding to the specified key. If
-// the key is not set or the value is a string, return "" and set the error to
+// the key is not set or the value is not string, return "" and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetString(key string) (string, error) {
 	return get(o, key, "", false)
@@ -281,7 +368,7 @@ func (o *Parameters) DefaultGetString(key, defaultValue string) (string, error) 
 }
 
 // GetBytes returns the []byte value corresponding to the specified key. If the
-// key is not set or the value is a []byte, return nil and set the error to
+// key is not set or the value is not []byte, return nil and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetBytes(key string) ([]byte, error) {
 	encoded, err := o.GetString(key)
@@ -327,7 +414,7 @@ func (o *Parameters) DefaultGetBytes(key string, defaultValue []byte) ([]byte, e
 }
 
 // GetInt64 returns the int64 value corresponding to the specified key. If the
-// key is not set or the value is a int64, return 0 and set the error to
+// key is not set or the value is not int64, return 0 and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetInt64(key string) (int64, error) {
 	return get(o, key, int64(0), false)
@@ -351,7 +438,7 @@ func (o *Parameters) DefaultGetInt64(key string, defaultValue int64) (int64, err
 }
 
 // GetInt returns the int value corresponding to the specified key. If the key
-// is not set or the value is a int, return 0 and set the error to ErrNotSet or
+// is not set or the value is not int, return 0 and set the error to ErrNotSet or
 // ErrInvalid respectively.
 func (o *Parameters) GetInt(key string) (int, error) {
 	val, err := o.GetInt64(key)
@@ -377,7 +464,7 @@ func (o *Parameters) DefaultGetInt(key string, defaultValue int) (int, error) {
 }
 
 // GetBool returns the bool value corresponding to the specified key. If the
-// key is not set or the value is a bool, return false and set the error to
+// key is not set or the value is not bool, return false and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetBool(key string) (bool, error) {
 	return get(o, key, false, false)
@@ -398,6 +485,54 @@ func (o *Parameters) MustGetBool(key string) bool {
 // a bool, returns false and the error is set to ErrInvalid.
 func (o *Parameters) DefaultGetBool(key string, defaultValue bool) (bool, error) {
 	return get(o, key, defaultValue, true)
+}
+
+// GetParameters returns the *Parameters value corresponding to the specified key. If the
+// key is not set or the value is not *Parameters, return nil and set the error to
+// ErrNotSet or ErrInvalid respectively.
+func (o *Parameters) GetParameters(key string) (*Parameters, error) {
+	return get[*Parameters](o, key, nil, false)
+}
+
+// MustGetParameters is like GetParameters but panics on error.
+func (o *Parameters) MustGetParameters(key string) *Parameters {
+	val, err := o.GetParameters(key)
+	if err != nil {
+		panic(err)
+	}
+
+	return val
+}
+
+// DefaultGetParameters returns the *Parameters value corresponding to the specified key.
+// If the key is not set, defaultValue is returned instead. If the value is not
+// a *Parameters, returns defaultValue and the error is set to ErrInvalid.
+func (o *Parameters) DefaultGetParameters(key string, defaultValue *Parameters) (*Parameters, error) {
+	return get[*Parameters](o, key, defaultValue, true)
+}
+
+// GetStrArray returns the []string value corresponding to the specified key. If the
+// key is not set or the value is not []string, return nil and set the error to
+// ErrNotSet or ErrInvalid respectively.
+func (o *Parameters) GetStrArray(key string) ([]string, error) {
+	return get[[]string](o, key, nil, false)
+}
+
+// MustGetStrArray is like GetStrArray but panics on error.
+func (o *Parameters) MustGetStrArray(key string) []string {
+	val, err := o.GetStrArray(key)
+	if err != nil {
+		panic(err)
+	}
+
+	return val
+}
+
+// DefaultGetStrArray returns the []string value corresponding to the specified key.
+// If the key is not set, defaultValue is returned instead. If the value is not
+// a []string, returns defaultValue and the error is set to ErrInvalid.
+func (o *Parameters) DefaultGetStrArray(key string, defaultValue []string) ([]string, error) {
+	return get[[]string](o, key, defaultValue, true)
 }
 
 func (o *Parameters) set(key string, value any) *Parameters {
