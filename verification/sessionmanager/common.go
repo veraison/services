@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// nolint:gocritic
 func makeKey(id uuid.UUID, tenant string) string {
 	// session://{tenant}/{uuid}
 	u := url.URL{

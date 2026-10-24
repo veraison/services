@@ -68,7 +68,8 @@ func validateCryptoKeys(keys []*comid.CryptoKey) error {
 }
 
 func validateMeasurements(measurements []comid.Measurement) error {
-	for i, mea := range measurements {
+	for i := range measurements {
+		mea := &measurements[i]
 		if mea.Key == nil {
 			return fmt.Errorf("measurement %d: mkey not set", i)
 		}

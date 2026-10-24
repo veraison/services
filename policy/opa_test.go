@@ -173,7 +173,7 @@ func jsonFileToMapSlice(path string) ([]map[string]any, error) {
 	}
 
 	var ret []map[string]any
-	if err = json.Unmarshal(bytes, &ret); err != nil {
+	if err := json.Unmarshal(bytes, &ret); err != nil {
 		return nil, err
 	}
 

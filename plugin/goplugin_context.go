@@ -13,7 +13,7 @@ import (
 	"github.com/veraison/services/log"
 )
 
-// IPluginContext is the common interace for handling all PluginContext[I] type
+// IPluginContext is the common interface for handling all PluginContext[I] type
 // instances of the generic PluginContext[].
 type IPluginContext interface {
 	GetName() string

@@ -50,8 +50,8 @@ func main() {
 		log.Fatalf("Could not read config: %v", err)
 	}
 	cfg := cfg{
-		ListenAddr: DefaultListenAddr,
-		Protocol:   "https",
+		ListenAddr:     DefaultListenAddr,
+		Protocol:       "https",
 		MaxPayloadSize: "1MB",
 	}
 
@@ -99,18 +99,20 @@ func main() {
 			log.Infow("vts connection established", "server-version",
 				vtsState.ServerVersion)
 		} else {
-			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+			log.Warnw("VTS server not ready. If you do not expect the server to be running yet,"+
+				" this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
 				"server-state", vtsState.Status.String())
 		}
 	} else {
-		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet,"+
+			" this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
 			"error", err)
 	}
 
 	log.Info("initializing verifier")
-	verifier := verifier.New(subs["verifier"], vtsClient)
+	verifierHandle := verifier.New(subs["verifier"], vtsClient)
 
-	apiHandler := api.NewHandler(sessionManager, verifier, cfg.DiscoveryMaxAge, maxPayloadSize)
+	apiHandler := api.NewHandler(sessionManager, verifierHandle, cfg.DiscoveryMaxAge, maxPayloadSize)
 
 	if cfg.Protocol == "https" {
 		apiServerTLS(apiHandler, cfg.ListenAddr, cfg.Cert, cfg.CertKey)
