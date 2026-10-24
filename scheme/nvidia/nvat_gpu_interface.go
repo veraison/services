@@ -11,6 +11,11 @@ import (
 	"unsafe"
 )
 
+const (
+	LOCAL  = "local"
+	REMOTE = "remote"
+)
+
 type NvatGpuInterface struct {
 	rimStore         C.nvat_rim_store_t
 	ocspClient       C.nvat_ocsp_client_t
@@ -25,7 +30,7 @@ func NewNvatGpuInterface(opts NvatOptions) (*NvatGpuInterface, error) {
 	n := &NvatGpuInterface{
 		options: opts,
 	}
-	if err := n.initLibrary(); err != nil {
+	if err := n.initLibrary(); err != nil { // nolint:gocritic // we return the error
 		return nil, err
 	}
 	return n, nil
@@ -72,21 +77,21 @@ func (n *NvatGpuInterface) initLibrary() error {
 	}
 
 	switch n.options.VerifierMode {
-	case "remote":
-		if err := n.createGpuNrasVerifier(); err != nil {
+	case REMOTE:
+		if err := n.createGpuNrasVerifier(); err != nil { // nolint:gocritic // we return the error
 			return err
 		}
 		n.gpuVerifier = C.nvat_gpu_nras_verifier_upcast_dyn(n.gpuNrasVerifier)
-	case "local":
-		if err := n.createRemoteRIMStore(); err != nil {
+	case LOCAL:
+		if err := n.createRemoteRIMStore(); err != nil { // nolint:gocritic // we return the error
 			return err
 		}
 
-		if err := n.createOcspClient(); err != nil {
+		if err := n.createOcspClient(); err != nil { // nolint:gocritic // we return the error
 			return err
 		}
 
-		if err := n.createGpuLocalVerifier(); err != nil {
+		if err := n.createGpuLocalVerifier(); err != nil { // nolint:gocritic // we return the error
 			return err
 		}
 		n.gpuVerifier = C.nvat_gpu_local_verifier_upcast_dyn(n.gpuLocalVerifier)
@@ -167,7 +172,7 @@ func (n *NvatGpuInterface) VerifyEvidence(nonceHex string, evidenceJSON []byte) 
 	return nil
 }
 
-func (n *NvatGpuInterface) createRemoteRIMStore() error {
+func (n *NvatGpuInterface) createRemoteRIMStore() error { // nolint:dupl
 	var remoteHost *C.char
 	if n.options.RemoteHost != "" {
 		remoteHost = C.CString(n.options.RemoteHost)
@@ -184,7 +189,7 @@ func (n *NvatGpuInterface) createRemoteRIMStore() error {
 	return nil
 }
 
-func (n *NvatGpuInterface) createOcspClient() error {
+func (n *NvatGpuInterface) createOcspClient() error { // nolint:dupl
 	var remoteHost *C.char
 	if n.options.RemoteHost != "" {
 		remoteHost = C.CString(n.options.RemoteHost)
@@ -212,7 +217,7 @@ func (n *NvatGpuInterface) createGpuLocalVerifier() error {
 	return nil
 }
 
-func (n *NvatGpuInterface) createGpuNrasVerifier() error {
+func (n *NvatGpuInterface) createGpuNrasVerifier() error { // nolint:dupl
 	var remoteHost *C.char
 	if n.options.RemoteHost != "" {
 		remoteHost = C.CString(n.options.RemoteHost)

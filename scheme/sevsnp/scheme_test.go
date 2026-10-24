@@ -3,6 +3,7 @@
 package sevsnp
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/binary"
 	"encoding/hex"
@@ -181,7 +182,7 @@ func derCertTable(t *testing.T, table []byte) []byte {
 	var entries []entry
 	for i := 0; i+24 <= len(table); i += 24 {
 		guid := table[i : i+16]
-		if string(guid) == string(make([]byte, 16)) {
+		if bytes.Equal(guid, make([]byte, 16)) {
 			break
 		}
 		off := binary.LittleEndian.Uint32(table[i+16:])

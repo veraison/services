@@ -3,9 +3,9 @@
 package main
 
 import (
-	"github.com/veraison/services/store-plugin/corim-store"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
+	corim_store "github.com/veraison/services/store-plugin/corim-store"
 )
 
 func main() {

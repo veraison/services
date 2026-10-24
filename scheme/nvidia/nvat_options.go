@@ -20,7 +20,7 @@ var defaultNvatOptions NvatOptions
 var logger = log.Named("NVIDIA-options")
 
 func init() {
-	defaultNvatOptions.VerifierMode = "remote"
+	defaultNvatOptions.VerifierMode = REMOTE
 
 	if _, err := os.Stat("/etc/ssl/certs/ca-certificates.crt"); err == nil {
 		defaultNvatOptions.CaTrustFile = "/etc/ssl/certs/ca-certificates.crt"
@@ -44,11 +44,11 @@ func (o NvatOptions) Valid() error {
 		return fmt.Errorf("verifier mode is required")
 	}
 
-	if o.VerifierMode != "remote" && o.VerifierMode != "local" {
+	if o.VerifierMode != REMOTE && o.VerifierMode != LOCAL {
 		return fmt.Errorf("unsupported verifier mode: %s", o.VerifierMode)
 	}
 
-	if o.VerifierMode == "remote" && o.ServiceToken == "" {
+	if o.VerifierMode == REMOTE && o.ServiceToken == "" {
 		return fmt.Errorf("service token is required")
 	}
 

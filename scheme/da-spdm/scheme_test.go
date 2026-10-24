@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	hwConfigName = "hardware-config"
+	hwConfigName  = "hardware-config"
 	mutableFwName = "mutable-firmware"
 
 	digest = comid.MustHexDecode(&testing.T{}, "07060504030201000f0e0c0b0817161514131211101f1e1d1c1b1a1918")
@@ -71,17 +71,17 @@ var (
 )
 
 func Test_evidenceToTriplesMap(t *testing.T) {
-	testCases := []struct{
-		title string
+	testCases := []struct {
+		title    string
 		evidence appraisal.Evidence
 		expected map[string]*comid.ValueTriple
-		err string
+		err      string
 	}{
 		{
 			title: "ok",
 			evidence: appraisal.Evidence{
 				Nonce: comid.MustHexDecode(t, "f9efc3341597f75f8d94432ad39566a8c5704b2004ba001c094f475bfc057f9f25d7aa40cd86cd30ebaae746fb19f008c1e6a1f23ad6a178e18dceda918f7f6e"),
-				Data: daSpdmGood,
+				Data:  daSpdmGood,
 			},
 			expected: testTriplesMap,
 		},
@@ -89,7 +89,7 @@ func Test_evidenceToTriplesMap(t *testing.T) {
 			title: "bad nonce",
 			evidence: appraisal.Evidence{
 				Nonce: comid.MustHexDecode(t, "deadbeef"),
-				Data: daSpdmGood,
+				Data:  daSpdmGood,
 			},
 			err: "nonce in evidence does not match session nonce",
 		},
@@ -97,7 +97,7 @@ func Test_evidenceToTriplesMap(t *testing.T) {
 			title: "bad CBOR",
 			evidence: appraisal.Evidence{
 				Nonce: comid.MustHexDecode(t, "deadbeef"),
-				Data: comid.MustHexDecode(t, "deadbeef"),
+				Data:  comid.MustHexDecode(t, "deadbeef"),
 			},
 			err: "cbor: invalid additional information",
 		},
@@ -117,15 +117,15 @@ func Test_evidenceToTriplesMap(t *testing.T) {
 }
 
 func Test_daTokenToTriplesMap_bad(t *testing.T) {
-	testCases := []struct{
+	testCases := []struct {
 		title string
 		token da.Token
-		err string
+		err   string
 	}{
 		{
 			title: "no submods",
 			token: da.Token{},
-			err: "no submods in DA token",
+			err:   "no submods in DA token",
 		},
 		{
 			title: "bad submod profile",
@@ -156,8 +156,7 @@ func Test_daTokenToTriplesMap_bad(t *testing.T) {
 					"foo": da.SPDMClaims{
 						EatProfile: DaDeviceSpdmProfile,
 						Measurements: map[uint8]da.SPDMMeasurement{
-							1: da.SPDMMeasurement{
-							},
+							1: da.SPDMMeasurement{},
 						},
 					},
 				},
@@ -191,7 +190,7 @@ func Test_daTokenToTriplesMap_bad(t *testing.T) {
 								ComponentType: 1,
 								DigestedMeasurement: &da.Digest{
 									Algorithm: 255,
-									Value: comid.MustHexDecode(t, "deadbeef"),
+									Value:     comid.MustHexDecode(t, "deadbeef"),
 								},
 							},
 						},
@@ -230,12 +229,12 @@ func TestImplementation_GetReferenceValueIDs(t *testing.T) {
 }
 
 func Test_matchMeasurement(t *testing.T) {
-	testCases := []struct{
-		title string
+	testCases := []struct {
+		title     string
 		reference []comid.Measurement
-		evidence []comid.Measurement
-		expected *MatchResult
-		err string
+		evidence  []comid.Measurement
+		expected  *MatchResult
+		err       string
 	}{
 		{
 			title: "ok digests matched",
@@ -245,7 +244,7 @@ func Test_matchMeasurement(t *testing.T) {
 					Val: comid.Mval{
 						Name: &hwConfigName,
 						Digests: comid.NewDigests().
-							AddDigest( 1, comid.MustHexDecode(t,"4f6d616861")),
+							AddDigest(1, comid.MustHexDecode(t, "4f6d616861")),
 					},
 				},
 			},
@@ -255,7 +254,7 @@ func Test_matchMeasurement(t *testing.T) {
 					Val: comid.Mval{
 						Name: &hwConfigName,
 						Digests: comid.NewDigests().
-							AddDigest( 1, comid.MustHexDecode(t,"4f6d616861")),
+							AddDigest(1, comid.MustHexDecode(t, "4f6d616861")),
 					},
 				},
 			},
@@ -317,7 +316,7 @@ func Test_matchMeasurement(t *testing.T) {
 			},
 			expected: &MatchResult{
 				Matched: false,
-				Reason: "mkey 1: raw-value (deadbeef) did not match reference (4f6d616861)",
+				Reason:  "mkey 1: raw-value (deadbeef) did not match reference (4f6d616861)",
 			},
 		},
 		{
@@ -328,7 +327,7 @@ func Test_matchMeasurement(t *testing.T) {
 					Val: comid.Mval{
 						Name: &hwConfigName,
 						Digests: comid.NewDigests().
-							AddDigest( 1, comid.MustHexDecode(t,"4f6d616861")),
+							AddDigest(1, comid.MustHexDecode(t, "4f6d616861")),
 					},
 				},
 			},
@@ -338,13 +337,13 @@ func Test_matchMeasurement(t *testing.T) {
 					Val: comid.Mval{
 						Name: &hwConfigName,
 						Digests: comid.NewDigests().
-							AddDigest( 1, comid.MustHexDecode(t,"deadbeef")),
+							AddDigest(1, comid.MustHexDecode(t, "deadbeef")),
 					},
 				},
 			},
 			expected: &MatchResult{
 				Matched: false,
-				Reason: "mkey 1: digests did not match reference",
+				Reason:  "mkey 1: digests did not match reference",
 			},
 		},
 		{
@@ -366,13 +365,13 @@ func Test_matchMeasurement(t *testing.T) {
 					Val: comid.Mval{
 						Name: &hwConfigName,
 						Digests: comid.NewDigests().
-							AddDigest( 1, comid.MustHexDecode(t,"deadbeef")),
+							AddDigest(1, comid.MustHexDecode(t, "deadbeef")),
 					},
 				},
 			},
 			expected: &MatchResult{
 				Matched: false,
-				Reason: "mkey 1: evidence does not contain raw-value",
+				Reason:  "mkey 1: evidence does not contain raw-value",
 			},
 		},
 		{
@@ -401,7 +400,7 @@ func Test_matchMeasurement(t *testing.T) {
 			},
 			expected: &MatchResult{
 				Matched: false,
-				Reason: "failed to match mkey 1",
+				Reason:  "failed to match mkey 1",
 			},
 		},
 		{
@@ -430,7 +429,7 @@ func Test_matchMeasurement(t *testing.T) {
 			},
 			expected: &MatchResult{
 				Matched: false,
-				Reason: `mkey 1: reference ("hardware-config") and evidence ("mutable-firmware") names don't match`,
+				Reason:  `mkey 1: reference ("hardware-config") and evidence ("mutable-firmware") names don't match`,
 			},
 		},
 		{
@@ -501,36 +500,36 @@ func TestImplementation_AppraiseClaims(t *testing.T) {
 }
 
 func Test_classNameFromSubmodName(t *testing.T) {
-	testCases := []struct{
-		title string
+	testCases := []struct {
+		title      string
 		submodName string
-		expected string
-		err string
+		expected   string
+		err        string
 	}{
 		{
-			title: "ok SAN with CN",
+			title:      "ok SAN with CN",
 			submodName: "spdm:C=CA,O=ACME,OU=Widget-B,CN=9876543210",
-			expected: "spdm:C=CA,O=ACME,OU=Widget-B",
+			expected:   "spdm:C=CA,O=ACME,OU=Widget-B",
 		},
 		{
-			title: "ok SAN without CN",
+			title:      "ok SAN without CN",
 			submodName: "spdm:C=CA,O=ACME,OU=Widget-B",
-			expected: "spdm:C=CA,O=ACME,OU=Widget-B",
+			expected:   "spdm:C=CA,O=ACME,OU=Widget-B",
 		},
 		{
-			title: "ok ub-DMTF-device-info",
+			title:      "ok ub-DMTF-device-info",
 			submodName: "spdm:ACME:WIDGET-A:0123456789",
-			expected: "spdm:ACME:WIDGET-A",
+			expected:   "spdm:ACME:WIDGET-A",
 		},
 		{
-			title: "err not namespace",
+			title:      "err not namespace",
 			submodName: "foo",
-			err: "submod name must start with spdm namespace",
+			err:        "submod name must start with spdm namespace",
 		},
 		{
-			title: "err bad fromat",
+			title:      "err bad fromat",
 			submodName: "spdm:foo",
-			err: `could not derive class from "spdm:foo"`,
+			err:        `could not derive class from "spdm:foo"`,
 		},
 	}
 

@@ -4,9 +4,9 @@
 package main
 
 import (
-	scheme "github.com/veraison/services/store-plugin/nvidia-coserv"
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
+	scheme "github.com/veraison/services/store-plugin/nvidia-coserv"
 )
 
 func main() {
