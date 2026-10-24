@@ -82,18 +82,18 @@ func main() {
 			log.Infow("vts connection established", "server-version",
 				vtsState.ServerVersion)
 		} else {
-			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings",
+			log.Warnw("VTS server not ready. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with your vts.server-addr in your settings", // nolint:lll
 				"server-state", vtsState.Status.String())
 		}
 	} else {
-		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings",
+		log.Warnw("Could not connect to VTS server. If you do not expect the server to be running yet, this is probably OK, otherwise it may indicate an issue with vts.server-addr in your settings", // nolint:lll
 			"error", err)
 	}
 
 	log.Info("initializing endorsement distributor")
-	endorsementdistributor := endorsementdistributor.New(vtsClient)
+	endorsementdistributorHandler := endorsementdistributor.New(vtsClient)
 
-	apiHandler := api.NewHandler(endorsementdistributor, log.Named("coserv"), cfg.DiscoveryMaxAge)
+	apiHandler := api.NewHandler(endorsementdistributorHandler, log.Named("coserv"), cfg.DiscoveryMaxAge)
 
 	if cfg.Protocol == "https" {
 		apiServerTLS(apiHandler, cfg.ListenAddr, cfg.Cert, cfg.CertKey)

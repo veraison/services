@@ -18,7 +18,7 @@ type BadEvidenceError struct {
 }
 
 // The goal of MarshalJSON and UnmarshalJSON below is to make
-// serialization/deserialization as transparrent as possible. This means
+// serialization/deserialization as transparent as possible. This means
 // accurately preserving Detail's structure.
 
 func (o BadEvidenceError) MarshalJSON() ([]byte, error) {

@@ -99,14 +99,14 @@ func (o Handler) CreatePolicy(c *gin.Context) {
 		return
 	}
 
-	policy, err := o.Manager.Update(c, tenantID, scheme, name, policyRules)
+	policyResp, err := o.Manager.Update(c, tenantID, scheme, name, policyRules)
 	if err != nil {
 		o.Logger.Errorf("could not update policy: %s", err)
 		reportProblem(c, http.StatusInternalServerError, "could not update policy")
 		return
 	}
 
-	respBytes, err := json.Marshal(&policy)
+	respBytes, err := json.Marshal(&policyResp)
 	if err != nil {
 		o.Logger.Errorf("error marshaling policy to JSON: %s", err)
 		reportProblem(c, http.StatusInternalServerError, "could not update policy")
@@ -160,7 +160,7 @@ func (o Handler) GetPolicy(c *gin.Context) {
 		return
 	}
 
-	uuid, err := uuid.Parse(c.Param("uuid"))
+	uuidVal, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
 		reportProblem(c,
 			http.StatusBadRequest,
@@ -169,7 +169,7 @@ func (o Handler) GetPolicy(c *gin.Context) {
 		return
 	}
 
-	pol, err := o.Manager.GetPolicy(c, tenantID, scheme, uuid)
+	pol, err := o.Manager.GetPolicy(c, tenantID, scheme, uuidVal)
 	o.respondToGet(c, PolicyMediaType, pol, err)
 }
 
@@ -207,7 +207,7 @@ func (o Handler) Activate(c *gin.Context) {
 		return
 	}
 
-	uuid, err := uuid.Parse(c.Param("uuid"))
+	uuidVal, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
 		reportProblem(c,
 			http.StatusBadRequest,
@@ -216,7 +216,7 @@ func (o Handler) Activate(c *gin.Context) {
 		return
 	}
 
-	err = o.Manager.Activate(c, tenantID, scheme, uuid)
+	err = o.Manager.Activate(c, tenantID, scheme, uuidVal)
 	o.respondSimple(c, err)
 }
 

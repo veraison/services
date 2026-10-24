@@ -57,7 +57,7 @@ func (o *OPA) Evaluate(
 		"endorsements": endorsements,
 	}
 
-	rego := rego.New(
+	regoEngine := rego.New(
 		// Policies accepted by this API use the Rego v0 syntax.  Keep that
 		// contract while using the OPA v1 Go API.
 		rego.SetRegoVersion(ast.RegoV0),
@@ -69,7 +69,7 @@ func (o *OPA) Evaluate(
 		rego.Dump(log.NamedWriter("opa", log.DebugLevel)),
 	)
 
-	resultSet, err := rego.Eval(ctx)
+	resultSet, err := regoEngine.Eval(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not Eval policy: %w", err)
 	}
@@ -86,7 +86,7 @@ func (o *OPA) Evaluate(
 }
 
 func (o *OPA) Validate(ctx context.Context, policy string) error {
-	rego := rego.New(
+	regoEngine := rego.New(
 		rego.SetRegoVersion(ast.RegoV0),
 		rego.Package("policy"),
 		rego.Module("opa.rego", preambleText),
@@ -95,7 +95,7 @@ func (o *OPA) Validate(ctx context.Context, policy string) error {
 		rego.Dump(log.NamedWriter("opa", log.DebugLevel)),
 	)
 
-	_, err := rego.Compile(ctx)
+	_, err := regoEngine.Compile(ctx)
 	return err
 }
 
