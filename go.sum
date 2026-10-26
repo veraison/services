@@ -1255,8 +1255,8 @@ github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666 h1:MjaP7BdIa6M
 github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666/go.mod h1:YheIuCJOdorTOO2Zrx8msKRGmDj/xP5YSMt/yJHcvPk=
 github.com/veraison/cmw v0.3.0 h1:Uu+Kf76sGseSBXPY6MIGo6CZAqkUUFDt7r6sBN7sB7k=
 github.com/veraison/cmw v0.3.0/go.mod h1:V7OMAyNVrMEWGu1d1LItZRuGJzlO0/KN84ju9XIXmFE=
-github.com/veraison/corim v1.1.3-0.20261014075055-d19e48dba761 h1:yrYhDYHuBVM2OmdUcGWZbokMwGvaGlgY2rR4p4sHeWg=
-github.com/veraison/corim v1.1.3-0.20261014075055-d19e48dba761/go.mod h1:CNq6Vwrc3bMFaWAC7SjyuCTp2/C2D9EDwj9CQJWF0/c=
+github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e h1:Dcb/FTqUAWrFC/e7MMM49Sb7dyrU3NAIHpEVNlMbpEg=
+github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e/go.mod h1:CNq6Vwrc3bMFaWAC7SjyuCTp2/C2D9EDwj9CQJWF0/c=
 github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5 h1:xsiDHnE9aefE9E1bODPvPnAZgzjgZ5hY0keTEmENKiQ=
 github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5/go.mod h1:CTlOMLXykV5OidkA8qXB7U4xfqI1BYMhian1qfwxeUs=
 github.com/veraison/da v0.0.0-20260902105205-bdc14504b673 h1:B5+jFu9XV+0f3pv3tszBbxGHOaYP/sbqVK09w55Wkdg=
