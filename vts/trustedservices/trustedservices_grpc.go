@@ -26,11 +26,11 @@ import (
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/ear"
-	"github.com/veraison/services/config"
+	servicesConfig "github.com/veraison/services/config"
 	handlermod "github.com/veraison/services/handler"
 	"github.com/veraison/services/plugin"
 	"github.com/veraison/services/proto"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	vtscoserv "github.com/veraison/services/vts/coserv"
 	"github.com/veraison/services/vts/earsigner"
 	"github.com/veraison/services/vts/endorsementstore"
@@ -124,7 +124,7 @@ func (o *GRPC) Init(
 		UseTLS:        true,
 	}
 
-	loader := config.NewLoader(&cfg)
+	loader := servicesConfig.NewLoader(&cfg)
 	if err := loader.LoadFromViper(v); err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func (o *GRPC) GetServiceState(context.Context, *emptypb.Empty) (*proto.ServiceS
 
 	return &proto.ServiceState{
 		Status:        proto.ServiceStatus_SERVICE_STATUS_READY,
-		ServerVersion: config.Version,
+		ServerVersion: servicesConfig.Version,
 		SupportedMediaTypes: map[string]*structpb.ListValue{
 			"challenge-response/v1": mediaTypesList.AsListValue(),
 		},
@@ -368,11 +368,11 @@ func (o *GRPC) GetAttestation(
 	ctx context.Context,
 	token *proto.AttestationToken,
 ) (*proto.AppraisalContext, error) {
-	evidence := appraisal.NewEvidenceFromProtobuf(token)
+	evidence := vts_appraisal.NewEvidenceFromProtobuf(token)
 	o.logger.Infow("get attestation", "media-type", evidence.MediaType,
 		"tenant-id", evidence.TenantID)
 
-	appraisal := appraisal.NewContext(evidence)
+	appraisal := vts_appraisal.NewContext(evidence)
 
 	handler, err := o.SchemePluginManager.LookupByMediaType(evidence.MediaType)
 	if err != nil {
@@ -743,7 +743,7 @@ func (o *GRPC) GetEndorsements(
 // is logged and the error is cleared because we assume the relevant claim has
 // been already set in the attestation result.
 func (o *GRPC) finalize(
-	appraisal *appraisal.Context,
+	appraisal *vts_appraisal.Context,
 	err error,
 ) (*proto.AppraisalContext, error) {
 	var signErr error

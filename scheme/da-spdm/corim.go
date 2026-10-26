@@ -20,7 +20,7 @@ func validateEnvironment(env *comid.Environment) error {
 		return errors.New("class not set")
 	}
 
-	if env.Class.ClassID == nil || !env.Class.ClassID.IsSet(){
+	if env.Class.ClassID == nil || !env.Class.ClassID.IsSet() {
 		return errors.New("class ID not set")
 	}
 
@@ -45,7 +45,8 @@ func validateEnvironment(env *comid.Environment) error {
 }
 
 func validateMeasurements(measurements []comid.Measurement) error {
-	for i, measurement := range measurements {
+	for i := range measurements {
+		measurement := &measurements[i]
 		if measurement.Key == nil {
 			return fmt.Errorf("measurement[%d]: mkey not set", i)
 		}
@@ -57,7 +58,7 @@ func validateMeasurements(measurements []comid.Measurement) error {
 		if measurement.Val.Name == nil {
 			return fmt.Errorf("measurement[%d]: name not set", i)
 		}
-		
+
 		if measurement.Val.Digests == nil && measurement.Val.RawValue == nil {
 			return fmt.Errorf("measurement[%d]: either digests or raw-value must be set", i)
 		}
@@ -77,7 +78,7 @@ func init() {
 	}
 
 	validator := &common.TriplesValidator{
-		EnviromentValidator: validateEnvironment,
+		EnviromentValidator:   validateEnvironment,
 		MeasurementsValidator: validateMeasurements,
 	}
 

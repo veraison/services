@@ -176,7 +176,7 @@ func (o *Store) setEndorsementsStateUsingIDs(query *lifecycle.Query, setActive b
 	return o.setTripleQueryGroupsActive(valueTripleQueryGroup, keyTripleQueryGroup, setActive)
 }
 
-func valueTripleQueryGroupFromEnvironmentSelector(selector *coserv.EnvironmentSelector) (*corimstore.ValueTripleQueryGroup, error) { //nolint:dupl
+func valueTripleQueryGroupFromEnvironmentSelector(selector *coserv.EnvironmentSelector) (*corimstore.ValueTripleQueryGroup, error) { //nolint:dupl,lll
 	valueTripleQueryGroup := corimstore.NewValueTripleQueryGroup()
 
 	if selector.Classes != nil {
@@ -221,7 +221,7 @@ func valueTripleQueryGroupFromEnvironmentSelector(selector *coserv.EnvironmentSe
 	return valueTripleQueryGroup, nil
 }
 
-func keyTripleQueryGroupFromEnvironmentSelector(selector *coserv.EnvironmentSelector) (*corimstore.KeyTripleQueryGroup, error) { // nolint:dupl
+func keyTripleQueryGroupFromEnvironmentSelector(selector *coserv.EnvironmentSelector) (*corimstore.KeyTripleQueryGroup, error) { // nolint:dupl,lll
 	keyTripleQueryGroup := corimstore.NewKeyTripleQueryGroup()
 
 	if selector.Classes != nil {

@@ -10,7 +10,7 @@ import (
 func TestDefaultNvatOptions(t *testing.T) {
 	opts := DefaultNvatOptions()
 
-	if opts.VerifierMode != "remote" {
+	if opts.VerifierMode != REMOTE {
 		t.Fatalf("expected default verifier mode 'remote', got %q", opts.VerifierMode)
 	}
 
@@ -23,7 +23,7 @@ func TestDefaultNvatOptions(t *testing.T) {
 
 func TestNvatOptionsValidSuccess(t *testing.T) {
 	opts := NvatOptions{
-		VerifierMode: "remote",
+		VerifierMode: REMOTE,
 		ServiceToken: "token",
 	}
 
@@ -34,7 +34,7 @@ func TestNvatOptionsValidSuccess(t *testing.T) {
 
 func TestNvatOptionsValidLocalWithoutServiceToken(t *testing.T) {
 	opts := NvatOptions{
-		VerifierMode: "local",
+		VerifierMode: LOCAL,
 	}
 
 	if err := opts.Valid(); err != nil {
@@ -50,17 +50,17 @@ func TestMissingRemoteServiceToken(t *testing.T) {
 	}{
 		{
 			name: "remote without token",
-			opts: NvatOptions{VerifierMode: "remote"},
+			opts: NvatOptions{VerifierMode: REMOTE},
 			want: true,
 		},
 		{
 			name: "remote with token",
-			opts: NvatOptions{VerifierMode: "remote", ServiceToken: "token"},
+			opts: NvatOptions{VerifierMode: REMOTE, ServiceToken: "token"},
 			want: false,
 		},
 		{
 			name: "local without token",
-			opts: NvatOptions{VerifierMode: "local"},
+			opts: NvatOptions{VerifierMode: LOCAL},
 			want: false,
 		},
 	}
@@ -91,7 +91,7 @@ func TestNvatOptionsValidFailures(t *testing.T) {
 	}
 
 	opts = NvatOptions{
-		VerifierMode: "remote",
+		VerifierMode: REMOTE,
 	}
 	if err := opts.Valid(); err == nil {
 		t.Fatal("expected error for missing service token")

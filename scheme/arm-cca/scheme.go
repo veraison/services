@@ -24,7 +24,7 @@ import (
 	"github.com/veraison/services/handler"
 	"github.com/veraison/services/log"
 	"github.com/veraison/services/scheme/common"
-	"github.com/veraison/services/vts/appraisal"
+	vts_appraisal "github.com/veraison/services/vts/appraisal"
 	"go.uber.org/zap"
 )
 
@@ -54,7 +54,7 @@ func NewImplementation() *Implementation {
 }
 
 func (o *Implementation) GetTrustAnchorIDs(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 ) ([]*comid.Environment, error) {
 	ccaToken, err := ccatoken.DecodeAndValidateEvidenceFromCBOR(evidence.Data)
 	if err != nil {
@@ -130,7 +130,7 @@ func (o *Implementation) ValidateComid(c *comid.Comid) error {
 }
 
 func (o *Implementation) ExtractClaims(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 ) (map[string]any, error) {
 	ccaToken, err := ccatoken.DecodeAndValidateEvidenceFromCBOR(evidence.Data)
@@ -157,7 +157,7 @@ func (o *Implementation) ExtractClaims(
 }
 
 func (o *Implementation) ValidateEvidenceIntegrity(
-	evidence *appraisal.Evidence,
+	evidence *vts_appraisal.Evidence,
 	trustAnchors []*comid.KeyTriple,
 	endorsements []*comid.ValueTriple,
 ) error {
@@ -334,39 +334,40 @@ func AppraiseRealm(
 			ExtensibleMeasurements: make([][]byte, NUM_REMS),
 		}
 
-		for _, measurement := range triple.Measurements.Values {
-			mkey, err := readMeasurementKey(&measurement)
+		for i := range triple.Measurements.Values {
+			measurement := &triple.Measurements.Values[i]
+			mkey, err := readMeasurementKey(measurement)
 			if err != nil {
 				return err
 			}
 
 			switch mkey {
 			case cca.CCARealmInitialMeasurementMkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return fmt.Errorf("%s: %w", cca.CCARealmInitialMeasurementMkey, err)
 				}
 				refVal.InitialMeasurement = digest
 			case cca.CCARealmExtendedMeasurement0Mkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement0Mkey, err)
 				}
 				refVal.ExtensibleMeasurements[0] = digest
 			case cca.CCARealmExtendedMeasurement1Mkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement1Mkey, err)
 				}
 				refVal.ExtensibleMeasurements[1] = digest
 			case cca.CCARealmExtendedMeasurement2Mkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement2Mkey, err)
 				}
 				refVal.ExtensibleMeasurements[2] = digest
 			case cca.CCARealmExtendedMeasurement3Mkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return fmt.Errorf("%s: %w", cca.CCARealmExtendedMeasurement3Mkey, err)
 				}
@@ -497,8 +498,9 @@ func matchPlatformClaimsToReferenceValues(
 	logger.Debug("building platform reference values map...")
 	referenceValues := make(map[string][2]string)
 	for _, triple := range endorsements {
-		for _, measurement := range triple.Measurements.Values {
-			mkey, err := readMeasurementKey(&measurement)
+		for i := range triple.Measurements.Values {
+			measurement := &triple.Measurements.Values[i]
+			mkey, err := readMeasurementKey(measurement)
 			if err != nil {
 				return false, false, err
 			}
@@ -523,7 +525,7 @@ func matchPlatformClaimsToReferenceValues(
 				referenceManufacturingConfigValue = measurement.Val.RawValue.Bytes()
 
 			case cca.CCASoftwareComponentMkey:
-				digest, err := readMeasurementDigestBytes(&measurement)
+				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
 					return false, false, err
 				}

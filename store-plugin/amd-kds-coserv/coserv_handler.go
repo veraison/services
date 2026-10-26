@@ -32,7 +32,7 @@ func constructVcekUrl(instance *coserv.StatefulInstance) string {
 
 func getVcekForInstance(instance *coserv.StatefulInstance) ([]byte, error) {
 	url := constructVcekUrl(instance)
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec // URL is constructed by us
 	if err != nil {
 		return nil, fmt.Errorf("HTTP GET error: %v", err)
 	}
@@ -97,14 +97,14 @@ func (s CoservProxyHandler) addTrustAnchorForInstance(i *coserv.StatefulInstance
 		Bytes:   cert,
 	}
 
-	pem := pem.EncodeToMemory(block)
+	pemData := pem.EncodeToMemory(block)
 
 	triple := comid.KeyTriple{
 		Environment: comid.Environment{
 			Instance: i.Instance,
 		},
 		VerifKeys: comid.CryptoKeys{
-			comid.MustNewPKIXBase64Cert(string(pem)),
+			comid.MustNewPKIXBase64Cert(string(pemData)),
 		},
 	}
 

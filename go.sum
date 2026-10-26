@@ -1253,10 +1253,10 @@ github.com/valyala/fastjson v1.6.4 h1:uAUNq9Z6ymTgGhcm0UynUAB6tlbakBrz6CQFax3BXV
 github.com/valyala/fastjson v1.6.4/go.mod h1:CLCAqky6SMuOcxStkYQvblddUtoRxhYMGLrsQns1aXY=
 github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666 h1:MjaP7BdIa6Mi+vKfbmdZFtpSfvVEy4AcPhRGrZO9hDk=
 github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666/go.mod h1:YheIuCJOdorTOO2Zrx8msKRGmDj/xP5YSMt/yJHcvPk=
-github.com/veraison/cmw v0.2.0 h1:BWEvwZnD4nn5osq6XwQpTRcGxwV+Su4t6ytdAbVXAJY=
-github.com/veraison/cmw v0.2.0/go.mod h1:OiYKk1t6/Fmmg30ZpSMzi4nKr5kt3374sNTkgxC5BDs=
-github.com/veraison/corim v1.1.3-0.20261014075055-d19e48dba761 h1:yrYhDYHuBVM2OmdUcGWZbokMwGvaGlgY2rR4p4sHeWg=
-github.com/veraison/corim v1.1.3-0.20261014075055-d19e48dba761/go.mod h1:CNq6Vwrc3bMFaWAC7SjyuCTp2/C2D9EDwj9CQJWF0/c=
+github.com/veraison/cmw v0.3.0 h1:Uu+Kf76sGseSBXPY6MIGo6CZAqkUUFDt7r6sBN7sB7k=
+github.com/veraison/cmw v0.3.0/go.mod h1:V7OMAyNVrMEWGu1d1LItZRuGJzlO0/KN84ju9XIXmFE=
+github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e h1:Dcb/FTqUAWrFC/e7MMM49Sb7dyrU3NAIHpEVNlMbpEg=
+github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e/go.mod h1:CNq6Vwrc3bMFaWAC7SjyuCTp2/C2D9EDwj9CQJWF0/c=
 github.com/veraison/corim-store v0.3.1-0.20261026180833-a2a60b6a11ad h1:6rn2aYsLUzhQTIQX7HdR9ap4h6gbZ+3FctD9lQ8NO0I=
 github.com/veraison/corim-store v0.3.1-0.20261026180833-a2a60b6a11ad/go.mod h1:LDDcWR+ACUUhJm0kc0ppuZkeh6MRKErL0AS1bnMn5jM=
 github.com/veraison/da v0.0.0-20260902105205-bdc14504b673 h1:B5+jFu9XV+0f3pv3tszBbxGHOaYP/sbqVK09w55Wkdg=
@@ -1271,6 +1271,8 @@ github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e h1:W1OWcrRvfN0
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e/go.mod h1:bXUwdYAGcRoclxe73JmO8Z9ngV9KDHqW20afM9Q0FKo=
 github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76 h1:AsVDP6X2A3atSJwoj7rLkAAyXGZ6l5Zr6gAgIztzpcw=
 github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76/go.mod h1:89kdVA6JprVqSY5TwYZN5GrPWuTCgRJapo8SMCjD8tU=
+github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56 h1:ZnHpD9x/Bpw1aSrv3xgSGcn4Q+l4DwuLuJ25+DLcIaI=
+github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56/go.mod h1:IO9MOHW0aXt0Ac0N7AyjirDVyjBQDF+lFNDsnfBUWjU=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897 h1:ze1ulqK70S7PRignyZzFDBJHNVEDyISk5FDv9Uh3UFw=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb h1:iBPEloogBk7uK2Ygtz1l6gJabikXs8ASZCmormbn2lM=

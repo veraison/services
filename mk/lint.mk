@@ -1,30 +1,20 @@
-# Copyright 2021-2026 Contributors to the Veraison project.
+# Copyright 2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-#
-# variables:
-# * GOLINT_ARGS - command line arguments for $(LINT) when run on the lint target
-# targets:
-# * lint  - run source code linter
+# Do NOT EDIT: synced from veraison/ci configs/mk/lint.mk
 
-GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E prealloc
+TOPDIR ?= $(CURDIR)
 
-GOLINT_VERSION = v2.13.2
-GOLINT = $(TOPDIR)/tools-bin/golangci-lint
-GOLINT_STAMP = $(TOPDIR)/tools-bin/golangci-lint-$(GOLINT_VERSION).stamp
+GOLINT_VERSION = v2.14.0
+GOLINT = $(TOPDIR)/tools-bin/$(GOLINT_VERSION)/golangci-lint
+GOLINT_ARGS ?= run
+GOMODS ?= .
 
-$(GOLINT): $(GOLINT_STAMP)
+.PHONY: lint lint-hook-pre
+lint: $(GOLINT) lint-hook-pre
+	set -e; for mod in $(GOMODS); do (cd $$mod && $(GOLINT) $(GOLINT_ARGS)); done
 
-$(GOLINT_STAMP):
-	mkdir -p $(dir $(GOLINT))
-	touch $(GOLINT_STAMP)
-	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)
-
-.PHONY: lint
-lint: $(GOLINT) lint-hook-pre reallint
-
-.PHONY: lint-hook-pre
+# projects add prerequisites
 lint-hook-pre:
 
-.PHONY: reallint
-reallint: ; $(GOLINT) $(GOLINT_ARGS)
-
+$(GOLINT):
+	GOBIN=$(@D) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)

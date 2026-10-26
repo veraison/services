@@ -30,7 +30,7 @@ import (
 
 const (
 	sessionURIRegexp = `^session/[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$`
-	maxPayloadSize = int64(99999)
+	maxPayloadSize   = int64(99999)
 )
 
 var (
@@ -404,7 +404,7 @@ func TestHandler_NewChallengeResponse_SetSessionFailure(t *testing.T) {
 func testHandler_UnsupportedAccept(t *testing.T, method string) {
 	h := &Handler{}
 
-	url := path.Join(testSessionBaseURL, testUUIDString)
+	urlStr := path.Join(testSessionBaseURL, testUUIDString)
 
 	expectedCode := http.StatusNotAcceptable
 	expectedType := "application/problem+json"
@@ -417,7 +417,7 @@ func testHandler_UnsupportedAccept(t *testing.T, method string) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(method, url, http.NoBody)
+	req, _ := http.NewRequest(method, urlStr, http.NoBody)
 	req.Header.Set("Accept", "application/unsupported+ber")
 
 	NewRouter(h).ServeHTTP(w, req)
@@ -440,7 +440,7 @@ func TestHandler_SubmitEvidence_unsupported_evidence_format(t *testing.T) {
 
 	verifierError := "no active plugin found for " + testUnsupportedMediaType
 
-	url := path.Join(testSessionBaseURL, testUUIDString)
+	urlStr := path.Join(testSessionBaseURL, testUUIDString)
 
 	expectedCode := http.StatusUnsupportedMediaType
 	expectedType := "application/problem+json"
@@ -465,7 +465,7 @@ func TestHandler_SubmitEvidence_unsupported_evidence_format(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(http.MethodPost, url, strings.NewReader(testJSONBody))
+	req, _ := http.NewRequest(http.MethodPost, urlStr, strings.NewReader(testJSONBody))
 	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
 	req.Header.Set("Content-Type", testUnsupportedMediaType)
 
@@ -986,8 +986,8 @@ func TestHandler_GetWellKnownVerificationInfo_ok(t *testing.T) {
 	NewRouter(h).ServeHTTP(w, req)
 
 	var body capability.WellKnownInfo
-	bytes := w.Body.Bytes()
-	_ = json.Unmarshal(bytes, &body)
+	bytesBody := w.Body.Bytes()
+	_ = json.Unmarshal(bytesBody, &body)
 
 	assert.Equal(t, expectedCode, w.Code)
 	assert.Equal(t, expectedType, w.Result().Header.Get("Content-Type"))
@@ -1184,7 +1184,7 @@ func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
 
 	verifierError := "could not unwrap the CMW: wrong number of entries (1) in the CMW record"
 
-	url := path.Join(testSessionBaseURL, testUUIDString)
+	urlStr := path.Join(testSessionBaseURL, testUUIDString)
 
 	expectedCode := http.StatusBadRequest
 	expectedType := "application/problem+json"
@@ -1203,7 +1203,7 @@ func TestHandler_SubmitEvidence_bad_CMW(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(badCMW))
+	req, _ := http.NewRequest(http.MethodPost, urlStr, bytes.NewReader(badCMW))
 	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
 	req.Header.Set("Content-Type", "application/vnd.veraison.cmw")
 
@@ -1225,7 +1225,7 @@ func TestHandler_SubmitEvidence_payload_too_large(t *testing.T) {
 
 	verifierError := "payload too large"
 
-	url := path.Join(testSessionBaseURL, testUUIDString)
+	urlStr := path.Join(testSessionBaseURL, testUUIDString)
 
 	expectedCode := http.StatusBadRequest
 	expectedType := "application/problem+json"
@@ -1244,7 +1244,7 @@ func TestHandler_SubmitEvidence_payload_too_large(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(testCMW))
+	req, _ := http.NewRequest(http.MethodPost, urlStr, bytes.NewReader(testCMW))
 	req.Header.Set("Accept", ChallengeResponseSessionMediaType)
 	req.Header.Set("Content-Type", "application/vnd.veraison.cmw")
 
