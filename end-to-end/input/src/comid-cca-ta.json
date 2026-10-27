@@ -1,42 +1,42 @@
 {
-  "lang": "en-GB",
-  "tag-identity": {
-    "id": "366D0A0A-5988-45ED-8488-2F2A544F6242",
-    "version": 0
-  },
-  "entities": [
-    {
-      "name": "ACME Ltd.",
-      "regid": "https://acme.example",
-      "roles": [
-        "tagCreator",
-        "creator",
-        "maintainer"
-      ]
-    }
-  ],
-  "triples": {
-    "attester-verification-keys": [
+    "lang": "en-GB",
+    "tag-identity": {
+      "id": "ceb50b5a-a61e-4666-8b6b-33cb957b6801",
+      "version": 0
+    },
+    "entities": [
       {
-        "environment": {
-          "class": {
-            "id": {
-              "type": "bytes",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-            }
-          },
-          "instance": {
-            "type": "ueid",
-            "value": "AQICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC"
-          }
-        },
-        "verification-keys": [
-          {
-            "type": "pkix-base64-key",
-	    "value": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMKBCTNIcKUSDii11ySs3526iDZ8A\niTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==\n-----END PUBLIC KEY-----"
-          }
+        "name": "ACME Ltd.",
+        "regid": "https://acme.example",
+        "roles": [
+          "tagCreator",
+          "creator",
+          "maintainer"
         ]
       }
-    ]
-  }
+    ],
+    "triples": {
+      "attester-verification-keys": [
+        {
+          "environment": {
+            "class": {
+              "id": {
+                "type": "bytes",
+                "value": "f0VMRgIBAQAAAAAAAAAAAAMAPgABAAAAUFgAAAAAAAA="
+              }
+            },
+            "instance": {
+              "type": "ueid",
+              "value": "AQcGBQQDAgEADw4NDAsKCQgXFhUUExIREB8eHRwbGhkY"
+            }
+          },
+          "verification-keys": [
+            {
+              "type": "pkix-base64-key",
+              "value": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEIShnxS4rlQiwpCCpBWDzlNLfqiG911FP\n8akBr+fh94uxHU5m+Kijivp2r2oxxN6MhM4tr8mWQli1P61xh3T0ViDREbF26DGO\nEYfbAjWjGNN7pZf+6A4OTHYqEryz6m7U\n-----END PUBLIC KEY-----\n"
+            }
+          ]
+        }
+      ]
+   }
 }

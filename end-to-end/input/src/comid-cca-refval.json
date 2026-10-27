@@ -1,4 +1,5 @@
 {
+  "lang": "en-GB",
   "tag-identity": {
     "id": "43BBE37F-2E61-4B33-AED3-53CFF1428B16",
     "version": 0
@@ -10,7 +11,7 @@
           "class": {
             "id": {
               "type": "bytes",
-              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              "value": "f0VMRgIBAQAAAAAAAAAAAAMAPgABAAAAUFgAAAAAAAA="
             }
           }
         },
@@ -21,16 +22,16 @@
               "value": "cca.software-component"
             },
             "value": {
+              "name": "RSE_BL1_2",
+              "digests": [
+                [1, "micfKpFrC27mzsskJvCzIG7wdFeL5V2byU9vP-Orhqo"]
+              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
                   "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
-              ],
-              "digests": [
-                [1, "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
-              ],
-              "name": "BL"
+              ]
             }
           },
           {
@@ -39,16 +40,16 @@
               "value": "cca.software-component"
             },
             "value": {
+              "name": "RSE_BL2",
+              "digests": [
+                [1, "U8I05ehHK2rFHBrhyrP-BvrQU7646_2Jd7AQZVv908M"]
+              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
                   "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
-              ],
-              "digests": [
-                [1, "CwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
-              ],
-              "name": "M1"
+              ]
             }
           },
           {
@@ -57,16 +58,16 @@
               "value": "cca.software-component"
             },
             "value": {
+              "name": "RSE_S",
+              "digests": [
+                [1, "ESHPzNWRPwpj_sQKb_1E6mT53BNcZmNLoAHRC89DAqI"]
+              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
                   "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
-              ],
-              "digests": [
-                [1, "DwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
-              ],
-              "name": "M2"
+              ]
             }
           },
           {
@@ -75,16 +76,178 @@
               "value": "cca.software-component"
             },
             "value": {
+              "name": "AP_BL1",
+              "digests": [
+                [1, "FXG17Hi9aFEr94MLtqKkSyBHx99XvOeeuKHA5b6gpQE"]
+              ],
               "cryptokeys": [
                 {
                   "type": "bytes",
                   "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
                 }
-              ],
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "AP_BL2",
               "digests": [
-                [1, "EwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg"]
+                [1, "EBWbryYrQ6ktldtZ2uH3LGRRJzAWYeCjzk44spWpfFg"]
               ],
-              "name": "M3"
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "SCP_BL1",
+              "digests": [
+                [1, "EBIuhWs_zUnwY2NjF0dhSctzChqhz6rYGFUrcvVtb2g"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "SCP_BL2",
+              "digests": [
+                [1, "qmehabC7oheqCqiKZTRpIMhMQkR8NrpffqZfQiwf5dg"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "8UtJh5BLy1gU5EWaBX7U0g9YpjMVIoinYSFNzSh4C1Y="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "AP_BL31",
+              "digests": [
+                [1, "Lm0xpZg6kSUb-uWu-hwKGdi6PPYB0OinBrTPqWYaa4o"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "RMM",
+              "digests": [
+                [1, "oftQ5shvrhZ57zNRKW_WcTQRoIz43ReQpP0F-uhogWQ"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "HW_CONFIG",
+              "digests": [
+                [1, "GiUkApcvYFf6U8wXK1K5_8ppjhgxH6zQ87Buyq73nhc"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "FW_CONFIG",
+              "digests": [
+                [1, "mpKtvAzuOO9ljHHOGxv4xlZo8Wa_shNkTIlcyxrQeiU"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "TB_FW_CONFIG",
+              "digests": [
+                [1, "I4kDGAzBBOwsXYs_IMW8YbOJ7AqWffjMIIzcfNRUF08"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.software-component"
+            },
+            "value": {
+              "name": "SOC_FW_CONFIG",
+              "digests": [
+                [1, "5sIejSYP5xiC3r2zOdJAKiynZIUpvCMD9IZJvOA4ABc"]
+              ],
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                }
+              ]
             }
           },
           {
@@ -96,8 +259,8 @@
               "raw-value": {
                 "type": "masked",
                 "value": {
-                  "value":"AQID",
-                  "mask": "BAUG"
+                  "value": "z8/Pzw==",
+                  "mask": "AAAAAA=="
                 }
               }
             }
