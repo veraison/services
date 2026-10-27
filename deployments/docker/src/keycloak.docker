@@ -1,4 +1,4 @@
-FROM quay.io/keycloak/keycloak:22.0.1 AS keycloak-builder
+FROM quay.io/keycloak/keycloak:26.8.1 AS keycloak-builder
 
 WORKDIR /opt/keycloak
 # note: for development set up early; use proper certification in production.
@@ -8,7 +8,7 @@ RUN keytool -genkeypair -storepass password -storetype PKCS12 -keyalg RSA -keysi
 
 RUN /opt/keycloak/bin/kc.sh build
 
-FROM quay.io/keycloak/keycloak:22.0.1
+FROM quay.io/keycloak/keycloak:26.8.1
 COPY --from=keycloak-builder /opt/keycloak/ /opt/keycloak/
 COPY keycloak.conf /opt/keycloak/conf/keycloak.conf
 COPY veraison-realm.json /opt/keycloak/data/import/veraison-realm.json
