@@ -608,8 +608,6 @@ github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/Masterminds/squirrel v1.5.4 h1:uUcX/aBc8O7Fg9kaISIUsHXdKuqehiXAMQTYX8afzqM=
 github.com/Masterminds/squirrel v1.5.4/go.mod h1:NNaOrjSoIDfDA40n7sr2tPNZRfjzjA400rg+riTZj10=
-github.com/NVIDIA/go-nvml v0.13.0-1 h1:OLX8Jq3dONuPOQPC7rndB6+iDmDakw0XTYgzMxObkEw=
-github.com/NVIDIA/go-nvml v0.13.0-1/go.mod h1:+KNA7c7gIBH7SKSJ1ntlwkfN80zdx8ovl4hrK3LmPt4=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
@@ -1269,10 +1267,8 @@ github.com/veraison/go-cose v1.3.0 h1:2/H5w8kdSpQJyVtIhx8gmwPJ2uSz1PkyWFx0idbd7r
 github.com/veraison/go-cose v1.3.0/go.mod h1:df09OV91aHoQWLmy1KsDdYiagtXgyAwAl8vFeFn1gMc=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e h1:W1OWcrRvfN0EWyldcpFgwl9xdKBbZUlk5pnbLTcR8Ec=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e/go.mod h1:bXUwdYAGcRoclxe73JmO8Z9ngV9KDHqW20afM9Q0FKo=
-github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76 h1:AsVDP6X2A3atSJwoj7rLkAAyXGZ6l5Zr6gAgIztzpcw=
-github.com/veraison/ratsd v0.0.0-20260724200913-b9ba647e3f76/go.mod h1:89kdVA6JprVqSY5TwYZN5GrPWuTCgRJapo8SMCjD8tU=
-github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56 h1:ZnHpD9x/Bpw1aSrv3xgSGcn4Q+l4DwuLuJ25+DLcIaI=
-github.com/veraison/ratsd-token v0.0.0-20261007144201-93500f814d56/go.mod h1:IO9MOHW0aXt0Ac0N7AyjirDVyjBQDF+lFNDsnfBUWjU=
+github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496 h1:n2GzynV7KOXAXM22aYEaQgwKba7hPKvncnVwA2+VWUE=
+github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496/go.mod h1:Ti++K/yPd7xe2cAd3hwwITmKvfVdh7Qv6gbZfmZzpmQ=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897 h1:ze1ulqK70S7PRignyZzFDBJHNVEDyISk5FDv9Uh3UFw=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb h1:iBPEloogBk7uK2Ygtz1l6gJabikXs8ASZCmormbn2lM=
