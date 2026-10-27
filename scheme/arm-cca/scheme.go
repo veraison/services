@@ -488,6 +488,7 @@ type tbbRotPKClaim struct {
 	keys      [][]byte
 }
 
+//nolint:gocyclo,cyclop // Attestation matching requires multiple independent checks.
 func matchPlatformClaimsToReferenceValues(
 	logger *zap.SugaredLogger,
 	claims platform.IClaims,
