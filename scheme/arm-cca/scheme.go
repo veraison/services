@@ -29,10 +29,6 @@ import (
 )
 
 const NUM_REMS = 4
-const (
-	CCA_PLATFORM_CONFIG               = "cca_platform_cofig"
-	CCA_PLATFORM_MANUFACTURING_CONFIG = "cca_platform_manufacturing_config"
-)
 
 var Descriptor = handler.SchemeDescriptor{
 	Name:         "ARM_CCA",
@@ -488,17 +484,15 @@ type tbbRotPKClaim struct {
 	keys      [][]byte
 }
 
-//nolint:gocyclo,cyclop // Attestation matching requires multiple independent checks.
 func matchPlatformClaimsToReferenceValues(
 	logger *zap.SugaredLogger,
 	claims platform.IClaims,
 	endorsements []*comid.ValueTriple,
-) (bool, bool, error) {
-	var err error
+) (platformMatched bool, swComponentsMatched bool, err error) {
 	var referenceConfigValue []byte
 	var referenceManufacturingConfigValue []byte
 	var tbbRoTPKreference []tbbRotPKClaim
-	var platformMatched, rotpkFound bool
+	var rotpkFound bool
 
 	logger.Debug("building platform reference values map...")
 	referenceValues := make(map[string][2]string)
@@ -566,18 +560,32 @@ func matchPlatformClaimsToReferenceValues(
 	}
 	logger.Debugw("platform reference values", "map", referenceValues)
 
-	configMatched, err := matchConfigurations(logger, CCA_PLATFORM_CONFIG, claims, referenceConfigValue)
+	evidenceConfigValue, err := claims.GetConfig()
 	if err != nil {
-		return false, false, err
+		return false, false, handler.BadEvidence(err)
+	}
+
+	configMatched := false
+	if bytes.Equal(evidenceConfigValue, referenceConfigValue) {
+		logger.Debug("platform config matched")
+		configMatched = true
+	} else {
+		logger.Debug("platform config failed to match")
 	}
 
 	// Default Match is always true for Optional Elements
 	mfgConfigMatched := true
 	if len(referenceManufacturingConfigValue) > 0 {
 		// Endorser expects Manufacturing Config to be set in the Evidence
-		mfgConfigMatched, err = matchConfigurations(logger, CCA_PLATFORM_MANUFACTURING_CONFIG, claims, referenceManufacturingConfigValue)
+		evManufacturingConfigValue, err := claims.GetManufacturingConfig()
 		if err != nil {
-			return false, false, err
+			return false, false, handler.BadEvidence(err)
+		}
+		if bytes.Equal(evManufacturingConfigValue, referenceManufacturingConfigValue) {
+			logger.Debug("platform manufacturing config matched")
+		} else {
+			mfgConfigMatched = false
+			logger.Debug("platform manufacturing config failed to match")
 		}
 	}
 
@@ -754,31 +762,4 @@ func matchTBBRoTPKs(pks platform.TBBRoTPKItems, tbbs *[]tbbRotPKClaim) (error, b
 		}
 	}
 	return nil, matched
-}
-
-func matchConfigurations(logger *zap.SugaredLogger, configType string, claims platform.IClaims, rvConfig []byte) (bool, error) {
-	switch configType {
-	case CCA_PLATFORM_CONFIG:
-		evidenceConfigValue, err := claims.GetConfig()
-		if err != nil {
-			return false, handler.BadEvidence(err)
-		}
-		if bytes.Equal(evidenceConfigValue, rvConfig) {
-			logger.Debug("cca platform config matched")
-			return true, nil
-		}
-	case CCA_PLATFORM_MANUFACTURING_CONFIG:
-		evManufacturingConfigValue, err := claims.GetManufacturingConfig()
-		if err != nil {
-			return false, handler.BadEvidence(err)
-		}
-		if bytes.Equal(evManufacturingConfigValue, rvConfig) {
-			logger.Debug("cca platform manufacturing config matched")
-			return true, nil
-		}
-	default:
-		return false, fmt.Errorf("invalid configType: %s", configType)
-	}
-	logger.Debug("configuration failed to match for, %s", configType)
-	return false, nil
 }
