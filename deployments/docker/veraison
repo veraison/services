@@ -316,6 +316,14 @@ function shell() {
     docker exec -it "$container_id" bash
 }
 
+function arc() {
+    local -a args
+    for arg in "$@"; do args+=("$arg"); done
+    # Note: calling _translated_host_paths sets translated_args
+    _translate_host_paths "${args[@]}"
+    manager arc "${translated_args[@]}"
+}
+
 function cocli() {
     local -a args
     for arg in "$@"; do args+=("$arg"); done
@@ -569,6 +577,7 @@ case $command in
     tmux | attach-tmux) attach_tmux_session "$2";;
     stop-tmux | kill-tmux) kill_tmux_session "$2";;
     shell) shell "$2";;
+    arc) shift; arc "$@";;
     cocli) shift; cocli "$@";;
     evcli) shift; evcli "$@";;
     pocli) shift; pocli "$@";;
