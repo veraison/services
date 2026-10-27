@@ -1267,8 +1267,8 @@ github.com/veraison/go-cose v1.3.0 h1:2/H5w8kdSpQJyVtIhx8gmwPJ2uSz1PkyWFx0idbd7r
 github.com/veraison/go-cose v1.3.0/go.mod h1:df09OV91aHoQWLmy1KsDdYiagtXgyAwAl8vFeFn1gMc=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e h1:W1OWcrRvfN0EWyldcpFgwl9xdKBbZUlk5pnbLTcR8Ec=
 github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e/go.mod h1:bXUwdYAGcRoclxe73JmO8Z9ngV9KDHqW20afM9Q0FKo=
-github.com/veraison/ratsd-token v0.0.0-20261022195846-499d07105e48 h1:epOX0Wq5xZXbGThJOuFS2ppvQournGjB6DZX8QA4QlU=
-github.com/veraison/ratsd-token v0.0.0-20261022195846-499d07105e48/go.mod h1:Ti++K/yPd7xe2cAd3hwwITmKvfVdh7Qv6gbZfmZzpmQ=
+github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496 h1:n2GzynV7KOXAXM22aYEaQgwKba7hPKvncnVwA2+VWUE=
+github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496/go.mod h1:Ti++K/yPd7xe2cAd3hwwITmKvfVdh7Qv6gbZfmZzpmQ=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897 h1:ze1ulqK70S7PRignyZzFDBJHNVEDyISk5FDv9Uh3UFw=
 github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897/go.mod h1:d5jt76uMNbTfQ+f2qU4Lt8RvWOTsv6PFgstIM1QdMH0=
 github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb h1:iBPEloogBk7uK2Ygtz1l6gJabikXs8ASZCmormbn2lM=

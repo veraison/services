@@ -48,7 +48,7 @@ require (
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
-	github.com/veraison/ratsd-token v0.0.0-20261022195846-499d07105e48
+	github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.41.0
 	google.golang.org/grpc v1.83.2
