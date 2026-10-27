@@ -51,6 +51,7 @@ function deploy() {
     cp $gobin/cocli $DEPLOY_DIR/utils/
     cp $gobin/pocli $DEPLOY_DIR/utils/
     cp $gobin/corim-store $DEPLOY_DIR/utils/
+    cp $gobin/arc $DEPLOY_DIR/utils/
 
     echo "creating config"
     set -a

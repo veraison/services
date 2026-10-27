@@ -53,6 +53,13 @@ function cocli() {
     /bin/bash -c "$cmd"
 }
 
+function arc() {
+    local -a args
+    for arg in "$@"; do args+=("'$arg'"); done
+    local cmd="$_utils_dir/arc ${args[@]}"
+    /bin/bash -c "$cmd"
+}
+
 function evcli() {
     local -a args
     for arg in "$@"; do args+=("'$arg'"); done
@@ -90,6 +97,7 @@ case $command in
     clear-stores) clear_stores "$@";;
     logs | get-logs) logs "$@";;
     clear-logs) clear_logs "$@";;
+    arc)  arc "$@";;
     cocli)  cocli "$@";;
     evcli)  evcli "$@";;
     pocli)  pocli "$@";;

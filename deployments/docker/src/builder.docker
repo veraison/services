@@ -71,10 +71,14 @@ USER builder
 RUN mkdir --mode=775 logs stores build
 ADD --chown=builder:builder go.mod go.sum ./
 
+
+# Arc jwx dependency switched to using the new JSON implementation
+# (standard in 1.27, needs that flag in 1.26)
+ENV GOEXPERIMENT=jsonv2
+
 # Download Go modules
 RUN go mod download &&\
     go install golang.org/x/tools/gopls@v0.21.1 &&\
-    go install golang.org/x/tools/cmd/guru@latest &&\
     go install github.com/golang/mock/mockgen@v1.7.0-rc.1 &&\
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26 &&\
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1 &&\
@@ -83,7 +87,8 @@ RUN go mod download &&\
     go install github.com/veraison/evcli/v2@0e253e8 &&\
     go install github.com/veraison/pocli@v0.2.0 &&\
     go install github.com/go-delve/delve/cmd/dlv@v1.26.0 &&\
-    go install github.com/veraison/corim-store/cmd/corim-store@818cd5f652ce
+    go install github.com/veraison/corim-store/cmd/corim-store@818cd5f652ce &&\
+    go install github.com/veraison/ear/arc@7c11c1b
 
 ADD --chown=builder:builder builder-dispatcher .
 ADD --chown=builder:builder builder-bashrc /home/builder/.bashrc
