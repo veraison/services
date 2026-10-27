@@ -1,0 +1,10 @@
+{
+  "kty": "EC",
+  "kid": "cca_realm",
+  "crv": "P-384",
+  "alg": "ES384",
+  "x": "dvmICRvlhe1BgBrs-rhYVIxjBX4WsOZ2Egu9DS-cKeBWxdQaATDrnCFReJncIxRr",
+  "y": "KOGwYr0-pLMV_SGfHLtSjLbnTKSb4Wdzc09hocphAxsrvz2Rjy-U_8QijlCRlUSu",
+  "d": "IBHH8DzuQyUXblJPAzwM4eIadubBpPC4Oaod9h4OilyKBXQPm2nvp-saQYW9EX9o"
+}
+

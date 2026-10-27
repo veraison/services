@@ -7,6 +7,7 @@ PS4=""
 
 SCHEME=${SCHEME:-psa}
 
+TEMP_DIR=/tmp/veraison-end-to-end
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 VERAISON="$THIS_DIR/../deployments/docker/veraison"
 
@@ -46,6 +47,19 @@ function check() {
     $VERAISON stores
 }
 
+function check_ear() {
+
+    # When SCHEME is cca the realm ear.status would be "warning",
+    # but the plaform one should be "affirming".
+    if $VERAISON -- arc print ${TEMP_DIR}/ear.jwt | grep -q '"ear.status": "affirming"'; then
+        echo "Successfull attestation"
+    else
+        echo "Attestaion failed:"
+        $VERAISON -- arc print ${TEMP_DIR}/ear.jwt
+        exit 1
+    fi
+}
+
 function verify_as_attester() {
     case $SCHEME  in
         psa)
@@ -55,7 +69,7 @@ function verify_as_attester() {
             ;;
         cca)
             local claims="$THIS_DIR/input/cca-claims-without-realm-challenge.json"
-            local -a key_args=(--iak "$THIS_DIR/input/ec256.json" --rak "$THIS_DIR/input/ec384.json")
+            local -a key_args=(--iak "$THIS_DIR/input/cca-platform-key.json" --rak "$THIS_DIR/input/cca-realm-key.json")
             local -a nonce_args=()
             ;;
         *)
@@ -64,8 +78,10 @@ function verify_as_attester() {
             ;;
     esac
 
-    set -x
-    $VERAISON -- evcli "$SCHEME" verify-as attester --claims "$claims"  "${key_args[@]}" "${nonce_args[@]}"
+    $VERAISON -- evcli "$SCHEME" verify-as attester --claims "$claims"  "${key_args[@]}" "${nonce_args[@]}" \
+        | grep -v "Using config file" | tr -d '"' >${TEMP_DIR}/ear.jwt
+
+    check_ear
 }
 
 function verify_as_relying_party() {
@@ -82,13 +98,16 @@ function verify_as_relying_party() {
             ;;
     esac
 
-    set -x
-    $VERAISON -- evcli "$SCHEME" verify-as relying-party --token "$token"
+    $VERAISON -- evcli "$SCHEME" verify-as relying-party --token "$token" \
+        | grep -v "Using config file" | tr -d '"' >${TEMP_DIR}/ear.jwt
+
+    check_ear
 }
 
 function verify() {
     as=$1
 
+    mkdir -p ${TEMP_DIR}
     case $as in
         attester | attest) verify_as_attester;;
         rp | relying-party) verify_as_relying_party;;
