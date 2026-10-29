@@ -9,6 +9,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/veraison/ccatoken"
 	"github.com/veraison/ccatoken/platform"
@@ -25,6 +29,10 @@ import (
 )
 
 const NUM_REMS = 4
+const (
+	CCA_PLATFORM_CONFIG               = "cca_platform_cofig"
+	CCA_PLATFORM_MANUFACTURING_CONFIG = "cca_platform_manufacturing_config"
+)
 
 var Descriptor = handler.SchemeDescriptor{
 	Name:         "ARM_CCA",
@@ -474,13 +482,22 @@ func readMeasurementDigestBytes(measurement *comid.Measurement) ([]byte, error) 
 	return (*measurement.Val.Digests)[0].Value, nil
 }
 
-func matchPlatformClaimsToReferenceValues( // nolint:gocritic
+type tbbRotPKClaim struct {
+	lifeCycle string // this can be either "CM" or "DM"
+	index     int
+	keys      [][]byte
+}
+
+//nolint:gocyclo,cyclop // Attestation matching requires multiple independent checks.
+func matchPlatformClaimsToReferenceValues(
 	logger *zap.SugaredLogger,
 	claims platform.IClaims,
 	endorsements []*comid.ValueTriple,
-) (bool, bool, error) {
-	var err error
+) (platformMatched bool, swComponentsMatched bool, err error) {
 	var referenceConfigValue []byte
+	var referenceManufacturingConfigValue []byte
+	var tbbRoTPKreference []tbbRotPKClaim
+	var rotpkFound bool
 
 	logger.Debug("building platform reference values map...")
 	referenceValues := make(map[string][2]string)
@@ -503,6 +520,14 @@ func matchPlatformClaimsToReferenceValues( // nolint:gocritic
 				referenceConfigValue = measurement.Val.RawValue.Bytes()
 
 				continue
+			case cca.CCAPlatformManufacturingConfigKey:
+				if measurement.Val.RawValue == nil {
+					return false, false,
+						errors.New("no raw value in platform manufacturing config measurement")
+				}
+
+				referenceManufacturingConfigValue = measurement.Val.RawValue.Bytes()
+
 			case cca.CCASoftwareComponentMkey:
 				digest, err := readMeasurementDigestBytes(measurement)
 				if err != nil {
@@ -522,23 +547,62 @@ func matchPlatformClaimsToReferenceValues( // nolint:gocritic
 
 				referenceValues[encoded] = [2]string{label, version}
 			default:
+				// check if TBB RoTPK MKey
+				if isTBBRoTPKMKey(mkey) {
+					logger.Debug("tbb rotpk mkey found in CoMID...")
+					tbb, err := extractTBBRoTPKReference(mkey, &measurement.Val)
+					if err != nil {
+						return false, false, err
+					}
+					tbbRoTPKreference = append(tbbRoTPKreference, *tbb)
+					rotpkFound = true
+					logger.Debug("tbb rotpk reference is true...")
+					continue
+				}
 				logger.Debugw("skipping non-platform measurement", "mkey", mkey)
 			}
 		}
 	}
 	logger.Debugw("platform reference values", "map", referenceValues)
 
-	evidenceConfigValue, err := claims.GetConfig()
+	configMatched, err := matchConfigurations(logger, CCA_PLATFORM_CONFIG, claims, referenceConfigValue)
 	if err != nil {
-		return false, false, handler.BadEvidence(err)
+		return false, false, err
 	}
 
-	configMatched := false
-	if bytes.Equal(evidenceConfigValue, referenceConfigValue) {
-		logger.Debug("platform config matched")
-		configMatched = true
-	} else {
-		logger.Debug("platform config failed to match")
+	// Default Match is always true for Optional Elements
+	mfgConfigMatched := true
+	if len(referenceManufacturingConfigValue) > 0 {
+		// Endorser expects Manufacturing Config to be set in the Evidence
+		mfgConfigMatched, err = matchConfigurations(logger, CCA_PLATFORM_MANUFACTURING_CONFIG, claims, referenceManufacturingConfigValue)
+		if err != nil {
+			return false, false, err
+		}
+	}
+
+	rotpkKeysMatched := true
+	// Check for TBB RoTPK Reference Values are present?
+	if rotpkFound {
+		// If Reference of RoTPK is present then Evidence MUST report it
+		rotpks, err := claims.GetTBBRoTPK()
+		if err != nil {
+			return false, false, handler.BadEvidence(err)
+		}
+
+		err, rotpkKeysMatched = matchTBBRoTPKs(rotpks, &tbbRoTPKreference)
+		if err != nil {
+			return false, false, handler.BadEvidence(err)
+		}
+
+		if !rotpkKeysMatched {
+			logger.Debug("platform tbb rotpk failed to match")
+		} else {
+			logger.Debug("platform tbb rotpk matched")
+		}
+	}
+
+	if configMatched && mfgConfigMatched && rotpkKeysMatched {
+		platformMatched = true
 	}
 
 	swComponents, err := claims.GetSoftwareComponents()
@@ -566,7 +630,7 @@ func matchPlatformClaimsToReferenceValues( // nolint:gocritic
 		rvInfo, matched := referenceValues[mvalEncoded]
 		if !matched {
 			logger.Debugf("S/W comp. %d measurement (%s) failed to match", i, mvalEncoded)
-			return configMatched, false, nil
+			return platformMatched, false, nil
 		}
 		logger.Debugf("S/W comp. %d measurement (%s) matched", i, mvalEncoded)
 		refValLabel := rvInfo[0]
@@ -578,11 +642,11 @@ func matchPlatformClaimsToReferenceValues( // nolint:gocritic
 			i, typeMatched, mtype, versionMatched, mversion)
 
 		if !typeMatched || !versionMatched {
-			return configMatched, false, nil
+			return platformMatched, false, nil
 		}
 	}
 
-	return configMatched, true, nil
+	return platformMatched, true, nil
 }
 
 func allMatch(lhs, rhs [][]byte) bool {
@@ -597,4 +661,123 @@ func allMatch(lhs, rhs [][]byte) bool {
 	}
 
 	return true
+}
+
+func isTBBRoTPKMKey(key string) bool {
+	rotpkRegexp := regexp.MustCompile(
+		`^cca\.rotpk\.[CD]M\.[0-5]$`,
+	)
+	return rotpkRegexp.MatchString(key)
+}
+
+//	extractTBBRoTPKReference extracts TBB RoTPK Reference Values from comid measurement values map
+//
+// and aligns it into tbbRotPKClaim, suitable for matching with the evidence claims
+func extractTBBRoTPKReference(key string, m *comid.Mval) (*tbbRotPKClaim, error) {
+	var tbb tbbRotPKClaim
+
+	// Extract individual indexes
+	rotpkRegexp := regexp.MustCompile(
+		`^(cca\.rotpk)\.([CD]M)\.([0-5])$`,
+	)
+	matches := rotpkRegexp.FindStringSubmatch(key)
+	if matches == nil {
+		return nil, fmt.Errorf("invalid key: %s", key)
+	}
+	_ = matches[1]                         // "cca.rotpk"
+	mode := matches[2]                     // "CM" or "DM"
+	index, err := strconv.Atoi(matches[3]) // index
+	if err != nil {
+		return nil, fmt.Errorf("inconsistent endorsement error: %w", err)
+	}
+
+	tbb.index = index
+	tbb.lifeCycle = strings.ToLower(mode)
+
+	// Append Keys
+	if err := appendRoTPKeys(m, &tbb); err != nil {
+		return nil, fmt.Errorf("unable to append keys: %w", err)
+	}
+
+	return &tbb, nil
+}
+func appendRoTPKeys(m *comid.Mval, tbb *tbbRotPKClaim) error {
+
+	if m.CryptoKeys == nil {
+		return fmt.Errorf("no keys")
+	}
+
+	kp := new([][]byte)
+	tbb.keys = *kp
+
+	for _, key := range *m.CryptoKeys {
+		tbb.keys = append(tbb.keys, key.Value.Bytes())
+	}
+
+	return nil
+}
+
+func matchTBBRoTPKs(pks platform.TBBRoTPKItems, tbbs *[]tbbRotPKClaim) (error, bool) {
+	if len(pks) == 0 {
+		return nil, false
+	}
+
+	var matched bool
+	for _, pk := range pks {
+		// All Keys MUST match
+		matched = false
+		index, err := pk.GetIndex()
+		if err != nil {
+			return err, false
+		}
+
+		name, err := pk.GetName()
+		if err != nil {
+			return err, false
+		}
+		name = strings.ToLower(name)
+		evKey, err := pk.GetHash()
+		if err != nil {
+			return err, false
+		}
+		for _, tbb := range *tbbs {
+			if tbb.index == int(index) && tbb.lifeCycle == name {
+				if slices.ContainsFunc(tbb.keys, func(key []byte) bool {
+					return bytes.Equal(key, evKey)
+				}) {
+					matched = true
+					break
+				}
+			}
+
+		}
+	}
+	return nil, matched
+}
+
+func matchConfigurations(logger *zap.SugaredLogger, configType string, claims platform.IClaims, rvConfig []byte) (bool, error) {
+	switch configType {
+	case CCA_PLATFORM_CONFIG:
+		evidenceConfigValue, err := claims.GetConfig()
+		if err != nil {
+			return false, handler.BadEvidence(err)
+		}
+		if bytes.Equal(evidenceConfigValue, rvConfig) {
+			logger.Debug("cca platform config matched")
+			return true, nil
+		}
+	case CCA_PLATFORM_MANUFACTURING_CONFIG:
+		evManufacturingConfigValue, err := claims.GetManufacturingConfig()
+		if err != nil {
+			return false, handler.BadEvidence(err)
+		}
+		if bytes.Equal(evManufacturingConfigValue, rvConfig) {
+			logger.Debug("cca platform manufacturing config matched")
+			return true, nil
+		}
+	default:
+		return false, fmt.Errorf("invalid configType: %s", configType)
+	}
+	logger.Debug("configuration failed to match for, %s", configType)
+	return false, nil
 }
