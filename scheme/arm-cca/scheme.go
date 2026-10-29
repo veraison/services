@@ -404,6 +404,11 @@ func AppraiseRealm(
 		appraisal.TrustVector.Executables = ear.ApprovedBootClaim
 		logger.Debug("RIM & RPV matched")
 
+		// Matching assumes:
+		// - Neither list is nil or empty (refVal via NUM_REMS, evidence via ccatoken)
+		// - Comparison is positional and if lists are not the same length matching fails
+		// - an empty reference value entry matches any evidence entry
+		// - non-empty entries require exact match
 		if allMatch(refVal.ExtensibleMeasurements, evidenceREMs) {
 			appraisal.TrustVector.Executables = ear.ApprovedRuntimeClaim
 			logger.Debug("REMs matched")
