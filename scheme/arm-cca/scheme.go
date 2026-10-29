@@ -672,10 +672,10 @@ func allMatch(lhs, rhs [][]byte) bool {
 	return true
 }
 
+var rotpkRegexp = regexp.MustCompile(
+	`^(cca\.rotpk)\.([CD]M)\.([0-5])$`)
+
 func isTBBRoTPKMKey(key string) bool {
-	rotpkRegexp := regexp.MustCompile(
-		`^cca\.rotpk\.[CD]M\.[0-5]$`,
-	)
 	return rotpkRegexp.MatchString(key)
 }
 
@@ -686,9 +686,6 @@ func extractTBBRoTPKReference(key string, m *comid.Mval) (*tbbRotPKClaim, error)
 	var tbb tbbRotPKClaim
 
 	// Extract individual indexes
-	rotpkRegexp := regexp.MustCompile(
-		`^(cca\.rotpk)\.([CD]M)\.([0-5])$`,
-	)
 	matches := rotpkRegexp.FindStringSubmatch(key)
 	if matches == nil {
 		return nil, fmt.Errorf("invalid key: %s", key)
