@@ -46,6 +46,14 @@
           "signer-id": "BwYFBAMCAQAPDg0MCwoJCBcWFRQTEhEQHx4dHBsaGRg=",
           "version": "1.0.0"
         }
+      ],
+      "cca-platform-manufacturing-config": "EBA=",
+      "cca-platform-tbb-rotpk": [
+        {
+        "name": "CM",
+        "index": 3,
+        "hash": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+        }
       ]
     }
   },

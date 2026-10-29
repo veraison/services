@@ -129,6 +129,43 @@
                 }
               }
             }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.platform-manufacturing-config"
+            },
+            "value": {
+              "raw-value": {
+                "type": "masked",
+                "value": {
+                  "value":"EBA=",
+                  "mask": "//8="
+                }
+              }
+            }
+          },
+          {
+            "key": {
+              "type": "string",
+              "value": "cca.rotpk.CM.3"
+            },
+            "value": {
+              "cryptokeys": [
+                {
+                  "type": "bytes",
+                  "value": "U3h5YwdTXfPsjYsVouLcVkFBnD0wYM/jIjjA+pc/eqM="
+                },
+                {
+                  "type": "bytes",
+                  "value": "2sRqWEFdw6ANenQYUgCOnK5k9S0DufdtdvSzZE/vxBY="
+                }, 
+                {
+                  "type": "bytes",
+                  "value":  "aOZWslHmfoNYvvhIOrDVHGYZ8+ehqfDnWDjUH/No9yg="
+                }
+              ]
+            }
           }
         ]
       }
