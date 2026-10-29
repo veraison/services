@@ -556,7 +556,7 @@ func matchPlatformClaimsToReferenceValues(
 					}
 					tbbRoTPKreference = append(tbbRoTPKreference, *tbb)
 					rotpkFound = true
-					logger.Debug("tbb rotpk reference is true...")
+					logger.Debug("tbb rotpk reference found")
 					continue
 				}
 				logger.Debugw("skipping non-platform measurement", "mkey", mkey)
@@ -565,7 +565,12 @@ func matchPlatformClaimsToReferenceValues(
 	}
 	logger.Debugw("platform reference values", "map", referenceValues)
 
-	configMatched, err := matchConfigurations(logger, CCA_PLATFORM_CONFIG, claims, referenceConfigValue)
+	configMatched, err := matchConfigurations(
+		logger,
+		CCA_PLATFORM_CONFIG,
+		claims,
+		referenceConfigValue)
+
 	if err != nil {
 		return false, false, err
 	}
@@ -574,7 +579,11 @@ func matchPlatformClaimsToReferenceValues(
 	mfgConfigMatched := true
 	if len(referenceManufacturingConfigValue) > 0 {
 		// Endorser expects Manufacturing Config to be set in the Evidence
-		mfgConfigMatched, err = matchConfigurations(logger, CCA_PLATFORM_MANUFACTURING_CONFIG, claims, referenceManufacturingConfigValue)
+		mfgConfigMatched, err = matchConfigurations(
+			logger,
+			CCA_PLATFORM_MANUFACTURING_CONFIG,
+			claims,
+			referenceManufacturingConfigValue)
 		if err != nil {
 			return false, false, err
 		}
@@ -684,11 +693,11 @@ func extractTBBRoTPKReference(key string, m *comid.Mval) (*tbbRotPKClaim, error)
 	if matches == nil {
 		return nil, fmt.Errorf("invalid key: %s", key)
 	}
-	_ = matches[1]                         // "cca.rotpk"
+
 	mode := matches[2]                     // "CM" or "DM"
 	index, err := strconv.Atoi(matches[3]) // index
 	if err != nil {
-		return nil, fmt.Errorf("inconsistent endorsement error: %w", err)
+		return nil, fmt.Errorf("could not parse RoTPK index: %w", err)
 	}
 
 	tbb.index = index
@@ -696,15 +705,16 @@ func extractTBBRoTPKReference(key string, m *comid.Mval) (*tbbRotPKClaim, error)
 
 	// Append Keys
 	if err := appendRoTPKeys(m, &tbb); err != nil {
-		return nil, fmt.Errorf("unable to append keys: %w", err)
+		return nil, err
 	}
 
 	return &tbb, nil
 }
+
 func appendRoTPKeys(m *comid.Mval, tbb *tbbRotPKClaim) error {
 
 	if m.CryptoKeys == nil {
-		return fmt.Errorf("no keys")
+		return fmt.Errorf("crypto-keys (code point 13) not set for RoTPK entry")
 	}
 
 	kp := new([][]byte)
