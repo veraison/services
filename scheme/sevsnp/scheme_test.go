@@ -351,3 +351,153 @@ func Test_ValidateEvidenceIntegrity_GoogleCloudReport(t *testing.T) {
 		})
 	}
 }
+
+// A report signed with a VLEK, from an AWS EC2 c6a.large (AMD Milan) guest, 6 October 2026
+// (test/evidence/SOURCES.md). AWS hosts put the VLEK alone in the certificate table; the guest that made this
+// report appended AMD's ASVK and ARK for a verifier that holds no roots of its own. hostTable takes them off again.
+//
+//go:embed test/evidence/sevsnp-aws-vlek-tsm-report.cbor
+var sevsnpAWSVLEKTSMReportCBOR []byte
+
+// the REPORT_DATA the guest bound into that report
+const sevsnpAWSVLEKReportData = "6131f96c32e9cb962b4c0c7507c9c7fe36ec4c527a73a7809c786251dbe5809fa9b84cd8aec306f3d151a78acb323d8e753e085aa6f829d636792a1ae43fba44"
+
+const (
+	certTableEntrySize = 24 // GUID, offset and length of one entry of the certificate table
+	certTableGUIDSize  = 16
+)
+
+// hostTable is a certificate table cut down to its first entry, the report's signing key: the table as AWS hosts
+// supply it.
+func hostTable(t *testing.T, table []byte) []byte {
+	t.Helper()
+	require.GreaterOrEqual(t, len(table), certTableEntrySize)
+
+	guid := table[:certTableGUIDSize]
+	off := binary.LittleEndian.Uint32(table[certTableGUIDSize:])
+	n := binary.LittleEndian.Uint32(table[certTableGUIDSize+4:])
+	der := table[off : off+n]
+
+	head := append([]byte{}, guid...)
+	head = binary.LittleEndian.AppendUint32(head, 2*certTableEntrySize)
+	head = binary.LittleEndian.AppendUint32(head, uint32(len(der)))
+	head = append(head, make([]byte, certTableEntrySize)...)
+
+	return append(head, der...)
+}
+
+func Test_amdRoots(t *testing.T) {
+	roots, err := amdRoots()
+	require.NoError(t, err)
+	require.Len(t, roots, 3)
+
+	for _, line := range []string{"Milan", "Genoa", "Turin"} {
+		require.Len(t, roots[line], 2, line)
+		vcek, vlek := roots[line][0].ProductCerts, roots[line][1].ProductCerts
+
+		require.Equal(t, "SEV-"+line, vcek.Ask.Subject.CommonName)
+		require.Nil(t, vcek.Asvk)
+		require.Equal(t, "SEV-VLEK-"+line, vlek.Asvk.Subject.CommonName)
+		require.Nil(t, vlek.Ask)
+
+		require.Equal(t, "ARK-"+line, vcek.Ark.Subject.CommonName)
+		require.Equal(t, vcek.Ark.Raw, vlek.Ark.Raw, line)
+	}
+}
+
+// The trust anchor to look up is the ARK among AMD's roots that certifies the report's key, whatever the host's
+// table holds.
+func Test_GetTrustAnchorIDs_FromAMDRoots(t *testing.T) {
+	var tsm tokens.TSMReport
+	require.NoError(t, tsm.FromCBOR(sevsnpAWSVLEKTSMReportCBOR))
+	tsm.AuxBlob = hostTable(t, tsm.AuxBlob)
+	token, err := tsm.ToCBOR()
+	require.NoError(t, err)
+
+	ids, err := NewImplementation().GetTrustAnchorIDs(&appraisal.Evidence{Data: token, MediaType: EvidenceMediaTypeTSMCbor})
+	require.NoError(t, err)
+	require.Len(t, ids, 1)
+	require.Equal(t, "Advanced Micro Devices", *ids[0].Class.Vendor)
+	require.Equal(t, "ARK-Milan", *ids[0].Class.Model)
+}
+
+// A VLEK report with the table as the host supplies it, the VLEK alone, validates against AMD's ARK-Milan; so does
+// the same report with AMD's chain appended by the guest. Another nonce, a changed report and another product
+// line's ARK are refused for their own reasons.
+func Test_ValidateEvidenceIntegrity_AWSVLEKReport(t *testing.T) {
+	reportData, err := hex.DecodeString(sevsnpAWSVLEKReportData)
+	require.NoError(t, err)
+
+	var tsm tokens.TSMReport
+	require.NoError(t, tsm.FromCBOR(sevsnpAWSVLEKTSMReportCBOR))
+	tsm.AuxBlob = hostTable(t, tsm.AuxBlob)
+	hostToken, err := tsm.ToCBOR()
+	require.NoError(t, err)
+
+	// the same report with one bit of MEASUREMENT (offset 0x90) changed
+	require.NoError(t, tsm.FromCBOR(sevsnpAWSVLEKTSMReportCBOR))
+	tsm.OutBlob = bytes.Clone(tsm.OutBlob)
+	tsm.OutBlob[0x90] ^= 1
+	changedToken, err := tsm.ToCBOR()
+	require.NoError(t, err)
+
+	for _, tc := range []struct {
+		name         string
+		token        []byte
+		nonce        []byte
+		trustAnchors []*comid.KeyTriple
+		wantErr      string
+		wantErrIs    error
+	}{
+		{
+			name:         "the host's table, the VLEK alone",
+			token:        hostToken,
+			nonce:        reportData,
+			trustAnchors: amdRootTrustAnchor(t, "Milan"),
+		},
+		{
+			name:         "the table with AMD's chain appended by the guest",
+			token:        sevsnpAWSVLEKTSMReportCBOR,
+			nonce:        reportData,
+			trustAnchors: amdRootTrustAnchor(t, "Milan"),
+		},
+		{
+			name:         "other nonce",
+			token:        hostToken,
+			nonce:        append([]byte{reportData[0] ^ 0xff}, reportData[1:]...),
+			trustAnchors: amdRootTrustAnchor(t, "Milan"),
+			wantErr:      "nonce in the evidence doesn't match",
+		},
+		{
+			name:         "MEASUREMENT changed",
+			token:        changedToken,
+			nonce:        reportData,
+			trustAnchors: amdRootTrustAnchor(t, "Milan"),
+			wantErr:      "report signature verification error",
+		},
+		{
+			name:         "another product line's ARK as the trust anchor",
+			token:        hostToken,
+			nonce:        reportData,
+			trustAnchors: amdRootTrustAnchor(t, "Genoa"),
+			wantErrIs:    ErrTAMismatch,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			evidence := appraisal.Evidence{
+				Data:      tc.token,
+				MediaType: EvidenceMediaTypeTSMCbor,
+				Nonce:     tc.nonce,
+			}
+			err := NewImplementation().ValidateEvidenceIntegrity(&evidence, tc.trustAnchors, nil)
+			switch {
+			case tc.wantErrIs != nil:
+				require.ErrorIs(t, err, tc.wantErrIs)
+			case tc.wantErr != "":
+				require.ErrorContains(t, err, tc.wantErr)
+			default:
+				require.NoError(t, err)
+			}
+		})
+	}
+}
