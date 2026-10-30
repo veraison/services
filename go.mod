@@ -15,6 +15,7 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang/mock v1.6.0
@@ -40,12 +41,14 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tbaehler/gin-keycloak v1.6.1
+	github.com/veraison/apiclient v0.4.1-0.20260916152747-a064c3fc0e5a
 	github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666
 	github.com/veraison/cmw v0.3.0
 	github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e
 	github.com/veraison/corim-store v0.2.2-0.20260804102809-d1c9b858ead5
 	github.com/veraison/da v0.0.0-20260902105205-bdc14504b673
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
+	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/go-cose v1.3.0
 	github.com/veraison/psatoken v1.2.1-0.20240912124429-aec3ece7886e
 	github.com/veraison/ratsd-token v0.0.0-20261027195537-1a1af9c38496
@@ -55,6 +58,7 @@ require (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -72,6 +76,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.29.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.17 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
+	github.com/bartventer/httpcache v0.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.11.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -153,7 +158,6 @@ require (
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15 // indirect
 	github.com/uptrace/bun/extra/bundebug v1.2.15 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
-	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
 	github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897
 	github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
@@ -179,7 +183,6 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
