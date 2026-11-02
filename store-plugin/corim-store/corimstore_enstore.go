@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/veraison/cmw"
 	"github.com/veraison/corim-store/pkg/model"
 	corimstore "github.com/veraison/corim-store/pkg/store"
 	"github.com/veraison/corim/comid"
@@ -75,11 +76,43 @@ func (s *Store) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error
 		return nil, errors.New("internal error: bad CoSERV result: result-set is nil")
 	}
 	// return ErrNotFound instead of empty results
-	if q.Results.AKQ == nil && q.Results.RVQ == nil {
+	if resultSetIsEmpty(q.Results) {
 		return nil, handler.ErrNotFound
 	}
 	s.logger.Debugf("got coserv response: %v", q)
 	return &q, nil
+}
+
+// resultSetIsEmpty returns true if the result set carries no results at all.
+// Every field that can hold query results is considered; Expiry is metadata
+// that is always set, so it is ignored. A field is empty if it is nil or has
+// no entries. In particular, a RIM query that matched nothing yields a RIMs
+// collection with no items rather than a nil RIMs.
+func resultSetIsEmpty(rs *coserv.ResultSet) bool {
+	return rs == nil ||
+		(len(deref(rs.RVQ)) == 0 &&
+			len(deref(rs.EVQ)) == 0 &&
+			len(deref(rs.CEQ)) == 0 &&
+			len(deref(rs.AKQ)) == 0 &&
+			len(deref(rs.TAS)) == 0 &&
+			len(deref(rs.SourceArtifacts)) == 0 &&
+			rimsIsEmpty(rs.RIMs))
+}
+
+func deref[T any](p *[]T) []T {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
+
+func rimsIsEmpty(rims *cmw.CMW) bool {
+	if rims == nil {
+		return true
+	}
+	// Anything other than a collection cannot be shown to be empty.
+	meta, err := rims.GetCollectionMeta()
+	return err == nil && len(meta) == 0
 }
 
 func (s *Store) AddCorimBytes(data []byte, label string, activate bool) error {
