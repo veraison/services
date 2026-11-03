@@ -257,6 +257,8 @@ func matchClaimsToReferenceValues(
 		return false, handler.BadEvidence(err)
 	}
 
+	// RFC 9783 PSA tokens are guaranteed to have at least one software component.
+	// When the deprecated no-sw-measurements is set, we will intentionally return true.
 	for i, swComp := range swComponents {
 		mval, err := swComp.GetMeasurementValue()
 		if err != nil {
