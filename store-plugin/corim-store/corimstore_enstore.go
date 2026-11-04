@@ -75,9 +75,9 @@ func (s *Store) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error
 	if q.Results == nil {
 		return nil, errors.New("internal error: bad CoSERV result: result-set is nil")
 	}
-	// return ErrNotFound instead of empty results
+	// TODO: replace with ResultSet.IsEmpty() once veraison/corim#293 merges
 	if resultSetIsEmpty(q.Results) {
-		return nil, handler.ErrNotFound
+		s.logger.Warnf("got empty coserv result set for query: %v", query)
 	}
 	s.logger.Debugf("got coserv response: %v", q)
 	return &q, nil
