@@ -64,6 +64,18 @@ endorsement-store:
     corim-store:
       dbms: sqlite
       dsn: /opt/veraison/stores/vts/store.sql
+    coserv-broker:
+      enable-broker: false
+      client-caching: true
+      # CoSERV configurations of schemes
+      schemes:
+        ARM_CCA:
+          coserv-url: "https://veraison.test.linaro.org:11443"
+          client-tls-insecure: true
+          client-certs:
+            - ""
+          unsigned-coserv: false
+          profile: "tag:arm.com,2025:cca_platform#1.0.0"
 auth:
   backend: keycloak
   host: keycloak-service

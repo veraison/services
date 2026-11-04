@@ -93,7 +93,7 @@ func ParametersFromMap(m map[string]any) (*Parameters, error) {
 
 // Parameters represent plugin configuration settings that are passed to a
 // plugin on its initialization. These are, essentially, string keys mapping on
-// values of supported types (string, []byte, int, int64, bool).
+// values of supported types (string, []byte, int, int64, bool, map[string]any, []string).
 // Valid keys and their expected value types are plugin-specific.
 type Parameters struct {
 	values map[string]any
@@ -167,10 +167,31 @@ func (o *Parameters) SetBool(key string, value bool) *Parameters {
 	return o.set(key, value)
 }
 
+// SetParameters sets the specified key to the specified parameter's values map and returns a
+// pointer to the Parameters object. If the key already exists, it is
+// overwritten.
+func (o *Parameters) SetParameters(key string, value Parameters) *Parameters {
+	return o.SetStringMap(key, value.Map())
+}
+
+// SetStringMap sets the specified key to the specified map[string]any value and returns a
+// pointer to the Parameters object. If the key already exists, it is
+// overwritten.
+func (o *Parameters) SetStringMap(key string, value map[string]any) *Parameters {
+	return o.set(key, maps.Clone(value))
+}
+
+// SetStringSlice sets the specified key to the specified string array value and returns a
+// pointer to the Parameters object. If the key already exists, it is
+// overwritten.
+func (o *Parameters) SetStringSlice(key string, value []string) *Parameters {
+	return o.set(key, append([]string(nil), value...))
+}
+
 // Set the specified key to the specified value, provided value is of one of
 // the supported types, otherwise ErrInvalid is returned. Supported types are
-// string, []byte, int, int64, and bool. If the key already exists, it is
-// overwritten.
+// string, []byte, int, int64, bool, []string, *Parameters (converted to map[string]any)
+// and map[string]any. If the key already exists, it is overwritten.
 func (o *Parameters) Set(key string, value any) error {
 	switch t := value.(type) {
 	case string, []byte, int64, bool:
@@ -194,6 +215,23 @@ func (o *Parameters) Set(key string, value any) error {
 		}
 
 		o.set(key, int64(t))
+
+	case map[string]any:
+		o.set(key, maps.Clone(t))
+
+	case *Parameters:
+		if t == nil {
+			return fmt.Errorf("%w for %q: nil Parameters", ErrInvalid, key)
+		}
+		o.set(key, t.Map())
+
+	case []string, []any:
+		s, err := toStringSlice(key, t)
+		if err != nil {
+			return err
+		}
+		o.set(key, s)
+
 	default:
 		return fmt.Errorf("%w for %q: %v (%T)", ErrInvalid, key, value, value)
 	}
@@ -257,7 +295,7 @@ func (o *Parameters) DefaultGet(key string, defaultValue any) any {
 }
 
 // GetString returns the string value corresponding to the specified key. If
-// the key is not set or the value is a string, return "" and set the error to
+// the key is not set or the value is not string, return "" and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetString(key string) (string, error) {
 	return get(o, key, "", false)
@@ -281,7 +319,7 @@ func (o *Parameters) DefaultGetString(key, defaultValue string) (string, error) 
 }
 
 // GetBytes returns the []byte value corresponding to the specified key. If the
-// key is not set or the value is a []byte, return nil and set the error to
+// key is not set or the value is not []byte, return nil and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetBytes(key string) ([]byte, error) {
 	encoded, err := o.GetString(key)
@@ -327,7 +365,7 @@ func (o *Parameters) DefaultGetBytes(key string, defaultValue []byte) ([]byte, e
 }
 
 // GetInt64 returns the int64 value corresponding to the specified key. If the
-// key is not set or the value is a int64, return 0 and set the error to
+// key is not set or the value is not int64, return 0 and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetInt64(key string) (int64, error) {
 	return get(o, key, int64(0), false)
@@ -351,7 +389,7 @@ func (o *Parameters) DefaultGetInt64(key string, defaultValue int64) (int64, err
 }
 
 // GetInt returns the int value corresponding to the specified key. If the key
-// is not set or the value is a int, return 0 and set the error to ErrNotSet or
+// is not set or the value is not int, return 0 and set the error to ErrNotSet or
 // ErrInvalid respectively.
 func (o *Parameters) GetInt(key string) (int, error) {
 	val, err := o.GetInt64(key)
@@ -377,7 +415,7 @@ func (o *Parameters) DefaultGetInt(key string, defaultValue int) (int, error) {
 }
 
 // GetBool returns the bool value corresponding to the specified key. If the
-// key is not set or the value is a bool, return false and set the error to
+// key is not set or the value is not bool, return false and set the error to
 // ErrNotSet or ErrInvalid respectively.
 func (o *Parameters) GetBool(key string) (bool, error) {
 	return get(o, key, false, false)
@@ -398,6 +436,126 @@ func (o *Parameters) MustGetBool(key string) bool {
 // a bool, returns false and the error is set to ErrInvalid.
 func (o *Parameters) DefaultGetBool(key string, defaultValue bool) (bool, error) {
 	return get(o, key, defaultValue, true)
+}
+
+// GetParameters returns the converted *Parameters value (from map[string]any) corresponding
+// to the specified key. If the key is not set or the value is not map[string]any
+// (or of Parameters form), return nil and set the error to ErrNotSet
+// or ErrInvalid respectively.
+func (o *Parameters) GetParameters(key string) (*Parameters, error) {
+	nested, err := o.GetStringMap(key)
+	if err != nil {
+		return nil, err
+	}
+	return ParametersFromMap(nested)
+}
+
+// MustGetParameters is like GetParameters but panics on error.
+func (o *Parameters) MustGetParameters(key string) *Parameters {
+	val, err := o.GetParameters(key)
+	if err != nil {
+		panic(err)
+	}
+
+	return val
+}
+
+// DefaultGetParameters returns the converted *Parameters value (from map[string]any) corresponding
+// to the specified key. If the key is not set, defaultValue is returned instead. If the value is not
+// a map[string]any (or of Parameters form), returns defaultValue and the error is set to ErrInvalid.
+func (o *Parameters) DefaultGetParameters(key string, defaultValue *Parameters) (*Parameters, error) {
+	if _, err := o.Get(key); err != nil {
+		return defaultValue, nil
+	}
+
+	p, err := o.GetParameters(key)
+	if err != nil {
+		return defaultValue, err
+	}
+	return p, nil
+}
+
+// GetStringMap returns the map[string]any value corresponding to the specified key. If the
+// key is not set or the value is not map[string]any, return empty map and set the error to
+// ErrNotSet or ErrInvalid respectively.
+func (o *Parameters) GetStringMap(key string) (map[string]any, error) {
+	return get[map[string]any](o, key, map[string]any{}, false)
+}
+
+// MustGetStringMap is like GetStringMap but panics on error.
+func (o *Parameters) MustGetStringMap(key string) map[string]any {
+	val, err := o.GetStringMap(key)
+	if err != nil {
+		panic(err)
+	}
+
+	return val
+}
+
+// DefaultGetStringMap returns the map[string]any value corresponding to the specified key.
+// If the key is not set, defaultValue is returned instead. If the value is not
+// a map[string]any, returns defaultValue and the error is set to ErrInvalid.
+func (o *Parameters) DefaultGetStringMap(key string, defaultValue map[string]any) (map[string]any, error) {
+	return get[map[string]any](o, key, defaultValue, true)
+}
+
+// toStringSlice converts []string or []any (of strings) into a fresh []string.
+func toStringSlice(key string, val any) ([]string, error) {
+	switch t := val.(type) {
+	case []string:
+		return append([]string(nil), t...), nil
+	case []any:
+		ret := make([]string, len(t))
+		for i, item := range t {
+			s, ok := item.(string)
+			if !ok {
+				return nil, fmt.Errorf(
+					"%w for %q: array element %d is not a string (%T)",
+					ErrInvalid, key, i, item,
+				)
+			}
+			ret[i] = s
+		}
+		return ret, nil
+	default:
+		return nil, fmt.Errorf("%w for %q: %v", ErrInvalid, key, val)
+	}
+}
+
+// GetStringSlice returns the []string value corresponding to the specified key. If the
+// key is not set or the value is not []string, return nil and set the error to
+// ErrNotSet or ErrInvalid respectively.
+func (o *Parameters) GetStringSlice(key string) ([]string, error) {
+	val, err := o.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	return toStringSlice(key, val)
+}
+
+// MustGetStringSlice is like GetStringSlice but panics on error.
+func (o *Parameters) MustGetStringSlice(key string) []string {
+	val, err := o.GetStringSlice(key)
+	if err != nil {
+		panic(err)
+	}
+
+	return val
+}
+
+// DefaultGetStringSlice returns the []string value corresponding to the specified key.
+// If the key is not set, defaultValue is returned instead. If the value is not
+// a []string, returns defaultValue and the error is set to ErrInvalid.
+func (o *Parameters) DefaultGetStringSlice(key string, defaultValue []string) ([]string, error) {
+	val, err := o.Get(key)
+	if err != nil {
+		return defaultValue, nil
+	}
+	ret, err := toStringSlice(key, val)
+	if err != nil {
+		return defaultValue, err
+	}
+	return ret, nil
 }
 
 func (o *Parameters) set(key string, value any) *Parameters {
