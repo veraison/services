@@ -16,6 +16,7 @@ import (
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/corim/coserv"
 	"github.com/veraison/eat"
+	"github.com/veraison/services/handler"
 	vtscoserv "github.com/veraison/services/vts/coserv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -227,15 +228,14 @@ func testRVQuery(t *testing.T) string {
 }
 
 func Test_ExecuteCoservQuery_empty_result_set(t *testing.T) {
-	core, logs := observer.New(zap.WarnLevel)
+	core, _ := observer.New(zap.WarnLevel)
 	store := newTestStore(t, core)
 
 	res, err := store.ExecuteCoservQuery("http://example.com", testRVQuery(t))
 
-	require.NoError(t, err)
+	assert.ErrorIs(t, err, handler.ErrNotFound)
 	require.NotNil(t, res)
 	assert.True(t, resultSetIsEmpty(res.Results))
-	assert.Equal(t, 1, logs.FilterMessageSnippet("empty coserv result set").Len())
 }
 
 func Test_ExecuteCoservQuery_non_empty_result_set(t *testing.T) {

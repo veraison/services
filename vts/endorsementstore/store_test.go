@@ -195,6 +195,58 @@ func TestExecuteCoservQuery(t *testing.T) {
 	assert.NoError(t, e4)
 }
 
+func TestExecuteCoservQueryEmptyResultSet(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	empty0 := &coserv.Coserv{}
+	empty1 := &coserv.Coserv{}
+
+	storeEmpty0 := emptyCoservStore(t, ctrl, empty0)
+	storeEmpty1 := emptyCoservStore(t, ctrl, empty1)
+	storeNotFound := notFoundStore(t, ctrl)
+	storeUnsupported := unsupportedStore(t, ctrl)
+	storeUnexpected := unexpStore(t, ctrl)
+	storeValid := validStore(t, ctrl)
+
+	// an empty result set does not stop later stores from being queried
+	store0 := VtsEndorsementStore{
+		log.Named("store0"),
+		[]handler.IEndorsementStorePlugin{},
+	}
+	store0.addStore(storeEmpty0)
+	store0.addStore(storeNotFound)
+	store0.addStore(storeValid)
+
+	// the first empty result set is returned if no store has results
+	store1 := VtsEndorsementStore{
+		log.Named("store1"),
+		[]handler.IEndorsementStorePlugin{},
+	}
+	store1.addStore(storeNotFound)
+	store1.addStore(storeEmpty0)
+	store1.addStore(storeUnsupported)
+	store1.addStore(storeEmpty1)
+
+	store2 := VtsEndorsementStore{
+		log.Named("store2"),
+		[]handler.IEndorsementStorePlugin{},
+	}
+	store2.addStore(storeEmpty0)
+	store2.addStore(storeUnexpected)
+
+	r0, e0 := store0.ExecuteCoservQuery("", "")
+	r1, e1 := store1.ExecuteCoservQuery("", "")
+	_, e2 := store2.ExecuteCoservQuery("", "")
+
+	assert.NoError(t, e0)
+	assert.NotNil(t, r0)
+	assert.NotSame(t, empty0, r0)
+	assert.NoError(t, e1)
+	assert.Same(t, empty0, r1)
+	assert.ErrorContains(t, e2, errUnexpected.Error())
+}
+
 func TestAddCorimBytes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -310,6 +362,20 @@ func errStore(t *testing.T, ctrl *gomock.Controller, err error) *mockstore.MockI
 		Return("error-store")
 
 	return storeUnexpected
+}
+
+func emptyCoservStore(t *testing.T, ctrl *gomock.Controller, res *coserv.Coserv) *mockstore.MockIEndorsementStorePlugin {
+	storeEmpty := mockstore.NewMockIEndorsementStorePlugin(ctrl)
+	storeEmpty.EXPECT().
+		ExecuteCoservQuery(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(res, errNotFound)
+	storeEmpty.EXPECT().
+		GetName().
+		AnyTimes().
+		Return("empty-store")
+
+	return storeEmpty
 }
 
 func validStore(t *testing.T, ctrl *gomock.Controller) *mockstore.MockIEndorsementStorePlugin {
