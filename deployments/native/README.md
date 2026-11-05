@@ -222,16 +222,16 @@ which case, it will be self-signed).
 Certificate generation relies on `openssl` which must be installed on the
 system.
 
-#### Create root certificate
+#### Create root certificates
 
-A root certificate may be created by running
+Root certificates for TLS and CoRIM verification may be created by running
 
 ```bash
-./deployment.sh create-root-cert "/C=US/O=Acme Inc."
+./deployment.sh create-root-certs "/C=US/O=Acme Inc."
 ```
 
-This will create `${VERAISON_ROOT}/certs/rootCA.crt` (and the associated
-`${VERAISON_ROOT}/certs/rootCA.key`) with the specified subject. The subject
+This will create `${VERAISON_ROOT}/certs/{rootCA,corimCA}.crt` (and the associated
+`${VERAISON_ROOT}/certs/{rootCA,corimCA}.key`) with the specified subject. The subject
 may be omitted from the invocation, in which case `/O=Veraison` will be used.
 
 #### Create service certificates

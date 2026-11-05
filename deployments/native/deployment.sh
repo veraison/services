@@ -353,14 +353,14 @@ function help() {
 	    This command does not install client executables or their configuration
 	    (see init-client command below).
 
-	[-f] create-root-cert [SUBJECT]
-	    Creates a self-signed certificate called rootCA.crt (and the associted key,
-	    rootCA.key) with the specified SUBJECT under
+	[-f] create-root-certs [SUBJECT]
+	    Creates self-signed CA certificates called {rootCA,corimCA}.crt (and the 
+		associted keys, {rootCA,corimCA}.key) with the specified SUBJECT under
 	    ${VERAISON_ROOT}/certs/.
 	    If the subject is not specified, then it defaults to "/O=Veraison".
 
-	    This command will not overwrite the existing rootCA.crt unless -f option
-	    is specified.
+	    This command will not overwrite the existing {rootCA,corimCA}.crt unless 
+		-f option is specified.
 
 	[-e] [-f] init-certificates | init-certs [NAME_TEMPLATE ROOT_CERT ROOT_CERT_KEY]
 	    Initialize x509 certificates for the deployment, either by generating new
