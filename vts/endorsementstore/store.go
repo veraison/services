@@ -109,6 +109,7 @@ func (s *VtsEndorsementStore) ExecuteCoservQuery(profile, query string) (*coserv
 		s.logger.Errorf("failed to fetch store list: %v", err)
 		return nil, err
 	}
+	var empty *coserv.Coserv // first empty result set returned with ErrNotFound
 	for _, store := range stores {
 		name := store.GetName()
 		res, err := store.ExecuteCoservQuery(profile, query)
@@ -116,10 +117,19 @@ func (s *VtsEndorsementStore) ExecuteCoservQuery(profile, query string) (*coserv
 			if logOrErr(err, s.logger, name, &errs) != nil {
 				return nil, err
 			}
+			if empty == nil && res != nil && errors.Is(err, handler.ErrNotFound) {
+				empty = res
+			}
 		} else {
 			s.logger.Infof("CoSERV results found in store `%s'", name)
 			return res, nil
 		}
+	}
+	// An empty result set is a valid CoSERV response, so return it as is
+	// if no store had any results.
+	if empty != nil {
+		s.logger.Warnw("no CoSERV results found in any store", "profile", profile, "query", query)
+		return empty, nil
 	}
 	return nil, computeStoreErr(errs)
 }
