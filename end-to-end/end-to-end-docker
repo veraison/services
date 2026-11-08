@@ -49,6 +49,22 @@ function check() {
 
 function check_ear() {
 
+    rm -f ${TEMP_DIR}/pkey.json
+    verifier=$(docker network inspect veraison-net |jq -r '.[].Containers[] | select(.Name == "verification-service").IPv4Address')
+    curl -k -s -N https://${verifier%\/*}:8443/.well-known/veraison/verification | jq '."ear-verification-key"' > ${TEMP_DIR}/pkey.json
+
+    if [ ! -s ${TEMP_DIR}/pkey.json ]; then
+        echo "Cannot obtain verification key"
+        exit 1
+    fi
+
+    if ! $VERAISON -- arc verify --pkey ${TEMP_DIR}/pkey.json ${TEMP_DIR}/ear.jwt >/dev/null; then
+        echo "EAR verification failed:"
+        $VERAISON -- arc print ${TEMP_DIR}/ear.jwt
+        exit 1
+    fi
+    echo "Successful EAR verification"
+
     # When SCHEME is cca the realm ear.status would be "warning",
     # but the plaform one should be "affirming".
     if $VERAISON -- arc print ${TEMP_DIR}/ear.jwt | grep -q '"ear.status": "affirming"'; then
