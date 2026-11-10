@@ -32,6 +32,10 @@ const NUM_REMS = 4
 const (
 	CCA_PLATFORM_CONFIG               = "cca_platform_cofig"
 	CCA_PLATFORM_MANUFACTURING_CONFIG = "cca_platform_manufacturing_config"
+
+	// REALM_MANAGEMENT_SECURITY_DOMAIN is the only Client ID value the
+	// platform can claim (CCA Evidence Profile, section 4.8.3).
+	REALM_MANAGEMENT_SECURITY_DOMAIN = 1
 )
 
 var Descriptor = handler.SchemeDescriptor{
@@ -242,6 +246,18 @@ func AppraisePlatform(
 	claims, err := convertToPlatformClaims(entry)
 	if err != nil {
 		return handler.BadEvidence(err)
+	}
+
+	clientID, err := claims.GetClientID()
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+
+	if clientID != REALM_MANAGEMENT_SECURITY_DOMAIN {
+		return handler.BadEvidence(
+			"client ID is %d; expected %d (realm management security domain)",
+			clientID, REALM_MANAGEMENT_SECURITY_DOMAIN,
+		)
 	}
 
 	// once the signature on the token is verified, we can claim the HW is

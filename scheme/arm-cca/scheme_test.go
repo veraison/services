@@ -201,6 +201,30 @@ func TestImplementation_AppraiseClaims_Platform_Valid(t *testing.T) {
 	assert.Equal(t, ear.ApprovedRuntimeClaim, platformAppraisal.TrustVector.Executables)
 }
 
+func TestImplementation_AppraiseClaims_Platform_Client_ID(t *testing.T) {
+	endorsements := loadReferenceValues(t, corimCcaPlatformValid)
+
+	for name, mutate := range map[string]func(map[string]any){
+		"invalid value": func(pc map[string]any) { pc["cca-platform-client-id"] = 2 },
+		"missing claim": func(pc map[string]any) { delete(pc, "cca-platform-client-id") },
+	} {
+		t.Run(name, func(t *testing.T) {
+			impl := NewImplementation()
+			claims, err := extractClaimsFromEvidence(t)
+			require.NoError(t, err)
+
+			platformClaims, ok := claims["platform"].(map[string]any)
+			require.True(t, ok)
+			mutate(platformClaims)
+
+			_, err = impl.AppraiseClaims(claims, endorsements)
+			assert.Error(t, err)
+			_, ok = err.(handler.BadEvidenceError)
+			assert.True(t, ok)
+		})
+	}
+}
+
 func TestImplementation_AppraiseClaims_Platform_No_Platform_Claims(t *testing.T) {
 	impl := NewImplementation()
 	var claims map[string]any
