@@ -17,6 +17,10 @@ if [[ "$(type -p git)" == "" ]]; then
 fi
 
 git_version_tag=$(git tag | grep -E '^v[[:digit:]]' | tail -n1)
+if [[ "$git_version_tag" == "" ]]; then
+  # Can't find a tag. Maybe it's a forked repo
+  git_version_tag="0.0.0"
+fi
 git_commit="$(git rev-parse --revs-only --short HEAD)"
 
 echo "${git_version_tag#v}+${git_commit}"
