@@ -10,10 +10,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/ccatoken"
 	"github.com/veraison/corim/comid"
 	"github.com/veraison/corim/corim"
 	"github.com/veraison/ear"
 	"github.com/veraison/services/handler"
+	"github.com/veraison/services/scheme/common"
 	"github.com/veraison/services/vts/appraisal"
 )
 
@@ -24,9 +26,9 @@ var testNonce = func() []byte {
 }()
 
 // Helper: loadEvidenceToken loads the CCA token CBOR from test/evidence/cca-good.cbor
-func loadEvidenceToken(t *testing.T) []byte {
+func loadEvidenceToken(t *testing.T, ccaEvidence string) []byte {
 	t.Helper()
-	data, err := os.ReadFile("test/evidence/cca-good.cbor")
+	data, err := os.ReadFile("test/evidence/" + ccaEvidence)
 	require.NoError(t, err, "failed to read evidence token file")
 	return data
 }
@@ -90,7 +92,7 @@ func TestNewImplementation(t *testing.T) {
 func TestImplementation_GetTrustAnchorIDs(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	envs, err := impl.GetTrustAnchorIDs(evidence)
@@ -103,7 +105,7 @@ func TestImplementation_GetTrustAnchorIDs(t *testing.T) {
 func TestImplementation_ExtractClaims(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	claims, err := impl.ExtractClaims(evidence, nil)
@@ -127,7 +129,7 @@ func TestImplementation_ExtractClaims_Empty_Evidence(t *testing.T) {
 func TestImplementation_GetReferenceValueIDs(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	claims, err := impl.ExtractClaims(evidence, nil)
@@ -147,7 +149,7 @@ func TestImplementation_GetReferenceValueIDs(t *testing.T) {
 func TestImplementation_ValidateEvidenceIntegrity_Valid(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	trustAnchors := loadTrustAnchors(t, corimCcaPlatformValid)
@@ -160,7 +162,7 @@ func TestImplementation_ValidateEvidenceIntegrity_Valid(t *testing.T) {
 func TestImplementation_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	trustAnchors := loadTrustAnchors(t, corimCcaPlatformBadTaCert)
@@ -174,7 +176,7 @@ func TestImplementation_ValidateEvidenceIntegrity_BadKey(t *testing.T) {
 func TestImplementation_ValidateEvidenceIntegrity_NonceMismatch(t *testing.T) {
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: []byte("wrongnonce"),
 	}
 	trustAnchors := loadTrustAnchors(t, corimCcaPlatformValid)
@@ -199,6 +201,30 @@ func TestImplementation_AppraiseClaims_Platform_Valid(t *testing.T) {
 	assert.Equal(t, ear.TrustTierAffirming, *platformAppraisal.Status)
 	assert.Equal(t, ear.ApprovedConfigClaim, platformAppraisal.TrustVector.Configuration)
 	assert.Equal(t, ear.ApprovedRuntimeClaim, platformAppraisal.TrustVector.Executables)
+}
+
+func extractClaimsWithoutValidation(t *testing.T, data []byte) map[string]any {
+	ccaToken, err := ccatoken.DecodeEvidenceFromCBOR(data)
+	require.NoError(t, err)
+	platformClaims, err := common.ToMapViaJSON(ccaToken.PlatformClaims)
+	require.NoError(t, err)
+	realmClaims, err := common.ToMapViaJSON(ccaToken.RealmClaims)
+	require.NoError(t, err)
+	claims := map[string]any{
+		"platform": platformClaims,
+		"realm":    realmClaims,
+	}
+	return claims
+}
+
+func TestImplementation_AppraiseClaims_Platform_RejectsBadClientID(t *testing.T) {
+	impl := NewImplementation()
+	data := loadEvidenceToken(t, "cca-bad.cbor")
+	claims := extractClaimsWithoutValidation(t, data)
+	endorsements := loadReferenceValues(t, corimCcaPlatformValid)
+	_, err := impl.AppraiseClaims(claims, endorsements)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "client id MUST be 1")
 }
 
 func TestImplementation_AppraiseClaims_Platform_No_Platform_Claims(t *testing.T) {
@@ -352,7 +378,7 @@ func extractClaimsFromEvidence(t *testing.T) (map[string]any, error) {
 	t.Helper()
 	impl := NewImplementation()
 	evidence := &appraisal.Evidence{
-		Data:  loadEvidenceToken(t),
+		Data:  loadEvidenceToken(t, "cca-good.cbor"),
 		Nonce: testNonce,
 	}
 	return impl.ExtractClaims(evidence, nil)
