@@ -13,7 +13,7 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-jose/go-jose/v4 v4.1.4
+	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang/mock v1.6.0
