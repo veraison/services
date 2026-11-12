@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -689,7 +690,15 @@ func (o *GRPC) getEndorsementsFromStores(
 		return resp.ToCBOR()
 	}
 
-	return nil, handlermod.ErrNotFound
+	// Return empty result set if endorsements are not in store
+	if errors.Is(err, handlermod.ErrNotFound) {
+		result := coserv.NewResultSet()
+		result.SetExpiry(time.Now().Add(o.CoservContext.MaxExpiry))
+		query.Results = result
+		return query.ToCBOR()
+	}
+
+	return nil, err
 }
 
 func (o *GRPC) GetEndorsements(
