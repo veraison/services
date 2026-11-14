@@ -6,5 +6,23 @@ set -euo pipefail
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SRC_DIR="$THIS_DIR/src"
 
-evcli cca create --iak="$SRC_DIR/ec.p256.jwk" --rak="$SRC_DIR/ec.p384.jwk" \
-	--claims="$SRC_DIR/cca-good.json" --token="$THIS_DIR/cca-good.cbor"
+testcases=(
+	cca-good
+	cca-bad
+)
+
+for case in "${testcases[@]}"; do
+	echo "generating ${case}.cbor"
+
+	if [[ “${case}” == "*bad*" ]]; then
+		echo "executing bad test check"
+		allow-invalid=“--allow-invalid”
+	fi
+
+	evcli cca create ${allow-invalid} --iak=“$SRC_DIR/ec.p256.jwk” --rak=“$SRC_DIR/ec.p384.jwk” \
+	--claims=“$SRC_DIR/${case}.json” --token=“$THIS_DIR/${case}.cbor”
+
+done
+
+echo "done"
+
