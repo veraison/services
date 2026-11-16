@@ -18,6 +18,9 @@ Additionally, the following dependencies are required specifically for AWS deplo
 - `packer`: used to build AMI images using temporary EC2 instances.
 - `psql`: Postgres client used to initialise the stores (may be packaged on its
   own or as part of `postgres`, depending on the platform).
+- Python 3.12 or newer, with virtual-environment support (`python3-venv` on
+  Ubuntu 24.04), and GNU `envsubst` from gettext. The similarly named Python
+  package is not a replacement for the GNU command.
 - A number of Python packages used by the deployment script. Please see
   [requirements.txt](misc/requirements.txt) for details.
 
@@ -34,10 +37,33 @@ for Arch, Ubuntu, and MacOSX (using [homebrew](https://brew.sh)).
 git clone https://github.com/veraison/services.git
 cd services/deployments/aws
 
+# Use a dedicated venv. Ubuntu bootstrap selects /usr/bin/python3.
+export VERAISON_AWS_VENV="$HOME/venv/veraison-aws"
 make bootstrap
+source env/env.bash --
 ```
 
-(this will only work on the above-mentioned platforms).
+This works on the platforms listed above. Ubuntu 24.04 provides the required
+Python version. Bootstrap installs `python3-venv` and gettext, and removes the
+legacy Python `envsubst` package from the dedicated deployment venv so that it
+cannot shadow GNU `envsubst` during Debian packaging. For another Python
+installation, set `VERAISON_AWS_PYTHON` to its executable before bootstrap and
+install its matching venv support package. Use a fresh `VERAISON_AWS_VENV`
+directory when changing Python versions.
+
+Check the selected tools before deploying:
+
+```bash
+python --version
+envsubst --version
+go version
+```
+
+`python` must be version 3.12 or newer, and `envsubst --version` must identify
+GNU gettext. The Go toolchain must meet the version in the repository's
+`go.mod`; the Go binaries and plugins must be built together. The default
+Packer images use Ubuntu 22.04 on x86-64, so any prebuilt Debian package must
+also be compatible with that architecture and its glibc version.
 
 ### AWS account
 
@@ -91,19 +117,39 @@ Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html)
 
 ## Quickstart
 
-Before creating a deployment, you need to provide account-specific
-configuration that specifies the IDs of the VPC and subnets that will be used
-for the deployment as well as the CIDR that will be granted access to the
-deployment. Please use [misc/arm.cfg](misc/arm.cfg) for an example.
-
-Once the account-specific config file is created, define `AWS_ACCOUNT_CFG`
-environment variable to point to it and execute `make deploy` to create the
-deployment.
+Before creating a deployment, create your own account configuration file.
+The scripts create the VPC and subnets using `VERAISON_AWS_VPC_CIDR`. Configure
+the region, the CIDR allowed to administer the deployment, and your DNS domain.
+For example, create `$HOME/veraison-aws.cfg` with the following settings,
+replacing the example CIDR and domain:
 
 ```bash
-export AWS_ACCOUNT_CFG=misc/arm.cfg  # replace with path to your config
+VERAISON_AWS_REGION=us-east-1
+VERAISON_AWS_ADMIN_CIDR=203.0.113.10/32
+VERAISON_AWS_VPC_CIDR=10.1.0.0/16
+VERAISON_AWS_DNS_NAME=example.com
+```
+
+The region must contain your ACM certificate. Sourcing `env/env.bash` with this
+file exports the region as both `AWS_DEFAULT_REGION` and `AWS_REGION` for AWS
+clients. Account-specific IAM settings can also be provided; see
+[deployment.cfg](deployment.cfg). The values in [misc/arm.cfg](misc/arm.cfg)
+are specific to the Arm development account.
+
+Activate this configuration and create the deployment:
+
+```bash
+export AWS_ACCOUNT_CFG="$HOME/veraison-aws.cfg"
+source env/env.bash "$AWS_ACCOUNT_CFG"
 make deploy
 ```
+
+The deployment stops at the first failed command. Fix that failure before
+running subsequent steps; downstream missing-cache messages usually follow
+from an earlier failure. A full `make deploy` is an initial deployment flow,
+not a resume operation. Use individual `veraison` commands to resume after
+checking the existing resources. `create-signer-key` reuses an active signing
+secret already recorded in the deployment cache.
 
 > [!NOTE]
 > This could take a while -- in the order of 45 minutes, depending on how
@@ -113,15 +159,16 @@ make deploy
 > It's possible to use an existing Veraison Debian package when creating the
 > deployment (by default, one will be built from source as part of the
 > process).
-> To do so, set `VERAISON_DEB` environment variable to point to the package
-> before calling `make deploy`. (You can also add the variable to the config
+> Leave `VERAISON_DEB` unset or empty to build from source. To reuse a package,
+> set `VERAISON_DEB` to the path of an existing amd64 `.deb` file before calling
+> `make deploy`. (You can also add the variable to the config
 > file you are using with  `AWS_ACCOUNT_CFG`).
 >
 
 Deployment can be accessed via CLI front end:
 
 ```bash
-source env/env.bash  # for bash, or alternatively, env/env.zsh for Zsh users
+source env/env.bash "$AWS_ACCOUNT_CFG"  # use env/env.zsh for Zsh
 veraison status
 ```
 
@@ -131,19 +178,43 @@ Veraison services as active and running.
 To make sure the deployment works, you can run through
 [end-to-end](../../end-to-end/README.md) flow.
 
-For example
+For CCA, install the client tools and submit both the platform and realm
+endorsements:
 
 ```bash
-# env/env.bash must be sourced
-../../end-to-end/end-to-end-aws provision
-# followed by
-../../end-to-end/end-to-end-aws verify rp
+go install github.com/veraison/cocli@v0.1.0
+go install github.com/veraison/evcli/v2@0e253e8
+export PATH="$(go env GOPATH)/bin:$PATH"
+SCHEME=cca ../../end-to-end/end-to-end-aws provision
+veraison stores
+SCHEME=cca ../../end-to-end/end-to-end-aws verify rp
 ```
+
+The provisioning command submits two CoRIM bundles. A successful run exits
+with status zero; it does not print a separate success banner. An unchanged
+bundle submitted again is rejected with `token already in store`. The
+`veraison stores` command shows the provisioned endorsement data.
+
+The sentinel's default CoRIM-store revision is `a2a60b6a11ad`, matching the
+services dependency in `go.mod`. Keep those revisions aligned when updating
+the dependency so fresh RDS initialization installs the schema used by the
+services, including the `tokens` table. Both the CoRIM store and policy store
+use encrypted PostgreSQL connections (`sslmode=require`).
 
 Finally, to remove the deployment, you can run
 
 ```bash
 make really-clean
+```
+
+### Local regression checks
+
+These checks use temporary files and mocked AWS clients. They do not create
+cloud resources. Run them from the repository root using Python 3.12 or newer
+with PyYAML installed:
+
+```bash
+python -m unittest discover -s deployments/aws/tests -v
 ```
 
 ## Deployment overview

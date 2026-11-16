@@ -20,28 +20,24 @@ ear-signer:
   key: aws:${AWS_REGION}/${DEPLOYMENT_NAME}-ear-signer
 plugin:
   backend: go-plugin
-  go-plugin:
-    dir: /opt/veraison/plugins/
-ta-store:
-  backend: sql
-  sql:
-    max_connections: ${MAX_STORE_CONNECTIONS}
-    driver: pgx
-    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
-    tablename: trust_anchors
-en-store:
-  backend: sql
-  sql:
-    max_connections: ${MAX_STORE_CONNECTIONS}
-    driver: pgx
-    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
-    tablename: endorsements
+  go-plugin-schemes:
+    dir: /opt/veraison/plugins/schemes/
+  go-plugin-stores:
+    dir: /opt/veraison/plugins/stores/
+endorsement-store:
+  active-plugins:
+    - corim-store
+  plugin-parameters:
+    corim-store:
+      dbms: pgx
+      dsn: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}?sslmode=require
+      trace-sql: false
 po-store:
   backend: sql
   sql:
     max_connections: ${MAX_STORE_CONNECTIONS}
     driver: pgx
-    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
+    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}?sslmode=require
     tablename: policies
 po-agent:
     backend: opa

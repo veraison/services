@@ -72,10 +72,10 @@ function bootstrap() {
 			arch) sudo pacman -Syy packer ssh;;
 			ubuntu)
 				sudo apt update
-				sudo apt --yes install curl postgresql
+				sudo apt --yes install curl postgresql python3-venv gettext-base
 
 				curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-				sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+				sudo apt-add-repository --yes "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 				sudo apt --yes install packer
 				;;
 			*)
@@ -97,10 +97,24 @@ function bootstrap() {
 			;;
 	esac
 
-	python -m venv "${VERAISON_AWS_VENV}"
+	local python=${VERAISON_AWS_PYTHON:-python3}
+	if [[ $(uname -s) == Linux && ${distrib_id:-} == ubuntu ]]; then
+		# Ignore a previously activated virtual environment on Ubuntu.
+		python=${VERAISON_AWS_PYTHON:-/usr/bin/python3}
+	fi
+	_check_installed "$python"
+	if ! "$python" -c 'import sys; sys.exit(sys.version_info < (3, 12))'; then
+		echo -e "$_error: AWS deployment requires Python 3.12 or newer. Set VERAISON_AWS_PYTHON to a suitable interpreter."
+		exit 1
+	fi
+
+	"$python" -m venv "${VERAISON_AWS_VENV}"
 	# shellcheck disable=SC1091
 	source "${VERAISON_AWS_VENV}/bin/activate"
-	pip install -r "${_this_dir}/misc/requirements.txt"
+	# Older deployment venvs installed a Python envsubst command that shadows GNU
+	# envsubst, which is required by the native/Debian packaging scripts.
+	python -m pip uninstall --yes envsubst
+	python -m pip install -r "${_this_dir}/misc/requirements.txt"
 
 	packer init "${_this_dir}/templates/image-services.pkr.hcl"
 
@@ -144,7 +158,7 @@ function bringup() {
 		--iam-permission-boundary-arn "${IAM_PERMISSION_BOUNDARY_ARN}" \
 		--max-dbms-connections "${MAX_DBMS_CONNECTIONS}"
 
-	if [[ "${VERAISON_DEB}" == "" ]]; then
+	if [[ -z "${VERAISON_DEB:-}" ]]; then
 		veraison create-deb
 	else
 		veraison add-deb "${VERAISON_DEB}"
@@ -236,7 +250,7 @@ if [[ $_no_error == true ]]; then
 	_script_flags+=(--no-error)
 fi
 
-_check_installed python
+_check_installed python3
 
 _command=$1; shift
 _command=$(echo "$_command" | tr -- _ -)

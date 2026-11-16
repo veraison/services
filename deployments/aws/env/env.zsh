@@ -27,11 +27,17 @@ set -a
 # shellcheck source=../deployment.cfg
 source "${_deployment_cfg}"
 
-if [[ "${1}" != "" && "${1}" != "--" ]]; then
+if [[ "${1:-}" != "" && "${1:-}" != "--" ]]; then
 	# shellcheck disable=SC1090
 	source "${1}"
 fi
 set +a
+
+# The deployment's configured region also applies to boto3 and other AWS tools.
+if [[ -n "${VERAISON_AWS_REGION:-}" ]]; then
+	export AWS_DEFAULT_REGION="${VERAISON_AWS_REGION}"
+	export AWS_REGION="${VERAISON_AWS_REGION}"
+fi
 
 if [[ -f "${VERAISON_AWS_VENV}/bin/activate" ]]; then
 	# shellcheck disable=SC1091

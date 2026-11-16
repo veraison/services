@@ -73,7 +73,7 @@ Parameters:
       AWS Region into which Veraison will be deployed
   CacheNodeType:
     Type: String
-    Default: cache.t2.micro
+    Default: cache.t4g.micro
   NumCacheNodes:
     Type: Number
     Default: 2

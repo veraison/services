@@ -5,8 +5,7 @@ SCRIPT := $(THIS_DIR)/deployment.sh
 
 .PHONY: bootstrap
 bootstrap:
-	source $(THIS_DIR)/env/env.bash
-	$(SCRIPT) bootstrap
+	source $(THIS_DIR)/env/env.bash -- && $(SCRIPT) bootstrap
 
 .PHONY: deploy
 deploy:
@@ -18,5 +17,4 @@ deploy:
 
 .PHONY: really-clean
 really-clean:
-	source $(THIS_DIR)/env/env.bash
-	$(SCRIPT) -N teardown
+	source $(THIS_DIR)/env/env.bash -- && $(SCRIPT) -N teardown
