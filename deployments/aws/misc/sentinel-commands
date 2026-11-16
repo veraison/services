@@ -151,8 +151,8 @@ class SetupRdsCommand(BaseCommand):
 
         self.logger.info('configuring corim-store client...')
         corim_store_settings = {
-            'dbms': 'pg',
-            'dsn': f'postgres://veraison:{args.password}@{args.host}:{args.port}/veraison?sslmode=disable',
+            'dbms': 'pgx',
+            'dsn': f'postgres://veraison:{args.password}@{args.host}:{args.port}/veraison?sslmode=require',
             'trace-sql': False,
         }
         self.logger.debug(f'corim-store settings: {corim_store_settings}')

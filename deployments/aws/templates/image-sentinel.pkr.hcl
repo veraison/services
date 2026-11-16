@@ -96,8 +96,8 @@ build {
       "sudo mv veraison-dispatcher /opt/veraison/bin/veraison",
       "sudo chmod +x /opt/veraison/bin/veraison",
       "sudo ln -s /opt/veraison/bin/veraison /usr/bin/veraison",
-      "sudo mv corim-store /opt/veraison/bin/corim-store"
-      "sudo chmod +x /opt/veraison/bin/corim-store"
+      "sudo mv corim-store /opt/veraison/bin/corim-store",
+      "sudo chmod +x /opt/veraison/bin/corim-store",
       "sudo ln -s /opt/veraison/bin/corim-store /usr/bin/corim-store",
 
       "sudo python3 -mvenv /opt/veraison/venv",

@@ -36,7 +36,6 @@ import requests
 import xdg.BaseDirectory
 import yaml
 from botocore.exceptions import ClientError
-from envsubst import envsubst
 from jwcrypto import jwk
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -401,7 +400,10 @@ def command_get(cmd, path, precondition=None):
 def command_instantiate_template(cmd, deployment_name, src_path, out_dir='/tmp'):
     with open(src_path) as fh:
         os.environ['DEPLOYMENT_NAME'] = deployment_name
-        instantiated_template_body = envsubst(fh.read())
+        # Match the variable forms used by GNU envsubst without installing the
+        # unrelated Python CLI of the same name into the deployment venv.
+        instantiated_template_body = string.Template(fh.read()).safe_substitute(
+            defaultdict(str, os.environ))
         instantiated_template_body = instantiated_template_body.replace('$@{', '${')
 
     basename = os.path.basename(src_path).removesuffix('.template')
@@ -530,12 +532,38 @@ def command_create_stack(
             cmd.logger.error(f'{status} {reason}')
 
         cmd.logger.info('waiting for the rollback to complete...')
-        resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
-        while resp['Stacks'][0]['StackStatus'] == 'DELETE_IN_PROGRESS':
+        while True:
+            try:
+                resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
+            except ClientError as error:
+                details = error.response.get('Error', {})
+                if (details.get('Code') == 'ValidationError'
+                        and 'does not exist' in details.get('Message', '')):
+                    break  # OnFailure=DELETE has finished removing the stack.
+                raise
+            if resp['Stacks'][0]['StackStatus'] != 'DELETE_IN_PROGRESS':
+                break
             time.sleep(wait_period)
-            resp = cmd.aws.cf.describe_stacks(StackName=stack_full_name)
 
         cmd.fail(f'could not create stack {stack_name}')
+
+
+
+def command_get_discovery(cmd, url, required_keys, session=None):
+    session = session or requests
+    try:
+        resp = session.get(url, timeout=(10, 30))
+        resp.raise_for_status()
+        document = resp.json()
+    except (requests.RequestException, ValueError) as error:
+        cmd.fail(f'could not read discovery document at {url}: {error}')
+
+    if not isinstance(document, dict):
+        cmd.fail(f'discovery document at {url} must be a JSON object')
+    missing = [key for key in required_keys if key not in document]
+    if missing:
+        cmd.fail(f'discovery document at {url} is missing: {", ".join(missing)}')
+    return document
 
 
 def command_get_ec2_instances(cmd):
@@ -1510,13 +1538,17 @@ class CreateSentinelImageCommand(BaseCommand):
             '-P', '--package',
             default='github.com/veraison/corim-store/cmd/corim-store',
         )
-        parser.add_argument( '-R', '--rev', default='9e4ba68b')
+        parser.add_argument('-R', '--rev', default='a2a60b6a11ad')
         parser.add_argument('-T', '--instance-type')
 
     def run(self, args):
         dir = tempfile.mkdtemp()
-        try: 
-            run_in_shell(f"GOBIN={dir} go install {args.package}@{args.rev}", args.verbose)
+        try:
+            install_cmd = (f'GOBIN={shlex.quote(dir)} go install '
+                           f'{shlex.quote(f"{args.package}@{args.rev}")}')
+            exit_code, stdout, stderr = run_in_shell(install_cmd, args.verbose)
+            if exit_code:
+                self.fail_shell('corim-store build', exit_code, stdout, stderr)
             path = os.path.join(dir, 'corim-store')
             self.logger.debug(f'installed corim-store: {path}')
 
@@ -1687,18 +1719,20 @@ class CreateDebCommand(BaseCommand):
         os.environ['GOARCH'] = 'amd64'
 
         self.logger.info(f'creating Debian package under {args.work_dir}...')
-        create_deb_cmd = f'{script} create-deb {args.work_dir}'
+        create_deb_cmd = f'{shlex.quote(script)} create-deb {shlex.quote(args.work_dir)}'
         self.logger.debug(create_deb_cmd)
         exit_code, stdout, stderr = run_in_shell(create_deb_cmd, args.verbose)
         if exit_code:
             self.fail_shell('deb creation', exit_code, stdout, stderr)
 
-        regex = re.compile(r"building package 'veraison' in '(?P<deb_path>[^']+)'")
+        regex = re.compile(r'^VERAISON_DEB=(?P<deb_path>.+)$', re.MULTILINE)
         match = regex.search(stdout)
         if not match:
             self.fail(f'could not find deb path in script output')
 
         deb_path = match.group('deb_path')
+        if not os.path.isfile(deb_path):
+            self.fail(f'package reported by build script does not exist: {deb_path}')
         dest_path = os.path.join(args.cache_dir, os.path.basename(deb_path))
         self.logger.debug(f'moving {deb_path} to {dest_path}')
         shutil.move(deb_path, dest_path)
@@ -2104,8 +2138,9 @@ class StatusCommand(BaseCommand):
                 host = services['services-dns-name']
                 port = services['verification-port']
 
-                resp = requests.get(f'https://{host}:{port}/.well-known/veraison/verification')
-                well_known = json.loads(resp.text)
+                well_known = command_get_discovery(
+                    self, f'https://{host}:{port}/.well-known/veraison/verification',
+                    ('version', 'ear-verification-key', 'media-types'))
 
                 print(f'Veraison version: {well_known['version']}')
                 print()
@@ -2138,8 +2173,9 @@ class StatusCommand(BaseCommand):
                 )
 
                 port = services['provisioning-port']
-                resp = oauth.get(f'https://{host}:{port}/.well-known/veraison/provisioning')
-                well_known = json.loads(resp.text)
+                well_known = command_get_discovery(
+                    self, f'https://{host}:{port}/.well-known/veraison/provisioning',
+                    ('media-types',), session=oauth)
 
                 print('Supported provisioning media types:')
                 for mt in well_known['media-types']:
@@ -2331,6 +2367,15 @@ class CreateSignerKeyCommand(BaseCommand):
         self.logger.info('Creating signer key...')
 
         name = f'{args.deployment_name}-ear-signer'
+        existing_arn = self.cache.get('signer-key-arn')
+        if existing_arn:
+            existing = self.aws.secretsmanager.describe_secret(SecretId=existing_arn)
+            if existing.get('Name') != name or existing.get('DeletedDate'):
+                self.fail('cached signer key does not identify an active secret '
+                          'for this deployment')
+            self.logger.info('Reusing the signer key recorded in the deployment cache.')
+            return
+
         params = dict(
             kid=name,
             kty=args.kty,
@@ -2438,6 +2483,7 @@ if __name__ == '__main__':
         aws_secret_access_key=os.getenv('AWS_SECRET_KEY'),
         aws_session_token=os.getenv('AWS_SESSION_TOKEN'),
         profile_name=os.getenv('AWS_PROFILE'),
+        region_name=os.getenv('VERAISON_AWS_REGION') or os.getenv('AWS_REGION'),
     )
 
     cmd_map = {}
@@ -2504,3 +2550,4 @@ if __name__ == '__main__':
     except Exception as e:
         write = cmd.logger.critical if args.fail_with_error else cmd.logger.info
         write(f'{e.__class__.__name__}: {e}')
+        sys.exit(1 if args.fail_with_error else 0)

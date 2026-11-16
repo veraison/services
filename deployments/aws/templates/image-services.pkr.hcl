@@ -107,7 +107,7 @@ build {
 
       "sudo mv combined-services-config.yaml /opt/veraison/config/services/config.yaml",
       "sudo chown ubuntu:1001 /opt/veraison/config/services/config.yaml",
-      "sudo systemctl restart veraison-vts",
+      "sudo systemctl restart veraison-vts || { sudo journalctl -u veraison-vts --no-pager -n 120 -o cat; exit 1; }",
       "sudo systemctl restart veraison-provisioning",
       "sudo systemctl restart veraison-verification",
       "sudo systemctl restart veraison-management",

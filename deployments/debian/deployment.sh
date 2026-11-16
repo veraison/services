@@ -74,6 +74,8 @@ function create_deb() {
 
 	dpkg --build "${pkg_dir}"
 
+	# Stable, locale-independent output for callers such as the AWS deployment.
+	printf 'VERAISON_DEB=%s\n' "${pkg_dir}.deb"
 	echo "done."
 }
 
