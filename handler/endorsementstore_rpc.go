@@ -4,6 +4,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/rpc"
 
 	"github.com/fxamacker/cbor/v2"
@@ -99,14 +100,23 @@ func (s *StoreRPCServer) GetKeyTriples(params *proto.GetEndorsementsArgs, resp *
 	return err
 }
 
-func (s *StoreRPCServer) ExecuteCoservQuery(params *proto.EndorsementQueryIn, resp *[]byte) error {
+func (s *StoreRPCServer) ExecuteCoservQuery(params *proto.EndorsementQueryIn, resp *proto.EndorsementQueryOut) error {
 	cos, err := s.Impl.ExecuteCoservQuery(params.MediaType, params.Query)
+	// A store may return an empty result set along with ErrNotFound. net/rpc
+	// drops the reply when an error is returned, so in that case the error is
+	// sent in the reply status instead, together with the result set.
+	notFound := errors.Is(err, ErrNotFound) && cos != nil
+	if err != nil && !notFound {
+		return err
+	}
+	resultSet, err := cos.ToCBOR()
 	if err != nil {
 		return err
 	}
-	*resp, err = cos.ToCBOR()
-	if err != nil {
-		return err
+	resp.ResultSet = resultSet
+	resp.Status = &proto.Status{Result: !notFound}
+	if notFound {
+		resp.Status.ErrorDetail = ErrNotFound.Error()
 	}
 	return nil
 }
@@ -247,13 +257,16 @@ func (c *StoreRPCClient) ExecuteCoservQuery(mediaType, query string) (*coserv.Co
 		Query:     query,
 	}
 
-	var rawResp []byte
-	if err := c.client.Call("Plugin.ExecuteCoservQuery", &args, &rawResp); err != nil {
+	var resp proto.EndorsementQueryOut
+	if err := c.client.Call("Plugin.ExecuteCoservQuery", &args, &resp); err != nil {
 		return nil, ParseError(err)
 	}
 	var ret coserv.Coserv
-	if err := ret.FromCBOR(rawResp); err != nil {
+	if err := ret.FromCBOR(resp.ResultSet); err != nil {
 		return nil, err
+	}
+	if resp.Status != nil && !resp.Status.Result {
+		return &ret, ParseError(errors.New(resp.Status.ErrorDetail))
 	}
 	return &ret, nil
 }
