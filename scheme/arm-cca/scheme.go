@@ -32,6 +32,7 @@ const NUM_REMS = 4
 const (
 	CCA_PLATFORM_CONFIG               = "cca_platform_cofig"
 	CCA_PLATFORM_MANUFACTURING_CONFIG = "cca_platform_manufacturing_config"
+	REALM_MANAGEMENT_SECURITY_DOMAIN  = 1
 )
 
 var Descriptor = handler.SchemeDescriptor{
@@ -242,6 +243,15 @@ func AppraisePlatform(
 	claims, err := convertToPlatformClaims(entry)
 	if err != nil {
 		return handler.BadEvidence(err)
+	}
+
+	claimClientID, err := claims.GetClientID()
+	if err != nil {
+		return handler.BadEvidence(err)
+	}
+
+	if claimClientID != REALM_MANAGEMENT_SECURITY_DOMAIN {
+		return handler.BadEvidence("Expected %d, Got %d.", REALM_MANAGEMENT_SECURITY_DOMAIN, claimClientID)
 	}
 
 	// once the signature on the token is verified, we can claim the HW is
