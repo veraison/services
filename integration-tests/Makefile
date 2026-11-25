@@ -14,7 +14,7 @@ THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 include ../deployments/docker/src/load-config.mk
 
 DEPLOYMENT_SRC_DIR := $(THIS_DIR)../deployments/docker/
-SCHEME_DIR := $(THIS_DIR)../scheme/
+SCHEME_DIR := $(THIS_DIR)../plugins/scheme/
 DOCKER_DIR := $(THIS_DIR)docker/
 TESTER_CONTEXT := $(CONTEXT_DIR)/tester
 

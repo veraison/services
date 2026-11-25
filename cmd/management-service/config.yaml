@@ -1,0 +1,24 @@
+plugin:
+    dirs:
+      - ../../plugins/bin/scheme/
+policy:
+  store:
+    backend: sql
+    sql:
+      driver: sqlite3
+      datasource: /tmp/po-store.sql
+  agent:
+    backend: opa
+management:
+  listen-addr: 0.0.0.0:10443
+  protocol: https
+  cert: ../../deployments/docker/src/certs/management.crt
+  cert-key: ../../deployments/docker/src/certs/management.key
+  max-payload-size: 1MB
+logging:
+  level: debug
+auth:
+  backend: keycloak
+  host: localhost
+  port: 11111
+  realm: veraison

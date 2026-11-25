@@ -1,0 +1,39 @@
+# This config file assumes the service is being run via "debug" command
+# from the docker deployment debug shell.
+plugin:
+  dirs:
+    - ../../plugins/bin/scheme/
+    - ../../plugins/bin/store/
+policy:
+  store:
+    backend: sql
+    sql:
+      driver: sqlite3
+      datasource: /veraison/stores/vts/po-store.sql
+  agent:
+    backend: opa
+vts:
+  server-addr: 127.0.0.1:50051
+  tls: true
+  cert: ../../deployments/docker/src/certs/vts.crt
+  cert-key: ../../deployments/docker/src/certs/vts.key
+  corim-ca-certs:
+      - ../../deployments/docker/src/certs/corimCA.crt
+ear-signer:
+  alg: ES256
+  key: ./skey.jwk
+endorsement-store:
+  coserv:
+    signer:
+      alg: ES256
+      key: ./skey.jwk
+    max-expiry: 5 mins
+  active-plugins:
+    - corim-store
+  plugin-parameters:
+    corim-store:
+      dbms: sqlite3
+      dsn: file::memory:?cache=shared
+      trace-sql: false
+logging:
+  level: debug

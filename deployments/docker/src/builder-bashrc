@@ -1,3 +1,5 @@
 alias ll='ls -lh --color=auto'
-alias debug="dlv debug --build-flags=\"-ldflags '-X github.com/veraison/services/config.SchemeLoader=builtin'\" -- --config config-docker.yaml"
+alias debug="dlv debug --build-flags=\"-tags builtin\" -- --config config-docker.yaml"
+alias debug-rpc="dlv debug -- --config config-docker.yaml"
 export PS1='\e[0;32m\u@debug-container \e[0;34m\w\n\e[0;32m$\e[0m '
+export PATH=/home/builder/go/bin:$PATH

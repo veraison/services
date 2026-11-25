@@ -152,7 +152,7 @@ function bootstrap() {
 }
 
 function build() {
-	make -C ${ROOT_DIR} COMBINED_PLUGINS=1
+	make -C ${ROOT_DIR} build
 }
 
 function create_deployment() {
@@ -234,7 +234,7 @@ function init_clients() {
 	_init_client evcli github.com/veraison/evcli/v2@0e253e8
 	_init_client cocli github.com/veraison/cocli@v0.1.0
 	_init_client pocli github.com/veraison/pocli@2fa24ea3
-	_init_client corim-store github.com/veraison/corim-store/cmd/corim-store@818cd5f652ce
+	_init_client corim-store github.com/veraison/corim-store/cmd/corim-store@23df8892dee2
 }
 
 function quick_init_all(){
@@ -353,14 +353,14 @@ function help() {
 	    This command does not install client executables or their configuration
 	    (see init-client command below).
 
-	[-f] create-root-certs [SUBJECT]
-	    Creates self-signed CA certificates called {rootCA,corimCA}.crt (and the 
-		associted keys, {rootCA,corimCA}.key) with the specified SUBJECT under
+	[-f] create-root-cert [SUBJECT]
+	    Creates a self-signed certificate called rootCA.crt (and the associted key,
+	    rootCA.key) with the specified SUBJECT under
 	    ${VERAISON_ROOT}/certs/.
 	    If the subject is not specified, then it defaults to "/O=Veraison".
 
-	    This command will not overwrite the existing {rootCA,corimCA}.crt unless 
-		-f option is specified.
+	    This command will not overwrite the existing rootCA.crt unless -f option
+	    is specified.
 
 	[-e] [-f] init-certificates | init-certs [NAME_TEMPLATE ROOT_CERT ROOT_CERT_KEY]
 	    Initialize x509 certificates for the deployment, either by generating new
@@ -527,11 +527,11 @@ function _deploy_env() {
 
 function _symlink_bins() {
 	exes=(
-		"${ROOT_DIR}/provisioning/cmd/provisioning-service/provisioning-service"
-		"${ROOT_DIR}/verification/cmd/verification-service/verification-service"
-		"${ROOT_DIR}/management/cmd/management-service/management-service"
-		"${ROOT_DIR}/coserv/cmd/coserv-service/coserv-service"
-		"${ROOT_DIR}/vts/cmd/vts-service/vts-service"
+		"${ROOT_DIR}/cmd/bin/provisioning-service"
+		"${ROOT_DIR}/cmd/bin/verification-service"
+		"${ROOT_DIR}/cmd/bin/management-service"
+		"${ROOT_DIR}/cmd/bin/coserv-service"
+		"${ROOT_DIR}/cmd/bin/vts-service"
 	)
 
 	local _f=""
@@ -545,14 +545,14 @@ function _symlink_bins() {
 		ln -s $_f "$path" "${DEPLOYMENT_BIN_DIR}/$(basename $path)"
 	done
 
-	find "${ROOT_DIR}/scheme/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	find "${ROOT_DIR}/plugins/bin/scheme/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		path=$(realpath "$path")
 		chmod +x "$path"
 		ln -s $_f "$path" "${DEPLOYMENT_SCHEME_PLUGINS_DIR}/$(basename $path)"
 	    done
 
-	find "${ROOT_DIR}/store-plugin/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	find "${ROOT_DIR}/plugins/bin/store/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		chmod +x "$path"
 		ln -s $_f "$path" "${DEPLOYMENT_STORE_PLUGINS_DIR}/$(basename $path)"
@@ -560,19 +560,19 @@ function _symlink_bins() {
 }
 
 function _deploy_bins() {
-	$_INSTALL -m 0755 ${ROOT_DIR}/provisioning/cmd/provisioning-service/provisioning-service \
-		${ROOT_DIR}/verification/cmd/verification-service/verification-service \
-		${ROOT_DIR}/management/cmd/management-service/management-service \
-		${ROOT_DIR}/coserv/cmd/coserv-service/coserv-service \
-		${ROOT_DIR}/vts/cmd/vts-service/vts-service \
+	$_INSTALL -m 0755 ${ROOT_DIR}/cmd/bin/provisioning-service \
+		${ROOT_DIR}/cmd/bin/verification-service \
+		${ROOT_DIR}/cmd/bin/management-service \
+		${ROOT_DIR}/cmd/bin/coserv-service \
+		${ROOT_DIR}/cmd/bin/vts-service \
 		${DEPLOYMENT_BIN_DIR}
 
-	find "${ROOT_DIR}/scheme/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	find "${ROOT_DIR}/plugins/bin/scheme/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_SCHEME_PLUGINS_DIR}/$(basename $path)"
 	    done
 
-	find "${ROOT_DIR}/store-plugin/bin/" -name '*.plugin' -print0 | grep -z -v handler |
+	find "${ROOT_DIR}/plugins/bin/store/" -name '*.plugin' -print0 | grep -z -v handler |
 	    while IFS= read -r -d '' path; do
 		    $_INSTALL -m 0755 "$path" "${DEPLOYMENT_STORE_PLUGINS_DIR}/$(basename $path)"
 	    done

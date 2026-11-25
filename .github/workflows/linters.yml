@@ -20,10 +20,3 @@ jobs:
       install-protoc: true
       setup: |
         .github/actions/install-nvat-dev/install.sh
-        go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-        go install golang.org/x/tools/gopls@v0.23.0
-        go install golang.org/x/tools/cmd/guru@latest
-        go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-        go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
-        go install github.com/yoheimuta/protolint/cmd/protolint@v0.43.2

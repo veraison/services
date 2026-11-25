@@ -1,1 +1,0 @@
-./scripts/plot-runs -t 'Requests against AWS (3 prov, 3 verif)' -o analysis/2025-02/aws-3prov-3verif raw/aws-set3/ raw/aws-set4

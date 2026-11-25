@@ -87,7 +87,7 @@ RUN go mod download &&\
     go install github.com/veraison/evcli/v2@0e253e8 &&\
     go install github.com/veraison/pocli@v0.2.0 &&\
     go install github.com/go-delve/delve/cmd/dlv@v1.26.0 &&\
-    go install github.com/veraison/corim-store/cmd/corim-store@818cd5f652ce &&\
+    go install github.com/veraison/corim-store/cmd/corim-store@23df8892dee2 &&\
     go install github.com/veraison/ear/arc@3034258
 
 ADD --chown=builder:builder builder-dispatcher .

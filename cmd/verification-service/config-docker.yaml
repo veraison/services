@@ -1,0 +1,15 @@
+# This config file assumes the service is being run via "debug" command
+# from the docker deployment debug shell.
+logging:
+  level: debug  # valid levels: error, warning, info, debug
+verification:
+  listen-addr: 0.0.0.0:8443
+  protocol: https
+  cert: ../../deployments/docker/src/certs/verification.crt
+  cert-key: ../../deployments/docker/src/certs/verification.key
+  discovery-max-age: 60s
+  max-payload-size: 1MB
+vts:
+  server-addr: vts-service:50051 # change to localhost:50051 when running outside docker
+  tls: true
+# vim: set ft=yaml:

@@ -1,0 +1,65 @@
+syntax = "proto3";
+package vts;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/veraison/services/pkg/vts";
+
+message SubmitEndorsementsRequest {
+  string media_type = 1;
+  bytes data = 2;
+}
+
+message SetEndorsementsStateRequest {
+  string tenant_id = 1;
+  bytes data = 2;
+  bool set_active = 3;
+}
+
+message GetEndosementsRequest {
+  string media_type = 1;
+  string query = 2;
+}
+
+message GetEndosementsResponse {
+  bytes result_set = 1;
+}
+
+message GetAttestationRequest {
+  string tenant_id = 1;
+  bytes data = 3;
+  string media_type = 4;
+  bytes nonce = 5;
+}
+
+message GetAttestationResponse {
+  bytes signed_ear = 1;
+}
+
+message GetServiceStateResponse {
+  string server_version = 1;
+  google.protobuf.ListValue provisioning_media_types = 2;
+  google.protobuf.ListValue verification_media_types = 3;
+  google.protobuf.ListValue coserv_media_types = 4;
+  string ear_signing_public_key = 5;
+  string coserv_signing_public_key = 6;
+}
+
+// Client interface for the Veraison Trusted Services component.
+// protolint:disable MAX_LINE_LENGTH
+service VTS {
+  // information about service state, including its version, public keys, and
+  // supported media types
+  rpc GetServiceState(google.protobuf.Empty) returns (GetServiceStateResponse);
+
+  // attestation verification API
+  rpc GetAttestation(GetAttestationRequest) returns (GetAttestationResponse);
+
+  // endorsement provisioning API
+  rpc SubmitEndorsements(SubmitEndorsementsRequest) returns (google.protobuf.Empty);
+  rpc SetEndorsementsState(SetEndorsementsStateRequest) returns (google.protobuf.Empty);
+
+  // endorsement distribution API
+  rpc GetEndorsements(GetEndosementsRequest) returns (GetEndosementsResponse);
+}
