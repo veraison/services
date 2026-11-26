@@ -6,7 +6,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -24,18 +23,14 @@ import (
 )
 
 var (
-	tenantID  = "0"
-	CoservMTs = []string{
-		"application/coserv+cbor",
-		"application/coserv+cose",
-	}
+	tenantID           = "0"
 	defaultCacheMaxAge = 3600 * time.Second
 )
 
 type Handler struct {
-	Logger                *zap.SugaredLogger
-	EndorsementDistibutor endorsementdistributor.IEndorsementDistributor
-	WkCacheMaxAge         time.Duration
+	Logger                 *zap.SugaredLogger
+	EndorsementDistributor endorsementdistributor.IEndorsementDistributor
+	WkCacheMaxAge          time.Duration
 }
 
 func NewHandler(
@@ -44,9 +39,9 @@ func NewHandler(
 	wkCacheMaxAge string,
 ) Handler {
 	return Handler{
-		EndorsementDistibutor: endorsementdistributorHandler,
-		Logger:                logger,
-		WkCacheMaxAge:         capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
+		EndorsementDistributor: endorsementdistributorHandler,
+		Logger:                 logger,
+		WkCacheMaxAge:          capability.ParseCacheMaxAge(wkCacheMaxAge, defaultCacheMaxAge, logger),
 	}
 }
 
@@ -62,7 +57,7 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 		return
 	}
 
-	mediaTypes, err := o.EndorsementDistibutor.SupportedMediaTypes()
+	mediaTypes, err := o.EndorsementDistributor.SupportedMediaTypes()
 	if err != nil {
 		reportProblem(c, http.StatusInternalServerError, err.Error())
 		return
@@ -78,7 +73,7 @@ func (o Handler) GetEdApiWellKnownInfo(c *gin.Context) {
 		capabilities = append(capabilities, c)
 	}
 
-	k, err := o.EndorsementDistibutor.GetPublicKey()
+	k, err := o.EndorsementDistributor.GetPublicKey()
 	if err != nil {
 		reportProblem(c, http.StatusInternalServerError, err.Error())
 		return
@@ -197,16 +192,6 @@ func setCacheHeaders(c *gin.Context, resultBytes []byte) {
 }
 
 func (o Handler) CoservRequest(c *gin.Context) {
-	offered := c.NegotiateFormat(CoservMTs...)
-	if !slices.Contains(CoservMTs, offered) {
-		reportProblem(c,
-			http.StatusNotAcceptable,
-			fmt.Sprintf("the only supported output formats are %s",
-				strings.Join(CoservMTs, " or ")),
-		)
-		return
-	}
-
 	coservQuery := c.Param("query")
 
 	var coservData coserv.Coserv
@@ -220,10 +205,24 @@ func (o Handler) CoservRequest(c *gin.Context) {
 		reportProblem(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	mediaType := fmt.Sprintf(`%s; profile=%q`, offered, profile)
+
+	// The supported list is the one advertised by the discovery document.
+	supported, err := o.EndorsementDistributor.SupportedMediaTypes()
+	if err != nil {
+		reportProblem(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// The query profile must be one we offer, and the Accept header must allow
+	// it (with the q-values honoured).
+	mediaType, err := negotiateMediaType(c.GetHeader("Accept"), supported, profile)
+	if err != nil {
+		reportProblem(c, http.StatusNotAcceptable, err.Error())
+		return
+	}
 
 	// Forward query to VTS
-	res, err := o.EndorsementDistibutor.GetEndorsements(tenantID, coservQuery, mediaType)
+	res, err := o.EndorsementDistributor.GetEndorsements(tenantID, coservQuery, mediaType)
 	if err != nil {
 		status := http.StatusBadRequest
 		reportProblem(c, status, err.Error())
