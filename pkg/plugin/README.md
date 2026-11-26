@@ -1,0 +1,235 @@
+# Veraison Plugin Framework
+
+> **Note**: This section is primarily of interest to core Veraison
+> developers. [see here](../../plugins/scheme/README.md) if you wish to learn
+> how to implement plugins to support new attestation schemes.
+
+Veraison services functionality can be extended via plugins. Extension points
+are defined via interfaces that embed `plugin.IPluggable` interface (which defines
+functionality common to all plugins. `plugin.IPluggable` implementations are
+managed via a `plugin.IManager[I IPluggable]`, which allows obtaining plugin
+implementations either by name or media type.
+
+Veraison plugin handling is implemented on top of HashiCorp [go-plugin
+framework](https://github.com/hashicorp/go-plugin).
+
+## Defining new plugin types
+
+All Veraison plugins must implement the `IPluggable` interface:
+
+```go
+
+type IPluggable interface {
+	Init(*Parameters) error
+	GetName() string
+    Fini() error
+}
+
+```
+
+A plugin implementation must have a unique name, and it may implement custom
+initialization and finalization.
+
+In order to define new extension points (plugin types) for Veraison, one needs
+to define a new interface embedding [`plugin.IPluggable`](./ipluggable.go), and
+provide an RPC channel for that interface.
+
+```go
+package myplugin
+
+import (
+    "net/rpc"
+    "github.com/veraison/pkg/plugin"
+    "github.com/veraison/pkg/plugin/host"
+)
+
+PluginType = "my-plugin"
+
+type IMyPlugin interface {
+    plugin.IPluggable
+
+    Method1()
+}
+
+var MyPluginRPC = &plugin.RPCChannel[IMyPlugin]{
+    GetClient: func(c *rpc.Client) any { return &RPCClient{client: c } },
+    GetServer: func(i IMyPlugin) any { return &RPCServer{Impl: i } },
+}
+
+type RPCClient {
+    client *rpc.Client
+}
+
+// TODO: implementation of IMyPlugin for RPCClient goes here...
+// ---8<----------------------------------------------------------
+
+type RPCServer struct {
+    Impl IMyPlugin
+}
+
+// TODO: server-side implementation of RPC for PRCServer goes here...
+// ---8<----------------------------------------------------------
+
+// RegisterMyPlugin is going to be used by plugins to register their
+// implementations of IMyPlugin interface.
+func RegisterMyPlugin(i IMyPlugin) {
+	err := host.RegisterImplementation(PluginType, i)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func init() {
+    // plugin type automatically gets registered when someone imports myplugin
+	if err := host.RegisterPluginType(PluginType, MyPluginRPC); err != nil {
+		panic(err)
+	}
+}
+```
+
+HashiCorp framework supports implementing RPC using `net/rpc` or
+[gRPC](https://grpc.io/). [See
+here](https://pkg.go.dev/github.com/hashicorp/go-plugin) for further details.
+
+## Creating plugins
+
+> :information_source: For the specifics of how to create implementations of the already
+> defined `IEndorsmentHandler` and `IEvidenceHandler` Veraison plugins, [see
+> here](../handler/README.md).
+
+Plugins are created by implementing the corresponding interface, registering
+this implementation under an appropriate name (matching the name the manager
+will look for on discovery -- see below), and serving the plugin inside
+`main()`:
+
+
+```go
+package main
+
+import (
+    "github.com/veraison/pkg/plugin"
+    "github.com/veraison/pkg/plugin/host"
+
+    "myplugin" // see above
+)
+
+type Impl struct {}
+
+func (o *Impl) Init(*plugin.Parameters) error { return nil }
+func (o *Impl) GetName() string { return "my-implementation" }
+func (o *Impl) Fini() error { return nil }
+func (o *Impl) Method1() {}
+
+func main() {
+    // "my-plugin" should match what the manager is looking for -- see below
+    myplugin.RegisterImplementation(&Impl{})
+    host.Serve()
+}
+```
+
+## Discovering and using plugins
+
+In short, you create a manager using `plugin.CreateGoPluginManager`, specifying
+which plugins you want it to manage, and where to look for them, and then
+look up your plugin either via it's name or one of the media types it supports.
+
+```go
+package main
+
+import (
+    "github.com/veraison/config"
+    "github.com/veraison/log"
+    "github.com/veraison/plugin/loader"
+
+    "myplugin" // see above
+)
+
+func main() {
+
+    // Read configuration form a file using github.com/spf13/viper
+    v, err := config.ReadRawConfig("", false)
+    if err != nil {
+            log.Fatalf("Could not read config sources: %v", err)
+    }
+
+    // Extract the sub-secition of config related to plugin management
+    subs, err := config.GetSubs(v, "plugin")
+    if err != nil {
+            log.Fatal(err)
+    }
+
+    // Extract plugin configuration
+    pluginConfig, err := plugin.ParametersMapFromViper(subs["plugin-type"], nil)
+    if err != nil {
+            log.Fatal(err)
+    }
+
+    pluginManager, err := plugin.CreateGoPluginManager(
+            subs["plugin"],
+            "go-plugin-myplugin", // subs["plugin"]["go-plugin-myplugin"] must not be empty
+            pluginConfig,
+            log.Named("plugin"),
+            // plugins must register themselves with type "my-plugin" -- see
+            // above.
+            "my-plugins", myplugin.MyPluginRPC)
+
+    var impl myplugin.IMyPlugin
+
+    // look up by name...
+    imp, err = pluginManager.LookupByName("my-implementation")
+    if err != nil {
+            log.Fatal(err)
+    }
+
+    // ...or, alternatively, by media type
+    imp, err = pluginManager.LookupByMediaType("test/html")
+    if err != nil {
+            log.Fatal(err)
+    }
+
+    // use your plugin
+    impl.Method1()
+}
+```
+
+## Plugin initialization and configuration
+
+Each plugin's `Init()` method is called when the plugin is discovered and
+loaded by the loader. This is the only method of `IPluggable` that gets
+invoked regardless of whether or not a plugin is actually used. This provides
+an opportunity for early one-time initialization of a plugin.
+
+If `Init()` return an error, this error will be reported  by loader and the
+plugin will not be loaded and will not be available for use later. This,
+however, will not result in process termination, and the loader will continue
+to load other plugins.
+
+Plugins can obtain configuration settings by querying `*Parameters` passed to
+their `Init()`. `Parameters` are populated from service configuration. Please
+see the [VTS service documentation](/vts/cmd/vts-service/README.md) for
+specifics.
+
+For example
+
+```go
+
+const defaultTimeout = 10
+
+func (o *Impl) Init(params *plugin.Parameters) error {
+    url, err := params.GetString("service_url")
+    if err != nil {
+        // "service_url" not set or is not a string
+        return err
+    }
+    o.serviceURL = url // will be used by Impl's other methods
+
+    timeout, err := params.DefaultGetInt("timeout", defaultTimeout)
+    if err != nil {
+        // "timeout" is set but is not an int
+        return err
+    }
+    o.timeout = timeout // will be used by Impl's other methods
+
+    return nil
+}
+```

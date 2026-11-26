@@ -29,7 +29,6 @@ require (
 	github.com/lestrrat-go/jwx/v3 v3.0.8
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/mitchellh/protoc-gen-go-json v1.1.0
 	github.com/moogar0880/problems v0.1.1
 	github.com/open-policy-agent/opa v1.4.0
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20211021192214-5ab2d9280aa9
@@ -42,8 +41,8 @@ require (
 	github.com/veraison/apiclient v0.4.1-0.20260916152747-a064c3fc0e5a
 	github.com/veraison/ccatoken v1.4.1-0.20261013095530-3b4af2545666
 	github.com/veraison/cmw v0.3.0
-	github.com/veraison/corim v1.1.3-0.20261026154109-f20ac04e104e
-	github.com/veraison/corim-store v0.3.1-0.20261026180833-a2a60b6a11ad
+	github.com/veraison/corim v1.1.3-0.20261106115031-2c27d6fe6669
+	github.com/veraison/corim-store v0.3.1-0.20261109135458-23df8892dee2
 	github.com/veraison/da v0.0.0-20260902105205-bdc14504b673
 	github.com/veraison/ear v1.1.4-0.20260213122616-3034258cda59
 	github.com/veraison/eat v0.0.0-20220117140849-ddaf59d69f53
@@ -156,7 +155,7 @@ require (
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15 // indirect
 	github.com/uptrace/bun/extra/bundebug v1.2.15 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
-	github.com/veraison/swid v1.1.1-0.20251003121634-fd1f7f1e1897
+	github.com/veraison/swid v1.1.1-0.20261103161241-f3ade3481f31
 	github.com/virtee/sev-snp-measure-go v0.0.0-20241128091219-920346c42ecb // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect

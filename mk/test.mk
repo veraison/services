@@ -1,61 +1,36 @@
-# Copyright 2021 Contributors to the Veraison project.
+# Copyright 2021-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-#
-# variables:
-# * GOPKG - name of the package to test
-# * TEST_ARGS - command line arguments to go test
-# * INTERFACES - interface files to be mocked
-# * MOCKPKG - name of the mock package
-# targets:
-# * test - run $(GOPKG) unit tests
 
-TEST_ARGS ?= -v -cover -race
-MOCKGEN := $(shell go env GOPATH)/bin/mockgen
-COPYRIGHT_FLAGS ?= --ignore \*scheme/example\*
+TOPDIR ?= $(CURDIR)
 
-define MOCK_template
-mock_$(1): $(1)
-	$$(MOCKGEN) -source=$$< -destination=mocks/$$$$(basename $$@) -package=$$(MOCKPKG)
-endef
+GO_TAGS_FLAG = $(if $(BUILD_TAGS_CSV),-tags=$(BUILD_TAGS_CSV))
 
-$(foreach m,$(INTERFACES),$(eval $(call MOCK_template,$(m))))
-MOCK_FILES := $(foreach m,$(INTERFACES),$(join mock_,$(m)))
+MOCKGEN_VERSION = v1.7.0-rc.1
+MOCKGEN = $(TOPDIR)/tools-bin/mockgen/$(MOCKGEN_VERSION)/mockgen
 
-THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+$(MOCKGEN):
+	GOBIN=$(@D) go install github.com/golang/mock/mockgen@$(MOCKGEN_VERSION)
 
-_mocks: $(MOCK_FILES)
-.PHONY: _mocks
-
-test: check-mockgen test-hook-pre realtest checkcopyrights
-.PHONY: test
-
-test-hook-pre:
-.PHONY: test-hook-pre
-
-check-mockgen:
-	@if [[ ! -x $(MOCKGEN) ]]; then \
-		echo ""; \
-		echo "please install mockgen using:"; \
-		echo ""; \
-		echo "    go install github.com/golang/mock/mockgen@v1.7.0-rc.1"; \
-		echo ""; \
-	elif [[ "$$($(MOCKGEN) -version)" != "v1.7.0-rc.1" ]]; then \
-		echo ""; \
-		echo "please upgrade mockgen to version v1.7.0-rc.1:"; \
-		echo ""; \
-		echo "    go install github.com/golang/mock/mockgen@v1.7.0-rc.1"; \
-		echo ""; \
-	fi
-.PHONY: check-mockgen
-
-realtest: _mocks ; go test $(TEST_ARGS) $(GOPKG)
-.PHONY: realtest
+export PATH := $(dir $(MOCKGEN)):$(PATH)
 
 ifdef CI_PIPELINE
 COPYRIGHT_FLAGS += --no-year-check
 endif
 
-checkcopyrights: ; python3 $(THIS_DIR)../scripts/check-copyright $(COPYRIGHT_FLAGS) .
-.PHONY: checkcopyrights
+test: $(MOCKGEN) check-copyrights
+	go generate $(TOPDIR)/pkg/... $(TOPDIR)/plugins/...
+	go test $(GO_TAGS_FLAG) $(TOPDIR)/pkg/... $(TOPDIR)/plugins/...
 
-CLEANFILES += $(MOCK_FILES)
+.PHONY: check-copyrights
+check-copyrights:
+	python3 $(TOPDIR)/scripts/check-copyright $(COPYRIGHT_FLAGS) .
+
+recursive_wildcard = $(foreach d,$(wildcard $(addsuffix /*,$(1))),\
+              $(call recursive_wildcard,$(d),$(2)) \
+              $(if $(filter $(subst *,%,$(2)),$(notdir $(d))),$(d)))
+
+MOCK_FILES = $(strip $(call recursive_wildcard,pkg,mock_*.go))
+
+.PHONY: clean-mocks
+clean-mocks:
+	rm -f $(MOCK_FILES)

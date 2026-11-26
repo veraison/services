@@ -1,0 +1,29 @@
+# cover.out is generated during make coverage
+profile: coverage.out
+
+threshold:
+  package: 60.0
+  total: 60.0
+
+exclude:
+  paths:
+   - pkg/api/common
+   - pkg/api/common/auth
+   - pkg/api/coserv
+   - pkg/api/management
+   - pkg/endorsement
+   - pkg/plugin/builtin
+   - pkg/plugin/goplugin
+   - pkg/plugin/host
+   - pkg/plugin/loader
+   - pkg/scheme
+   - pkg/util
+   - pkg/vts
+   - pkg/vts/client
+   - pkg/vts/service
+   - plugins/.*/plugin
+   - plugins/scheme/psa-iot
+   - plugins/scheme/tpm-enacttrust
+   - plugins/store/amd-kds-coserv
+   - plugins/store/corim-store
+   - plugins/store/nvidia-coserv

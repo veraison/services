@@ -19,28 +19,31 @@ ear-signer:
   alg: ES256
   key: aws:${AWS_REGION}/${DEPLOYMENT_NAME}-ear-signer
 plugin:
-  backend: go-plugin
-  go-plugin-schemes:
-    dir: /opt/veraison/plugins/schemes/
-  go-plugin-stores:
-    dir: /opt/veraison/plugins/stores/
+    dirs:
+      - /opt/veraison/plugins/schemes/
+      - /opt/veraison/plugins/stores/
+policy:
+  store:
+    backend: sql
+    sql:
+      max_connections: ${MAX_STORE_CONNECTIONS}
+      driver: pgx
+      datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
+      tablename: policies
+  agent:
+    backend: opa
 endorsement-store:
+  coserv:
+    max-expiry: 5 mins
+    signer:
+      alg: ES256
+      key: aws:${AWS_REGION}/${DEPLOYMENT_NAME}-ear-signer
   active-plugins:
     - corim-store
   plugin-parameters:
     corim-store:
       dbms: pgx
-      dsn: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}?sslmode=require
-      trace-sql: false
-po-store:
-  backend: sql
-  sql:
-    max_connections: ${MAX_STORE_CONNECTIONS}
-    driver: pgx
-    datasource: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}?sslmode=require
-    tablename: policies
-po-agent:
-    backend: opa
+      dsn: postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_HOST}:${RDS_PORT}/${RDS_DBNAME}
 auth:
    backend: keycloak
    host: keycloak.${VERAISON_AWS_DNS_NAME}

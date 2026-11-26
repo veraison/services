@@ -49,6 +49,9 @@ linters:
     - comments
     - legacy
     rules:
+    - path: 'plugins/scheme/nvidia/nvat_bindings\.go'
+      linters:
+        - lll
     - path: _test\.go
       linters:
       - dupl
@@ -58,9 +61,7 @@ linters:
     generated: lax
     paths:
     - third_party$
-    - builtin$
-    - examples$
-    - scheme/nvidia/nvat_bindings.go
+    - mock_.*.go
 formatters:
   enable:
   - goimports
@@ -68,8 +69,8 @@ formatters:
     generated: lax
     paths:
     - third_party$
-    - builtin$
-    - examples$
+    - mock_.*.go
+    - 'plugins/scheme/nvidia/nvat_bindings\.go'
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

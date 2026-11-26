@@ -27,25 +27,11 @@ jobs:
           fetch-depth: 0
       - name: Install NVIDIA Attestation SDK headers
         uses: ./.github/actions/install-nvat-dev
-      - name: Install mockgen
-        run: |
-          go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-      - name: Install gopls
-        run: |
-          go install golang.org/x/tools/gopls@v0.23.0
-      - name: Install guru
-        run: |
-          go install golang.org/x/tools/cmd/guru@latest
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
           version: '3.x'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: protoc-gen deps
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-          go install github.com/mitchellh/protoc-gen-go-json@v1.1.0
       - name: Install packaging deps
         uses: ConorMacBride/install-package@v1
         with:

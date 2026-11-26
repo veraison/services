@@ -240,7 +240,7 @@ def parse_copyright(path):
     return ci
 
 
-DEFAULT_EGNORE_PATHS = ['*.git*', '*.pb.go', '*.pb.json.go', '*mocks*', '*.gen.go']
+DEFAULT_EGNORE_PATHS = ['*.git*', '*.pb.go', '*.pb.json.go', '*mock_*', '*.gen.go']
 
 
 def main(argv):

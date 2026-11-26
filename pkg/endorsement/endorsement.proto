@@ -1,0 +1,30 @@
+// Copyright 2025-2026 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package endorsement;
+
+option go_package = "github.com/veraison/services/pkg/endorsement";
+
+message ExecuteCoservQueryRequest {
+  string media_type = 1;
+  string query = 2;
+}
+
+message GetEndorsementsRequest {
+  bytes environment = 1;
+  string label = 2;
+  bool match_exactly = 3;
+}
+
+message AddCorimBytesRequest {
+  bytes endorsement = 1;
+  string label = 2;
+  bool activate = 3;
+}
+
+message SetEndorsementsStateRequest {
+  string tenant_id = 1;
+  bytes data = 2;
+  bool set_active = 3;
+}
+

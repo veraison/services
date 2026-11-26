@@ -37,11 +37,9 @@ ear-signer:
   alg: ES256
   key: ${VERAISON_SIGNING_DIR}/skey.jwk
 plugin:
-  backend: go-plugin
-  go-plugin-schemes:
-    dir: ${VERAISON_SCHEME_PLUGINS_DIR}/
-  go-plugin-stores:
-    dir: ${VERAISON_STORE_PLUGINS_DIR}/
+  dirs:
+    - ${VERAISON_SCHEME_PLUGINS_DIR}/
+    - ${VERAISON_STORE_PLUGINS_DIR}/
 ##############################################################################
 # The store entries below configure the stores for endorsements, trust
 # anchors, and policies. They are configured to use sqlite3 by default. sqlite3
@@ -64,8 +62,9 @@ endorsement-store:
       key: ${VERAISON_SIGNING_DIR}/coserv-signer.jwk
   active-plugins:
     - corim-store
-    - nvidia-coserv-proxy-handler
-    - amd-kds-coserv-proxy-handler
+    #- cosev-broker
+    #- nvidia-coserv-proxy
+    #- amd-kds-coserv-proxy
 
   # configurations for the corim-store plugin
   plugin-parameters:
@@ -80,36 +79,36 @@ endorsement-store:
 
       #dbms: mysql
       #dsn: veraison:password@tcp(localhost:3306)/veraison
-    coserv-broker:
-      enable-broker: false
-      client-caching: true
-      # CoSERV configurations of schemes
-      schemes:
-        ARM_CCA:
-          coserv-url: "https://veraison.test.linaro.org:11443"
-          client-tls-insecure: true
-          client-certs:
-            - ""
-          unsigned-coserv: false
-          profile: "tag:arm.com,2025:cca_platform#1.0.0"
 
-po-store:
-  backend: sql
-  sql:
-    max_connections: 10
+    #coserv-broker:
+      #client-caching: true
+      ## CoSERV configurations of schemes
+      #schemes:
+        #ARM_CCA:
+          #coserv-url: "https://veraison.test.linaro.org:11443"
+          #client-tls-insecure: true
+          #client-certs:
+            #- ""
+          #unsigned-coserv: false
+          #profile: "tag:arm.com,2025:cca_platform#1.0.0"
+policy:
+  store:
+    backend: sql
+    sql:
+      max_connections: 10
 
-    driver: sqlite3
-    datasource: ${VERAISON_STORES_DIR}/po-store.sql
+      driver: sqlite3
+      datasource: ${VERAISON_STORES_DIR}/po-store.sql
 
-    #driver: pgx
-    #datasource: postgres://veraison:password@localhost:5432/veraison
-    #tablename: policies
+      #driver: pgx
+      #datasource: postgres://veraison:password@localhost:5432/veraison
+      #tablename: policies
 
-    #driver: mysql
-    #datasource: veraison:password@tcp(localhost:3306)/veraison
-    #tablename: policies
-po-agent:
-    backend: opa
+      #driver: mysql
+      #datasource: veraison:password@tcp(localhost:3306)/veraison
+      #tablename: policies
+  agent:
+      backend: opa
 auth:
   backend: none
 ##############################################################################

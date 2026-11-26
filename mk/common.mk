@@ -10,4 +10,8 @@ export TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 # Used to set the ServerVersion reported by  services
 VERSION_FROM_GIT := $(shell $(TOPDIR)/scripts/get-veraison-version)
 
-install:
+comma := ,
+empty :=
+space := $(empty) $(empty)
+
+BUILD_TAGS_CSV = $(subst $(space),$(comma),$(strip $(BUILD_TAGS)))

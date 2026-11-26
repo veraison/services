@@ -37,18 +37,17 @@ ear-signer:
   alg: ES256
   key: skey.jwk
 plugin:
-  backend: go-plugin
-  go-plugin-schemes:
-    dir: ./plugins/schemes/
-  go-plugin-stores:
-    dir: ./plugins/stores/
-po-store:
-  backend: sql
-  sql:
-    max_connections: 10
-    driver: sqlite3
-    datasource: stores/vts/po-store.sql
-po-agent:
+  dirs:
+    - ./plugins/scheme/
+    - ./plugins/store/
+policy:
+  store:
+    backend: sql
+    sql:
+      max_connections: 10
+      driver: sqlite3
+      datasource: stores/vts/po-store.sql
+  agent:
     backend: opa
 endorsement-store:
   coserv:
@@ -58,8 +57,8 @@ endorsement-store:
       key: /opt/veraison/coserv-signer.jwk
   active-plugins:
     - corim-store
-    - nvidia-coserv-proxy-handler
-    - amd-kds-coserv-proxy-handler
+    - nvidia-coserv-proxy
+    - amd-kds-coserv-proxy
   plugin-parameters:
     corim-store:
       dbms: sqlite

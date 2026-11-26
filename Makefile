@@ -2,71 +2,51 @@
 # SPDX-License-Identifier: Apache-2.0
 
 SHELL = /bin/bash
+TOPDIR = $(CURDIR)
 
-SUBDIR += builtin
-SUBDIR += auth
-SUBDIR += config
-SUBDIR += coserv
-SUBDIR += store-plugin
-SUBDIR += handler
-SUBDIR += kvstore
-SUBDIR += log
-SUBDIR += management
-SUBDIR += plugin
-SUBDIR += policy
-SUBDIR += proto
-SUBDIR += provisioning
-SUBDIR += scheme
-SUBDIR += verification
-SUBDIR += vts
-SUBDIR += vtsclient
+SCHEME_LOADER ?= plugins
+ifeq ($(SCHEME_LOADER),builtin)
+	BUILD_TAGS += builtin
+endif
 
-COVERAGE_THRESHOLD ?= 60.0
-# plugin coverage is low because it is mostly tested via plugin/test, a
-# separate package (this is necessary due to to the nature of the code being
-# tested. plugin/test coverage is low because it's purely test code).
-IGNORE_COVERAGE += github.com/veraison/services/plugin
-IGNORE_COVERAGE += github.com/veraison/services/plugin/test
-# There is protobuf-generated stuff here, which skews coverage.
-IGNORE_COVERAGE += github.com/veraison/services/handler
+NVAT_OK := $(shell $(TOPDIR)/scripts/check-nvat.sh; echo $$?)
+ifeq ($(NVAT_OK),0)
+	BUILD_TAGS += nvat
+endif
 
-# Go 1.22 started reporting subpackages without any tests as having 0.0%
-# coverage. Previous version of go ignored them.
-#  See: https://go-review.googlesource.com/c/go/+/495447
-IGNORE_COVERAGE += github.com/veraison/services/builtin
-IGNORE_COVERAGE += github.com/veraison/services/auth
-IGNORE_COVERAGE += github.com/veraison/services/management/api
-IGNORE_COVERAGE += github.com/veraison/services/management/cmd/management-service
-IGNORE_COVERAGE += github.com/veraison/services/provisioning/cmd/provisioning-service
-IGNORE_COVERAGE += github.com/veraison/services/provisioning/provisioner
-IGNORE_COVERAGE += github.com/veraison/services/scheme/common
-IGNORE_COVERAGE += github.com/veraison/services/scheme/common/arm
-IGNORE_COVERAGE += github.com/veraison/services/verification/cmd/verification-service
-IGNORE_COVERAGE += github.com/veraison/services/verification/verifier
-IGNORE_COVERAGE += github.com/veraison/services/vts/cmd/vts-service
-IGNORE_COVERAGE += github.com/veraison/services/vts/trustedservices
-IGNORE_COVERAGE += github.com/veraison/services/vtsclient
-IGNORE_COVERAGE += github.com/veraison/services/coserv/api
-IGNORE_COVERAGE += github.com/veraison/services/coserv/cmd/coserv-service
-IGNORE_COVERAGE += github.com/veraison/services/store-plugin/amd-kds-coserv
-IGNORE_COVERAGE += github.com/veraison/services/store-plugin/nvidia-coserv
-IGNORE_COVERAGE += github.com/veraison/services/scheme/nvidia
-IGNORE_COVERAGE += github.com/veraison/services/store-plugin/corim-store
-IGNORE_COVERAGE += github.com/veraison/services/scheme/psa-iot
-IGNORE_COVERAGE += github.com/veraison/services/scheme/riot
-IGNORE_COVERAGE += github.com/veraison/services/scheme/sevsnp
-IGNORE_COVERAGE += github.com/veraison/services/scheme/tpm-enacttrust
-
+include mk/common.mk
+include mk/services.mk
+include mk/plugins.mk
+include mk/test.mk
+include mk/lint.mk
 include mk/cover.mk
+
+.PHONY: build
+build: services plugins
+
+.PHONY: clean
+clean: clean-services clean-plugins
+
+.DEFAULT_GOAL := help
 
 define __MAKEFILE_HELP
 Available targets:
 
+	services:      build services executables, puting them under cmd/bin/
+	plugins:       build plugin executables, puting them under plugins/bin/
+	scheme-<NAME>  build the specified plugn's executable; the name is taken
+	               from the executlable's name without the .plugin exension
+	               e.g. scheme-arm-cca
+	store-<NAME>  build the specified plugn's executable; the name is taken
+	               from the executlable's name without the .plugin exension
+	               e.g. store-corim-store
+	build:         combination of services and plugins above
 	test:          run unit tests
 	integ-test:    run integration tests
 	lint:          run the Go linter against the source
 	coverage:      run a check to make sure that unit test coverage is
-	               above a pre-determined threshold ($(COVERAGE_THRESHOLD)%)
+	               above a threshold defined in .testcoverage.yml
+	report:        open html coverage report in default browser
 	clean:         clean up build artefacts
 	really-clean:  clean up deployment and integration-test related artefacts
 	docker-deploy: create and start the docker deployment (docker must be
@@ -82,10 +62,6 @@ export __MAKEFILE_HELP
 .PHONY: help
 help:
 	@echo "$$__MAKEFILE_HELP"
-
-ifeq ($(filter help,$(MAKECMDGOALS)),help)
-__NO_RECURSE = true
-endif
 
 define __DOCKER_DEPLOY_MESSAGE
 
@@ -112,36 +88,20 @@ docker-deploy:
 	deployments/docker/veraison start
 	@echo "$$__DOCKER_DEPLOY_MESSAGE"
 
-ifeq ($(filter docker-deploy,$(MAKECMDGOALS)),docker-deploy)
-__NO_RECURSE = true
-endif
-
 .PHONY: really-clean
-really-clean:
+really-clean: clean clean-mocks
 	make -C integration-tests really-clean
 	make -C deployments/debian really-clean
 	make -C deployments/docker really-clean
 	make -C deployments/native really-clean
 
-ifeq ($(filter really-clean,$(MAKECMDGOALS)),really-clean)
-__NO_RECURSE = true
-endif
-
 .PHONY: integ-test
 integ-test:
 	make -C integration-tests test
 
-ifeq ($(filter integ-test,$(MAKECMDGOALS)),integ-test)
-__NO_RECURSE = true
-endif
-
 .PHONY: bootstrap
 bootstrap:
 	make -C deployments/native bootstrap
-
-ifeq ($(filter bootstrap,$(MAKECMDGOALS)),bootstrap)
-__NO_RECURSE = true
-endif
 
 VERAISON_ROOT ?= $(HOME)/veraison-deployment
 export VERAISON_ROOT
@@ -174,10 +134,6 @@ native-deploy:
 	fi
 	@echo "$$__NATIVE_DEPLOY_MESSAGE"
 
-ifeq ($(filter native-deploy,$(MAKECMDGOALS)),native-deploy)
-__NO_RECURSE = true
-endif
-
 .PHONY: deb
 deb:
 	make -C deployments/debian deb
@@ -185,15 +141,3 @@ deb:
 .PHONY: rpm
 rpm:
 	make -C deployments/rpm rpm
-
-ifeq ($(filter deb,$(MAKECMDGOALS)),deb)
-__NO_RECURSE = true
-endif
-
-ifeq ($(filter rpm,$(MAKECMDGOALS)),rpm)
-__NO_RECURSE = true
-endif
-
-ifndef __NO_RECURSE
-include mk/subdir.mk
-endif

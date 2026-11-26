@@ -1,0 +1,480 @@
+// Copyright 2025-2026 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+package corim_store
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/veraison/corim-store/pkg/model"
+	corimstore "github.com/veraison/corim-store/pkg/store"
+	"github.com/veraison/corim/comid"
+	"github.com/veraison/corim/coserv"
+	"github.com/veraison/services/pkg/endorsement"
+	"github.com/veraison/services/pkg/fault"
+	"github.com/veraison/services/pkg/log"
+	"github.com/veraison/services/pkg/plugin"
+	"go.uber.org/zap"
+)
+
+const PluginName = "corim-store"
+
+var Capabilities = []endorsement.Capability{
+	endorsement.GetTriples,
+	endorsement.ExecuteCoservQuery,
+	endorsement.UpdateStore,
+}
+
+type Store struct {
+	store  *corimstore.Store
+	logger *zap.SugaredLogger
+	coserv *endorsement.CoservConfig
+}
+
+func NewStore() *Store {
+	logger := log.Named(PluginName)
+	return &Store{nil, logger, nil}
+}
+
+func (s *Store) Init(params *plugin.Parameters) error {
+	s.logger.Debug("initializing default store")
+	if params == nil {
+		return errors.New("parameters are required for corim-store")
+	}
+	cfg, err := ConfigFromParameters(params, s.logger)
+	if err != nil {
+		s.logger.Errorf("Failed to load corim-store parameters: %v", err)
+		return err
+	}
+	s.coserv = cfg.CoservConfig()
+
+	s.logger.Debugf("connecting to %s store %s", cfg.DBMS, cfg.DSN)
+
+	store, err := corimstore.Open(context.Background(), cfg.StoreConfig())
+	if err != nil {
+		return err
+	}
+
+	// The store must be initialized before it may be used. In general, we
+	// rely on the store being pointed to by DSN to be initialized prior
+	// to starting the VTS. For in-memory store this can never be the case, so we
+	// initialize it here.
+	if strings.Contains(cfg.DSN, ":memory:") {
+		if err := store.Init(); err != nil {
+			return err
+		}
+	}
+
+	s.store = store
+	return nil
+}
+
+func (s *Store) Fini() error {
+	s.logger.Info("closing")
+	if s.store == nil {
+		panic("attempted to close an uninitialized store")
+	}
+	if err := s.store.Close(); err != nil {
+		s.logger.Errorf("Failed to close corim-store: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (s *Store) GetName() string {
+	return PluginName
+}
+
+func (s *Store) GetKeyTriples(
+	env *comid.Environment,
+	label string,
+	exact bool,
+) ([]*comid.KeyTriple, error) {
+	res, err := s.store.GetActiveKeyTriples(env, label, exact)
+	if errors.Is(err, corimstore.ErrNoMatch) {
+		return nil, fault.ErrNotFound
+	}
+	return res, err
+}
+
+func (s *Store) GetValueTriples(
+	env *comid.Environment,
+	label string,
+	exact bool,
+) ([]*comid.ValueTriple, error) {
+	res, err := s.store.GetActiveValueTriples(env, label, exact)
+	if errors.Is(err, corimstore.ErrNoMatch) {
+		return nil, fault.ErrNotFound
+	}
+	return res, err
+}
+
+func (s *Store) ExecuteCoservQuery(profile, query string) (*coserv.Coserv, error) {
+	s.logger.Infof("got coserv query: %v", query)
+	coservService := corimstore.NewCoSERVService(s.store, s.coserv.Authority, s.coserv.MaxExpiry)
+	var q coserv.Coserv
+	if err := q.FromBase64Url(query); err != nil {
+		s.logger.Errorf("could not decode string to coserv: %v", err)
+		return nil, err
+	}
+
+	if err := coservService.UpdateCoSERV(&q); err != nil {
+		s.logger.Errorf("could not update coserv: %v", err)
+		return nil, err
+	}
+
+	s.logger.Debugf("got coserv response: %v", q)
+	return &q, nil
+}
+
+func (s *Store) AddCorimBytes(data []byte, label string, activate bool) error {
+	s.logger.Debugf("adding CoRIM")
+	return s.store.AddBytes(data, label, activate)
+}
+
+func (s *Store) SetEndorsementsState(label string, req []byte, setActive bool) error {
+	s.logger.Debugw("SetEndorsementsState", "set-active", setActive, "tenant-id", label)
+
+	var elmq endorsement.Query
+	if err := elmq.FromCBOR(req); err != nil {
+		return fault.BadInput(err)
+	}
+
+	switch {
+	case elmq.EnvironmentSelector != nil:
+		if err := s.setEndorsementsStateUsingEnv(&elmq, setActive); err != nil {
+			return err
+		}
+	case elmq.RimSelector != nil:
+		if err := s.setEndorsementsStateUsingIDs(&elmq, setActive); err != nil {
+			return err
+		}
+	default:
+		// should not get here -- query already validated
+		panic("invalid ELM query")
+	}
+
+	return nil
+
+}
+
+func (o *Store) setEndorsementsStateUsingEnv(query *endorsement.Query, setActive bool) error {
+	if err := query.Valid(); err != nil {
+		return err
+	}
+
+	var (
+		err                   error
+		valueTripleQueryGroup *corimstore.ValueTripleQueryGroup
+		keyTripleQueryGroup   *corimstore.KeyTripleQueryGroup
+	)
+
+	switch *query.ArtifactType {
+	case coserv.ArtifactTypeReferenceValues:
+		valueTripleQueryGroup, err = valueTripleQueryGroupFromEnvironmentSelector(
+			query.EnvironmentSelector,
+		)
+		if err != nil {
+			return err
+		}
+
+		if _, err := query.Profile.Get(); err == nil {
+			valueTripleQueryGroup.ForEach(func(v *corimstore.ValueTripleQuery) {
+				v.ProfileFromEAT(query.Profile)
+			})
+		}
+	case coserv.ArtifactTypeTrustAnchors:
+		keyTripleQueryGroup, err = keyTripleQueryGroupFromEnvironmentSelector(query.EnvironmentSelector)
+		if err != nil {
+			return err
+		}
+
+		if _, err := query.Profile.Get(); err == nil {
+			keyTripleQueryGroup.ForEach(func(k *corimstore.KeyTripleQuery) {
+				k.ProfileFromEAT(query.Profile)
+			})
+		}
+	default:
+		return errors.New("only reference values and trust anchors are supported at present")
+	}
+
+	return o.setTripleQueryGroupsActive(valueTripleQueryGroup, keyTripleQueryGroup, setActive)
+}
+
+func (o *Store) setEndorsementsStateUsingIDs(query *endorsement.Query, setActive bool) error {
+	if err := query.Valid(); err != nil {
+		return err
+	}
+
+	valueTripleQueryGroup, err := valueTripleQueryGroupFromRimSelector(query.RimSelector)
+	if err != nil {
+		return err
+	}
+
+	keyTripleQueryGroup, err := keyTripleQueryGroupFromRimSelector(query.RimSelector)
+	if err != nil {
+		return err
+	}
+
+	return o.setTripleQueryGroupsActive(valueTripleQueryGroup, keyTripleQueryGroup, setActive)
+}
+
+func valueTripleQueryGroupFromEnvironmentSelector( //nolint:dupl
+	selector *coserv.EnvironmentSelector,
+) (*corimstore.ValueTripleQueryGroup, error) {
+	valueTripleQueryGroup := corimstore.NewValueTripleQueryGroup()
+
+	if selector.Classes != nil {
+		for i, statefulClass := range *selector.Classes {
+			q, err := corimstore.ValueTripleQueryFromStatefulClass(&statefulClass)
+			if err != nil {
+				return nil, fmt.Errorf("stateful class %d: %w", i, err)
+			}
+
+			q.TripleType(model.ReferenceValueTriple).ValidOn(time.Now())
+
+			valueTripleQueryGroup.Add(q)
+		}
+	}
+
+	if selector.Instances != nil {
+		for i, statefulInstance := range *selector.Instances {
+			q, err := corimstore.ValueTripleQueryFromStatefulInstance(&statefulInstance)
+			if err != nil {
+				return nil, fmt.Errorf("stateful instance: %d: %w", i, err)
+			}
+
+			q.TripleType(model.ReferenceValueTriple).ValidOn(time.Now())
+
+			valueTripleQueryGroup.Add(q)
+		}
+	}
+
+	if selector.Groups != nil {
+		for i, statefulGroup := range *selector.Groups {
+			q, err := corimstore.ValueTripleQueryFromStatefulGroup(&statefulGroup)
+			if err != nil {
+				return nil, fmt.Errorf("stateful group: %d: %w", i, err)
+			}
+
+			q.TripleType(model.ReferenceValueTriple).ValidOn(time.Now())
+
+			valueTripleQueryGroup.Add(q)
+		}
+	}
+
+	return valueTripleQueryGroup, nil
+}
+
+func keyTripleQueryGroupFromEnvironmentSelector( // nolint:dupl
+	selector *coserv.EnvironmentSelector,
+) (*corimstore.KeyTripleQueryGroup, error) {
+	keyTripleQueryGroup := corimstore.NewKeyTripleQueryGroup()
+
+	if selector.Classes != nil {
+		for i, statefulClass := range *selector.Classes {
+			q, err := corimstore.KeyTripleQueryFromStatefulClass(&statefulClass)
+			if err != nil {
+				return nil, fmt.Errorf("stateful class %d: %w", i, err)
+			}
+
+			q.TripleType(model.AttestKeyTriple).ValidOn(time.Now())
+
+			keyTripleQueryGroup.Add(q)
+		}
+	}
+
+	if selector.Instances != nil {
+		for i, statefulInstance := range *selector.Instances {
+			q, err := corimstore.KeyTripleQueryFromStatefulInstance(&statefulInstance)
+			if err != nil {
+				return nil, fmt.Errorf("stateful instance: %d: %w", i, err)
+			}
+
+			q.TripleType(model.AttestKeyTriple).ValidOn(time.Now())
+
+			keyTripleQueryGroup.Add(q)
+		}
+	}
+
+	if selector.Groups != nil {
+		for i, statefulGroup := range *selector.Groups {
+			q, err := corimstore.KeyTripleQueryFromStatefulGroup(&statefulGroup)
+			if err != nil {
+				return nil, fmt.Errorf("stateful group: %d: %w", i, err)
+			}
+
+			q.TripleType(model.AttestKeyTriple).ValidOn(time.Now())
+
+			keyTripleQueryGroup.Add(q)
+		}
+	}
+
+	return keyTripleQueryGroup, nil
+}
+
+func valueTripleQueryGroupFromRimSelector(
+	selector *coserv.RimSelectorIDs,
+) (*corimstore.ValueTripleQueryGroup, error) {
+	if selector == nil {
+		return nil, fmt.Errorf("empty RIM selector")
+	}
+
+	queryGroup := corimstore.NewValueTripleQueryGroup()
+
+	for _, id := range *selector {
+		q := corimstore.NewValueTripleQuery()
+
+		tagId := id.TagID.String()
+		// swid.TagID does not expose the underlying type in any way, but we
+		// need it to correctly reconstruct it inside corim-store, so we guess
+		// by seeing if the ID parses as a valid UUID.
+		// see: https://github.com/veraison/corim-store/blob/d1c9b858ead512ff45ba54d0e16781fafcff242c/pkg/model/manifest.go#L94
+		var tagIdType model.TagIDType
+		if _, err := uuid.Parse(tagId); err == nil {
+			tagIdType = model.UUIDTagID
+		} else {
+			tagIdType = model.StringTagID
+		}
+
+		log.Debugf("tag id: %v, tag id type: %v", tagId, tagIdType)
+
+		switch id.Type {
+		case coserv.RimSelectorTypeComid:
+			q.ModuleTagID(tagIdType, tagId)
+		case coserv.RimSelectorTypeCoswid:
+			// not supported by corim-store
+			// see: https://github.com/veraison/corim-store/blob/d1c9b858ead512ff45ba54d0e16781fafcff242c/pkg/store/coserv.go#L333
+			return nil, errors.New("CoSWID selectors not supported")
+		case coserv.RimSelectorTypeCorim:
+			q.ManifestID(tagIdType, tagId)
+		}
+
+		q.TripleType(model.ReferenceValueTriple).ValidOn(time.Now())
+
+		queryGroup.Add(q)
+	}
+
+	return queryGroup, nil
+}
+
+func keyTripleQueryGroupFromRimSelector(
+	selector *coserv.RimSelectorIDs,
+) (*corimstore.KeyTripleQueryGroup, error) {
+	if selector == nil {
+		return nil, fmt.Errorf("empty RIM ID selector")
+	}
+
+	queryGroup := corimstore.NewKeyTripleQueryGroup()
+
+	for _, id := range *selector {
+		q := corimstore.NewKeyTripleQuery()
+
+		switch id.Type {
+		case coserv.RimSelectorTypeComid:
+			q.ModuleTagIDValue(id.TagID.String())
+		case coserv.RimSelectorTypeCoswid:
+			// not supported by corim-store
+			// see: https://github.com/veraison/corim-store/blob/d1c9b858ead512ff45ba54d0e16781fafcff242c/pkg/store/coserv.go#L333
+			return nil, errors.New("CoSWID selectors not supported")
+		case coserv.RimSelectorTypeCorim:
+			q.ManifestIDValue(id.TagID.String())
+		}
+
+		q.TripleType(model.AttestKeyTriple).ValidOn(time.Now())
+
+		queryGroup.Add(q)
+	}
+
+	return queryGroup, nil
+}
+
+func (o *Store) setTripleQueryGroupsActive(
+	valueTripleQueryGroup *corimstore.ValueTripleQueryGroup,
+	keyTripleQueryGroup *corimstore.KeyTripleQueryGroup,
+	setActive bool,
+) error {
+	txStore, err := o.store.BeginTx(nil)
+	if err != nil {
+		return err
+	}
+
+	if valueTripleQueryGroup != nil {
+		// Check if there are endorsements matching the query.
+		//
+		// Later, we add an IsActive() condition to the query to avoid unnecessary writes
+		// to rows where we already have the desired activation state. Once this condition
+		// is added, it will be difficult to distinguish between no matching endorsements vs
+		// no database upates required, since they both will result in an ErrNoMatch. Hence,
+		// do a check for ErrNoMatch beforehand.
+		if _, err := txStore.QueryValueTripleEntries(valueTripleQueryGroup); err != nil {
+			_ = txStore.Tx().Rollback()
+			return err
+		}
+
+		// only select triples that need their activation state changed
+		valueTripleQueryGroup.ForEach(func(q *corimstore.ValueTripleQuery) {
+			q.IsActive(!setActive)
+		})
+
+		// check if any entry will be affected, and raise warning if no change
+		if _, err := txStore.QueryValueTripleEntries(valueTripleQueryGroup); err != nil {
+			if !errors.Is(err, corimstore.ErrNoMatch) {
+				_ = txStore.Tx().Rollback()
+				return err
+			}
+			log.Warnf(
+				"value triples already in the desired activation state (setActive = %v)",
+				setActive,
+			)
+		} else {
+			if _, err := txStore.SetValueTriplesActive(valueTripleQueryGroup, setActive); err != nil {
+				_ = txStore.Tx().Rollback()
+				return err
+			}
+		}
+	}
+
+	if keyTripleQueryGroup != nil {
+		// Check if there are endorsements matching the query.
+		//
+		// Later, we add an IsActive() condition to the query to avoid unnecessary writes
+		// to rows where we already have the desired activation state. Once this condition
+		// is added, it will be difficult to distinguish between no matching endorsements vs
+		// no database upates required, since they both will result in an ErrNoMatch. Hence,
+		// do a check for ErrNoMatch beforehand.
+		_, err := txStore.QueryKeyTripleEntries(keyTripleQueryGroup)
+		if err != nil {
+			_ = txStore.Tx().Rollback()
+			return err
+		}
+
+		// only select triples that need their activation state changed
+		keyTripleQueryGroup.ForEach(func(q *corimstore.KeyTripleQuery) {
+			q.IsActive(!setActive)
+		})
+
+		// check if any entry will be affected, and raise warning if no change
+		if _, err := txStore.QueryKeyTripleEntries(keyTripleQueryGroup); err != nil {
+			if !errors.Is(err, corimstore.ErrNoMatch) {
+				_ = txStore.Tx().Rollback()
+				return err
+			}
+			log.Warnf(
+				"key triples already in the desired activation state (setActive = %v)",
+				setActive,
+			)
+		} else {
+			if _, err := txStore.SetKeyTriplesActive(keyTripleQueryGroup, setActive); err != nil {
+				_ = txStore.Tx().Rollback()
+				return err
+			}
+		}
+	}
+
+	return txStore.Tx().Commit()
+}
